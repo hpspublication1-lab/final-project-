@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social Media Growth by Prossore</title>
+<style>
+  :root{
+    --bg:#0e1014; --panel:#161a21; --panel2:#1c2029; --panel3:#232833;
+    --line:#2a3039; --line2:#353c48;
+    --text:#e8ebf1; --muted:#96a0b2; --dim:#6c7688;
+    --accent:#4f9cf9; --green:#34d399; --amber:#fbbf24; --rose:#fb7185;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+       font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* ---------- header ---------- */
+  header{padding:26px 24px 20px;background:linear-gradient(180deg,#1a1f28,#161a21);
+         border-bottom:1px solid var(--line)}
+  h1{margin:0 0 6px;font-size:22px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:13px}
+  .notice{margin:16px 24px 0;padding:11px 14px;border-radius:9px;
+          background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.28);
+          color:#f0cf8e;font-size:12.5px;line-height:1.5}
+
+  /* ---------- summary cards ---------- */
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));
+           gap:12px;padding:18px 24px 4px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+  .card .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim)}
+  .card .v{font-size:21px;font-weight:650;margin-top:3px;font-variant-numeric:tabular-nums}
+  .card .n{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{position:sticky;top:0;z-index:20;background:rgba(22,26,33,.96);
+           backdrop-filter:blur(8px);padding:12px 24px;margin-top:16px;
+           border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+           display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .toolbar .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+  input,select{background:var(--panel2);color:var(--text);border:1px solid var(--line2);
+               border-radius:8px;padding:7px 10px;font-size:13px;outline:none}
+  input:focus,select:focus{border-color:var(--accent)}
+  #q{flex:1;min-width:200px}
+  .lab{font-size:11.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+  .chip{background:var(--panel2);border:1px solid var(--line2);border-radius:999px;
+        padding:6px 13px;font-size:12.5px;cursor:pointer;color:var(--muted);user-select:none}
+  .chip:hover{color:var(--text);border-color:var(--dim)}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#05121f;font-weight:650}
+  .divider{width:1px;height:22px;background:var(--line2);margin:0 3px}
+
+  /* ---------- sections ---------- */
+  .wrap{padding:20px 24px 70px;max-width:1500px}
+  details.group{border:1px solid var(--line);border-radius:12px;background:var(--panel);
+                margin-bottom:14px;overflow:hidden}
+  details.group[open]{border-color:var(--line2)}
+  summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;
+          align-items:center;gap:12px;flex-wrap:wrap}
+  summary::-webkit-details-marker{display:none}
+  summary:hover{background:var(--panel2)}
+  .arrow{color:var(--dim);font-size:11px;transition:transform .15s;display:inline-block}
+  details[open] .arrow{transform:rotate(90deg)}
+  .g-title{font-size:14.5px;font-weight:640}
+  .g-meta{color:var(--muted);font-size:12px;margin-left:auto;
+          display:flex;gap:14px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+  .g-meta b{color:var(--text);font-weight:600}
+  .pill{font-size:11px;padding:2px 9px;border-radius:999px;font-weight:600}
+  .p-tiktok{background:rgba(251,113,133,.14);color:#fb7185}
+  .p-facebook{background:rgba(79,156,249,.14);color:#6aa9fb}
+  .p-instagram{background:rgba(232,121,198,.15);color:#e879c6}
+  .p-youtube{background:rgba(239,68,68,.15);color:#f87171}
+  .p-telegram{background:rgba(56,189,248,.14);color:#38bdf8}
+  .p-twitter{background:rgba(226,232,240,.12);color:#cbd5e1}
+  .p-spotify{background:rgba(34,197,94,.14);color:#4ade80}
+  .p-linkedin{background:rgba(96,165,250,.14);color:#60a5fa}
+  .p-pinterest{background:rgba(244,63,94,.14);color:#fb7185}
+
+  /* ---------- import panel ---------- */
+  .chipset{display:flex;gap:8px;flex-wrap:wrap}
+  details.import{margin:16px 24px 0;border:1px dashed var(--line2);border-radius:11px;
+                 background:var(--panel);animation:fadeUp .5s .12s cubic-bezier(.2,.7,.3,1) both}
+  details.import>summary{padding:12px 16px;font-size:13px;color:var(--muted);gap:9px}
+  details.import>summary:hover{color:var(--text)}
+  .imp-body{padding:0 16px 16px;border-top:1px solid var(--line)}
+  .imp-body p{color:var(--muted);font-size:12.5px;margin:12px 0 9px}
+  .imp-body code{background:var(--panel3);padding:1px 5px;border-radius:4px;font-size:11.5px;color:#9dd0ff}
+  textarea{width:100%;min-height:120px;background:var(--panel2);color:var(--text);
+           border:1px solid var(--line2);border-radius:9px;padding:10px 12px;
+           font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+           resize:vertical;outline:none;transition:border-color .18s,box-shadow .18s}
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,156,249,.16)}
+  .imp-row{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .btn{background:var(--accent);color:#05121f;border:none;border-radius:8px;
+       padding:8px 16px;font-size:13px;font-weight:650;cursor:pointer;
+       transition:transform .16s cubic-bezier(.2,.7,.3,1),filter .18s}
+  .btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn:active{transform:scale(.96)}
+  .btn.ghost{background:var(--panel3);color:var(--muted);border:1px solid var(--line2)}
+  input[type=file]{padding:6px 10px;font-size:12.5px;cursor:pointer;max-width:360px}
+  input[type=file]::file-selector-button{background:var(--accent);color:#05121f;border:none;
+    border-radius:6px;padding:6px 13px;font-weight:650;font-size:12.5px;cursor:pointer;
+    margin-right:11px;transition:filter .18s}
+  input[type=file]::file-selector-button:hover{filter:brightness(1.1)}
+  .imp-msg{font-size:12.5px;color:var(--green)}
+  .imp-msg.err{color:var(--rose)}
+  .p-followers{background:rgba(52,211,153,.13);color:#34d399}
+  .p-likes{background:rgba(251,191,36,.13);color:#fbbf24}
+  .p-views{background:rgba(167,139,250,.15);color:#a78bfa}
+  .p-other{background:rgba(150,160,178,.13);color:var(--muted)}
+
+  /* ---------- table ---------- */
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:var(--panel3);text-align:left;padding:9px 12px;
+     border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+     font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;
+     color:var(--dim);white-space:nowrap;font-weight:600}
+  th.sortable{cursor:pointer}
+  th.sortable:hover{color:var(--text)}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:rgba(79,156,249,.055)}
+  tr.best td{background:rgba(52,211,153,.06)}
+  tr.oor td{opacity:.42}
+  .id{color:var(--dim);font-variant-numeric:tabular-nums;font-size:12px}
+  .nm{max-width:600px;line-height:1.45}
+  .tag{display:inline-block;font-size:10px;padding:1.5px 6px;border-radius:4px;
+       margin:0 5px 0 0;border:1px solid var(--line2);color:var(--muted);white-space:nowrap}
+  .t-refill{color:var(--green);border-color:rgba(52,211,153,.32)}
+  .t-norefill{color:var(--rose);border-color:rgba(251,113,133,.3)}
+  .t-real{color:#7dd3fc;border-color:rgba(125,211,252,.3)}
+  .t-geo{color:#c4b5fd;border-color:rgba(196,181,253,.32)}
+  .t-best{color:#05121f;background:var(--green);border-color:var(--green);font-weight:700}
+  .usd{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:650}
+  .npr{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--green);font-size:12.5px}
+  .cost{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--amber);font-weight:600}
+  .num{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted);font-size:12.5px}
+  .empty{padding:40px;text-align:center;color:var(--dim)}
+  footer{padding:22px 24px;color:var(--dim);font-size:11.5px;border-top:1px solid var(--line);
+         line-height:1.6}
+  /* ============ BRANDING ============ */
+  header{position:relative;overflow:hidden;padding:30px 24px 26px}
+  .glow{position:absolute;inset:-60% -20% auto -20%;height:280px;pointer-events:none;
+        background:radial-gradient(45% 60% at 22% 40%,rgba(79,156,249,.30),transparent 70%),
+                   radial-gradient(40% 55% at 62% 30%,rgba(167,139,250,.26),transparent 70%),
+                   radial-gradient(38% 50% at 85% 55%,rgba(52,211,153,.20),transparent 70%);
+        filter:blur(14px);animation:drift 16s ease-in-out infinite alternate}
+  @keyframes drift{
+    0%  {transform:translate3d(-3%,0,0) scale(1)}
+    50% {transform:translate3d(3%,7px,0) scale(1.06)}
+    100%{transform:translate3d(6%,-5px,0) scale(1.02)}
+  }
+  .brandrow{position:relative;display:flex;align-items:center;gap:16px;
+            animation:fadeUp .6s cubic-bezier(.2,.7,.3,1) both}
+  .topnav{margin-left:auto;display:inline-flex;align-items:center;gap:8px;
+          background:linear-gradient(135deg,var(--accent),#7c6cf7);color:#fff;
+          padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;white-space:nowrap;
+          box-shadow:0 6px 18px rgba(79,156,249,.32);text-decoration:none;
+          transition:transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .22s,filter .2s}
+  .topnav:hover{transform:translateY(-2px);filter:brightness(1.08);
+                box-shadow:0 10px 26px rgba(79,156,249,.46);text-decoration:none}
+  .topnav .n{background:rgba(0,0,0,.22);border-radius:999px;padding:2px 9px;font-size:11px}
+  @media(max-width:620px){ .topnav .lbl{display:none} }
+  .mark{width:52px;height:52px;flex:none;border-radius:14px;display:grid;place-items:center;
+        background:linear-gradient(160deg,#1e2532,#161a21);border:1px solid var(--line2);
+        box-shadow:0 8px 22px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05)}
+  .mark svg{width:30px;height:30px;overflow:visible}
+  .mark .bar{transform-origin:50% 100%;animation:grow 2.6s cubic-bezier(.3,.9,.3,1) infinite}
+  .mark .b1{animation-delay:0s}   .mark .b2{animation-delay:.14s}
+  .mark .b3{animation-delay:.28s} .mark .b4{animation-delay:.42s}
+  @keyframes grow{
+    0%,70%,100%{transform:scaleY(1)}
+    18%{transform:scaleY(.42)}
+    40%{transform:scaleY(1.12)}
+  }
+  h1{margin:0 0 5px;font-size:24px;font-weight:700;letter-spacing:-.025em}
+  h1 .by{color:var(--dim);font-weight:400;font-size:19px}
+  .grad{background:linear-gradient(92deg,#4f9cf9,#a78bfa,#34d399,#4f9cf9);
+        background-size:300% 100%;-webkit-background-clip:text;background-clip:text;
+        color:transparent;animation:sweep 7s linear infinite}
+  @keyframes sweep{to{background-position:300% 0}}
+  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);
+       margin:0 3px 1px 1px;box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}
+    70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}
+    100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}
+  }
+
+  /* ============ MOTION ============ */
+  @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  @keyframes shine{0%{background-position:-140% 0}60%,100%{background-position:240% 0}}
+  @keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+  .notice{animation:fadeUp .55s .06s cubic-bezier(.2,.7,.3,1) both}
+  .card{animation:fadeUp .5s cubic-bezier(.2,.7,.3,1) both;
+        transition:transform .22s cubic-bezier(.2,.7,.3,1),border-color .22s,box-shadow .22s}
+  .card:hover{transform:translateY(-3px);border-color:var(--line2);
+              box-shadow:0 10px 26px rgba(0,0,0,.38)}
+  .card .v{transition:color .2s}
+  .card:hover .v{color:#fff}
+
+  .toolbar{animation:fadeIn .5s .1s both}
+  .chip{transition:transform .16s cubic-bezier(.2,.7,.3,1),background .18s,color .18s,border-color .18s}
+  .chip:hover{transform:translateY(-1px)}
+  .chip:active{transform:scale(.94)}
+  input,select{transition:border-color .18s,box-shadow .18s}
+  input:focus,select:focus{box-shadow:0 0 0 3px rgba(79,156,249,.16)}
+
+  details.group{animation:fadeUp .5s cubic-bezier(.2,.7,.3,1) both;
+                transition:border-color .2s,box-shadow .25s}
+  details.group:hover{box-shadow:0 8px 24px rgba(0,0,0,.28)}
+  details[open]>summary{border-bottom:1px solid var(--line)}
+  summary{transition:background .18s}
+  .arrow{transition:transform .28s cubic-bezier(.3,.8,.3,1),color .2s}
+  details[open] .arrow{color:var(--accent)}
+  details[open] table{animation:slideDown .32s cubic-bezier(.2,.7,.3,1) both}
+  .pill{transition:transform .2s}
+  details.group:hover .pill{transform:translateY(-1px)}
+
+  tbody tr{animation:rowIn .34s cubic-bezier(.2,.7,.3,1) both}
+  tbody tr:nth-child(1){animation-delay:.01s}  tbody tr:nth-child(2){animation-delay:.03s}
+  tbody tr:nth-child(3){animation-delay:.05s}  tbody tr:nth-child(4){animation-delay:.07s}
+  tbody tr:nth-child(5){animation-delay:.09s}  tbody tr:nth-child(6){animation-delay:.11s}
+  tbody tr:nth-child(7){animation-delay:.13s}  tbody tr:nth-child(8){animation-delay:.15s}
+  tbody tr:nth-child(9){animation-delay:.17s}  tbody tr:nth-child(10){animation-delay:.19s}
+  tbody tr:nth-child(n+11){animation-delay:.21s}
+  tbody tr td{transition:background .16s}
+  tbody tr:hover td{background:rgba(79,156,249,.075)}
+  tr.oor{transition:opacity .25s}
+
+  .tag{transition:transform .18s,border-color .18s,color .18s}
+  tbody tr:hover .tag{border-color:var(--dim)}
+  .t-best{position:relative;overflow:hidden;
+          background-image:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.85) 42%,transparent 62%),
+                           linear-gradient(var(--green),var(--green));
+          background-size:220% 100%,100% 100%;background-repeat:no-repeat;
+          animation:shine 3.4s ease-in-out infinite}
+
+  /* relative-price bar under each USD figure */
+  .bar-wrap{height:3px;border-radius:2px;background:var(--line);margin-top:5px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:2px;transform-origin:left center;
+            background:linear-gradient(90deg,var(--green),var(--amber),var(--rose));
+            animation:barGrow .55s cubic-bezier(.2,.7,.3,1) both}
+
+  /* ============ REFINED LOOK ============ */
+  body{background:
+    radial-gradient(1200px 600px at 15% -8%,rgba(79,156,249,.08),transparent 60%),
+    radial-gradient(1000px 520px at 88% -4%,rgba(167,139,250,.07),transparent 60%),
+    var(--bg);background-attachment:fixed}
+
+  details.group{position:relative;--pc:var(--accent);
+                background:linear-gradient(180deg,rgba(255,255,255,.022),transparent 120px),var(--panel);
+                border-radius:14px}
+  details.group::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+                        background:linear-gradient(180deg,var(--pc),transparent 85%);
+                        opacity:.9;border-radius:14px 0 0 14px}
+  details.group:hover{border-color:color-mix(in srgb,var(--pc) 35%,var(--line2))}
+  summary{padding:15px 18px}
+  .g-title{font-size:14px;font-weight:600;color:var(--muted)}
+  .g-title b{color:var(--text);font-weight:700}
+
+  thead th{background:linear-gradient(180deg,var(--panel3),rgba(35,40,51,.6));padding:10px 14px}
+  td{padding:11px 14px}
+  tbody tr:nth-child(even) td{background:rgba(255,255,255,.014)}
+  tbody tr:hover td{background:rgba(79,156,249,.07)}
+
+  .price .npr-big{font-size:15px;font-weight:700;color:var(--text);
+                  font-variant-numeric:tabular-nums;letter-spacing:-.01em;white-space:nowrap}
+  .usd-sm{font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;margin-top:1px}
+  .profit{color:var(--green);font-weight:600}
+  .cost .cost-big{font-size:14px;font-weight:700;color:var(--amber);
+                  font-variant-numeric:tabular-nums;white-space:nowrap}
+  .nm-title{margin-top:4px;font-size:13.5px;color:var(--text)}
+
+  /* buy button */
+  .buycell{text-align:right;white-space:nowrap}
+  .buy{position:relative;overflow:hidden;border:none;cursor:pointer;
+       background:linear-gradient(135deg,var(--accent),#7c6cf7);color:#fff;
+       border-radius:9px;padding:8px 16px;font-size:12.5px;font-weight:700;letter-spacing:.01em;
+       box-shadow:0 4px 14px rgba(79,156,249,.28);
+       transition:transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .22s,filter .2s}
+  .buy:hover{transform:translateY(-2px);filter:brightness(1.08);
+             box-shadow:0 8px 22px rgba(79,156,249,.42)}
+  .buy:active{transform:scale(.95)}
+  .buy::after{content:"";position:absolute;inset:0;
+              background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.45) 48%,transparent 66%);
+              background-size:250% 100%;background-repeat:no-repeat;background-position:-120% 0;
+              transition:background-position .55s ease}
+  .buy:hover::after{background-position:220% 0}
+  .copyid{background:none;border:1px solid var(--line2);color:var(--dim);border-radius:8px;
+          padding:7px 10px;font-size:11.5px;cursor:pointer;margin-right:7px;
+          transition:color .18s,border-color .18s,transform .16s}
+  .copyid:hover{color:var(--text);border-color:var(--dim);transform:translateY(-1px)}
+
+  /* toast */
+  #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);z-index:99;
+         background:linear-gradient(135deg,#1d2430,#171b23);border:1px solid var(--line2);
+         color:var(--text);padding:12px 18px;border-radius:12px;font-size:13px;
+         box-shadow:0 16px 40px rgba(0,0,0,.55);opacity:0;pointer-events:none;
+         transition:opacity .28s,transform .28s cubic-bezier(.2,.7,.3,1);max-width:88vw}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #toast b{color:var(--accent)}
+
+  @media(max-width:820px){ .buy{padding:7px 12px} .copyid{display:none} }
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+                         transition-duration:.001ms!important}
+  }
+
+  @media(max-width:820px){
+    .hide-sm{display:none}
+    .toolbar{position:static}
+    .wrap,header,.summary,.notice{padding-left:14px;padding-right:14px}
+    .g-meta{margin-left:0;width:100%}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="glow"></div>
+  <div class="brandrow">
+    <div class="mark">
+      <svg viewBox="0 0 44 44" aria-hidden="true">
+        <defs>
+          <linearGradient id="mg" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0%" stop-color="#4f9cf9"/><stop offset="55%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#34d399"/>
+          </linearGradient>
+        </defs>
+        <rect x="4"  y="24" width="7" height="16" rx="2.5" fill="url(#mg)" class="bar b1"/>
+        <rect x="14" y="18" width="7" height="22" rx="2.5" fill="url(#mg)" class="bar b2"/>
+        <rect x="24" y="11" width="7" height="29" rx="2.5" fill="url(#mg)" class="bar b3"/>
+        <rect x="34" y="4"  width="7" height="36" rx="2.5" fill="url(#mg)" class="bar b4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Social Media Growth <span class="by">by</span> <span class="grad">Prossore</span></h1>
+      <div class="sub">SMM service catalogue &amp; live cost calculator · rates shown <strong>per 1,000 units</strong> · <span class="dot"></span> data sourced from <a href="https://smmnepal.com/services" target="_blank" rel="noopener">smmnepal.com</a>, snapshot 28 Jul 2026</div>
+    </div>
+    <a class="topnav" href="prostore-checkout.html" title="Open the customer checkout"><span class="lbl">Checkout</span> →</a>
+    <a class="topnav" href="prossore-orders.html" title="Open the admin console" style="margin-left:10px;background:var(--panel3);border:1px solid var(--line2);box-shadow:none;color:var(--muted)"><span class="lbl">Admin</span> ⚙</a>
+  </div>
+</header>
+
+<div class="notice">
+  <strong>Load the full catalogue first.</strong> This page ships with the 198 services visible to logged-out visitors — TikTok and Facebook only. Your account actually has <strong>1,869 services</strong> including 140 Instagram, 71 YouTube and 43 Telegram. Use the loader below to bring them all in. Rates were verified against your logged-in account at SMMNepal's own rate of <strong>152.63 NPR per USD</strong>; prices still move, so confirm before ordering.
+</div>
+
+<details class="import" id="importPanel">
+  <summary><span class="arrow">▶</span> <strong>Load the full catalogue &amp; bake it in permanently</strong> — 1,869 services incl. Instagram, YouTube &amp; Telegram</summary>
+  <div class="imp-body">
+    <p><strong style="color:var(--text)">Step 1 —</strong> select <code>smmnepal-all-services.tsv</code> from your Downloads (exported from your logged-in account, 1,869 services). Everything loads instantly — platform, refill terms, account quality and country targeting are detected automatically.</p>
+    <div class="imp-row">
+      <input type="file" id="impFile" accept=".tsv,.txt,.csv">
+      <span class="imp-msg" id="impMsg"></span>
+    </div>
+    <p style="margin-top:14px"><strong style="color:var(--text)">Step 2 —</strong> click <strong>Save permanent copy</strong>. That writes a new HTML file with all the services baked straight into it, so you never have to load the file again. Use that copy from then on.</p>
+    <div class="imp-row">
+      <button class="btn" id="impSave">💾 Save permanent copy</button>
+      <span class="imp-msg" id="saveMsg"></span>
+    </div>
+    <p style="margin-top:16px"><strong style="color:var(--text)">Or paste rows manually —</strong> accepts panel rows (<code>ID:1234 Instagram Followers … $ 0.50 per 1000 100 50000 12 minutes</code>) or tab-separated <code>id ⇥ name ⇥ rate ⇥ min ⇥ max ⇥ time</code>.</p>
+    <textarea id="impText" placeholder="Paste service rows here…" spellcheck="false"></textarea>
+    <div class="imp-row">
+      <button class="btn" id="impGo">Add pasted services</button>
+      <button class="btn ghost" id="impClear">Reset to captured 198</button>
+    </div>
+  </div>
+</details>
+
+<div class="summary" id="summary"></div>
+
+<div class="toolbar">
+  <div class="row">
+    <input id="q" placeholder="Search service name or ID…">
+    <span class="lab">Platform</span>
+    <span class="chipset" id="platchips"></span>
+    <span class="divider"></span>
+    <span class="lab">Type</span>
+    <span class="chipset" id="typechips"></span>
+  </div>
+  <div class="row">
+    <span class="lab">Sort</span>
+    <select id="sort">
+      <option value="rate">Price: low → high</option>
+      <option value="-rate">Price: high → low</option>
+      <option value="id">Service ID</option>
+      <option value="name">Name A → Z</option>
+      <option value="min">Min order</option>
+    </select>
+    <span class="lab">Refill</span>
+    <select id="ref">
+      <option value="all">Any</option>
+      <option value="yes">Guaranteed / refill only</option>
+      <option value="no">No refill only</option>
+    </select>
+    <span class="divider"></span>
+    <span class="lab">Quantity</span>
+    <input id="qty" type="number" value="1000" min="1" step="100" style="width:110px">
+    <span class="lab">NPR per $</span>
+    <input id="fx" type="number" value="152.63" step="0.5" style="width:88px" title="SMMNepal's own USD→NPR rate is 152.63">
+    <span class="lab">Markup ×</span>
+    <input id="mk" type="number" value="2.35" step="0.05" min="1" style="width:84px" title="Your resale multiplier — set to 1 to see raw cost">
+    <span class="divider"></span>
+    <span class="chip on" id="grp">Grouped view</span>
+    <span class="chip on" id="exp">Collapse all</span>
+  </div>
+</div>
+
+<div class="wrap" id="content"></div>
+
+<footer>
+  <strong style="color:var(--muted)">Social Media Growth by Prossore</strong> — service catalogue &amp; cost calculator.<br>
+  Snapshot taken 28 July 2026 from the public services page. Prices are USD per 1,000 units as displayed to logged-out visitors.<br>
+  The NPR column and the cost column are convenience conversions using the editable rate above — they are not quotes from SMMNepal. The site accepts NPR directly (eSewa, Khalti, IME Pay, bank transfer) and has its own NPR currency view; use that for exact local pricing.<br>
+  Rows are dimmed when your chosen quantity falls outside that service's min/max order limits.<br>
+  <strong>Markup ×</strong> multiplies every rate to give your resale price — the big NPR figure is what you charge, the small grey line is your actual cost from SMMNepal, and the green figure is your profit on that order. Set it to 1 to see raw cost prices.<br>
+  <strong>Buy →</strong> opens the <a href="prostore-checkout.html" target="_blank">customer checkout</a> with this service pre-loaded at your markup. Orders placed there appear in the <a href="prossore-orders.html" target="_blank">admin console</a>, where you manage payment, fulfilment and invoices. The catalogue and markup are shared across all three pages automatically. Nothing is ordered directly from this page.
+</footer>
+
+<script>
+const RAW = `
+5347	TikTok Video Views | Instant Start | Cheaper | No Refill ⚠️	0.0243	100	2147483647	17 minutes
+6727	TikTok Video Views | Instant Start | 100% Non Drop | No Refill ⚠️	0.0658	100	100000000	11 minutes
+5600	TikTok Video Views | Instant Start | 100% Non Drop | ♻️30 Days Guarantee	0.0705	100	100000000	21 minutes
+6381	TikTok Likes | 🤖 Fully Bot Accounts | Instant Start | No Refill ⚠️	0.1445	50	100000	1 hour 21 minutes
+7025	TikTok Likes | Low Drop | High Quality Accounts | Speed 50K/Day | ⚠️No Refill	0.2285	10	1000000	17 minutes
+6947	TikTok Likes | Low Drop | High Quality Accounts | Speed 50K/Day | ♻️ 30 Days Guarantee	0.4042	10	1000000	17 minutes
+6574	TikTok Likes | HQ+REAL | Speed 30K/Day ⚡️ULTRA FAST 🚀 ⚠️No Refill	0.175	50	1000000	10 minutes
+6608	TikTok Likes | Low Quality Profiles | ⚠️No Refill | Instant Start 🚀	0.1313	50	50000	1 hour 55 minutes
+5702	TikTok Followers | Super Speed | HQ & Profiles With Photo | Instant Start | No Refill ⚠️	2.4605	10	1000000	57 minutes
+6809	TikTok Followers | High Drop | Instant Start | Speed 10K/Day | ⚠️ No Refill	3.26	10	500000	33 minutes
+5907	TikTok Followers | 100% Real Profiles | No Refill ⚠️ | Instant Start 🚀 [ TOP SPEED ]	3.55	10	1000000	7 minutes
+5554	TikTok Followers | USA Mix Accounts | Speed 10K/Day | ♻️15 Days Refill	5.55	10	500000	47 hours 48 minutes
+5596	TikTok Followers | Instant | Real Mix Accounts | 30 Days Guarantee ♻️ 🚀	2.96	10	100000	8 hours 9 minutes
+5555	TikTok Followers | HQ Accounts | 5-10% Drop Rate | No Refill ⚠️ | Instant Start	4.3938	10	100000	18 hours 6 minutes
+5752	TikTok Followers | USA Mix Accounts | Speed 10K/Day | ♻️90 Days Refill	6.475	10	500000	15 minutes
+6096	TikTok Followers | USA Mix Accounts | Speed 10K/Day | ♻️30 Days Refill	5.92	10	100000	128 hours 25 minutes
+5556	TikTok Followers | Low Drop | HQ | Speed 30K/Day | Instant Start | No Refill ⚠️	6.5028	10	100000	45 minutes
+6870	TikTok Followers | HQ Accounts | 5-10% Drop Rate | 10 Days Refill ♻️ | Instant Start	5.2725	10	100000	12 hours 12 minutes
+5557	TikTok Followers | Stable Mostly | High Quality accounts | No Refill ⚠️	2.6714	10	1000000	6 hours 29 minutes
+6098	TikTok Followers | Real Accounts | Instant Start | Speed 20K/Day | No Refill ⚠️	2.6011	10	1000000	1 hour 17 minutes
+6143	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀 [ Super Fast Complete ]	0.0312	100	2147483647	14 minutes
+5322	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀	0.0554	100	2147483647	21 minutes
+6726	TikTok Video Views [ Max Unlimited ] | HQ | Almost Non Drop | 90 Days Guarantee ♻️ | Instant Start	0.0594	100	2147483647	5 minutes
+6948	TikTok Video Views [ Max Unlimited ] | HQ | Almost Non Drop | 365 Days Guarantee ♻️ | Instant Start 🚀	0.0608	100	2147483647	1 hour 12 minutes
+7110	TikTok Video Views [ Max Unlimited ] | HQ | Almost Non Drop | Life time Guarantee ♻️ | Instant Start 🚀	0.0621	100	2147483647	36 minutes
+5276	TikTok Video Views [ Max Unlimited ] | HQ | 90 Days Guarantee ♻️ | Instant Start [ Super Fast Complete ]	0.0365	100	2147483647	1 hour 0 minutes
+5390	TikTok Video Views [ Max Unlimited ] | HQ | 365 Days Guarantee ♻️ | Instant Start [ Super Fast Complete ]	0.0378	100	2147483647	24 minutes
+6874	TikTok Video Views [ Max Unlimited ] | HQ | Life Time Guarantee ♻️ | Instant Start [ Super Fast Complete ]	0.0392	100	2147483647	38 minutes
+7026	TikTok Followers | 100% Real Accounts With Posts | No Refill ⚠️ | Instant Start 🚀	2.79	10	500000	38 minutes
+4152	TikTok Followers | 100% Real Accounts With Posts | 20 Days Guarantee ♻️ | Instant Start 🚀	3.06	10	500000	213 hours 19 minutes
+6347	TikTok Followers | 100% Real Accounts With Posts | 30 Days Guarantee ♻️ | Instant Start 🚀	3.15	10	500000	2 hours 9 minutes
+6966	Facebook Followers | Old Account High Quality | Low Drop | Speed 500K/Day | ⚠️ No Refill	0.3762	10	1000000	39 minutes
+5671	Facebook Followers | Old Account High Quality | Low Drop | Speed 500K/Day | ♻️ 30 Days Guarantee	0.4446	10	1000000	18 minutes
+5921	Facebook Followers | Instant Start | Almost 0% Drop | Speed 100K/Day | ⚠️ No Refill	0.4104	10	1000000	28 minutes
+6123	Facebook Followers | Instant Start | Almost 0% Drop | Speed 100K/Day | ♻️ 30 Days Guarantee	0.513	10	1000000	31 minutes
+6388	Facebook Followers | 🌎 Worldwide | High Quality | Super Speed | Speed 200K/Day | ⚠️ No Refill	0.3848	10	1000000	16 minutes
+6404	TikTok Followers | 100% Real Users with Posts | Low Drop | No Refill ⚠️ | Instant Start 🚀	1.782	10	200000	1 hour 44 minutes
+6902	TikTok Followers | 100% Real Users with Posts | Low Drop | 7 Days Guarantee ♻️ | Instant Start 🚀	1.89	10	200000	102 hours 26 minutes
+7169	TikTok Followers | 100% Real Users with Posts | Low Drop | 15 Days Guarantee ♻️ | Instant Start 🚀	1.98	10	200000	2 hours 40 minutes
+3548	TikTok Followers | 100% Real Users with Posts | Low Drop | 30 Days Guarantee ♻️ | Instant Start 🚀	2.07	10	200000	18 hours 16 minutes
+5602	Facebook Followers [ Page & Profile ] | HQ Profiles | No Refill ⚠️ | Instant Start 🚀	0.45	10	1000000	3 minutes
+5719	Facebook Followers [ Page & Profile ] | HQ Profiles | Almost Non Drop | 30 Days Guarantee ♻️ | Instant Start 🚀	0.468	10	1000000	19 hours 58 minutes
+5868	Facebook Followers [ Page & Profile ] | HQ Profiles | Almost Non Drop | 60 Days Guarantee ♻️ | Instant Start 🚀	0.486	10	1000000	7 hours 25 minutes
+6093	Facebook Followers [ Page & Profile ] | HQ Profiles | Almost Non Drop | 90 Days Guarantee ♻️ | Instant Start 🚀	0.504	10	1000000	16 minutes
+6211	Facebook Followers [ Page & Profile ] | HQ Profiles | Almost Non Drop | 365 Days Guarantee ♻️ | Instant Start 🚀	0.522	10	1000000	29 minutes
+6281	Facebook Followers [ Page & Profile ] | HQ Profiles | Almost Non Drop | Life Time Guarantee ♻️ | Instant Start 🚀	0.54	10	1000000	23 minutes
+5586	TikTok Followers | HQ Profiles | Super Ultra Faster | Speed 10K/Day 🚀 No Refill ⚠️	1.9665	10	100000	36 minutes
+6499	TikTok Followers [ Worldwide 🌍 ] | HQ Real Accounts | Low Drop | No Refill ⚠️ | Instant Start 🚀	2.79	10	1000000	2 hours 1 minute
+6569	TikTok Followers [ Worldwide 🌍 ] | HQ Real Accounts | Low Drop | 7 Days Guarantee ♻️ | Instant Start 🚀	2.88	10	1000000	16 hours 37 minutes
+6625	TikTok Followers [ Worldwide 🌍 ] | HQ Real Accounts | Low Drop | 10 Days Guarantee ♻️ | Instant Start 🚀	2.97	10	1000000	447 hours 17 minutes
+6731	TikTok Followers [ Worldwide 🌍 ] | HQ Real Accounts | Low Drop | 20 Days Guarantee ♻️ | Instant Start 🚀	3.06	10	1000000	42 hours 48 minutes
+6799	TikTok Followers [ Worldwide 🌍 ] | HQ Real Accounts | Low Drop | 30 Days Guarantee ♻️ | Instant Start 🚀	3.15	10	1000000	8 minutes
+6287	TikTok Likes | Almost Non Drop | 200 Per Hours | No Refill ⚠️ | Instant Start 🚀 S3	0.3145	10	50000	1 hour 22 minutes
+6416	TikTok Likes | Almost Non Drop | 200 Per Hours | ♻️30 Days Guarantee | Instant Start 🚀 S3	0.3885	10	50000	18 hours 47 minutes
+6480	TikTok Likes | Almost Non Drop | 100% Real Accounts | No Refill ⚠️ | Instant Start 🚀	0.396	10	100000	5 minutes
+5240	TikTok Likes | Almost Non Drop | 100% Real Accounts | ♻️30 Days Guarantee | Instant Start 🚀	0.504	10	100000	4 hours 50 minutes
+5684	TikTok Likes | Almost Non Drop | 100% Real Accounts | No Refill ⚠️ | Instant Start 🚀 S2	0.4	10	100000	1 hour 20 minutes
+6770	TikTok Likes | Almost Non Drop | 100% Real Accounts | ♻️30 Days Guarantee | Instant Start 🚀 S2	0.432	10	100000	42 minutes
+7111	TikTok Like | Fast Speed | Speed 2K/Day | ⚠️ No Refill	0.1782	50	10000	59 minutes
+7034	TikTok Like | Slow Speed | Speed 1-2K/Day | ⚠️ No Refill	0.072	10	10000	7 hours 26 minutes
+4190	TikTok Like | [Brazil 🇧🇷] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.252	50	10000	9 hours 59 minutes
+7121	TikTok Like | [Iraq 🇮🇶] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	1.242	10	5000	4 hours 53 minutes
+6745	TikTok Like | [Iraq 🇮🇶] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.36	10	1000	128 hours 1 minute
+6567	TikTok Like | [Saudi Arabia 🇸🇦] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.882	50	50000	8 hours 31 minutes
+6505	TikTok Like | [Saudi Arabia 🇸🇦] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.63	50	10000	12 minutes
+6413	TikTok Like | [Pakistan 🇵🇰] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.54	50	10000	3 hours 31 minutes
+6259	TikTok Like | [Pakistan 🇵🇰] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.36	50	10000	15 hours 36 minutes
+6219	TikTok Like | [India 🇮🇳] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.54	10	10000	6 minutes
+5865	TikTok Like | [India 🇮🇳] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.54	10	10000	24 minutes
+5756	TikTok Like | [United Kingdom 🇬🇧] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.54	10	5000	38 minutes
+5591	TikTok Like | [United Kingdom 🇬🇧] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.72	10	3000	22 hours 14 minutes
+5574	TikTok Like | [Egypt 🇪🇬] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.882	10	10000	15 minutes
+5571	TikTok Like | [Egypt 🇪🇬] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.63	10	5000	48 minutes
+5405	TikTok Like | [Germany 🇩🇪] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	1.08	10	10000	19 minutes
+5296	TikTok Like | [Germany 🇩🇪] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.9	10	1000	17 minutes
+4747	TikTok Like | [Brazil 🇧🇷] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.54	50	50000	4 hours 16 minutes
+5799	TikTok Like | [Korea 🇰🇷] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.702	10	10000	40 minutes
+5734	TikTok Like | [Kuwait 🇰🇼] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	0.9	50	10000	21 minutes
+5911	TikTok Like | [Korea 🇰🇷] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	1.062	10	50000	2 hours 29 minutes
+5601	TikTok Like | [Kuwait 🇰🇼] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.9	50	10000	19 minutes
+5073	TikTok Like | [Lebanon 🇱🇧] HQ | Mix Country Accounts | Speed 2K/Day | ♻️365 Days Guarantee	1.242	10	5000	12 minutes
+4142	TikTok Like | [Lebanon 🇱🇧] HQ | Mix Country Accounts | Speed 2K/Day | ⚠️ No Refill	0.702	10	2000	41 minutes
+5130	TikTok Followers 🚀 High Speed | 100% Real Accounts | Speed 10K/Day | No Refill ⚠️	2.442	10	1000000	56 minutes
+6837	TikTok Followers | Instant Start | Speed: 500/Day ⚡ No Refill ⚠️	1.6095	50	3000	18 hours 42 minutes
+6852	TikTok Followers | 100% Real Accounts | 🚀 Speed 1K/Day | No Refill ⚠️	1.8315	50	3000	4 hours 18 minutes
+7172	TikTok Followers | Instant Start | HQ Accounts | 🚀 Speed 10K/Day | No Refill ⚠️	2.448	10	1000000	3 hours 53 minutes
+4268	TikTok Followers | 100% USA Accounts | HQ Accounts | 🚀 Speed 10K/Day | No Refill ⚠️	1.9684	10	1000000	2 minutes
+5176	TikTok Followers | Instant Start | HQ Profiles With Photo | 🚀 Speed 30K/Day | No Refill ⚠️	2.4975	10	1000000	15 hours 23 minutes
+5528	TikTok Followers | Super Instant Start | HQ Profiles | 🚀 Speed 30K/Day | No Refill ⚠️	3.0155	10	1000000	2 hours 24 minutes
+5530	TikTok Video Views | Instant Start | 100% Non Drop | No Refill ⚠️	0.0626	100	100000000	8 minutes
+7194	TikTok Views | 🔥 100% Non Drop | 💎 2 Month Tested | No Refill ⚠️	0.1001	100	1000000	1 hour 18 minutes
+7195	TikTok Views | 🔥 100% Non Drop | 💎 3 Month Tested | No Refill ⚠️	0.0435	5000	1000000	1 hour 28 minutes
+7196	TikTok Views | Real Views 🔥 100% Non Drop | 💎 2 Month Tested | No Refill ⚠️	0.069	3000	50000	67 hours 43 minutes
+6955	TikTok Followers | 100% Real Accounts | No Refill ⚠️ | Instant Start 🚀	2.34	10	100000	6 hours 17 minutes
+6115	TikTok Followers | 100% Real Accounts | 7 Days Guarantee ♻️ | Instant Start | Day 100K 🚀	2.43	10	100000	8 minutes
+6784	TikTok Followers | 100% Real Accounts | 10 Days Guarantee ♻️ | Instant Start 🚀	2.52	10	100000	6 hours 48 minutes
+5238	TikTok Followers | 100% Real Accounts | 20 Days Guarantee ♻️ | Instant Start 🚀	2.34	10	100000	421 hours 50 minutes
+6834	TikTok Followers | 100% Real Accounts | 30 Days Guarantee ♻️ | Instant Start 🚀	2.52	10	100000	1 hour 8 minutes
+6915	TikTok Followers | 100% Real Accounts | ♻️ Life Time Guarantee | Instant Start 🚀	2.8	10	100000	99 hours 42 minutes
+6142	TikTok Followers | HQ Accounts | No Refill ⚠️ | Instant Start 🚀	2.59	50	5000000	46 minutes
+6585	TikTok Followers | HQ Accounts | No Refill ⚠️ | Instant Start 🚀	2.627	10	5000000	30 hours 24 minutes
+4255	TikTok Followers | HQ Accounts ♻️ 7 Days Guarantee | Instant Start 🚀	2.7195	10	5000000	11 hours 5 minutes
+6015	TikTok Followers | HQ Accounts ♻️ 10 Days Guarantee | Instant Start 🚀	2.59	10	5000000	9 hours 9 minutes
+5171	TikTok Followers | HQ Accounts ♻️ 15 Days Guarantee | Instant Start 🚀	2.6825	10	5000000	7 hours 22 minutes
+6501	TikTok Followers | HQ Accounts ♻️ 20 Days Guarantee | Instant Start 🚀	2.775	10	5000000	6 hours 42 minutes
+6169	TikTok Followers | HQ Accounts ♻️ 30 Days Guarantee | Instant Start 🚀	2.8675	10	5000000	11 hours 4 minutes
+6165	TikTok Followers | [ ⚡TOP SPEED⚡ ] | No Refill ⚠️ | Instant Start 🚀 S2	2.584	10	100000	1 hour 18 minutes
+6554	TikTok Followers | High Drop | Ultra Fast | Instant Start 🚀 1 Minutes Completed	2.94	10	100000	4 hours 19 minutes
+6682	TikTok Followers | Low Drop | No Refill ⚠️ | Instant Start 🚀 [ ⚡TOP SPEED⚡ ]	2.16	50	10000	3 hours 5 minutes
+5149	TikTok Followers | Instant Start | Speed 10K/Day ⚡ Cheap ULTRA FAST	2.565	10	100000	365 hours 16 minutes
+6016	TikTok Followers | HQ & Profiles With Photo | Instant Start 🚀	2.717	10	100000	23 hours 0 minutes
+6524	TikTok Followers | 100% Real Accounts | No Refill ⚠️ | Instant Start 🚀	8.32	10	30000	23 minutes
+6939	TikTok Followers | HQ Real Accounts | Low Drop | No Guarantee | Instant Start 🚀	7.03	10	100000	3 hours 2 minutes
+6937	TikTok Followers | HQ Accounts With Posts | No Refill ⚠️ | Instant Start 🚀	2.6325	10	1000000	1 hour 11 minutes
+5841	TikTok Likes | Low Quality | Cancel Enable | No Refill ⚠️ | Instant Start	0.135	50	50000	1 hour 27 minutes
+3442	TikTok Likes | HQ+REAL | Speed 20K/Day ⚡ No Refill ⚠️ | Instant Start	0.1625	10	10000	25 minutes
+5539	TikTok Likes | HQ & Real Profiles | Low Drop | Instant | ⚠️No Refill	0.248	10	200000	14 minutes
+5577	TikTok Likes | HQ & Real Profiles | Low Drop | Instant | ♻️ 30 Days Guarantee	0.3933	10	200000	46 minutes
+5845	TikTok Likes | HQ & Real Profiles | Low Drop | Instant | ♻️ 60 Days Guarantee	0.4617	10	200000	11 minutes
+5275	TikTok Likes | HQ & Real Profiles | Low Drop | Instant | ♻️ 90 Days Guarantee	0.5301	10	200000	37 minutes
+6392	TikTok Likes | HQ & Real Profiles | Low Drop | Instant | ♻️ 365 Days Guarantee	0.5814	10	200000	1 hour 47 minutes
+5480	TikTok Likes | HQ & Real Profiles | Low Drop | Instant | ♻️ Life Time Guarantee	0.646	10	200000	43 minutes
+6274	TikTok Likes | HQ Accounts | No Refill ⚠️ | Super Instant 🚀	0.19	10	10000000	1 hour 27 minutes
+5481	TikTok Likes | HQ Accounts | No Refill ⚠️ | Instant Start 🚀	0.18	50	1000000	46 minutes
+5482	TikTok Likes | HQ Accounts | 30 Days Guarantee ♻️ | Instant Start 🚀	0.198	50	1000000	4 hours 47 minutes
+5483	TikTok Likes | HQ Accounts | 60 Days Guarantee ♻️ | Instant Start 🚀	0.216	50	1000000	19 hours 11 minutes
+5484	TikTok Likes | HQ Accounts | 90 Days Guarantee ♻️ | Instant Start 🚀	0.247	50	1000000	13 hours 25 minutes
+5485	TikTok Likes | HQ Accounts | 365 Days Guarantee ♻️ | Instant Start 🚀	0.252	50	1000000	31 hours 4 minutes
+3925	TikTok Likes | HQ Accounts | Life Time Guarantee ♻️ | Instant Start 🚀	0.27	50	1000000	25 hours 58 minutes
+7006	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀 [ Super Fast Complete ]	0.0375	100	2147483647	12 minutes
+7033	TikTok Video Views [ Max Unlimited ] | HQ | 30 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.039	100	2147483647	9 minutes
+5646	TikTok Video Views [ Max Unlimited ] | HQ | 60 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0405	100	2147483647	1 hour 35 minutes
+5511	TikTok Video Views [ Max Unlimited ] | HQ | 90 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.042	100	2147483647	1 hour 6 minutes
+7068	TikTok Video Views [ Max Unlimited ] | HQ | 365 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0435	100	2147483647	25 minutes
+7116	TikTok Video Views [ Max Unlimited ] | HQ | Life Time Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.045	100	2147483647	30 minutes
+5914	TikTok Video Views | HQ | No Refill ⚠️ | Instant Start 🚀 Instant Delivered (NEW)	0.0257	100	2147482677	1 minute
+6479	TikTok Video Views | Ultra Faster | 1 Click Completed 🚀 [ Super Fast Complete ]	0.0255	100	50000000	20 minutes
+5649	TikTok Video Views | HQ | No Refill ⚠️ | Instant Start 🚀 Instant Delivered (NEW) S3	0.0285	100	50000	4 hours 13 minutes
+5436	TikTok Video Views | HQ | No Refill ⚠️ | Instant Start 🚀 [ Super Fast Complete ]	0.0342	100	2147483647	11 hours 1 minute
+5470	TikTok Video Views | HQ | No Refill ⚠️ | Instant Start 🚀 [ Super Fast Complete ] S3	0.0143	100	2147483647	37 hours 51 minutes
+5609	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀🚀	0.0338	100	2147483647	24 hours 5 minutes
+6655	TikTok Video Views [ Max Unlimited ] | HQ | 30 Days Guarantee ♻️ | Instant Start 🚀🚀	0.0351	100	2147483647	2 hours 30 minutes
+5718	TikTok Video Views [ Max Unlimited ] | HQ | 365 Days Guarantee ♻️ | Instant Start 🚀🚀	0.0365	100	2147483647	1 hour 11 minutes
+6629	TikTok Video Views [ Max Unlimited ] | HQ | Life Time Guarantee ♻️ | Instant Start 🚀🚀	0.0378	100	2147483647	21 minutes
+7066	TikTok Likes | 100% Real Accounts with Profile Photos | Low Drop | No Refill ⚠️ | Instant Start 🚀	0.0648	50	5000000	57 hours 4 minutes
+6048	TikTok Likes | 100% Real Accounts with Profile Photos | Low Drop | 30 Days Guarantee ♻️ | Instant Start 🚀	0.0666	50	5000000	36 hours 5 minutes
+6595	TikTok Likes | 100% Real Accounts with Profile Photos | Low Drop | 60 Days Guarantee ♻️ | Instant Start 🚀	0.0666	50	5000000	166 hours 58 minutes
+7043	TikTok Likes | 100% Real Accounts with Profile Photos | Low Drop | 90 Days Guarantee ♻️ | Instant Start 🚀	0.0684	50	5000000	175 hours 5 minutes
+5895	TikTok Likes | 100% Real Accounts with Profile Photos | Low Drop | 365 Days Guarantee ♻️ | Instant Start 🚀	0.0702	50	5000000	35 hours 33 minutes
+6995	TikTok Likes | 100% Real Accounts with Profile Photos | Low Drop | Life Time Guarantee ♻️ | Instant Start 🚀	0.072	50	5000000	56 hours 46 minutes
+5875	TikTok Likes | HQ Accounts | No Refill ⚠️ | Instant Start 🚀	0.18	10	1000000	173 hours 53 minutes
+7021	TikTok Likes | HQ Accounts | 30 Days Guarantee ♻️ | Instant Start 🚀	0.2035	10	1000000	5 minutes
+6041	TikTok Likes | HQ Accounts | 60 Days Guarantee ♻️ | Instant Start 🚀	0.216	10	1000000	173 hours 47 minutes
+5874	TikTok Likes | HQ Accounts | 90 Days Guarantee ♻️ | Instant Start 🚀	0.234	10	1000000	153 hours 9 minutes
+5589	TikTok Likes | HQ Accounts | 365 Days Guarantee ♻️ | Instant Start 🚀	0.252	10	1000000	6 minutes
+5885	TikTok Likes | HQ Accounts | Life Time Guarantee ♻️ | Instant Start 🚀	0.27	10	1000000	165 hours 5 minutes
+5298	TikTok Likes | Hidden Profile | No Refill ⚠️ | Instant Start 🚀	0.1925	1	1000000	23 minutes
+5933	TikTok Likes | Hidden Profile | 30 Days Guarantee ♻️ | Instant Start 🚀	0.2013	1	1000000	316 hours 30 minutes
+6684	TikTok Likes | Hidden Profile | 60 Days Guarantee ♻️ | Instant Start 🚀	0.21	1	1000000	104 hours 13 minutes
+5736	TikTok Likes | Hidden Profile | 90 Days Guarantee ♻️ | Instant Start 🚀	0.2188	1	1000000	66 hours 37 minutes
+5321	TikTok Likes | Hidden Profile | 365 Days Guarantee ♻️ | Instant Start 🚀	0.2275	1	1000000	259 hours 39 minutes
+6613	TikTok Likes | Hidden Profile | Life Time Guarantee ♻️ | Instant Start 🚀	0.2363	1	1000000	13 hours 16 minutes
+6626	TikTok Followers | HQ & Profiles With Photo | Speed 10K/Day | Instant Start 🚀	2.717	10	100000	2 hours 3 minutes
+6598	TikTok Followers | Real Accounts | Ultra Faster | No Refill ⚠️ | Instant Start 🚀 S2	2.622	10	100000	3 hours 12 minutes
+6541	TikTok Followers | Real Accounts | Ultra Faster | 7 Days Guarantee ♻️ | Instant Start 🚀 S2	2.7531	10	100000	2 hours 45 minutes
+6606	TikTok Followers | Real Accounts | Ultra Faster | 15 Days Guarantee ♻️ | Instant Start 🚀 S2	2.8842	10	100000	53 minutes
+5957	TikTok Followers | Real Accounts | Ultra Faster | 30 Days Guarantee ♻️ | Instant Start 🚀 S2	3.0153	10	100000	6 hours 12 minutes
+5634	TikTok Likes | Super Ultra Faster | 100% Real Accounts | Instant Start 🚀	0.2907	50	1000000	5 minutes
+6959	TikTok Likes | High Quality | No Refill ⚠️ | Instant Start 🚀	0.2494	50	100000	1 hour 53 minutes
+5829	TikTok Likes | High Quality | 30 Days Guarantee ♻️ | Instant Start 🚀	0.2636	50	100000	15 hours 44 minutes
+5730	TikTok Likes | High Quality | 60 Days Guarantee ♻️ | Instant Start 🚀	0.2779	50	100000	26 minutes
+5604	TikTok Likes | High Quality | 90 Days Guarantee ♻️ | Instant Start 🚀	0.2921	50	100000	1 hour 7 minutes
+5603	TikTok Likes | High Quality | 365 Days Guarantee ♻️ | Instant Start 🚀	0.3064	50	100000	6 hours 13 minutes
+6525	TikTok Likes | High Quality | Life Time Guarantee ♻️ | Instant Start 🚀	0.3206	50	100000	19 minutes
+6370	TikTok Video Views | HQ | No Refill ⚠️ | Instant Start 🚀 Instant Delivered (NEW) S2	0.0345	100	10000000	2 minutes
+4217	TikTok Video Views | HQ | No Refill ⚠️ | Instant Start 🚀 [ Super Fast Complete ]	0.03	100	2147483647	1 hour 20 minutes
+5790	TikTok Video Views | HQ | 30 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0313	100	2147483647	24 minutes
+4285	TikTok Video Views | HQ | 60 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0325	100	2147483647	41 minutes
+5479	TikTok Video Views | HQ | 90 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0338	100	2147483647	6 minutes
+6090	TikTok Video Views | HQ | 365 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.035	100	2147483647	20 minutes
+6503	TikTok Video Views | HQ | Life Time Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0363	100	2147483647	11 minutes
+6243	TikTok Followers | Real Accounts | Ultra Faster | No Refill ⚠️ | Instant Start 🚀	3.04	10	1000000	1 hour 15 minutes
+6562	TikTok Followers | Real Accounts | Ultra Faster | 7 Days Guarantee ♻️ | Instant Start 🚀	3.192	10	1000000	4 hours 1 minute
+5725	TikTok Followers | Real Accounts | Ultra Faster | 15 Days Guarantee ♻️ | Instant Start 🚀	3.344	10	1000000	19 hours 50 minutes
+7076	TikTok Followers | Real Accounts | Ultra Faster | 30 Days Guarantee ♻️ | Instant Start 🚀	3.496	10	1000000	9 hours 46 minutes
+6399	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀	0.0525	100	10000000	10 minutes
+5521	TikTok Video Views [ Max Unlimited ] | Extra 30%+ Deliver | Instant Start 🚀	0.075	100	100000000	37 minutes
+5477	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀	0.0255	100	10000000	45 minutes
+5188	TikTok Video Views [ Max Unlimited ] | HQ | Premium Real App | Instant Start 🚀	0.135	100	10000000	15 minutes
+6138	TikTok Followers | 100% Real Profiles | No Refill ⚠️ | Instant Start 🚀 [ ⚡TOP SPEED⚡ ] S2	3.2	10	50000	14 hours 58 minutes
+5882	TikTok Followers 🚀 Ultra Faster [NEVER STUCK] Real profile | No Refill ⚠️ S3	4	50	1000000	42 minutes
+7027	TikTok Followers 🚀 Ultra Faster - USA 🇺🇸 Accounts Real profile | No Refill ⚠️ S2	5.6	10	100000	122 hours 16 minutes
+5456	TikTok Like | 80% Profile Pic | Instant Start ⚡ Speed 20K/Day ♻️30 Days Guarantee	0.315	10	1000000	13 minutes
+6478	TikTok Like | 80% Profile Pic | Instant Start ⚡ Speed 20K/Day ♻️60 Days Guarantee	0.333	10	1000000	2 hours 42 minutes
+5295	TikTok Like | 80% Profile Pic | Instant Start ⚡ Speed 20K/Day ♻️90 Days Guarantee	0.351	10	1000000	1 hour 40 minutes
+5559	TikTok Like | 80% Profile Pic | Instant Start ⚡ Speed 20K/Day ♻️365 Days Guarantee	0.369	10	1000000	13 minutes
+5705	TikTok Like | 80% Profile Pic | Instant Start ⚡ Speed 20K/Day ♻️Life Time Guarantee	0.396	10	1000000	1 hour 2 minutes
+6977	TikTok Video Views [ Max Unlimited ] | HQ | No Refill ⚠️ | Instant Start 🚀 [ Super Fast Complete ]	0.0375	100	2147483647	26 minutes
+7031	TikTok Video Views [ Max Unlimited ] | HQ | 30 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.039	100	2147483647	1 minute
+6918	TikTok Video Views [ Max Unlimited ] | HQ | 365 Days Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.0435	100	2147483647	2 hours 18 minutes
+6055	TikTok Video Views [ Max Unlimited ] | HQ | Lifetime Guarantee ♻️ | Instant Start 🚀 [ Super Fast Complete ]	0.045	100	2147483647	13 minutes
+6683	TikTok Views Monetizable | Min 5K Views | Speed 50K/Day | 0-24 Hours Start | Non Drop | Lifetime Guaranteed ♻️ Own Server 🔥	0.12	5000	1000000	74 hours 36 minutes
+6164	TikTok Views Monetizable | Min 10K Views | Speed 50K/Day | 0-24 Hours Start | Non Drop | Lifetime Guaranteed ♻️ Own Server 🔥	0.104	10000	10000000	62 hours 9 minutes
+`;
+
+/* ---------- parse + enrich ---------- */
+const UNLIM = 2147483647;
+const esc = s => s.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+const PLAT_LIST = ["TikTok","Instagram","Facebook","YouTube","Telegram","Twitter","Spotify",
+                   "LinkedIn","Pinterest","Likee","Clubhouse","Threads","Soundcloud","Website"];
+const TYPE_ORDER = ["Followers","Subscribers","Likes","Views","Comments","Shares","Other"];
+
+function enrich(id, name, rate, min, max, time){
+  name = String(name || "").trim();
+  const plat = PLAT_LIST.find(p => new RegExp("^" + p, "i").test(name))
+            || PLAT_LIST.find(p => new RegExp("\\b" + p + "\\b", "i").test(name))
+            || "Other";
+  const type = /Subscriber/i.test(name)                 ? "Subscribers"
+             : /Follower|Member|Fan/i.test(name)        ? "Followers"
+             : /Like|Heart|Reaction/i.test(name)        ? "Likes"
+             : /Comment/i.test(name)                    ? "Comments"
+             : /Share|Save|Repost|Retweet/i.test(name)  ? "Shares"
+             : /View|Watch|Impression|Reach|Play|Plum/i.test(name) ? "Views"
+             : "Other";
+
+  // retention / refill guarantee
+  let refill = "No refill", hasRefill = false;
+  const d = name.match(/(\d+)\s*Days?\s*(Guarantee|Refill)/i);
+  if (/Life\s*[Tt]ime|Lifetime/i.test(name)) { refill = "Lifetime"; hasRefill = true; }
+  else if (d) { refill = d[1] + "d refill"; hasRefill = true; }
+
+  // country / region targeting
+  const g = name.match(/\[([^\]]*?[\u{1F1E6}-\u{1F1FF}]{2}[^\]]*?)\]/u);
+  const geo = g ? g[1].trim() : (/Worldwide/i.test(name) ? "Worldwide 🌍" : "");
+
+  // account quality
+  let quality = "";
+  if (/Fully Bot/i.test(name))                 quality = "Bot";
+  else if (/LQ|Low Quality/i.test(name))       quality = "LQ";
+  else if (/100% Real|Real Accounts|Real Users|Real Profiles|REAL/i.test(name)) quality = "Real";
+  else if (/HQ|High Quality/i.test(name))      quality = "HQ";
+
+  const speedM = name.match(/Speed:?\s*([\d.]+\s*K?)\s*\/\s*Day/i);
+  const speed = speedM ? speedM[1].replace(/\s/g,"") + "/day" : "";
+
+  // short display name: drop the platform+type prefix and decoration
+  const pre = new RegExp("^(" + PLAT_LIST.join("|") + ")\\s+(Video\\s+|Reels?\\s+|Story\\s+|Post\\s+|Channel\\s+|IGTV\\s+|Live\\s+)?" +
+                         "(Followers?|Subscribers?|Likes?|Views?|Comments?|Shares?|Members?)\\s*", "i");
+  let short = name.replace(pre, "").replace(/^\|\s*/, "").trim();
+  if (!short) short = name;
+
+  return { id:+id, name, short, rate:parseFloat(rate), min:+min, max:+max,
+           time: String(time || "").trim() || "—", plat, type, refill, hasRefill, geo, quality, speed };
+}
+
+const baseRows = RAW.trim().split("\n").map(l => {
+  const [id, name, rate, min, max, time] = l.split("\t");
+  return enrich(id, name, rate, min, max, time);
+});
+let rows = baseRows.slice();
+
+/* ---------- elements ---------- */
+const $ = id => document.getElementById(id);
+const q = $("q"), sortSel = $("sort"), refSel = $("ref"),
+      qtyIn = $("qty"), fxIn = $("fx"), mkIn = $("mk"), content = $("content"),
+      grpBtn = $("grp"), expBtn = $("exp"), summary = $("summary");
+let plat = "all", type = "all", grouped = true, expandAll = true;
+
+function buildPlatChips(){
+  const present = PLAT_LIST.filter(p => rows.some(r => r.plat === p));
+  if (rows.some(r => r.plat === "Other")) present.push("Other");
+  if (!present.includes(plat) && plat !== "all") plat = "all";
+  $("platchips").innerHTML = ["all", ...present]
+    .map(p => `<span class="chip ${p === plat ? "on" : ""}" data-plat="${p}">${p === "all" ? "All" : p}</span>`).join("");
+  $("platchips").querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    plat = c.dataset.plat;
+    $("platchips").querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+    render();
+  });
+}
+function buildTypeChips(){
+  const present = TYPE_ORDER.filter(t => rows.some(r => r.type === t));
+  if (!present.includes(type) && type !== "all") type = "all";
+  $("typechips").innerHTML = ["all", ...present]
+    .map(t => `<span class="chip ${t === type ? "on" : ""}" data-type="${t}">${t === "all" ? "All" : t}</span>`).join("");
+  $("typechips").querySelectorAll(".chip").forEach(c => c.onclick = () => {
+    type = c.dataset.type;
+    $("typechips").querySelectorAll(".chip").forEach(x => x.classList.toggle("on", x === c));
+    render();
+  });
+}
+grpBtn.onclick = () => { grouped = !grouped; grpBtn.classList.toggle("on", grouped);
+                         grpBtn.textContent = grouped ? "Grouped view" : "Flat list";
+                         expBtn.style.display = grouped ? "" : "none"; render(); };
+expBtn.onclick = () => { expandAll = !expandAll; expBtn.classList.toggle("on", expandAll);
+                         expBtn.textContent = expandAll ? "Collapse all" : "Expand all"; render(); };
+[q, sortSel, refSel, qtyIn, fxIn, mkIn].forEach(el => el.addEventListener("input", render));
+[fxIn, mkIn].forEach(el => el.addEventListener("change", syncToCheckout));
+
+/* ---------- helpers ---------- */
+const fmtMax  = n => n >= UNLIM ? "Unlimited" : n.toLocaleString();
+const money   = n => n < 0.01 ? n.toFixed(4) : n < 1 ? n.toFixed(3) : n.toFixed(2);
+const ORDER   = TYPE_ORDER;
+const PC = { TikTok:"#fb7185", Instagram:"#e879c6", Facebook:"#6aa9fb", YouTube:"#f87171",
+             Telegram:"#38bdf8", Twitter:"#cbd5e1", Spotify:"#4ade80", LinkedIn:"#60a5fa",
+             Pinterest:"#fb7185", Other:"#96a0b2" };
+const ORDER_URL = "https://smmnepal.com/";
+const CHECKOUT_URL = "prostore-checkout.html";
+const CK = { cat:"prossore_catalogue", set:"prossore_settings" };
+
+/* Share the catalogue + pricing with the checkout page (same folder / browser). */
+function syncToCheckout(){
+  try {
+    const cat = rows.map(r => ({ id:r.id, name:r.name, rate:r.rate,
+                                 min:r.min, max:r.max, time:r.time, plat:r.plat }));
+    localStorage.setItem(CK.cat, JSON.stringify(cat));
+    const s = JSON.parse(localStorage.getItem(CK.set) || "{}");
+    s.fx = parseFloat(fxIn.value) || 152.63;
+    s.mk = Math.max(1, parseFloat(mkIn.value) || 1);
+    localStorage.setItem(CK.set, JSON.stringify(s));
+    return true;
+  } catch(e){ return false; }
+}
+
+function toast(html){
+  let el = $("toast");
+  if (!el){ el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
+  el.innerHTML = html;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => el.classList.remove("show"), 3800);
+}
+
+function copyText(t){
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+  const ta = document.createElement("textarea");
+  ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch(e){}
+  ta.remove();
+  return Promise.resolve();
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-copy]");
+  if (!b) return;
+  const id = b.dataset.copy;
+  if (b.dataset.buy){
+    const item = rows.find(r => String(r.id) === String(id));
+    if (!item) return;
+    syncToCheckout();
+    const payload = encodeURIComponent(JSON.stringify({
+      id:item.id, name:item.name, rate:item.rate, min:item.min, max:item.max, time:item.time, plat:item.plat }));
+    window.open(CHECKOUT_URL + "#buy=" + payload, "_blank");   // synchronous → not blocked
+    toast(`Opening checkout for <b>ID ${id}</b> — ${esc(item.short)}`);
+    return;
+  }
+  copyText(id).then(() => toast(`Service ID <b>${id}</b> copied.`));
+});
+const platsIn = list => [...PLAT_LIST, "Other"].filter(p => list.some(r => r.plat === p));
+
+function sortRows(list){
+  const s = sortSel.value, desc = s.startsWith("-"), k = desc ? s.slice(1) : s;
+  return list.slice().sort((a,b) => {
+    const v = k === "name" ? a.name.localeCompare(b.name) : a[k] - b[k];
+    return desc ? -v : v;
+  });
+}
+
+function tags(x, isBest){
+  let t = "";
+  if (isBest) t += '<span class="tag t-best">CHEAPEST</span>';
+  t += `<span class="tag ${x.hasRefill ? "t-refill" : "t-norefill"}">${x.refill}</span>`;
+  if (x.quality) t += `<span class="tag t-real">${x.quality}</span>`;
+  if (x.geo)     t += `<span class="tag t-geo">${esc(x.geo)}</span>`;
+  if (x.speed)   t += `<span class="tag">${x.speed}</span>`;
+  return t;
+}
+
+function countUp(el, target, dur = 600, delay = 0){
+  if (window.matchMedia("(prefers-reduced-motion:reduce)").matches){ el.textContent = target; return; }
+  const t0 = performance.now() + delay;
+  (function step(now){
+    const p = Math.min(1, Math.max(0, (now - t0) / dur));
+    el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(step);
+  })(performance.now());
+}
+
+function table(list, fx, qty, mk){
+  const rates = list.map(r => r.rate);
+  const best = list.length ? Math.min(...rates) : null;
+  const hi   = list.length ? Math.max(...rates) : 1;
+  const span = Math.max(hi - best, 1e-9);
+  let bestUsed = false;
+  const body = list.map((x, i) => {
+    const oor  = qty > 0 && (qty < x.min || qty > x.max);
+    const isBest = !bestUsed && x.rate === best && (bestUsed = true);
+    const cost = x.rate * qty / 1000;
+    const w = 7 + 93 * Math.sqrt((x.rate - best) / span);
+    return `<tr class="${oor ? "oor" : ""} ${isBest ? "best" : ""}"${oor ? ' title="Your quantity is outside this service\'s min/max limits"' : ""}>
+      <td class="id">${x.id}</td>
+      <td class="nm">${tags(x, isBest)}<div class="nm-title">${esc(x.short)}</div></td>
+      <td class="price">
+        <div class="npr-big">रु ${(x.rate * fx * mk).toFixed(2)}</div>
+        <div class="usd-sm">${mk === 1 ? "$" + money(x.rate)
+          : `cost रु ${(x.rate * fx).toFixed(2)}`}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${w.toFixed(1)}%;animation-delay:${120 + Math.min(i,10)*25}ms"></div></div>
+      </td>
+      <td class="cost">
+        <div class="cost-big">रु ${(cost * fx * mk).toFixed(2)}</div>
+        <div class="usd-sm">${mk === 1 ? "$" + cost.toFixed(2)
+          : `cost रु ${(cost * fx).toFixed(2)} · <span class="profit">+रु ${(cost * fx * (mk - 1)).toFixed(2)}</span>`}</div>
+      </td>
+      <td class="num hide-sm">${x.min.toLocaleString()}</td>
+      <td class="num hide-sm">${fmtMax(x.max)}</td>
+      <td class="num hide-sm">${x.time}</td>
+      <td class="buycell">
+        <button class="copyid" data-copy="${x.id}" title="Copy service ID">Copy ID</button>
+        <button class="buy" data-copy="${x.id}" data-buy="1" title="Open the Prossore checkout with this service pre-loaded">Buy →</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `<table>
+    <thead><tr>
+      <th class="sortable" data-k="id">ID</th>
+      <th class="sortable" data-k="name">Service</th>
+      <th class="sortable" data-k="rate">${mk === 1 ? "Price" : "Sell price"} /1k</th>
+      <th>${mk === 1 ? "Cost" : "You charge"} for ${qty.toLocaleString()}</th>
+      <th class="sortable hide-sm" data-k="min">Min</th>
+      <th class="sortable hide-sm" data-k="max">Max</th>
+      <th class="hide-sm">Avg. time</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${body}</tbody></table>`;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const term = q.value.trim().toLowerCase();
+  const fx   = parseFloat(fxIn.value) || 0;
+  const qty  = Math.max(1, parseInt(qtyIn.value) || 1000);
+  const mk   = Math.max(1, parseFloat(mkIn.value) || 1);
+  const ref  = refSel.value;
+
+  const out = rows.filter(x =>
+    (plat === "all" || x.plat === plat) &&
+    (type === "all" || x.type === type) &&
+    (ref === "all" || (ref === "yes" ? x.hasRefill : !x.hasRefill)) &&
+    (!term || x.name.toLowerCase().includes(term) || String(x.id).includes(term))
+  );
+
+  /* summary cards */
+  const byType = t => out.filter(x => x.type === t);
+  const lo = l => l.length ? "रु " + (Math.min(...l.map(x => x.rate)) * fx * mk).toFixed(2) : "—";
+  const platsHere = platsIn(out);
+  const unit = mk === 1 ? "per 1,000" : "your price per 1,000";
+  const cards = [
+    ["Services shown", out.length, `of ${rows.length} in catalogue`],
+    ["Platforms", platsHere.length, platsHere.slice(0,3).join(" · ") + (platsHere.length>3 ? " +" + (platsHere.length-3) : "")],
+    ["Cheapest", lo(out), mk === 1 ? "per 1,000" : `per 1,000 · at ${mk}× markup`],
+    ["Followers from", lo(byType("Followers")), unit],
+    ["Likes from", lo(byType("Likes")), unit],
+    ["Views from", lo(byType("Views")), unit]
+  ];
+  summary.innerHTML = cards.map(([k,v,n],i) => {
+    const isNum = typeof v === "number";
+    return `<div class="card" style="animation-delay:${40 + i*55}ms">
+      <div class="k">${k}</div>
+      <div class="v"${isNum ? ` data-count="${v}"` : ""}>${isNum ? 0 : v}</div>
+      <div class="n">${n}</div></div>`;
+  }).join("");
+  summary.querySelectorAll("[data-count]").forEach((el,i) => countUp(el, +el.dataset.count, 620, 140 + i*55));
+
+  if (!out.length){ content.innerHTML = '<div class="empty">No services match those filters.</div>'; return; }
+
+  if (!grouped){
+    content.innerHTML = table(sortRows(out), fx, qty, mk);
+  } else {
+    let html = "", gi = 0;
+    platsIn(out).forEach(p => ORDER.forEach(t => {
+      const list = sortRows(out.filter(x => x.plat === p && x.type === t));
+      if (!list.length) return;
+      const rates = list.map(x => x.rate);
+      const mn = Math.min(...rates), mx = Math.max(...rates);
+      html += `<details class="group" ${expandAll ? "open" : ""} style="animation-delay:${gi++ * 70}ms;--pc:${PC[p] || PC.Other}">
+        <summary>
+          <span class="arrow">▶</span>
+          <span class="pill p-${p.toLowerCase()}">${p}</span>
+          <span class="pill p-${t.toLowerCase()}">${t}</span>
+          <span class="g-title"><b>${list.length}</b> service${list.length>1?"s":""}</span>
+          <span class="g-meta">
+            <span>from <b>रु ${(mn*fx*mk).toFixed(2)}</b>/1k</span>
+            <span>up to <b>रु ${(mx*fx*mk).toFixed(2)}</b>/1k</span>
+            <span><b>${list.filter(x=>x.hasRefill).length}</b> with refill guarantee</span>
+          </span>
+        </summary>${table(list, fx, qty, mk)}</details>`;
+    }));
+    content.innerHTML = html;
+  }
+
+  content.querySelectorAll("th.sortable").forEach(th => th.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    const k = th.dataset.k;
+    sortSel.value = sortSel.value === k ? "-" + k : k;
+    render();
+  });
+}
+
+/* ---------- importer: paste Instagram / YouTube / any other rows ---------- */
+const num = s => parseFloat(String(s).replace(/,/g, "")) || 0;
+
+function parsePasted(text){
+  const found = [];
+
+  // Format A — rows copied straight from the panel table
+  const re = /ID:\s*(\d+)\s+(.+?)\s+\$?\s*([\d.]+)\s*per\s*1000\s+([\d,]+)\s+([\d,]+)\s+(.*?)(?=\s*View Full Details|\s*\d+\s+Copy Id|\s*ID:\s*\d|\s*$)/gis;
+  let m;
+  while ((m = re.exec(text))){
+    const name = m[2].replace(/\*\*/g, "").replace(/^\d+\s+Copy Id\s*/i, "").trim();
+    found.push(enrich(m[1], name, m[3], num(m[4]), num(m[5]), m[6]));
+  }
+
+  // Format B — plain tab-separated fallback
+  if (!found.length){
+    text.trim().split(/\r?\n/).forEach(line => {
+      const c = line.split("\t").map(s => s.trim());
+      if (c.length >= 3 && /^\d+$/.test(c[0]) && !isNaN(parseFloat(c[2])))
+        found.push(enrich(c[0], c[1], c[2], num(c[3] || 10), num(c[4] || 1000000), c[5] || "—"));
+    });
+  }
+  return found.filter(r => r.rate > 0 && r.name);
+}
+
+function say(msg, isErr){
+  const el = $("impMsg");
+  el.textContent = msg;
+  el.className = "imp-msg" + (isErr ? " err" : "");
+  el.style.animation = "none"; void el.offsetWidth; el.style.animation = "fadeUp .35s both";
+}
+
+$("impGo").onclick = () => {
+  const parsed = parsePasted($("impText").value);
+  if (!parsed.length) return say("Couldn't find any service rows in that text — paste the table rows including the ID and the “per 1000” price.", true);
+  const have = new Set(rows.map(r => r.id));
+  const added = parsed.filter(r => !have.has(r.id));
+  rows = rows.concat(added);
+  buildPlatChips(); buildTypeChips(); render();
+  if (added.length) syncToCheckout();
+  const plats = [...new Set(added.map(r => r.plat))].join(", ");
+  say(added.length
+    ? `Added ${added.length} service${added.length > 1 ? "s" : ""}${plats ? " — " + plats : ""}. ${parsed.length - added.length} duplicate${parsed.length - added.length === 1 ? "" : "s"} skipped.`
+    : "All of those service IDs are already in the catalogue.", !added.length);
+};
+
+$("impFile").onchange = e => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => {
+    const parsed = parsePasted(fr.result);
+    if (!parsed.length) return say("That file didn't contain any readable service rows.", true);
+    const have = new Set(rows.map(r => r.id));
+    const added = parsed.filter(r => !have.has(r.id));
+    rows = rows.concat(added);
+    buildPlatChips(); buildTypeChips(); render(); syncToCheckout();
+    const byPlat = {};
+    added.forEach(r => byPlat[r.plat] = (byPlat[r.plat] || 0) + 1);
+    const brk = Object.entries(byPlat).sort((a,b) => b[1]-a[1])
+                 .map(([k,v]) => `${k} ${v}`).join(" · ");
+    say(`Loaded ${added.length} new services — ${brk}. Catalogue now ${rows.length}, and shared with checkout.`);
+  };
+  fr.onerror = () => say("Could not read that file.", true);
+  fr.readAsText(f);
+};
+
+/* Rebuild the page with the current catalogue baked into its own RAW block */
+$("impSave").onclick = () => {
+  const m2 = (t, e) => { const el = $("saveMsg"); el.textContent = t; el.className = "imp-msg" + (e ? " err" : ""); };
+  try {
+    // strip characters that would break the template literal we write into
+    const safe = v => String(v).replace(/[`\\]/g, "").replace(/\$\{/g, "$ {")
+                               .replace(/<\/script/gi, "<\\/script").replace(/[\t\r\n]+/g, " ").trim();
+    const tsv = rows.map(r => [r.id, safe(r.name), r.rate, r.min, r.max, safe(r.time)].join("\t")).join("\n");
+
+    const clone = document.documentElement.cloneNode(true);
+    ["#content", "#summary", "#platchips", "#typechips"].forEach(s => {
+      const el = clone.querySelector(s); if (el) el.innerHTML = "";
+    });
+    ["#toast"].forEach(s => { const el = clone.querySelector(s); if (el) el.remove(); });
+    const ta = clone.querySelector("#impText"); if (ta) ta.textContent = "";
+    const fi = clone.querySelector("#impFile"); if (fi) fi.removeAttribute("value");
+    const ip = clone.querySelector("#importPanel"); if (ip) ip.removeAttribute("open");
+
+    let html = clone.outerHTML;
+    const OPEN = "const RAW = `";
+    const s = html.indexOf(OPEN);
+    const e = html.indexOf("`;", s + OPEN.length);
+    if (s < 0 || e < 0) return m2("Could not locate the data block to rewrite.", true);
+
+    html = "<!DOCTYPE html>\n" + html.slice(0, s + OPEN.length) + "\n" + tsv + "\n" + html.slice(e);
+
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "social-media-growth-by-prossore.html";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+
+    m2(`Saved with ${rows.length} services baked in (${Math.round(blob.size / 1024)} KB). Use that file from now on.`);
+    toast(`Saved <b>social-media-growth-by-prossore.html</b> — ${rows.length} services built in.`);
+  } catch (err) {
+    m2("Save failed: " + err.message, true);
+  }
+};
+
+$("impClear").onclick = () => {
+  rows = baseRows.slice();
+  $("impText").value = "";
+  $("impFile").value = "";
+  buildPlatChips(); buildTypeChips(); render();
+  say(`Reset to the original ${baseRows.length} captured services.`);
+};
+
+/* ---------- init ---------- */
+// adopt any markup/FX already saved by the checkout page so both stay in step
+try {
+  const s = JSON.parse(localStorage.getItem(CK.set) || "{}");
+  if (s.fx) fxIn.value = s.fx;
+  if (s.mk) mkIn.value = s.mk;
+} catch(e){}
+buildPlatChips();
+buildTypeChips();
+render();
+syncToCheckout();
+</script>
+</body>
+</html>

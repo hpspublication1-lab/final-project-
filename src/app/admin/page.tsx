@@ -1,0 +1,11 @@
+import React from 'react';
+import type { Metadata } from 'next';
+import AdminDashboardClient from './components/AdminDashboardClient';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
+export default function AdminPage() {
+  return <AdminDashboardClient />;
+}
