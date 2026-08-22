@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useProgram, PROGRAMS, ProgramType } from '@/contexts/ProgramContext';
-import { CheckCircle2, GraduationCap, Stethoscope, Sparkles, ArrowRight, X, Languages, Cpu } from 'lucide-react';
+import { useProgram, CANONICAL_COURSES, COURSES_MAP, CanonicalCourseId, ProgramType, normalizeCourseId } from '@/contexts/ProgramContext';
+import { CheckCircle2, GraduationCap, Stethoscope, Sparkles, ArrowRight, X, Languages, Cpu, TrendingUp } from 'lucide-react';
 
 interface ProgramSelectorModalProps {
   isOpen?: boolean;
@@ -13,7 +13,7 @@ interface ProgramSelectorModalProps {
 export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpen = false }: ProgramSelectorModalProps) {
   const { program, setProgram } = useProgram();
   const [internalIsOpen, setInternalIsOpen] = useState(false);
-  const [selected, setSelected] = useState<ProgramType>(program);
+  const [selected, setSelected] = useState<CanonicalCourseId>(normalizeCourseId(program));
 
   useEffect(() => {
     if (forceOpen) {
@@ -35,12 +35,12 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
   }, [externalIsOpen, forceOpen]);
 
   useEffect(() => {
-    setSelected(program);
+    setSelected(normalizeCourseId(program));
   }, [program]);
 
   if (!internalIsOpen) return null;
 
-  const handleConfirm = (pType: ProgramType) => {
+  const handleConfirm = (pType: CanonicalCourseId) => {
     setProgram(pType);
     if (typeof window !== 'undefined') {
       localStorage.setItem('samyak_course_chosen', 'true');
@@ -49,37 +49,40 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
     if (onClose) onClose();
   };
 
-  const getSectorIcon = (id: ProgramType) => {
+  const getSectorIcon = (id: CanonicalCourseId) => {
     switch (id) {
-      case 'cee': return <Stethoscope size={24} />;
-      case 'see': return <GraduationCap size={26} />;
-      case 'english': return <Languages size={24} />;
-      case 'digital': return <Cpu size={24} />;
+      case 'cee_medical': return <Stethoscope size={24} />;
+      case 'see_class_10': return <GraduationCap size={26} />;
+      case 'ielts': return <Languages size={24} />;
+      case 'digital_marketing': return <TrendingUp size={24} />;
+      case 'artificial_intelligence': return <Cpu size={24} />;
     }
   };
 
-  const getBorderColor = (id: ProgramType, isSel: boolean) => {
+  const getBorderColor = (id: CanonicalCourseId, isSel: boolean) => {
     if (!isSel) return 'border-border bg-card/60 hover:border-primary/40 hover:bg-muted/30';
     switch (id) {
-      case 'cee': return 'border-primary bg-primary/5 shadow-lg shadow-primary/10 ring-2 ring-primary/20 scale-[1.02]';
-      case 'see': return 'border-bio bg-bio/5 shadow-lg shadow-bio/10 ring-2 ring-bio/20 scale-[1.02]';
-      case 'english': return 'border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 ring-2 ring-amber-500/20 scale-[1.02]';
-      case 'digital': return 'border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 ring-2 ring-purple-500/20 scale-[1.02]';
+      case 'cee_medical': return 'border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/10 ring-2 ring-indigo-500/20 scale-[1.02]';
+      case 'see_class_10': return 'border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/20 scale-[1.02]';
+      case 'ielts': return 'border-amber-500 bg-amber-500/5 shadow-lg shadow-amber-500/10 ring-2 ring-amber-500/20 scale-[1.02]';
+      case 'digital_marketing': return 'border-rose-500 bg-rose-500/5 shadow-lg shadow-rose-500/10 ring-2 ring-rose-500/20 scale-[1.02]';
+      case 'artificial_intelligence': return 'border-purple-500 bg-purple-500/5 shadow-lg shadow-purple-500/10 ring-2 ring-purple-500/20 scale-[1.02]';
     }
   };
 
-  const getBtnBg = (id: ProgramType) => {
+  const getBtnBg = (id: CanonicalCourseId) => {
     switch (id) {
-      case 'cee': return 'bg-primary hover:bg-primary/90 shadow-primary/20';
-      case 'see': return 'bg-bio hover:bg-bio/90 shadow-bio/20';
-      case 'english': return 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20';
-      case 'digital': return 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20';
+      case 'cee_medical': return 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20';
+      case 'see_class_10': return 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20';
+      case 'ielts': return 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20';
+      case 'digital_marketing': return 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20';
+      case 'artificial_intelligence': return 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/20';
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn overflow-y-auto">
-      <div className="relative max-w-4xl w-full bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-2xl my-auto">
+      <div className="relative max-w-5xl w-full bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-2xl my-auto">
         {/* Background glow effects */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-primary/10 rounded-full blur-3xl -z-10 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
@@ -98,21 +101,21 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
         )}
 
         <div className="text-center max-w-lg mx-auto mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-3">
-            <Sparkles size={14} /> PhysicsWallah-Grade eLearning Platform
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-black mb-3">
+            <Sparkles size={14} /> Soumya Guru Multi-Course Learning Platform
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            Select Your Target Learning Sector
+            Choose Your Learning Path
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed">
-            Choose your learning path. The entire platform (courses, live classes, study notes, practice questions, and AI tutor) will instantly customize to your vertical.
+            Select an independent learning portal. Your dashboard, subjects, video classes, mock tests, and AI tools will customize specifically to this course.
           </p>
         </div>
 
-        {/* 4 Sector Cards Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {(Object.keys(PROGRAMS) as ProgramType[]).map((key) => {
-            const prog = PROGRAMS[key];
+        {/* 5 Sector Cards Grid */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-6">
+          {CANONICAL_COURSES.map((key) => {
+            const prog = COURSES_MAP[key];
             const isSel = selected === key;
             return (
               <div
@@ -152,12 +155,12 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
           onClick={() => handleConfirm(selected)}
           className={`w-full py-3.5 px-6 rounded-xl font-extrabold text-sm text-white flex items-center justify-center gap-2 transition-all shadow-md ${getBtnBg(selected)}`}
         >
-          <span>Confirm &amp; Enter {PROGRAMS[selected].name}</span>
+          <span>Enter {COURSES_MAP[selected].name}</span>
           <ArrowRight size={16} />
         </button>
 
         <p className="text-[11px] text-center text-muted-foreground mt-3">
-          You can switch between CEE, SEE, English Learning, and Digital Skills anytime in the navigation menu.
+          You can switch between courses anytime from the top bar switcher.
         </p>
       </div>
     </div>
@@ -165,4 +168,5 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
 }
 
 export default ProgramSelectorModal;
+
 

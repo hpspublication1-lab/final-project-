@@ -26,12 +26,12 @@ const plans = [
       { key: 'f-notes', text: '20 free chapter notes', included: true },
       { key: 'f-mcq', text: '200 practice MCQs/month', included: true },
       { key: 'f-leaderboard', text: 'Public leaderboard access', included: true },
-      { key: 'f-videos', text: 'Video Lectures (Samyak Guru App)', included: true },
+      { key: 'f-videos', text: 'Video Lectures (Soumya Guru App)', included: true },
       { key: 'f-mock', text: 'Full mock exams', included: false },
       { key: 'f-battle', text: 'Battle Arena access', included: false },
       { key: 'f-analytics', text: 'Advanced analytics', included: false },
       { key: 'f-ai', text: 'AI Tutor access', included: false },
-      { key: 'f-live', text: 'Live Classes (Samyak Guru App)', included: false },
+      { key: 'f-live', text: 'Live Classes (Soumya Guru App)', included: false },
     ],
     cta: 'Start Free',
     isFree: true,
@@ -42,7 +42,7 @@ const plans = [
     icon: Star,
     price: { monthly: 799, yearly: 7190 },
     currency: 'NPR',
-    tagline: 'Everything you need for CEE',
+    tagline: 'Everything you need for your target course',
     badge: 'Most Popular',
     color: 'text-primary',
     bg: 'bg-secondary',
@@ -51,12 +51,12 @@ const plans = [
       { key: 'f-notes', text: 'All 1,200+ premium notes', included: true },
       { key: 'f-mcq', text: 'Unlimited practice MCQs', included: true },
       { key: 'f-leaderboard', text: 'Full leaderboard + rank', included: true },
-      { key: 'f-videos', text: 'Video Lectures (Samyak Guru App)', included: true },
+      { key: 'f-videos', text: 'Video Lectures (Soumya Guru App)', included: true },
       { key: 'f-mock', text: 'Chapter & subject tests', included: true },
       { key: 'f-battle', text: 'Battle Arena access', included: true },
       { key: 'f-analytics', text: 'Standard analytics', included: true },
       { key: 'f-ai', text: 'AI Tutor access', included: false },
-      { key: 'f-live', text: 'Live Classes (Samyak Guru App)', included: true },
+      { key: 'f-live', text: 'Live Classes (Soumya Guru App)', included: true },
     ],
     isFree: false,
   },
@@ -66,7 +66,7 @@ const plans = [
     icon: Gem,
     price: { monthly: 1299, yearly: 11690 },
     currency: 'NPR',
-    tagline: 'Maximum edge for top rankers',
+    tagline: 'Maximum edge for top achievers',
     badge: 'Best Value',
     color: 'text-ma',
     bg: 'bg-ma-light',
@@ -75,12 +75,12 @@ const plans = [
       { key: 'f-notes', text: 'All 1,200+ sub-chapter notes', included: true },
       { key: 'f-mcq', text: 'Unlimited practice MCQs', included: true },
       { key: 'f-leaderboard', text: 'Full leaderboard + rank', included: true },
-      { key: 'f-videos', text: 'Video Lectures (Samyak Guru App)', included: true },
+      { key: 'f-videos', text: 'Video Lectures (Soumya Guru App)', included: true },
       { key: 'f-mock', text: 'Full mock exams + analysis', included: true },
       { key: 'f-battle', text: 'Battle Arena + Tournaments', included: true },
       { key: 'f-analytics', text: 'Advanced analytics + weak topics', included: true },
       { key: 'f-ai', text: 'AI Tutor (unlimited)', included: true },
-      { key: 'f-live', text: 'All Live Classes (Samyak Guru App)', included: true },
+      { key: 'f-live', text: 'All Live Classes (Soumya Guru App)', included: true },
     ],
     isFree: false,
   },
@@ -89,7 +89,7 @@ const plans = [
 function buildWhatsAppUrl(planName: string, price: number, yearly: boolean): string {
   const period = yearly ? 'yearly' : 'monthly';
   const priceStr = price > 0 ? `NPR ${price.toLocaleString()}/${period}` : 'Free';
-  const message = `Hi! I want to activate the *${planName} Plan* (${priceStr}) on Samyak CEE Mastery. Please send me the activation code. Thank you!`;
+  const message = `Hi! I want to activate the *${planName} Plan* (${priceStr}) on Soumya Guru. Please send me the activation code. Thank you!`;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 

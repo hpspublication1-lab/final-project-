@@ -18,8 +18,8 @@ export default function AnnouncementBar({ onDismiss }: { onDismiss?: () => void 
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-center gap-3">
         <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium">
           <Smartphone size={14} className="animate-pulse shrink-0 text-amber-300" />
-          <span className="hidden sm:inline">Samyak Guru App:</span>
-          <span>Live classes & video lectures are available in the Samyak Guru App</span>
+          <span className="hidden sm:inline">Soumya Guru App:</span>
+          <span>Live classes &amp; video lectures are available in the Soumya Guru App</span>
           <Link
             href="/app-feature"
             className="ml-2 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-2.5 py-0.5 rounded-full transition-colors whitespace-nowrap"

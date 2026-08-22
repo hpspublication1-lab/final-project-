@@ -4,7 +4,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
-import { LayoutDashboard, BookOpen, Video, Radio, Zap, FileText, Bell, CreditCard, User, ChevronLeft, ChevronRight, Sun, Moon, Swords, AlertTriangle, LogOut, ClipboardList, Bot, Sparkles, Users, CheckCheck, X, Menu, Home, Trophy, Layers, MessageCircleQuestion, Bookmark, Lock } from 'lucide-react';
+import {
+  LayoutDashboard, BookOpen, Video, Radio, Zap, FileText, Bell, CreditCard,
+  User, ChevronLeft, ChevronRight, Sun, Moon, Swords, AlertTriangle, LogOut,
+  ClipboardList, Bot, Sparkles, Users, CheckCheck, X, Menu, Home, Trophy,
+  Layers, MessageCircleQuestion, Bookmark, Lock, Languages, Cpu, TrendingUp,
+  GraduationCap, Stethoscope, Mic, Headphones, FileEdit, Search, Share2, Code, Terminal, Target
+} from 'lucide-react';
 
 // Nav items that require a paid/prebook plan (see PremiumGate). Free users get
 // a small "Pro" lock badge on these until they upgrade.
@@ -17,68 +23,321 @@ import { useAuth } from '@/contexts/AuthContext';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import ProgramSelectorModal from '@/components/ProgramSelectorModal';
-import { useProgram } from '@/contexts/ProgramContext';
+import { useProgram, normalizeCourseId, CanonicalCourseId } from '@/contexts/ProgramContext';
 
+interface NavItem {
+  label: string;
+  href: string;
+  icon: any;
+  key: string;
+  desc?: string;
+  badge?: string;
+}
 
+interface NavGroup {
+  label: string;
+  key: string;
+  items: NavItem[];
+}
 
-const navGroups = [
-  {
-    label: 'Home',
-    key: 'group-overview',
-    items: [
-      { label: 'Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Your overview & stats' },
-      { label: 'Study Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily tasks & schedule' },
-      { label: 'Doubts', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask a teacher' },
-    ],
-  },
-  {
-    label: 'Study Materials & Store',
-    key: 'group-study',
-    items: [
-      { label: 'All Courses & Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Browse 4 sector batches' },
-      { label: 'Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Structured courses' },
-      { label: 'Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Browse all topics' },
-      { label: 'Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Spaced-repetition review' },
-      { label: 'Samyak Guru App', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'APP', desc: 'Live & Video Lectures' },
-    ],
-  },
-  {
-    label: 'AI Tools',
-    key: 'group-ai',
-    items: [
-      { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'NEW', desc: 'Ask any question' },
-      { label: 'MCQ Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate practice questions' },
-      { label: 'Mistake Analyser', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Fix your weak spots' },
-    ],
-  },
-  {
-    label: 'Practice & Exams',
-    key: 'group-exam',
-    items: [
-      { label: 'Practice MCQs', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Quick question practice' },
-      { label: 'SEE Subjective AI', href: '/practice/subjective', icon: Sparkles, key: 'nav-subjective', badge: 'NEW', desc: 'Handwritten answer grading' },
-      { label: 'Mock Tests', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Full-length exams' },
-      { label: 'Battle Arena', href: '/battle-arena', icon: Swords, key: 'nav-battle', badge: 'LIVE', desc: 'Compete with others' },
-      { label: 'Match Lobby', href: '/match-lobby', icon: Users, key: 'nav-match-lobby', badge: 'NEW', desc: 'Find opponents' },
-    ],
-  },
-  {
-    label: 'My Progress',
-    key: 'group-progress',
-    items: [
-      { label: 'Leaderboard', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'See rankings' },
-      { label: 'Bookmarks', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions' },
-    ],
-  },
-];
+function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
+  switch (canonicalId) {
+    case 'see_class_10':
+      return [
+        {
+          label: 'SEE Class 10 Overview',
+          key: 'group-see-home',
+          items: [
+            { label: 'SEE Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'GPA Tracker & Stats' },
+            { label: 'Study Schedule', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily revision tasks' },
+            { label: 'Ask Teacher', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask subject teachers' },
+          ],
+        },
+        {
+          label: 'Class 10 Syllabus',
+          key: 'group-see-syllabus',
+          items: [
+            { label: '5 Core Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Science, Math, Opt Math...' },
+            { label: 'Video Classes', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'HD', desc: 'Chapter-wise lectures' },
+            { label: 'Revision Cards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Formula sheets' },
+            { label: 'Class 10 Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Batch enrollments' },
+          ],
+        },
+        {
+          label: 'Board Exam Preparation',
+          key: 'group-see-exams',
+          items: [
+            { label: 'AI Subjective Grading', href: '/practice/subjective', icon: Sparkles, key: 'nav-subjective', badge: 'AI', desc: 'Handwritten answer check' },
+            { label: 'NEB Model Papers', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: '10-Year Question Sets' },
+            { label: 'Objective Practice', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Unit-wise test drills' },
+          ],
+        },
+        {
+          label: 'AI Study Assistant',
+          key: 'group-see-ai',
+          items: [
+            { label: 'SEE AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Math & Science solver' },
+            { label: 'Question Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Create practice questions' },
+            { label: 'Weakness Fixer', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Fix exam weak spots' },
+          ],
+        },
+        {
+          label: 'My Progress',
+          key: 'group-see-progress',
+          items: [
+            { label: 'Rankings', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Batch rankings' },
+            { label: 'Saved Notes', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Bookmarked questions' },
+            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
+          ],
+        },
+      ];
 
-const mobileNavItems = [
-  { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-  { label: 'Practice', href: '/practice', icon: Zap, key: 'mob-practice' },
-  { label: 'Mock Tests', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
-  { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
-  { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
-];
+    case 'ielts':
+      return [
+        {
+          label: 'IELTS Mastery Overview',
+          key: 'group-ielts-home',
+          items: [
+            { label: 'IELTS Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Target Band 8.0+ Tracker' },
+            { label: 'Study Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily speaking & essay schedule' },
+            { label: 'Examiner Q&A', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask certified mentors' },
+          ],
+        },
+        {
+          label: '4 Core Skills Hub',
+          key: 'group-ielts-skills',
+          items: [
+            { label: 'Speaking Simulator', href: '/english', icon: Mic, key: 'nav-speaking', badge: 'AI LIVE', desc: 'Part 1, 2, 3 AI scoring' },
+            { label: 'Writing Evaluator', href: '/english', icon: FileEdit, key: 'nav-writing', badge: 'RUBRIC', desc: 'Task 1 & 2 essay checks' },
+            { label: 'Listening Audio Sets', href: '/courses?sector=english', icon: Headphones, key: 'nav-listening', desc: 'Audio sections 1-4' },
+            { label: 'Reading Speed Drills', href: '/courses?sector=english', icon: BookOpen, key: 'nav-reading', desc: 'Academic & GT passages' },
+          ],
+        },
+        {
+          label: 'Mock Tests & Grammar',
+          key: 'group-ielts-mock',
+          items: [
+            { label: 'Full Mock Exams', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Band score prediction' },
+            { label: 'Vocabulary & Grammar', href: '/practice', icon: Zap, key: 'nav-grammar', desc: 'AWL 500 academic words' },
+            { label: 'Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Collocations & idioms' },
+          ],
+        },
+        {
+          label: 'AI Fluency Tools',
+          key: 'group-ielts-ai',
+          items: [
+            { label: 'English AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Grammar correction & tips' },
+            { label: 'Drill Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Custom practice tests' },
+          ],
+        },
+        {
+          label: 'My Progress',
+          key: 'group-ielts-progress',
+          items: [
+            { label: 'Band Rankings', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Global learner rankings' },
+            { label: 'Saved Drills', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions' },
+            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
+          ],
+        },
+      ];
+
+    case 'digital_marketing':
+      return [
+        {
+          label: 'Marketing Overview',
+          key: 'group-dm-home',
+          items: [
+            { label: 'Marketing Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Campaigns & Milestones' },
+            { label: 'Daily Action Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Growth strategies' },
+            { label: 'Mentor Support', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask marketing experts' },
+          ],
+        },
+        {
+          label: 'Marketing Tracks',
+          key: 'group-dm-tracks',
+          items: [
+            { label: 'Meta & Instagram Ads', href: '/courses?sector=digital', icon: TrendingUp, key: 'nav-meta', badge: 'HIGH ROAS', desc: 'Pixel & ad setup' },
+            { label: 'TikTok Viral Growth', href: '/courses?sector=digital', icon: Share2, key: 'nav-tiktok', desc: 'Hook formulas & scripts' },
+            { label: 'Search Engine SEO', href: '/courses?sector=digital', icon: Search, key: 'nav-seo', desc: 'Rank #1 on Google' },
+            { label: 'Copywriting & Funnels', href: '/courses?sector=digital', icon: FileText, key: 'nav-copy', desc: 'High-converting pages' },
+          ],
+        },
+        {
+          label: 'Practical Hub',
+          key: 'group-dm-practical',
+          items: [
+            { label: 'Swipe Files & Templates', href: '/digital', icon: Layers, key: 'nav-swipe', badge: 'PRO', desc: 'Proven ad copy' },
+            { label: 'Video Playbooks', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'HD', desc: 'Step-by-step walkthrus' },
+            { label: 'Marketing Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Live cohorts' },
+          ],
+        },
+        {
+          label: 'AI Marketing Tools',
+          key: 'group-dm-ai',
+          items: [
+            { label: 'Marketing AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Ad angle brainstorming' },
+            { label: 'Prompt Studio', href: '/digital', icon: Sparkles, key: 'nav-prompt', desc: 'Marketing prompt tests' },
+          ],
+        },
+        {
+          label: 'My Progress',
+          key: 'group-dm-progress',
+          items: [
+            { label: 'Certification Hub', href: '/account', icon: Trophy, key: 'nav-cert', desc: 'Course certificates' },
+            { label: 'Saved Resources', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved templates' },
+            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
+          ],
+        },
+      ];
+
+    case 'artificial_intelligence':
+      return [
+        {
+          label: 'AI Academy Overview',
+          key: 'group-ai-home',
+          items: [
+            { label: 'AI Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'AI skill progress' },
+            { label: 'Learning Roadmap', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily AI tasks' },
+            { label: 'Dev Doubts', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask AI instructors' },
+          ],
+        },
+        {
+          label: 'AI Specialization Tracks',
+          key: 'group-ai-tracks',
+          items: [
+            { label: 'Prompt Studio Sandbox', href: '/digital', icon: Bot, key: 'nav-prompt-studio', badge: 'LIVE AI', desc: 'Test & score prompts' },
+            { label: 'Modern AI Tools', href: '/digital', icon: Zap, key: 'nav-ai-tools', desc: 'ChatGPT, Claude, Midjourney' },
+            { label: 'Python for AI', href: '/courses?sector=digital', icon: Code, key: 'nav-python', desc: '5 Real-world projects' },
+            { label: 'AI Automation & Agents', href: '/courses?sector=digital', icon: Terminal, key: 'nav-agents', desc: 'No-code workflows' },
+          ],
+        },
+        {
+          label: 'Hands-On Practice',
+          key: 'group-ai-practice',
+          items: [
+            { label: 'Coding Exercises', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Syntax & logic tests' },
+            { label: 'Project Submissions', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'BUILD', desc: 'Portfolio projects' },
+            { label: 'AI Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Core terms & concepts' },
+          ],
+        },
+        {
+          label: 'AI Study Assistants',
+          key: 'group-ai-tutors',
+          items: [
+            { label: 'Master AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Ask coding & AI questions' },
+            { label: 'Prompt Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate test cases' },
+          ],
+        },
+        {
+          label: 'My Progress',
+          key: 'group-ai-progress',
+          items: [
+            { label: 'Skill Rankings', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Leaderboard' },
+            { label: 'Saved Prompts', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Bookmark library' },
+            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
+          ],
+        },
+      ];
+
+    case 'cee_medical':
+    default:
+      return [
+        {
+          label: 'CEE Medical Overview',
+          key: 'group-cee-home',
+          items: [
+            { label: 'Medical Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Rank, accuracy & stats' },
+            { label: 'CEE Study Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily tasks & schedule' },
+            { label: 'Ask Doctor / Teacher', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Medical entrance doubts' },
+          ],
+        },
+        {
+          label: 'Medical Syllabus & Materials',
+          key: 'group-cee-study',
+          items: [
+            { label: 'Medical Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Bio, Chem, Physics & MAT' },
+            { label: 'Bunny Video Lectures', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'APP', desc: 'Live & recorded classes' },
+            { label: 'SM-2 Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Spaced-repetition high-yield' },
+            { label: 'Target Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Structured medical batches' },
+          ],
+        },
+        {
+          label: 'Medical Entrance Practice',
+          key: 'group-cee-exam',
+          items: [
+            { label: 'Practice 15,000+ MCQs', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Subjectwise question bank' },
+            { label: 'MEC Mock Exams', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: '200-Question full simulation' },
+            { label: '2-Player Battle Arena', href: '/battle-arena', icon: Swords, key: 'nav-battle', badge: 'LIVE', desc: 'Realtime 1v1 battle' },
+            { label: 'Match Lobby', href: '/match-lobby', icon: Users, key: 'nav-match-lobby', badge: 'NEW', desc: 'Find opponents' },
+          ],
+        },
+        {
+          label: 'Medical AI Tools',
+          key: 'group-cee-ai',
+          items: [
+            { label: 'AI Medical Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Instant explanations' },
+            { label: 'MCQ Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate practice questions' },
+            { label: 'Mistake Analyser', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Fix your weak spots' },
+          ],
+        },
+        {
+          label: 'My Progress',
+          key: 'group-cee-progress',
+          items: [
+            { label: 'CEE Leaderboard', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'See rankings' },
+            { label: 'Saved MCQs', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions' },
+            { label: 'All Courses Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Browse all courses' },
+          ],
+        },
+      ];
+  }
+}
+
+function getCourseMobileNavItems(canonicalId: CanonicalCourseId) {
+  switch (canonicalId) {
+    case 'see_class_10':
+      return [
+        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
+        { label: 'Subjective', href: '/practice/subjective', icon: Sparkles, key: 'mob-subjective' },
+        { label: 'Papers', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
+        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
+        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+      ];
+    case 'ielts':
+      return [
+        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
+        { label: 'Speaking', href: '/english', icon: Mic, key: 'mob-speaking' },
+        { label: 'Mocks', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
+        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
+        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+      ];
+    case 'digital_marketing':
+      return [
+        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
+        { label: 'Modules', href: '/courses?sector=digital', icon: TrendingUp, key: 'mob-modules' },
+        { label: 'Swipe Files', href: '/digital', icon: Layers, key: 'mob-swipe' },
+        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
+        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+      ];
+    case 'artificial_intelligence':
+      return [
+        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
+        { label: 'Studio', href: '/digital', icon: Bot, key: 'mob-studio' },
+        { label: 'Code', href: '/courses?sector=digital', icon: Code, key: 'mob-code' },
+        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
+        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+      ];
+    case 'cee_medical':
+    default:
+      return [
+        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
+        { label: 'Practice', href: '/practice', icon: Zap, key: 'mob-practice' },
+        { label: 'Mock Tests', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
+        { label: 'Battle', href: '/battle-arena', icon: Swords, key: 'mob-battle' },
+        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+      ];
+  }
+}
 
 interface Notification {
   id: string;
@@ -126,6 +385,10 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, isDark = false, onToggleDark }: DashboardLayoutProps) {
   const { program, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
+  const activeNavGroups = getCourseNavGroups(canonicalId);
+  const activeMobileNavItems = getCourseMobileNavItems(canonicalId);
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -258,7 +521,7 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
 
         {/* Nav */}
         <div className="flex-1 overflow-y-auto py-3 px-2 scrollbar-hide">
-          {navGroups.map((group) => (
+          {activeNavGroups.map((group) => (
             <div key={group.key} className="mb-5">
               {!collapsed && (
                 <p className="section-label px-2 mb-1.5">{group.label}</p>
@@ -386,7 +649,7 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
 
             {/* Mobile nav groups */}
             <div className="flex-1 py-3 px-3">
-              {navGroups.map((group) => (
+              {activeNavGroups.map((group) => (
                 <div key={group.key} className="mb-5">
                   <p className="section-label px-2 mb-1.5">{group.label}</p>
                   {group.items.map((item) => {
@@ -579,7 +842,7 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
         {/* Mobile Bottom Navigation Bar */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
           <div className="flex items-stretch justify-around px-1 py-1">
-            {mobileNavItems.map((item) => {
+            {activeMobileNavItems.map((item) => {
               if (item.key === 'mob-more') {
                 return (
                   <button

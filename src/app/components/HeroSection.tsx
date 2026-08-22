@@ -52,32 +52,42 @@ function CountdownUnit({ value, label }: { value: number; label: string }) {
   );
 }
 
-const SECTOR_HIGHLIGHTS: Record<ProgramType, { key: string; text: string }[]> = {
-  cee: [
+const SECTOR_HIGHLIGHTS: Record<string, { key: string; text: string }[]> = {
+  cee_medical: [
     { key: 'hl-mcq', text: '15,000+ CEE MCQs with detailed explanations' },
     { key: 'hl-notes', text: 'Sub-chapter high-yield notes (Bio, Chem, Physics)' },
-    { key: 'hl-live', text: 'Live MEC mock exams on Samyak Guru App' },
+    { key: 'hl-live', text: 'Live MEC mock exams on Soumya Guru App' },
     { key: 'hl-battle', text: 'Real-time 2-player entrance battle arena' },
   ],
-  see: [
+  see_class_10: [
     { key: 'hl-see-sci', text: 'Complete Grade 10 Science & Opt Math solved' },
     { key: 'hl-see-board', text: 'Previous 10 Years NEB Board Question Bank' },
-    { key: 'hl-see-notes', text: 'Chapter-wise HD Video lectures & summary notes' },
+    { key: 'hl-see-notes', text: 'AI Handwritten answer sheet grading' },
     { key: 'hl-see-gpa', text: 'Target 4.0 GPA step-by-step guidance' },
   ],
-  english: [
-    { key: 'hl-eng-spk', text: 'Daily AI Spoken English fluency practice' },
-    { key: 'hl-eng-ielts', text: 'IELTS Academic & GT Band 8.0+ strategies' },
-    { key: 'hl-eng-pte', text: 'PTE 79+ Express templates & mock scoring' },
-    { key: 'hl-eng-cert', text: 'Job interview & email communication skills' },
+  ielts: [
+    { key: 'hl-eng-spk', text: 'Interactive AI Speaking Examiner practice' },
+    { key: 'hl-eng-ielts', text: 'IELTS Academic & GT Band 8.0+ essay scoring' },
+    { key: 'hl-eng-pte', text: 'Listening audio drills & speed reading' },
+    { key: 'hl-eng-cert', text: 'CEFR certified English fluency masterclass' },
   ],
-  digital: [
+  digital_marketing: [
+    { key: 'hl-dm-meta', text: 'Meta & Instagram Ads high-ROAS playbooks' },
+    { key: 'hl-dm-tiktok', text: 'TikTok viral short-form hooks & funnels' },
+    { key: 'hl-dm-seo', text: 'SEO ranking playbooks & copy templates' },
+    { key: 'hl-dm-free', text: 'Upwork & Fiverr freelance client acquisition' },
+  ],
+  artificial_intelligence: [
     { key: 'hl-dig-ai', text: 'ChatGPT, Claude & Midjourney Prompt Engineering' },
     { key: 'hl-dig-py', text: 'Python programming from scratch to 5 real projects' },
-    { key: 'hl-dig-mkt', text: 'Canva graphic design & Facebook/TikTok ads' },
-    { key: 'hl-dig-free', text: 'Upwork & Fiverr freelancing gig setup guide' },
+    { key: 'hl-dig-auto', text: 'No-code AI automation agents & workflows' },
+    { key: 'hl-dig-cert', text: 'AI Specialization Certificate of Completion' },
   ],
 };
+SECTOR_HIGHLIGHTS.cee = SECTOR_HIGHLIGHTS.cee_medical;
+SECTOR_HIGHLIGHTS.see = SECTOR_HIGHLIGHTS.see_class_10;
+SECTOR_HIGHLIGHTS.english = SECTOR_HIGHLIGHTS.ielts;
+SECTOR_HIGHLIGHTS.digital = SECTOR_HIGHLIGHTS.artificial_intelligence;
 
 interface HeroMCQ {
   subject: string;
@@ -225,6 +235,11 @@ const SECTOR_MCQ_POOLS: Record<ProgramType, HeroMCQ[]> = {
     },
   ],
 };
+(SECTOR_MCQ_POOLS as any).cee_medical = SECTOR_MCQ_POOLS.cee;
+(SECTOR_MCQ_POOLS as any).see_class_10 = SECTOR_MCQ_POOLS.see;
+(SECTOR_MCQ_POOLS as any).ielts = SECTOR_MCQ_POOLS.english;
+(SECTOR_MCQ_POOLS as any).digital_marketing = SECTOR_MCQ_POOLS.digital;
+(SECTOR_MCQ_POOLS as any).artificial_intelligence = SECTOR_MCQ_POOLS.digital;
 
 export default function HeroSection() {
   const countdown = useCEECountdown();
@@ -295,43 +310,51 @@ export default function HeroSection() {
               </Link>
             </div>
 
-            {/* PW-Grade 4 Sector Quick Bar */}
+            {/* 5 Course Portals Quick Bar */}
             <div className="pt-4 border-t border-border/60">
               <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground mb-2.5">
-                Explore All Learning Sectors:
+                Choose Your Learning Portal:
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                 <Link
-                  href="/courses?sector=cee"
-                  onClick={() => setProgram('cee')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-primary/50 text-xs font-bold text-foreground hover:text-primary transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>🩺</span>
-                  <span className="truncate">CEE Medical</span>
-                </Link>
-                <Link
-                  href="/courses?sector=see"
-                  onClick={() => setProgram('see')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-bio/50 text-xs font-bold text-foreground hover:text-bio transition-all flex items-center gap-1.5 shadow-xs"
+                  href="/student-dashboard"
+                  onClick={() => setProgram('see_class_10')}
+                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-emerald-500/50 text-xs font-bold text-foreground hover:text-emerald-600 transition-all flex items-center gap-1.5 shadow-xs"
                 >
                   <span>🎓</span>
                   <span className="truncate">SEE Class 10</span>
                 </Link>
                 <Link
-                  href="/english"
-                  onClick={() => setProgram('english')}
+                  href="/student-dashboard"
+                  onClick={() => setProgram('cee_medical')}
+                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-indigo-500/50 text-xs font-bold text-foreground hover:text-indigo-600 transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>🩺</span>
+                  <span className="truncate">CEE Medical</span>
+                </Link>
+                <Link
+                  href="/student-dashboard"
+                  onClick={() => setProgram('ielts')}
                   className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-amber-500/50 text-xs font-bold text-foreground hover:text-amber-600 transition-all flex items-center gap-1.5 shadow-xs"
                 >
                   <span>🗣️</span>
-                  <span className="truncate">English &amp; IELTS</span>
+                  <span className="truncate">IELTS English</span>
                 </Link>
                 <Link
-                  href="/digital"
-                  onClick={() => setProgram('digital')}
+                  href="/student-dashboard"
+                  onClick={() => setProgram('digital_marketing')}
+                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-rose-500/50 text-xs font-bold text-foreground hover:text-rose-600 transition-all flex items-center gap-1.5 shadow-xs"
+                >
+                  <span>📈</span>
+                  <span className="truncate">Marketing</span>
+                </Link>
+                <Link
+                  href="/student-dashboard"
+                  onClick={() => setProgram('artificial_intelligence')}
                   className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-purple-500/50 text-xs font-bold text-foreground hover:text-purple-600 transition-all flex items-center gap-1.5 shadow-xs"
                 >
-                  <span>💻</span>
-                  <span className="truncate">Digital &amp; AI</span>
+                  <span>🤖</span>
+                  <span className="truncate">AI Academy</span>
                 </Link>
               </div>
             </div>

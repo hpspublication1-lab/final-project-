@@ -181,74 +181,134 @@ const englishSubjects = [
   },
 ];
 
-const digitalSubjects = [
+const marketingSubjects = [
   {
-    key: 'dig-ai',
-    name: 'AI & Prompt Engineering',
+    key: 'mkt-meta',
+    name: 'Meta & Instagram Ads',
+    icon: Globe,
+    color: 'text-rose-600',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    chapters: 18,
+    mcqs: 800,
+    notes: 120,
+    topics: ['Pixel Setup', 'Lookalike Audiences', 'A/B Creative Testing', 'Scaling High-ROAS Ads'],
+    description: 'Master Facebook and Instagram paid ad infrastructure and conversion funnels.',
+    weight: 'High ROAS',
+  },
+  {
+    key: 'mkt-tiktok',
+    name: 'TikTok Viral Short-Form Growth',
+    icon: Sparkles,
+    color: 'text-rose-600',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    chapters: 14,
+    mcqs: 600,
+    notes: 95,
+    topics: ['Hook Scripting', 'Retention Hacks', 'Trending Audios', 'Viral Storytelling'],
+    description: 'Grow organic follower bases and drive product sales with short-form videos.',
+    weight: 'Organic',
+  },
+  {
+    key: 'mkt-seo',
+    name: 'Search Engine Optimization (SEO)',
+    icon: BookOpen,
+    color: 'text-rose-600',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    chapters: 16,
+    mcqs: 750,
+    notes: 110,
+    topics: ['Keyword Discovery', 'Technical Audits', 'On-Page SEO', 'Backlink Building'],
+    description: 'Rank websites on Google top 3 search results and capture high-intent organic traffic.',
+    weight: 'Google #1',
+  },
+  {
+    key: 'mkt-copy',
+    name: 'Copywriting & Sales Funnels',
+    icon: Book,
+    color: 'text-rose-600',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    chapters: 15,
+    mcqs: 650,
+    notes: 105,
+    topics: ['Landing Page Copy', 'Email Sequences', 'Headline Formulas', 'Client Upwork Blueprints'],
+    description: 'High-converting copywriting frameworks and global freelance client acquisition.',
+    weight: 'Conversion',
+  },
+];
+
+const aiSubjects = [
+  {
+    key: 'ai-prompt',
+    name: 'Prompt Engineering Studio',
     icon: Brain,
     color: 'text-purple-600',
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/20',
-    chapters: 14,
-    mcqs: 1100,
-    notes: 130,
-    topics: ['ChatGPT Prompts', 'Midjourney Images', 'AI Workflows', 'Claude & Automation'],
-    description: 'Master practical AI tools to 10x your productivity at study or work.',
-    weight: 'Top Tech',
+    chapters: 20,
+    mcqs: 1200,
+    notes: 160,
+    topics: ['Role-Task-Format (RTF)', 'Chain-of-Thought', 'Zero & Few Shot', 'Prompt Optimization'],
+    description: 'Master advanced prompting frameworks for ChatGPT, Claude, and Midjourney.',
+    weight: 'Live Studio',
   },
   {
-    key: 'dig-python',
-    name: 'Python for Beginners',
+    key: 'ai-python',
+    name: 'Python for AI & Data',
     icon: Calculator,
     color: 'text-purple-600',
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/20',
     chapters: 22,
-    mcqs: 2400,
-    notes: 220,
-    topics: ['Syntax & Loops', 'Functions & OOP', 'Web Scraping', 'Data Analysis'],
-    description: 'Learn to code in Python with step-by-step projects from zero prior experience.',
-    weight: 'Programming',
+    mcqs: 1400,
+    notes: 190,
+    topics: ['Syntax Basics', 'Data Wrangling', 'Web Scraping', '5 Real-World Coding Projects'],
+    description: 'Hands-on programming from scratch to building custom data pipelines and bots.',
+    weight: '5 Projects',
   },
   {
-    key: 'dig-mkt',
-    name: 'Digital Marketing & Social Ads',
-    icon: Globe,
-    color: 'text-purple-600',
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/20',
-    chapters: 18,
-    mcqs: 1600,
-    notes: 170,
-    topics: ['Facebook & TikTok Ads', 'SEO Basics', 'Content Strategy', 'Copywriting'],
-    description: 'Launch campaigns, build audiences, and drive online sales for businesses.',
-    weight: 'Marketing',
-  },
-  {
-    key: 'dig-des',
-    name: 'Graphic Design & Canva',
+    key: 'ai-tools',
+    name: 'Modern AI Tools & Workflows',
     icon: Sparkles,
     color: 'text-purple-600',
     bg: 'bg-purple-500/10',
     border: 'border-purple-500/20',
-    chapters: 12,
-    mcqs: 950,
-    notes: 110,
-    topics: ['Canva Pro Features', 'Social Media Graphics', 'Branding Kits', 'Portfolio'],
-    description: 'Design eye-catching social posts, thumbnails, and banners effortlessly.',
-    weight: 'Creative',
+    chapters: 15,
+    mcqs: 900,
+    notes: 130,
+    topics: ['ChatGPT & Claude 3.5', 'Midjourney v6', 'Perplexity Pro', 'Voice Synthesis'],
+    description: '10x your study and work speed using cutting-edge AI generation suites.',
+    weight: '10x Speed',
+  },
+  {
+    key: 'ai-auto',
+    name: 'No-Code AI Automation & Agents',
+    icon: Globe,
+    color: 'text-purple-600',
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/20',
+    chapters: 14,
+    mcqs: 800,
+    notes: 115,
+    topics: ['Make.com Scenarios', 'Zapier Workflows', 'Custom GPTs', 'Automated Agents'],
+    description: 'Build self-running automated business pipelines without writing code.',
+    weight: 'Automation',
   },
 ];
 
 export default function SubjectsSection() {
-  const [tab, setTab] = useState<'cee' | 'see' | 'english' | 'digital'>('cee');
+  const [tab, setTab] = useState<'see_class_10' | 'cee_medical' | 'ielts' | 'digital_marketing' | 'artificial_intelligence'>('see_class_10');
 
   const getSubjects = () => {
     switch (tab) {
-      case 'cee': return ceeSubjects;
-      case 'see': return seeSubjects;
-      case 'english': return englishSubjects;
-      case 'digital': return digitalSubjects;
+      case 'see_class_10': return seeSubjects;
+      case 'cee_medical': return ceeSubjects;
+      case 'ielts': return englishSubjects;
+      case 'digital_marketing': return marketingSubjects;
+      case 'artificial_intelligence': return aiSubjects;
     }
   };
 
@@ -261,40 +321,31 @@ export default function SubjectsSection() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="section-label">Curriculum &amp; Syllabus</span>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">4 Learning Sectors</span>
+              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">5 Course Portals</span>
             </div>
-            <h2 className="text-hero-md text-foreground">
-              {tab === 'cee' && 'CEE Medical Entrance Syllabus'}
-              {tab === 'see' && 'SEE Class 10 Board Syllabus'}
-              {tab === 'english' && 'English Fluency & IELTS/PTE Modules'}
-              {tab === 'digital' && 'Digital Skills & AI Curriculum'}
+            <h2 className="text-hero-md text-foreground font-black">
+              {tab === 'see_class_10' && 'SEE Class 10 Board Syllabus'}
+              {tab === 'cee_medical' && 'CEE Medical Entrance Syllabus'}
+              {tab === 'ielts' && 'IELTS & English Fluency Modules'}
+              {tab === 'digital_marketing' && 'Digital Marketing Specialization'}
+              {tab === 'artificial_intelligence' && 'Artificial Intelligence Curriculum'}
             </h2>
-            <p className="text-muted-foreground mt-1 max-w-lg">
-              {tab === 'cee' && 'Chapter-wise notes, videos, and MCQs for all four CEE Medical subjects.'}
-              {tab === 'see' && 'Complete Class 10 NEB Board subjects with past papers and model solutions.'}
-              {tab === 'english' && 'Structured modules for speaking fluency, test preparation, and grammar.'}
-              {tab === 'digital' && 'Hands-on courses for AI tools, coding, marketing, and design.'}
+            <p className="text-muted-foreground mt-1 max-w-lg text-sm">
+              {tab === 'see_class_10' && 'Complete Class 10 NEB Board subjects with past papers and AI handwritten answer grading.'}
+              {tab === 'cee_medical' && 'Chapter-wise notes, HD video lectures, and 15,000+ MCQs for all CEE Medical subjects.'}
+              {tab === 'ielts' && '4 Core skills with real-time AI Speaking Examiner, Writing Task 1/2 rubrics, and audio sets.'}
+              {tab === 'digital_marketing' && 'Performance marketing playbooks, Meta/TikTok ads, SEO, and 100+ swipe files.'}
+              {tab === 'artificial_intelligence' && 'Interactive prompt engineering sandbox, Python coding, and AI automation agents.'}
             </p>
           </div>
 
-          {/* 4-Sector Switcher Tabs */}
+          {/* 5-Course Switcher Tabs */}
           <div className="flex flex-wrap items-center p-1.5 bg-muted/80 backdrop-blur border border-border rounded-2xl shadow-xs shrink-0 gap-1">
             <button
-              onClick={() => setTab('cee')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                tab === 'cee'
-                  ? 'bg-card text-primary shadow-sm border border-border'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <BookOpen size={14} /> CEE Medical
-            </button>
-
-            <button
-              onClick={() => setTab('see')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                tab === 'see'
-                  ? 'bg-card text-bio shadow-sm border border-border'
+              onClick={() => setTab('see_class_10')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                tab === 'see_class_10'
+                  ? 'bg-card text-emerald-600 shadow-sm border border-border'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -302,25 +353,47 @@ export default function SubjectsSection() {
             </button>
 
             <button
-              onClick={() => setTab('english')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                tab === 'english'
+              onClick={() => setTab('cee_medical')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                tab === 'cee_medical'
+                  ? 'bg-card text-indigo-600 shadow-sm border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <BookOpen size={14} /> CEE Medical
+            </button>
+
+            <button
+              onClick={() => setTab('ielts')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                tab === 'ielts'
                   ? 'bg-card text-amber-600 shadow-sm border border-border'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Globe size={14} /> English &amp; IELTS
+              <Globe size={14} /> IELTS English
             </button>
 
             <button
-              onClick={() => setTab('digital')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                tab === 'digital'
+              onClick={() => setTab('digital_marketing')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                tab === 'digital_marketing'
+                  ? 'bg-card text-rose-600 shadow-sm border border-border'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Sparkles size={14} /> Marketing
+            </button>
+
+            <button
+              onClick={() => setTab('artificial_intelligence')}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                tab === 'artificial_intelligence'
                   ? 'bg-card text-purple-600 shadow-sm border border-border'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Brain size={14} /> Digital &amp; AI
+              <Brain size={14} /> AI Academy
             </button>
           </div>
         </div>

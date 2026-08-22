@@ -5,7 +5,7 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgram, PROGRAMS } from '@/contexts/ProgramContext';
+import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { Search, Calendar, CheckCircle2, Loader2, GraduationCap, Layers, UserRound, Stethoscope } from 'lucide-react';
 
@@ -85,14 +85,28 @@ export default function BatchesPageClient() {
     fetchData();
   }, [fetchData]);
 
+  const canonicalId = normalizeCourseId(program);
+
   const isSeeBatch = (b: Batch) => {
     const slug = (b.slug || '').toLowerCase();
     const title = (b.title || '').toLowerCase();
-    return b.program_type === 'see' || slug.includes('see-') || slug.includes('-see') || title.includes('see');
+    return b.program_type === 'see' || b.program_type === 'see_class_10' || slug.includes('see-') || slug.includes('-see') || title.includes('see');
   };
 
   const programBatches = batches.filter((b) => {
-    if (program === 'see') return isSeeBatch(b);
+    if (canonicalId === 'see_class_10') return isSeeBatch(b);
+    if (canonicalId === 'ielts') {
+      const s = (b.slug || '').toLowerCase() + (b.title || '').toLowerCase();
+      return s.includes('ielts') || s.includes('english') || s.includes('spoken') || s.includes('pte');
+    }
+    if (canonicalId === 'digital_marketing') {
+      const s = (b.slug || '').toLowerCase() + (b.title || '').toLowerCase();
+      return s.includes('market') || s.includes('ads') || s.includes('seo') || s.includes('canva');
+    }
+    if (canonicalId === 'artificial_intelligence') {
+      const s = (b.slug || '').toLowerCase() + (b.title || '').toLowerCase();
+      return s.includes('ai') || s.includes('chatgpt') || s.includes('python') || s.includes('prompt');
+    }
     return !isSeeBatch(b); // CEE
   });
 

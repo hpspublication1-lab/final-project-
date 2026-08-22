@@ -32,12 +32,13 @@ const YoutubeIcon = ({ size = 16 }: { size?: number }) => (
 const footerLinks = [
   {
     key: 'col-sectors',
-    title: 'Our Sectors',
+    title: 'Learning Portals',
     links: [
-      { key: 'fl-sec-cee', label: 'CEE Medical Entrance', href: '/courses?sector=cee' },
-      { key: 'fl-sec-see', label: 'SEE Class 10 Board', href: '/courses?sector=see' },
-      { key: 'fl-sec-eng', label: 'English & IELTS Fluency', href: '/english' },
-      { key: 'fl-sec-dig', label: 'Digital Skills & AI Academy', href: '/digital' },
+      { key: 'fl-sec-see', label: 'SEE Class 10 Board', href: '/courses?sector=see_class_10' },
+      { key: 'fl-sec-cee', label: 'CEE Medical Entrance', href: '/courses?sector=cee_medical' },
+      { key: 'fl-sec-eng', label: 'IELTS English Mastery', href: '/courses?sector=ielts' },
+      { key: 'fl-sec-dm', label: 'Digital Marketing', href: '/courses?sector=digital_marketing' },
+      { key: 'fl-sec-ai', label: 'Artificial Intelligence (AI)', href: '/courses?sector=artificial_intelligence' },
     ],
   },
   {
@@ -47,17 +48,18 @@ const footerLinks = [
       { key: 'fl-all-courses', label: 'All Batches & Courses', href: '/courses' },
       { key: 'fl-prebook', label: 'Prebook Crash Course', href: '/prebook' },
       { key: 'fl-notes', label: 'Chapter Notes & Subjects', href: '/subjects' },
-      { key: 'fl-app-guru', label: 'Samyak Guru App', href: '/app-feature' },
+      { key: 'fl-app-guru', label: 'Soumya Guru App', href: '/app-feature' },
     ],
   },
   {
     key: 'col-practice',
-    title: 'Practice & AI',
+    title: 'Practice & AI Tools',
     links: [
-      { key: 'fl-mcq', label: 'MCQ Practice', href: '/practice' },
-      { key: 'fl-mock', label: 'Mock Tests', href: '/mock-tests' },
-      { key: 'fl-battle', label: 'Battle Arena', href: '/battle-arena' },
-      { key: 'fl-ai', label: 'AI Tutor', href: '/ai-tutor' },
+      { key: 'fl-mcq', label: 'MCQ Practice Bank', href: '/practice' },
+      { key: 'fl-subj', label: 'SEE Subjective AI Checker', href: '/practice/subjective' },
+      { key: 'fl-mock', label: 'Mock Tests & Mocks', href: '/mock-tests' },
+      { key: 'fl-battle', label: 'Battle Arena 1v1', href: '/battle-arena' },
+      { key: 'fl-ai', label: 'AI Study Assistant', href: '/ai-tutor' },
     ],
   },
   {
@@ -82,12 +84,12 @@ export default function HomepageFooter() {
             <div className="flex items-center gap-2.5">
               <AppLogo size={36} />
               <div className="flex flex-col leading-none">
-                <span className="font-extrabold text-base text-white tracking-tight">Samyak</span>
-                <span className="text-xs font-medium text-primary">CEE Mastery</span>
+                <span className="font-extrabold text-base text-white tracking-tight">Soumya</span>
+                <span className="text-xs font-bold text-primary">Guru Platform</span>
               </div>
             </div>
             <p className="text-sm text-white/60 leading-relaxed max-w-xs">
-              Nepal&apos;s most comprehensive CEE medical entrance preparation platform. Trusted by 40,000+ aspirants.
+              Nepal&apos;s premier 5-in-1 multi-course education platform for SEE, CEE, IELTS, Digital Marketing &amp; AI.
             </p>
             <div className="space-y-2">
               <a href={`mailto:${SUPPORT_CONFIG.email}`} className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
@@ -105,9 +107,9 @@ export default function HomepageFooter() {
             </div>
             <div className="flex items-center gap-3">
               {[
-                { key: 'social-fb', icon: FacebookIcon, href: 'https://www.facebook.com/samyakcee' },
-                { key: 'social-ig', icon: InstagramIcon, href: 'https://www.instagram.com/samyakcee' },
-                { key: 'social-yt', icon: YoutubeIcon, href: 'https://www.youtube.com/samyakcee' },
+                { key: 'social-fb', icon: FacebookIcon, href: 'https://soumyace.com' },
+                { key: 'social-ig', icon: InstagramIcon, href: 'https://soumyace.com' },
+                { key: 'social-yt', icon: YoutubeIcon, href: 'https://soumyace.com' },
               ]?.map((s) => (
                 <a
                   key={s?.key}
@@ -142,7 +144,7 @@ export default function HomepageFooter() {
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            © 2026 Samyak Online Education Pvt. Ltd. All rights reserved.
+            © 2026 Soumya Guru Education Platform. All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/40">Payments powered by</span>

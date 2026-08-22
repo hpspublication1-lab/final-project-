@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicNav from '@/components/PublicNav';
-import { useProgram, PROGRAMS, ProgramType } from '@/contexts/ProgramContext';
+import { useProgram, COURSES_MAP, CanonicalCourseId, normalizeCourseId } from '@/contexts/ProgramContext';
 import { Search, Star, Clock, Users, BookOpen, CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
 
 interface Course {
   id: string;
   title: string;
-  sector: ProgramType;
+  sector: CanonicalCourseId;
   category: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels';
   instructor: {
@@ -30,11 +30,11 @@ interface Course {
 }
 
 const COURSES_DATA: Course[] = [
-  // CEE Medical Sector
+  // CEE Medical Entrance Sector
   {
     id: 'cee-mbbs-mastery-2026',
     title: 'CEE Medical Entrance Super Target Batch 2026',
-    sector: 'cee',
+    sector: 'cee_medical',
     category: 'Full Course',
     level: 'Advanced',
     instructor: { name: 'Dr. Samyak Shrestha', role: 'Chief Medical Educator', avatar: '🩺' },
@@ -52,7 +52,7 @@ const COURSES_DATA: Course[] = [
   {
     id: 'cee-physics-chemistry-booster',
     title: 'CEE Physics & Chemistry High-Yield Formula Batch',
-    sector: 'cee',
+    sector: 'cee_medical',
     category: 'Subject Special',
     level: 'Intermediate',
     instructor: { name: 'Er. Aakash Sharma', role: 'Senior Physics Faculty', avatar: '⚡' },
@@ -70,7 +70,7 @@ const COURSES_DATA: Course[] = [
   {
     id: 'cee-45-day-crash-course',
     title: 'CEE 45-Day Ultimate Crash Course 2026',
-    sector: 'cee',
+    sector: 'cee_medical',
     category: 'Crash Course',
     level: 'Advanced',
     instructor: { name: 'Dr. Riya Adhikari', role: 'Zoology Specialist', avatar: '🦁' },
@@ -90,7 +90,7 @@ const COURSES_DATA: Course[] = [
   {
     id: 'see-class-10-board-topper-batch',
     title: 'SEE Class 10 Board Topper Batch 2082/2083',
-    sector: 'see',
+    sector: 'see_class_10',
     category: 'Full Board Prep',
     level: 'All Levels',
     instructor: { name: 'Pradeep Poudel Sir', role: 'NEB Master Educator', avatar: '🎓' },
@@ -102,13 +102,13 @@ const COURSES_DATA: Course[] = [
     priceNpr: 4990,
     originalPriceNpr: 9990,
     badge: 'BOARD TOPPER',
-    features: ['Compulsory Science & Math Solved', 'Model Question Paper Bank', 'Chapter-wise HD Video Notes', 'Grammar & Essay Writing'],
+    features: ['Compulsory Science & Math Solved', 'Model Question Paper Bank', 'Chapter-wise HD Video Notes', 'AI Handwritten Answer Checker'],
     thumbnail: '🔬',
   },
   {
     id: 'see-opt-math-science-mastery',
     title: 'SEE Optional Math & Science Score Booster',
-    sector: 'see',
+    sector: 'see_class_10',
     category: 'Subject Special',
     level: 'Intermediate',
     instructor: { name: 'Kiran Thapa Sir', role: 'Maths Head', avatar: '📐' },
@@ -124,11 +124,29 @@ const COURSES_DATA: Course[] = [
     thumbnail: '📊',
   },
 
-  // English Learning Sector
+  // IELTS & English Language Sector
+  {
+    id: 'english-ielts-target-8-mastery',
+    title: 'IELTS Academic & General Target Band 8.0+',
+    sector: 'ielts',
+    category: 'IELTS Prep',
+    level: 'Intermediate',
+    instructor: { name: 'David Miller', role: 'IELTS Ex-Examiner', avatar: '🎓' },
+    duration: '8 Weeks',
+    lecturesCount: 90,
+    studentsEnrolled: 3100,
+    rating: 4.92,
+    reviewsCount: 540,
+    priceNpr: 3490,
+    originalPriceNpr: 6990,
+    badge: 'BAND 8.0+',
+    features: ['AI Speaking Simulation Mock Tests', 'Writing Task 1 & 2 Correction', 'Listening Audio Modules', 'Reading Speed Strategies'],
+    thumbnail: '📚',
+  },
   {
     id: 'english-spoken-fluency-pro',
     title: 'Spoken English & Professional Confidence Masterclass',
-    sector: 'english',
+    sector: 'ielts',
     category: 'Fluency & Speaking',
     level: 'Beginner',
     instructor: { name: 'Sarah Jenkins', role: 'ESL Certified Instructor', avatar: '🗣️' },
@@ -143,48 +161,32 @@ const COURSES_DATA: Course[] = [
     features: ['Daily Speaking Practice Drills', 'Accent & Pronunciation Guide', 'Professional Email & Job Interviews', 'AI Speech Feedback'],
     thumbnail: '💬',
   },
+
+  // Digital Marketing Sector
   {
-    id: 'english-ielts-target-8-mastery',
-    title: 'IELTS Academic & General Target Band 8.0+',
-    sector: 'english',
-    category: 'IELTS Prep',
-    level: 'Intermediate',
-    instructor: { name: 'David Miller', role: 'IELTS Ex-Examiner', avatar: '🎓' },
-    duration: '8 Weeks',
-    lecturesCount: 90,
-    studentsEnrolled: 3100,
-    rating: 4.92,
-    reviewsCount: 540,
-    priceNpr: 3490,
-    originalPriceNpr: 6990,
-    badge: 'BAND 8.0+',
-    features: ['Speaking Simulation Mock Tests', 'Writing Task 1 & 2 Correction', 'Listening Audio Modules', 'Reading Speed Strategies'],
-    thumbnail: '📚',
-  },
-  {
-    id: 'english-pte-academic-express',
-    title: 'PTE Academic 79+ Express Preparation',
-    sector: 'english',
-    category: 'PTE Prep',
-    level: 'Intermediate',
-    instructor: { name: 'Anita Shrestha', role: 'PTE Specialist', avatar: '🎧' },
-    duration: '4 Weeks',
-    lecturesCount: 50,
-    studentsEnrolled: 1900,
-    rating: 4.88,
-    reviewsCount: 290,
-    priceNpr: 2990,
-    originalPriceNpr: 5990,
-    badge: 'EXPRESS BATCH',
-    features: ['Describe Image Templates', 'Retell Lecture Formulas', 'AI Scoring Mock Portal', 'Repeat Sentence Drills'],
-    thumbnail: '🎙️',
+    id: 'digital-marketing-canva-freelancing',
+    title: 'Meta Ads, TikTok Viral Growth & Digital Marketing Masterclass',
+    sector: 'digital_marketing',
+    category: 'Performance Marketing',
+    level: 'Beginner',
+    instructor: { name: 'Pooja Thapa', role: 'Digital Marketer & Creator', avatar: '📈' },
+    duration: '6 Weeks',
+    lecturesCount: 55,
+    studentsEnrolled: 2700,
+    rating: 4.87,
+    reviewsCount: 310,
+    priceNpr: 1990,
+    originalPriceNpr: 3990,
+    badge: 'HIGH ROAS',
+    features: ['Facebook & Instagram Pixel Setup', 'TikTok Viral Short Hooks', '100+ Ad Copy Swipe Files', 'Upwork & Fiverr Client Blueprints'],
+    thumbnail: '📈',
   },
 
-  // Digital Skills & AI Sector
+  // Artificial Intelligence Sector
   {
     id: 'digital-ai-prompt-engineering',
-    title: 'AI Tools, ChatGPT & Prompt Engineering for Beginners',
-    sector: 'digital',
+    title: 'AI Tools, ChatGPT & Prompt Engineering Studio',
+    sector: 'artificial_intelligence',
     category: 'Artificial Intelligence',
     level: 'Beginner',
     instructor: { name: 'Nabin KC', role: 'AI Consultant & Developer', avatar: '🤖' },
@@ -196,16 +198,16 @@ const COURSES_DATA: Course[] = [
     priceNpr: 1490,
     originalPriceNpr: 3490,
     badge: 'HOT & TRENDING',
-    features: ['ChatGPT & Midjourney Mastery', 'Automate Work & Study Tasks', 'No-Code AI App Creation', 'Certificate of Completion'],
+    features: ['ChatGPT, Claude & Midjourney Mastery', 'Prompt Engineering Interactive Sandbox', 'No-Code AI App Creation', 'AI Specialist Certificate'],
     thumbnail: '🧠',
   },
   {
     id: 'digital-python-programming-zero-to-hero',
-    title: 'Python Programming Zero to Hero (Hands-On Code)',
-    sector: 'digital',
+    title: 'Python for AI & Automation (5 Real-World Projects)',
+    sector: 'artificial_intelligence',
     category: 'Programming',
     level: 'Beginner',
-    instructor: { name: 'Rohan Shrestha', role: 'Full Stack Engineer', avatar: '🐍' },
+    instructor: { name: 'Rohan Shrestha', role: 'Full Stack AI Engineer', avatar: '🐍' },
     duration: '8 Weeks',
     lecturesCount: 75,
     studentsEnrolled: 3800,
@@ -214,26 +216,8 @@ const COURSES_DATA: Course[] = [
     priceNpr: 2490,
     originalPriceNpr: 4990,
     badge: 'CAREER STARTER',
-    features: ['5 Practical Real-World Projects', 'Data Structures & Algorithms', 'Web Scraping & Automation', 'GitHub Profile Setup'],
+    features: ['5 Practical Real-World AI Projects', 'Web Scraping & Data Processing', 'Custom LLM API Integrations', 'GitHub Portfolio Setup'],
     thumbnail: '⚡',
-  },
-  {
-    id: 'digital-marketing-canva-freelancing',
-    title: 'Digital Marketing, Canva Design & Freelancing 101',
-    sector: 'digital',
-    category: 'Freelancing',
-    level: 'Beginner',
-    instructor: { name: 'Pooja Thapa', role: 'Digital Marketer & Creator', avatar: '🎨' },
-    duration: '6 Weeks',
-    lecturesCount: 55,
-    studentsEnrolled: 2700,
-    rating: 4.87,
-    reviewsCount: 310,
-    priceNpr: 1990,
-    originalPriceNpr: 3990,
-    badge: 'EARN ONLINE',
-    features: ['Canva Pro Graphic Design', 'Facebook & TikTok Ads Masterclass', 'Upwork & Fiverr Gig Setup', 'Client Communication'],
-    thumbnail: '📈',
   },
 ];
 
@@ -262,12 +246,13 @@ export default function MasterCourseCatalogPage() {
     return matchesSector && matchesSearch && matchesLevel;
   });
 
-  const getSectorBadgeColor = (sec: ProgramType) => {
+  const getSectorBadgeColor = (sec: CanonicalCourseId) => {
     switch (sec) {
-      case 'cee': return 'bg-primary/10 text-primary border-primary/20';
-      case 'see': return 'bg-bio/10 text-bio border-bio/20';
-      case 'english': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
-      case 'digital': return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
+      case 'cee_medical': return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20';
+      case 'see_class_10': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+      case 'ielts': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+      case 'digital_marketing': return 'bg-rose-500/10 text-rose-600 border-rose-500/20';
+      case 'artificial_intelligence': return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
     }
   };
 
@@ -279,25 +264,25 @@ export default function MasterCourseCatalogPage() {
       <section className="relative pt-28 pb-14 bg-gradient-to-b from-primary/10 via-card to-background border-b border-border overflow-hidden">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-sm">
-              <Sparkles size={14} /> PhysicsWallah-Style Course Store
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-black shadow-sm">
+              <Sparkles size={14} /> Soumya Guru Multi-Course Catalog
             </div>
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
               Master Any Skill or Exam with Nepal&apos;s Top Batches
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Explore CEE Medical Entrance, SEE Class 10 Board, English Fluency (IELTS/PTE), and Digital/AI Skills. Top faculties, HD video lectures, live doubt sessions &amp; study notes.
+              Explore SEE Class 10 Board, CEE Medical Entrance, IELTS Mastery, Digital Marketing, and Artificial Intelligence. Top faculties, HD video lectures, live doubt sessions &amp; study notes.
             </p>
           </div>
 
           {/* Search & Quick Filters */}
           <div className="mt-8 grid md:grid-cols-12 gap-4 items-center">
             {/* Search Input */}
-            <div className="md:col-span-6 relative">
+            <div className="md:col-span-5 relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <input
                 type="text"
-                placeholder="Search courses, instructors, or topics (e.g. CEE, IELTS, Python, Science)..."
+                placeholder="Search courses, instructors, or topics (e.g. CEE, SEE, IELTS, Python, SEO)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-card border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm font-medium text-foreground outline-none transition-all shadow-sm"
@@ -305,46 +290,54 @@ export default function MasterCourseCatalogPage() {
             </div>
 
             {/* Sector Tabs */}
-            <div className="md:col-span-6 flex flex-wrap items-center gap-2">
+            <div className="md:col-span-7 flex flex-wrap items-center gap-1.5">
               <button
                 onClick={() => setSelectedSector('all')}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                   selectedSector === 'all' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
-                🌟 All Sectors
+                🌟 All Courses
               </button>
               <button
-                onClick={() => setSelectedSector('cee')}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  selectedSector === 'cee' ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                🩺 CEE Medical
-              </button>
-              <button
-                onClick={() => setSelectedSector('see')}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  selectedSector === 'see' ? 'bg-bio text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+                onClick={() => setSelectedSector('see_class_10')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedSector === 'see_class_10' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
                 🎓 SEE Class 10
               </button>
               <button
-                onClick={() => setSelectedSector('english')}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  selectedSector === 'english' ? 'bg-amber-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+                onClick={() => setSelectedSector('cee_medical')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedSector === 'cee_medical' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
-                🗣️ English &amp; IELTS
+                🩺 CEE Medical
               </button>
               <button
-                onClick={() => setSelectedSector('digital')}
-                className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  selectedSector === 'digital' ? 'bg-purple-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+                onClick={() => setSelectedSector('ielts')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedSector === 'ielts' ? 'bg-amber-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
                 }`}
               >
-                💻 Digital &amp; AI
+                🗣️ IELTS English
+              </button>
+              <button
+                onClick={() => setSelectedSector('digital_marketing')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedSector === 'digital_marketing' ? 'bg-rose-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                📈 Marketing
+              </button>
+              <button
+                onClick={() => setSelectedSector('artificial_intelligence')}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  selectedSector === 'artificial_intelligence' ? 'bg-purple-600 text-white shadow-sm' : 'bg-card border border-border text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                🤖 AI Academy
               </button>
             </div>
           </div>
@@ -396,12 +389,13 @@ export default function MasterCourseCatalogPage() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {filteredCourses.map((course) => {
-              const getBannerGradient = (sec: ProgramType) => {
+              const getBannerGradient = (sec: CanonicalCourseId) => {
                 switch (sec) {
-                  case 'cee': return 'from-indigo-600/20 via-purple-600/10 to-primary/20';
-                  case 'see': return 'from-emerald-600/20 via-teal-600/10 to-bio/20';
-                  case 'english': return 'from-amber-600/20 via-orange-600/10 to-amber-500/20';
-                  case 'digital': return 'from-purple-600/20 via-pink-600/10 to-purple-500/20';
+                  case 'cee_medical': return 'from-indigo-600/20 via-purple-600/10 to-primary/20';
+                  case 'see_class_10': return 'from-emerald-600/20 via-teal-600/10 to-emerald-500/20';
+                  case 'ielts': return 'from-amber-600/20 via-orange-600/10 to-amber-500/20';
+                  case 'digital_marketing': return 'from-rose-600/20 via-pink-600/10 to-rose-500/20';
+                  case 'artificial_intelligence': return 'from-purple-600/20 via-indigo-600/10 to-purple-500/20';
                 }
               };
 
@@ -426,7 +420,7 @@ export default function MasterCourseCatalogPage() {
 
                       {/* Sector Tag top left */}
                       <span className={`absolute top-3 left-3 text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border bg-card/90 backdrop-blur-sm ${getSectorBadgeColor(course.sector)}`}>
-                        {PROGRAMS[course.sector].shortName}
+                        {COURSES_MAP[course.sector]?.shortName || 'Course'}
                       </span>
                     </div>
 

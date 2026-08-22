@@ -5,8 +5,7 @@ import Link from 'next/link';
 import AppLogo from '@/components/ui/AppLogo';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import ProgramSelectorModal from '@/components/ProgramSelectorModal';
-import { useProgram } from '@/contexts/ProgramContext';
-import { Menu, X, ChevronDown, Sun, Moon, BookOpen, Download, Zap, FileText, Bot, Swords, Trophy, ClipboardList, Rocket, LayoutDashboard, Stethoscope, GraduationCap, Languages, Cpu, Sparkles } from 'lucide-react';
+import { Menu, X, ChevronDown, Sun, Moon, BookOpen, Download, Zap, FileText, Bot, Swords, Trophy, ClipboardList, Rocket, LayoutDashboard, Stethoscope, GraduationCap, Languages, Cpu, Sparkles, TrendingUp } from 'lucide-react';
 
 
 
@@ -15,15 +14,16 @@ type NavLink = { label: string; href: string; key: string; badge?: string; child
 
 const navLinks: NavLink[] = [
   {
-    label: 'Sectors',
+    label: 'Courses & Portals',
     href: '/courses',
     key: 'nav-sectors',
-    badge: '4 VERTICALS',
+    badge: '5 PATHS',
     children: [
-      { label: 'CEE Medical Entrance', href: '/courses?sector=cee', icon: Stethoscope, key: 'nav-cee', desc: 'MBBS, BDS, B.Sc Nursing' },
-      { label: 'SEE Class 10 Board', href: '/courses?sector=see', icon: GraduationCap, key: 'nav-see', desc: 'Grade 10 NEB Board Prep' },
-      { label: 'English & IELTS Learning', href: '/english', icon: Languages, key: 'nav-eng', desc: 'Spoken, IELTS & PTE' },
-      { label: 'Digital Skills & AI', href: '/digital', icon: Cpu, key: 'nav-dig', desc: 'AI Tools, Python, Canva' },
+      { label: 'SEE Class 10 Board', href: '/courses?sector=see', icon: GraduationCap, key: 'nav-see', desc: 'Grade 10 NEB Model Sets & AI Grading' },
+      { label: 'CEE Medical Entrance', href: '/courses?sector=cee', icon: Stethoscope, key: 'nav-cee', desc: 'MBBS, BDS, 15,000+ MCQs & Arena' },
+      { label: 'IELTS & English Mastery', href: '/english', icon: Languages, key: 'nav-eng', desc: 'AI Speaking Cue Cards & Writing Task 1/2' },
+      { label: 'Digital Marketing Skills', href: '/courses?sector=digital', icon: TrendingUp, key: 'nav-dm', desc: 'Meta Ads, TikTok Viral Hooks & SEO' },
+      { label: 'Artificial Intelligence (AI)', href: '/digital', icon: Cpu, key: 'nav-ai-port', desc: 'Prompt Studio, Python & Automations' },
     ],
   },
   {
