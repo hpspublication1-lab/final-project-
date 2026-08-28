@@ -37,12 +37,14 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function friendlyError(err: unknown): string {
   const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
   if (
+    msg.includes('missing oauth secret') ||
+    msg.includes('unsupported provider') ||
     msg.includes('provider') ||
     msg.includes('unsupported') ||
     msg.includes('not enabled') ||
     msg.includes('disabled')
   ) {
-    return 'Google Sign-In is not enabled in your Supabase Dashboard yet. Enable Google in Supabase > Authentication > Providers, or sign in using Email OTP / Password below.';
+    return 'Google OAuth is missing its Client Secret in your Supabase Dashboard. Enter your Google Client ID & Secret in Supabase > Authentication > Providers > Google.';
   }
   if (msg.includes('expired') || msg.includes('invalid') || msg.includes('token')) {
     return 'That code or password is invalid or expired. Please try again.';
