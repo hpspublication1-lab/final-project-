@@ -107,6 +107,14 @@ const nextConfig = {
     return config;
   },
 
+  async redirects() {
+    return [
+      { source: '/login', destination: '/sign-up-login-screen', permanent: false },
+      { source: '/signin', destination: '/sign-up-login-screen', permanent: false },
+      { source: '/signup', destination: '/sign-up-login-screen', permanent: false },
+    ];
+  },
+
   async rewrites() {
     return [
       { source: '/login', destination: '/sign-up-login-screen' },
