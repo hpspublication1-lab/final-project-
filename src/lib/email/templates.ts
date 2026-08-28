@@ -9,7 +9,7 @@ export function generateEnrollmentEmailHtml({
   studentName,
   planName,
   expirationDate,
-  loginUrl = 'https://samyakcee.com/login',
+  loginUrl = 'https://samyakcee.com/sign-up-login-screen',
 }: EnrollmentEmailProps): string {
   const expiryText = expirationDate
     ? new Date(expirationDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
