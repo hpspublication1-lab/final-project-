@@ -107,6 +107,14 @@ const nextConfig = {
     return config;
   },
 
+  async rewrites() {
+    return [
+      { source: '/login', destination: '/sign-up-login-screen' },
+      { source: '/signin', destination: '/sign-up-login-screen' },
+      { source: '/signup', destination: '/sign-up-login-screen' },
+    ];
+  },
+
   async headers() {
     // Production only — HSTS/upgrade-insecure-requests would break http://localhost dev.
     if (process.env.NODE_ENV !== 'production') return [];
