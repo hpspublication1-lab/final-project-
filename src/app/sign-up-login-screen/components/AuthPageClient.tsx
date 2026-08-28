@@ -379,6 +379,21 @@ export default function AuthPageClient() {
                   </button>
                 </div>
 
+                {/* Google Benefits Quick Bar */}
+                <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground bg-blue-500/5 dark:bg-blue-500/10 py-2 px-3 rounded-xl border border-blue-500/15">
+                  <span className="flex items-center gap-1 text-foreground font-semibold">
+                    <span className="text-amber-500">⚡</span> Fast 1-Click
+                  </span>
+                  <span className="text-border">|</span>
+                  <span className="flex items-center gap-1 text-foreground font-semibold">
+                    <span className="text-emerald-500">🔒</span> 256-Bit SSL
+                  </span>
+                  <span className="text-border">|</span>
+                  <span className="flex items-center gap-1 text-foreground font-semibold">
+                    <span className="text-blue-500">📱</span> Auto-Sync
+                  </span>
+                </div>
+
                 {/* Divider */}
                 <div className="relative my-6 flex items-center justify-center">
                   <div className="absolute inset-0 flex items-center">
@@ -699,13 +714,54 @@ export default function AuthPageClient() {
             )}
           </div>
 
-          {/* Footer */}
+          {/* Trust & Social Proof Bar */}
+          <div className="mt-6 p-4 rounded-2xl bg-card border border-border text-center shadow-sm">
+            <div className="flex items-center justify-center gap-1 text-amber-400 mb-1 text-sm font-black">
+              ★ ★ ★ ★ ★
+            </div>
+            <p className="text-xs font-extrabold text-foreground">
+              Trusted by 15,000+ CEE &amp; SEE Medical Aspirants
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+              Instant sync with Samyak AI Tutor, Live Mock Tests &amp; Battle Arena
+            </p>
+          </div>
+
+          {/* Help & FAQ Collapsible Drawer */}
+          <details className="mt-4 group text-xs text-muted-foreground">
+            <summary className="cursor-pointer font-bold hover:text-foreground text-center flex items-center justify-center gap-1 list-none transition-colors py-1">
+              <span>Need help logging in? FAQ &amp; Support</span>
+              <span className="group-open:rotate-180 transition-transform">▾</span>
+            </summary>
+            <div className="mt-3 p-4 rounded-xl bg-card space-y-3 text-left border border-border/80 shadow-sm">
+              <div>
+                <p className="font-extrabold text-foreground">Google Sign-In:</p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Click &ldquo;Continue with Google&rdquo; above for instant 1-click access. No passwords to remember or reset.
+                </p>
+              </div>
+              <div className="border-t border-border/50 pt-2">
+                <p className="font-extrabold text-foreground">Email Passcode (OTP):</p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Enter your email address to receive a 6-digit verification code. Please check your inbox (and Spam/Junk folder if delayed).
+                </p>
+              </div>
+              <div className="border-t border-border/50 pt-2">
+                <p className="font-extrabold text-foreground">Technical Support:</p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Reach out at <span className="font-bold text-primary">support@samyakcee.com</span> for 24/7 student account assistance.
+                </p>
+              </div>
+            </div>
+          </details>
+
+          {/* Security Footer */}
           <div className="flex items-center justify-center gap-1.5 mt-6 text-muted-foreground">
-            <ShieldCheck size={14} />
-            <span className="text-xs font-medium">Secured with end-to-end authentication</span>
+            <ShieldCheck size={14} className="text-emerald-500" />
+            <span className="text-xs font-semibold">256-Bit SSL Encrypted &amp; Supabase Auth Secured</span>
           </div>
           <p className="text-center text-xs text-muted-foreground mt-3">
-            &copy; 2026 Samyak Online Education Pvt. Ltd.
+            &copy; 2026 Samyak Online Education Pvt. Ltd. All rights reserved.
           </p>
         </div>
       </div>
