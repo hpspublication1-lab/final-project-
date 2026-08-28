@@ -109,11 +109,13 @@ export default function StudyPlanAiClient() {
   const [liveData, setLiveData] = useState<LivePerformanceData | null>(null);
   const [liveLoading, setLiveLoading] = useState(false);
 
-  // Study plan state
-  const [daysToExam, setDaysToExam] = useState(60);
-  const [hoursPerDay, setHoursPerDay] = useState(6);
-  const [weakSubjects, setWeakSubjects] = useState<string[]>(['Chemistry']);
-  const [strongSubjects, setStrongSubjects] = useState<string[]>(['Biology']);
+  // Study plan state inputs
+  const [targetGpa, setTargetGpa] = useState('3.8 GPA');
+  const [currentScore, setCurrentScore] = useState('68%');
+  const [daysToExam, setDaysToExam] = useState(42);
+  const [hoursPerDay, setHoursPerDay] = useState(4);
+  const [weakSubjects, setWeakSubjects] = useState<string[]>(['Mathematics', 'Physics']);
+  const [strongSubjects, setStrongSubjects] = useState<string[]>(['English', 'Nepali']);
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
   const [tasks, setTasks] = useState<StudyTask[]>([]);
   const [planGenerated, setPlanGenerated] = useState(false);
@@ -262,59 +264,85 @@ export default function StudyPlanAiClient() {
     // Build live data context for the prompt
     let liveDataContext = '';
     if (liveData && (liveData.weakTopics.length > 0 || Object.keys(liveData.subjectAccuracy).length > 0)) {
-      liveDataContext = `\n\nLIVE PERFORMANCE DATA (from actual practice history):`;
+      liveDataContext = `\n\nLIVE PERFORMANCE DATA:`;
       if (Object.keys(liveData.subjectAccuracy).length > 0) {
-        liveDataContext += `\nSubject accuracy (last 30 days):`;
+        liveDataContext += `\nSubject accuracy:`;
         Object.entries(liveData.subjectAccuracy).forEach(([subj, acc]) => {
           liveDataContext += `\n  - ${subj}: ${acc}%`;
         });
       }
       if (liveData.weakTopics.length > 0) {
-        liveDataContext += `\nSpecific weak topics (lowest accuracy):`;
+        liveDataContext += `\nSpecific weak topics:`;
         liveData.weakTopics.slice(0, 5).forEach(t => {
           liveDataContext += `\n  - ${t.topic} (${t.subject}): ${t.accuracy}% accuracy`;
         });
       }
-      if (liveData.recentExamScore !== undefined) {
-        liveDataContext += `\nMost recent mock exam score: ${liveData.recentExamScore}%`;
-      }
-      if (liveData.totalAttempts > 0) {
-        liveDataContext += `\nTotal questions practiced (last 30 days): ${liveData.totalAttempts}`;
-      }
-      liveDataContext += `\n\nIMPORTANT: Use this live data to personalise the plan. Allocate MORE time to the specific weak topics listed above.`;
+      liveDataContext += `\n\nIMPORTANT: Use this live data to generate 4 distinct sections: Today's Plan, This Week's Plan, Weak-Topic Plan, and Revision Schedule.`;
     }
 
-    const prompt = `Create a personalised 7-day study plan for a Nepal CEE medical entrance student.
+    const prompt = `Create a personalized AI study plan for a student preparing for board & entrance exams.
 
-Student Profile:
-- Days until exam: ${daysToExam}
-- Study hours per day: ${hoursPerDay}
-- Weak subjects (self-reported): ${weakSubjects.join(', ') || 'None specified'}
-- Strong subjects (self-reported): ${strongSubjects.join(', ') || 'None specified'}${liveDataContext}
+Student Input Parameters:
+- Target Goal/GPA: ${targetGpa}
+- Current Score/Performance: ${currentScore}
+- Available Study Hours Per Day: ${hoursPerDay} Hours
+- Days Until Exam: ${daysToExam} Days
+- Weak Subjects: ${weakSubjects.join(', ') || 'Mathematics, Physics'}${liveDataContext}
 
 Return ONLY valid JSON (no extra text):
 {
-  "weeklyGoal": "One sentence describing the week's primary goal",
+  "weeklyGoal": "One sentence goal statement for achieving ${targetGpa} from ${currentScore}",
   "tasks": [
     {
-      "day": "Monday",
-      "subject": "Biology",
-      "topic": "Cell Biology — Mitosis",
+      "day": "Today",
+      "subject": "Mathematics",
+      "topic": "Algebra & Vector Transformation Drills",
       "duration": "90 min",
+      "type": "Weak Topic"
+    },
+    {
+      "day": "Today",
+      "subject": "Science",
+      "topic": "Electric Circuit Formula Revision",
+      "duration": "60 min",
       "type": "Revision"
+    },
+    {
+      "day": "Monday",
+      "subject": "Mathematics",
+      "topic": "Quadratic Equations Past Papers",
+      "duration": "90 min",
+      "type": "Practice"
+    },
+    {
+      "day": "Tuesday",
+      "subject": "Physics",
+      "topic": "Mechanics Numerical Drills",
+      "duration": "90 min",
+      "type": "Weak Topic"
+    },
+    {
+      "day": "Wednesday",
+      "subject": "English",
+      "topic": "Grammar & Essay Writing",
+      "duration": "60 min",
+      "type": "Revision"
+    },
+    {
+      "day": "Saturday",
+      "subject": "All Subjects",
+      "topic": "Full Exam Simulation Mock Test",
+      "duration": "180 min",
+      "type": "Mock Test"
     }
   ],
-  "tips": ["Tip 1", "Tip 2", "Tip 3"]
-}
-
-Rules:
-- Create 14-21 tasks spread across 7 days (Mon-Sun)
-- Prioritise weak subjects with more tasks
-- Include at least 1 Mock Test or Practice session
-- Include Weak Topic sessions for weak subjects
-- Types: "Revision", "Practice", "Mock Test", "Weak Topic"
-- Balance all 4 subjects across the week
-- If live weak topics are provided, create specific tasks targeting those exact topics`;
+  "tips": [
+    "Today's Plan: Complete 90-min Algebra drill + 60-min Physics formula revision.",
+    "This Week's Plan: 6 days of targeted chapter drills ending with Saturday full mock test.",
+    "Weak-Topic Plan: Prioritise Mathematics & Physics with 3x spaced repetition sessions.",
+    "Revision Schedule: Review incorrect questions every 48 hours to lock memory retention."
+  ]
+}`;
 
     sendPlan([{ role: 'user', content: prompt }], { max_completion_tokens: 2500 });
   };
@@ -459,9 +487,37 @@ Rules:
               </div>
             ) : null}
 
-            {/* Config */}
+            {/* Config Input Form */}
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <p className="text-sm font-bold text-foreground">Your Profile</p>
+              <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Target size={16} className="text-emerald-500" />
+                AI Personalised Study Plan Parameters
+              </p>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-1.5">Target GPA / Goal Score</label>
+                  <input
+                    type="text"
+                    value={targetGpa}
+                    onChange={(e) => setTargetGpa(e.target.value)}
+                    placeholder="e.g. GPA 3.8 or 90%"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border text-sm font-bold text-foreground focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-1.5">Current Score / Performance</label>
+                  <input
+                    type="text"
+                    value={currentScore}
+                    onChange={(e) => setCurrentScore(e.target.value)}
+                    placeholder="e.g. 68% or GPA 3.0"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-muted/50 border border-border text-sm font-bold text-foreground focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">Days Until Exam</label>
@@ -469,51 +525,40 @@ Rules:
                     <input
                       type="range" min={7} max={180} value={daysToExam}
                       onChange={(e) => setDaysToExam(Number(e.target.value))}
-                      className="flex-1 accent-primary"
+                      className="flex-1 accent-emerald-500"
                     />
-                    <span className="text-sm font-bold text-primary w-12 text-right">{daysToExam}d</span>
+                    <span className="text-sm font-bold text-emerald-600 w-12 text-right">{daysToExam}d</span>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">Hours Per Day</label>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">Available Hours Per Day</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="range" min={2} max={12} value={hoursPerDay}
                       onChange={(e) => setHoursPerDay(Number(e.target.value))}
-                      className="flex-1 accent-primary"
+                      className="flex-1 accent-emerald-500"
                     />
-                    <span className="text-sm font-bold text-primary w-12 text-right">{hoursPerDay}h</span>
+                    <span className="text-sm font-bold text-emerald-600 w-12 text-right">{hoursPerDay}h</span>
                   </div>
                 </div>
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
-                    Weak Subjects {liveData && Object.keys(liveData.subjectAccuracy).length > 0 && <span className="text-primary">(auto-detected)</span>}
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {SUBJECTS.map((s) => (
-                      <button key={s} onClick={() => toggleSubjectWeak(s)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${weakSubjects.includes(s) ? 'bg-error-light text-error border-error/20' : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">Strong Subjects</label>
-                  <div className="flex flex-wrap gap-2">
-                    {SUBJECTS.map((s) => (
-                      <button key={s} onClick={() => toggleSubjectStrong(s)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all ${strongSubjects.includes(s) ? 'bg-success-light text-success border-success/20' : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
+
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">
+                  Weak Subjects {liveData && Object.keys(liveData.subjectAccuracy).length > 0 && <span className="text-emerald-600">(auto-detected)</span>}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'Nepali', 'Social Studies'].map((s) => (
+                    <button key={s} onClick={() => toggleSubjectWeak(s)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${weakSubjects.includes(s) ? 'bg-red-500/10 text-red-600 border-red-500/30' : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
+                      {s}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <button onClick={handleGeneratePlan} disabled={planLoading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
-                {planLoading ? <><Loader2 size={15} className="animate-spin" />Generating Personalised Plan…</> : <><Sparkles size={15} />{liveData ? 'Generate AI Plan from Live Data' : 'Generate 7-Day Study Plan'}</>}
+
+              <button onClick={handleGeneratePlan} disabled={planLoading} className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg transition-all">
+                {planLoading ? <><Loader2 size={16} className="animate-spin" />Generating AI Study Plan…</> : <><Sparkles size={16} />Generate Personalized AI Study Plan</>}
               </button>
             </div>
 

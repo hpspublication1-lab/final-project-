@@ -31,7 +31,10 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<any>;
   signIn: (email: string, password: string) => Promise<any>;
-  signInWithOAuth: (provider: 'google' | 'github' | 'apple') => Promise<void>;
+  signInWithOAuth: (
+    provider: 'google' | 'github' | 'apple',
+    options?: { redirectTo?: string; queryParams?: Record<string, string> }
+  ) => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
   signInWithEmailOtp: (email: string) => Promise<void>;
   verifyEmailOtp: (email: string, token: string) => Promise<any>;
@@ -152,11 +155,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return data;
   };
 
-  const signInWithOAuth = async (provider: 'google' | 'github' | 'apple') => {
+  const signInWithOAuth = async (
+    provider: 'google' | 'github' | 'apple',
+    options?: { redirectTo?: string; queryParams?: Record<string, string> }
+  ) => {
+    const origin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || 'https://samyakcee.com';
+
+    const targetRedirect = options?.redirectTo || `${origin}/auth/callback`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || ''}/auth/callback`,
+        redirectTo: targetRedirect,
+        queryParams: {
+          prompt: 'select_account',
+          access_type: 'offline',
+          ...options?.queryParams,
+        },
       },
     });
     if (error) throw error;

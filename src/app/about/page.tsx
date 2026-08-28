@@ -41,9 +41,9 @@ export default function AboutPage() {
             <div className="w-10 h-10 rounded-xl bg-chem-light text-chem flex items-center justify-center mb-4">
               <Trophy size={20} />
             </div>
-            <h3 className="font-bold text-lg mb-2">Proven Impact</h3>
+            <h3 className="font-bold text-lg mb-2">Evidence-Based Platform</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Trusted by 40,000+ active aspirants across Nepal. 92% of regular platform users report measurable accuracy and rank improvement in CEE mock exams.
+              Powered by 15,000+ verified practice MCQs, 1,200+ sub-chapter notes, 8 specialized AI agents, and 100% curriculum alignment with NEB &amp; MEC syllabi.
             </p>
           </div>
         </div>

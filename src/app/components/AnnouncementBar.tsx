@@ -16,17 +16,17 @@ export default function AnnouncementBar({ onDismiss }: { onDismiss?: () => void 
   return (
     <div className="bg-primary text-primary-foreground relative z-50">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-center gap-3">
-        <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium">
+        <div className="flex items-center justify-center gap-2 font-bold text-[11px] sm:text-xs">
           <Smartphone size={14} className="animate-pulse shrink-0 text-amber-300" />
-          <span className="hidden sm:inline">Soumya Guru App:</span>
-          <span>Live classes &amp; video lectures are available in the Soumya Guru App</span>
+          <span className="hidden sm:inline">Unified Ecosystem:</span>
+          <span>Start lessons on Web, continue on Mobile with 100% instant account sync.</span>
           <Link
             href="/app-feature"
             className="ml-2 bg-white/20 hover:bg-white/30 text-white text-xs font-bold px-2.5 py-0.5 rounded-full transition-colors whitespace-nowrap"
           >
-            Get App →
+            Learn More →
           </Link>
-        </span>
+        </div>
         <button
           onClick={dismiss}
           className="absolute right-3 p-1 rounded hover:bg-white/20 transition-colors"

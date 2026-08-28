@@ -265,7 +265,7 @@ export default function MasterCourseCatalogPage() {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
           <div className="max-w-3xl space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-black shadow-sm">
-              <Sparkles size={14} /> Soumya Guru Multi-Course Catalog
+              <Sparkles size={14} /> Samyak Guru Multi-Course Catalog
             </div>
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground">
               Master Any Skill or Exam with Nepal&apos;s Top Batches

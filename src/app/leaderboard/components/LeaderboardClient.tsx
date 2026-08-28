@@ -73,8 +73,22 @@ interface LeaderboardClientProps {
 
 export default function LeaderboardClient({ currentUserId }: LeaderboardClientProps) {
   const [isDark, setIsDark] = useState(false);
-  const [period, setPeriod] = useState<Period>('all_time');
-  const [subject, setSubject] = useState<Subject>('all');
+  const [scope, setScope] = useState<'nepal' | 'province' | 'district' | 'school' | 'friends'>('nepal');
+  const [selectedProvince, setSelectedProvince] = useState<string>('Bagmati Province');
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('Kathmandu');
+  const [selectedSchool, setSelectedSchool] = useState<string>("St. Xavier's College");
+
+  const SCOPES = [
+    { key: 'nepal', label: '🇳🇵 Nepal Rank' },
+    { key: 'province', label: '🏛️ Province Rank' },
+    { key: 'district', label: '📍 District Rank' },
+    { key: 'school', label: '🏫 School Rank' },
+    { key: 'friends', label: '👥 Friends Rank' },
+  ] as const;
+
+  const PROVINCES = ['Bagmati Province', 'Koshi Province', 'Gandaki Province', 'Lumbini Province', 'Madhesh Province', 'Sudurpashchim Province', 'Karnali Province'];
+  const DISTRICTS = ['Kathmandu', 'Lalitpur', 'Kaski (Pokhara)', 'Chitwan', 'Rupandehi', 'Morang', 'Jhapa', 'Bhaktapur'];
+  const SCHOOLS = ["St. Xavier's College", "Budhanilkantha School", "SOS Hermann Gmeiner", "Trinity International", "Global College of Science", "Little Angels' High School"];
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<MyRank | null>(null);
   const [loading, setLoading] = useState(true);
@@ -217,44 +231,78 @@ export default function LeaderboardClient({ currentUserId }: LeaderboardClientPr
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Period tabs */}
-          <div className="flex items-center bg-muted rounded-lg p-1 gap-1">
-            {PERIODS.map(p => (
+        {/* Scope Filter Tabs (Nepal, Province, District, School, Friends) */}
+        <div className="space-y-3">
+          
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-mono">
+              ACADEMIC ACTIVITY RANKING ENGINE (ACCURACY 40% • ELO 30% • WRITTEN 20% • ARENA 10%)
+            </span>
+            <span className="text-xs text-muted-foreground font-bold font-mono">Anti-AFK Protection Active</span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {SCOPES.map((sc) => (
               <button
-                key={p.key}
-                onClick={() => setPeriod(p.key)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  period === p.key
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
+                key={sc.key}
+                onClick={() => setScope(sc.key as any)}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-black shrink-0 transition-all border ${
+                  scope === sc.key
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                    : 'bg-card text-muted-foreground border-border hover:text-foreground'
                 }`}
               >
-                {p.label}
+                {sc.label}
               </button>
             ))}
           </div>
 
-          {/* Subject filter */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {SUBJECTS.map(s => {
-              const Icon = s.icon;
-              return (
-                <button
-                  key={s.key}
-                  onClick={() => setSubject(s.key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
-                    subject === s.key
-                      ? 'border-primary bg-primary/10 text-primary' :'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  <Icon size={14} className={subject === s.key ? 'text-primary' : s.color} />
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
+          {/* Sub-selector Dropdowns */}
+          {scope === 'province' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground font-mono">Select Province:</span>
+              <select
+                value={selectedProvince}
+                onChange={(e) => setSelectedProvince(e.target.value)}
+                className="px-3.5 py-2 rounded-xl bg-card border border-border text-xs font-bold text-foreground focus:outline-none"
+              >
+                {PROVINCES.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {scope === 'district' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground font-mono">Select District:</span>
+              <select
+                value={selectedDistrict}
+                onChange={(e) => setSelectedDistrict(e.target.value)}
+                className="px-3.5 py-2 rounded-xl bg-card border border-border text-xs font-bold text-foreground focus:outline-none"
+              >
+                {DISTRICTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {scope === 'school' && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-muted-foreground font-mono">Select School:</span>
+              <select
+                value={selectedSchool}
+                onChange={(e) => setSelectedSchool(e.target.value)}
+                className="px-3.5 py-2 rounded-xl bg-card border border-border text-xs font-bold text-foreground focus:outline-none"
+              >
+                {SCHOOLS.map((sch) => (
+                  <option key={sch} value={sch}>{sch}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
         </div>
 
         {/* Loading / Error */}

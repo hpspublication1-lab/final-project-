@@ -83,12 +83,16 @@ export async function GET() {
       .select('program_id, feature_key, is_enabled, config');
 
     let userEnrollments: any[] = [];
+    let profilePlan: string = 'free';
+
     if (user) {
-      const { data: enrolls } = await admin
-        .from('enrollments')
-        .select('program_id, status, plan_tier')
-        .eq('user_id', user.id);
+      const [{ data: enrolls }, { data: userProf }, { data: batchEnrolls }] = await Promise.all([
+        admin.from('enrollments').select('program_id, status, plan_tier').eq('user_id', user.id),
+        admin.from('profiles').select('subscription_plan').eq('id', user.id).maybeSingle(),
+        admin.from('batch_enrollments').select('batch_id, batches(program_type)').eq('student_id', user.id),
+      ]);
       userEnrollments = enrolls || [];
+      profilePlan = userProf?.subscription_plan || 'free';
     }
 
     const entitlements = programs.map((prog) => {
@@ -100,11 +104,19 @@ export async function GET() {
 
       const userEnroll = userEnrollments.find((e) => e.program_id === prog.id);
 
+      // Determine plan tier: direct enrollment > profile legacy pro > free
+      let planTier = userEnroll?.plan_tier || 'free';
+      let status = userEnroll?.status || 'active';
+
+      if (planTier === 'free' && (profilePlan === 'pro' || profilePlan === 'institution') && prog.slug === 'cee_medical') {
+        planTier = 'pro';
+      }
+
       return {
         programSlug: prog.slug,
         programName: prog.name,
-        status: userEnroll?.status || 'active',
-        planTier: userEnroll?.plan_tier || 'free',
+        status,
+        planTier,
         features: featureMap,
       };
     });

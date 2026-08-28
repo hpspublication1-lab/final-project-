@@ -13,8 +13,7 @@ const INSTRUCTORS = [
     avatar: '🩺',
     experience: '8+ Years Teaching',
     rating: 4.9,
-    students: '25,000+',
-    bio: 'Guided over 2,000 students into top medical colleges across Nepal including IOM Maharajgunj & BPKIHS Dharan.',
+    bio: 'Medical Educator specializing in CEE entrance strategy, high-yield biology sub-chapter notes, and high-frequency MCQ explanation breakdowns.',
   },
   {
     name: 'Pradeep Poudel Sir',
@@ -24,30 +23,27 @@ const INSTRUCTORS = [
     avatar: '🎓',
     experience: '12+ Years Teaching',
     rating: 4.95,
-    students: '32,000+',
-    bio: 'Former NEB board paper examiner & author of bestselling Class 10 Science question bank books.',
+    bio: 'Secondary Education Educator specializing in Grade 10 Science & Opt Math problem-solving and step-by-step model exam derivations.',
   },
   {
-    name: 'Sarah Jenkins',
-    role: 'Senior ESL & IELTS Coach',
+    name: 'Coach Aria (AI Persona)',
+    role: 'Senior IELTS Speech Assessor',
     sector: 'English Learning',
     sectorBadge: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
     avatar: '🗣️',
-    experience: '10+ Years Teaching',
+    experience: 'Cambridge Rubric Model',
     rating: 4.92,
-    students: '14,000+',
-    bio: 'Certified CELTA trainer who has helped over 1,500 Nepalese students achieve Band 7.5+ in IELTS.',
+    bio: 'AI Speech Assessor persona modeled after official Cambridge IELTS Band Descriptors (FC, LR, GRA, PR) with ElevenLabs studio audio.',
   },
   {
     name: 'Nabin KC',
-    role: 'AI Developer & Tech Educator',
+    role: 'AI & Full-Stack Tech Educator',
     sector: 'Digital Skills & AI',
     sectorBadge: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
     avatar: '🤖',
     experience: '6+ Years Tech Industry',
     rating: 4.96,
-    students: '18,000+',
-    bio: 'Ex-Silicon Valley startup developer training students on AI workflows, Python, and digital freelancing.',
+    bio: 'Software Engineer & Instructor guiding students on Python programming, ChatGPT prompt engineering, and digital skill building.',
   },
 ];
 
@@ -58,81 +54,61 @@ export default function FeaturedInstructors() {
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
           <div>
-            <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider bg-primary/10 text-primary px-3.5 py-1 rounded-full border border-primary/20 mb-3 shadow-xs">
-              <Award size={14} /> Expert Faculties
-            </span>
-            <h2 className="text-hero-md text-foreground font-black tracking-tight">
-              Learn from Nepal&apos;s Star Educators
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black mb-3">
+              <Sparkles size={14} /> Academic Faculty &amp; AI Personas
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+              Subject Specialists &amp; Curriculum Leads
             </h2>
-            <p className="text-muted-foreground mt-1 text-sm sm:text-base max-w-lg">
-              Top doctors, board examiners, certified language coaches, and AI engineers guiding your success.
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
+              Learn with experienced Nepalese subject educators and specialized AI assessment personas.
             </p>
           </div>
-
           <Link
             href="/courses"
-            className="inline-flex items-center gap-2 text-xs font-extrabold text-primary hover:text-primary-dark transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-all shrink-0"
           >
-            <span>Browse All Faculty Courses</span>
+            <span>Explore All Faculty Courses</span>
             <ArrowRight size={14} />
           </Link>
         </div>
 
         {/* Instructor Cards Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {INSTRUCTORS.map((inst, idx) => (
             <div
               key={idx}
-              className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+              className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/40 transition-all flex flex-col justify-between space-y-4 group"
             >
               <div className="space-y-4">
-                {/* Header Avatar & Sector */}
-                <div className="flex items-start justify-between">
-                  <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center text-2xl shadow-xs group-hover:scale-105 transition-transform">
+                <div className="flex items-center justify-between">
+                  <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border flex items-center justify-center text-2xl shadow-xs group-hover:scale-105 transition-transform">
                     {inst.avatar}
                   </div>
-                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${inst.sectorBadge}`}>
+                  <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${inst.sectorBadge}`}>
                     {inst.sector}
                   </span>
                 </div>
 
-                {/* Name & Role */}
                 <div>
-                  <h3 className="text-base font-extrabold text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors">
                     {inst.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground font-medium">{inst.role}</p>
+                  <p className="text-xs font-bold text-muted-foreground mt-0.5">{inst.role}</p>
                 </div>
 
-                {/* Rating & Students */}
-                <div className="flex items-center justify-between py-2 px-3 rounded-xl bg-muted/40 text-[11px] font-bold text-muted-foreground border border-border/40">
-                  <div className="flex items-center gap-1 text-amber-500">
-                    <Star size={13} className="fill-amber-500" />
-                    <span className="text-foreground font-black">{inst.rating}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <GraduationCap size={13} className="text-primary" />
-                    <span>{inst.students} Students</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {inst.bio}
                 </p>
               </div>
 
-              {/* Card Footer */}
-              <div className="pt-4 mt-4 border-t border-border/50 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                  {inst.experience}
+              <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs font-bold">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <GraduationCap size={14} className="text-primary" /> {inst.experience}
                 </span>
-                <Link
-                  href="/courses"
-                  className="text-xs font-extrabold text-foreground group-hover:text-primary flex items-center gap-1 transition-colors"
-                >
-                  <span>Courses</span>
-                  <ArrowRight size={13} />
-                </Link>
+                <span className="flex items-center gap-1 text-amber-600">
+                  <Star size={13} className="fill-amber-500 text-amber-500" /> {inst.rating}
+                </span>
               </div>
             </div>
           ))}

@@ -35,10 +35,24 @@ function getMetadataBase(): URL {
 }
 
 export const metadata: Metadata = {
-  metadataBase: getMetadataBase(),
-  title: 'Soumya Guru — Multi-Course Learning Platform (SEE, CEE, IELTS, Digital Marketing, AI)',
+  metadataBase: new URL('https://samyakcee.com'),
+  title: 'Samyak Guru — AI Education Platform (SEE, CEE, IELTS, Digital Marketing, AI)',
   description:
-    'Nepal\'s premier 5-in-1 online learning platform with dedicated portals for SEE Class 10, CEE Medical Entrance, IELTS Mastery, Digital Marketing, and Artificial Intelligence.',
+    'Samyak Guru is Nepal\'s flagship AI Education Platform. Prepare for CEE Medical Entrance, SEE Class 10 Board Exams, IELTS Band 8.5+ Mastery, Digital Marketing, and AI Neural Tutoring with 24/7 AI Teachers.',
+  keywords: [
+    'Samyak Guru',
+    'CEE Medical Entrance Preparation Nepal',
+    'SEE Class 10 Online Classes',
+    'IELTS Speaking Engine Nepal',
+    'IELTS Preparation Class Nepal',
+    'Digital Marketing Course Nepal',
+    'AI Education Platform Nepal',
+    'Samyak CEE',
+    'MEC Entrance Exam',
+  ],
+  authors: [{ name: 'Samyak Guru Team', url: 'https://samyakcee.com' }],
+  creator: 'Samyak Guru',
+  publisher: 'Samyak Guru',
   manifest: '/manifest.json',
   icons: {
     icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
@@ -48,26 +62,28 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'Soumya Guru — Multi-Course Learning Platform',
-    description: 'Master SEE Class 10, CEE Medical, IELTS, Digital Marketing & AI with Nepal\'s top faculty and AI tools.',
-    url: '/',
-    siteName: 'Soumya Guru Platform',
-    locale: 'en_NP',
     type: 'website',
+    locale: 'en_US',
+    url: 'https://samyakcee.com',
+    siteName: 'Samyak Guru — AI Education Platform',
+    title: 'Samyak Guru — AI Education Platform',
+    description:
+      'Prepare for CEE Medical Entrance, SEE Class 10 Board Exams, IELTS Band 8.5+ Mastery, and Digital Marketing with 24/7 AI Teachers.',
     images: [
       {
-        url: '/assets/images/app_logo.png',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Soumya Guru Multi-Course Learning Platform — SEE, CEE, IELTS, Digital Marketing, AI',
+        alt: 'Samyak Guru AI Education Platform — CEE, SEE, IELTS, Digital Marketing & AI',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Soumya Guru — Multi-Course Learning Platform',
-    description: 'Master SEE Class 10, CEE Medical, IELTS, Digital Marketing & AI with dedicated portals.',
-    images: ['/assets/images/app_logo.png'],
+    title: 'Samyak Guru — AI Education Platform',
+    description:
+      'Prepare for CEE Medical Entrance, SEE Class 10 Board Exams, IELTS Band 8.5+ Mastery with 24/7 AI Teachers.',
+    images: ['/og-image.png'],
   },
   robots: {
     index: true,
@@ -89,12 +105,12 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'Organization',
-              name: 'Soumya Guru',
-              url: process.env.NEXT_PUBLIC_SITE_URL || 'https://soumyace.com',
-              logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://soumyace.com'}/assets/images/app_logo.png`,
-              description: 'Nepal\'s premier 5-in-1 multi-course education platform',
+              name: 'Samyak Guru',
+              url: 'https://samyakcee.com',
+              logo: 'https://samyakcee.com/assets/images/app_logo.png',
+              description: 'Nepal\'s flagship AI Education Platform (SEE, CEE, IELTS, Digital Marketing, AI)',
               sameAs: [
-                'https://soumyace.com',
+                'https://samyakcee.com',
               ],
               contactPoint: {
                 '@type': 'ContactPoint',

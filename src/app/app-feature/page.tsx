@@ -4,140 +4,102 @@ import React, { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Smartphone, Download, ArrowLeft, Video, Radio, Sparkles, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Smartphone, Download, ArrowLeft, Video, Radio, Sparkles, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
 import { SUPPORT_CONFIG } from '@/lib/config/support';
 
 function AppFeatureContent() {
   const searchParams = useSearchParams();
-  const router = Router();
+  const router = useRouter();
   const feature = searchParams.get('feature') || 'general';
 
   const isLiveClasses = feature === 'live-classes';
   const isVideoLectures = feature === 'video-lectures';
 
-  const title = isLiveClasses
-    ? 'Live Classes are available in Samyak Guru App'
-    : isVideoLectures
-    ? 'Recorded Video Lectures are available in Samyak Guru App'
-    : 'Available Exclusively on Samyak Guru App';
+  const title = 'One Account. Seamless Web + Mobile Ecosystem.';
 
-  const description = isLiveClasses
-    ? 'Join interactive live streams, real-time Q&A sessions, and instructor chat directly on your mobile device.'
-    : isVideoLectures
-    ? 'Stream high-definition recorded video lectures, track your playback progress, and download study notes on the go.'
-    : 'Experience low-latency streaming, offline downloads, push notifications, and exclusive mobile prep features.';
+  const description = 'Start your lessons on Desktop Web, take interactive practice MCQs, and continue seamlessly on Mobile with instant account sync.';
 
-  const features = isLiveClasses
-    ? [
-        'Interactive live chat & instant Q&A with top faculties',
-        'HD low-latency live streaming with auto-bitrate adaptation',
-        'Class reminders & schedule push notifications',
-        'Direct access to downloadable PDF lecture notes',
-      ]
-    : [
-        '300+ HD video lectures covering full CEE syllabus',
-        'Playback speed controls & auto-resume watching position',
-        'Timestamped personal note taking during videos',
-        'Offline viewing & bandwidth saving mode',
-      ];
+  const features = [
+    '100% instant account sync across Web & Mobile',
+    'Start a video lecture or practice test on Web and resume on Mobile',
+    'Interactive live chat & instant Q&A with top faculties',
+    'Offline viewing mode & study notifications on Mobile',
+  ];
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 py-12">
-      <div className="max-w-2xl w-full bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-100 dark:border-slate-800 text-center relative overflow-hidden">
+      <div className="max-w-2xl w-full bg-card rounded-3xl p-8 sm:p-12 shadow-xl border border-border text-center relative overflow-hidden">
         {/* Background glow */}
         <div className="absolute -top-24 -right-24 w-60 h-60 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top Icon Badge */}
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-primary/10 to-secondary/10 text-primary mb-6 shadow-inner">
-          {isLiveClasses ? (
-            <Radio className="w-10 h-10 animate-pulse text-error" />
-          ) : isVideoLectures ? (
-            <Video className="w-10 h-10 text-physics" />
-          ) : (
-            <Smartphone className="w-10 h-10 text-primary" />
-          )}
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-amber-500/10 text-amber-600 mb-6 shadow-inner">
+          <Smartphone className="w-10 h-10 animate-pulse text-amber-600" />
         </div>
 
-        {/* Title & Description */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-wider mb-4">
-          <Sparkles className="w-3.5 h-3.5" /> Mobile Exclusive Feature
+        {/* Badge */}
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success/10 text-success text-xs font-black mb-4">
+          <CheckCircle2 size={13} /> Unified Same-Account Architecture
         </div>
 
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight mb-4">
+        {/* Title */}
+        <h1 className="text-2xl sm:text-3xl font-black text-foreground mb-3 tracking-tight">
           {title}
         </h1>
 
-        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 mb-8 max-w-xl mx-auto leading-relaxed">
+        {/* Subtitle */}
+        <p className="text-muted-foreground text-xs sm:text-sm max-w-lg mx-auto mb-8 leading-relaxed">
           {description}
         </p>
 
-        {/* Feature Highlights */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-6 text-left mb-8 border border-slate-100 dark:border-slate-800">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-primary" /> Key Mobile App Features
-          </h3>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {features.map((item, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-200">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* App Download CTA Card */}
-        <div className="bg-gradient-to-r from-primary to-secondary text-white rounded-2xl p-6 mb-8 shadow-lg">
-          <h3 className="text-xl font-bold mb-2">Get Samyak Guru App Now</h3>
-          <p className="text-white/80 text-sm mb-6">
-            Install the official application on your phone for full access to live classes, recorded lectures, and offline study materials.
+        {/* Features list */}
+        <div className="bg-muted/40 rounded-2xl p-5 border border-border mb-8 text-left space-y-3">
+          <p className="text-xs font-black text-foreground uppercase tracking-wider mb-2">
+            Ecosystem Highlights:
           </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href={SUPPORT_CONFIG.whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3.5 bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2.5 text-sm"
-            >
-              <Download className="w-4 h-4 text-primary" />
-              Download APK / App Link
-            </a>
-            <a
-              href={SUPPORT_CONFIG.whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3.5 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2 text-sm border border-white/20"
-            >
-              Ask Support on WhatsApp
-            </a>
-          </div>
+          {features.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-2.5 text-xs text-foreground font-semibold">
+              <CheckCircle2 size={15} className="text-success shrink-0" />
+              <span>{item}</span>
+            </div>
+          ))}
         </div>
 
-        {/* Navigation Actions */}
-        <div className="flex items-center justify-center gap-4">
-          <Link
-            href="/student-dashboard"
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-primary transition-colors"
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a
+            href={SUPPORT_CONFIG.appDownloadUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-primary text-white font-extrabold text-xs shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-          </Link>
+            <Download size={16} />
+            <span>Download Mobile App (Android / iOS)</span>
+          </a>
+
+          <button
+            onClick={() => router.back()}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-border text-foreground font-bold text-xs hover:bg-muted transition-all"
+          >
+            <ArrowLeft size={16} />
+            <span>Return to Web Portal</span>
+          </button>
         </div>
+
       </div>
     </div>
   );
 }
 
-function Router() {
-  const router = useRouter();
-  return router;
-}
-
 export default function AppFeaturePage() {
   return (
     <DashboardLayout>
-      <Suspense fallback={<div className="p-8 text-center">Loading feature details...</div>}>
+      <Suspense fallback={
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
         <AppFeatureContent />
       </Suspense>
     </DashboardLayout>

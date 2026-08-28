@@ -102,7 +102,7 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
 
         <div className="text-center max-w-lg mx-auto mb-6">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-black mb-3">
-            <Sparkles size={14} /> Soumya Guru Multi-Course Learning Platform
+            <Sparkles size={14} /> Samyak Guru AI Education Platform
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
             Choose Your Learning Path

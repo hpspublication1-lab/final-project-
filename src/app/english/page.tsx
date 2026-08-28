@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicNav from '@/components/PublicNav';
 import { useProgram } from '@/contexts/ProgramContext';
-import { Languages, Mic, Award, Sparkles, BookOpen, CheckCircle, ArrowRight, Play, Volume2, Star, Trophy, MessageSquare } from 'lucide-react';
+import { Languages, Mic, Award, Sparkles, BookOpen, CheckCircle, ArrowRight, Play, Volume2, Star, Trophy, MessageSquare, Camera } from 'lucide-react';
 
 export default function EnglishLearningPage() {
   const { setProgram } = useProgram();
@@ -55,24 +55,23 @@ export default function EnglishLearningPage() {
 
               <div className="flex flex-wrap gap-4 pt-2">
                 <Link
-                  href="/courses?sector=english"
-                  onClick={() => setProgram('english')}
+                  href="/english/classroom"
                   className="px-6 py-3.5 rounded-2xl bg-amber-600 text-white font-extrabold text-sm flex items-center gap-2 shadow-lg shadow-amber-600/20 hover:bg-amber-700 transition-all"
                 >
-                  <span>Explore English Courses</span>
-                  <ArrowRight size={16} />
+                  <Sparkles size={16} />
+                  <span>Launch 10-Module IELTS AI Classroom</span>
                 </Link>
-                <a
-                  href="#ai-speaking-demo"
-                  className="px-6 py-3.5 rounded-2xl bg-card border border-border font-bold text-sm flex items-center gap-2 hover:bg-muted transition-colors"
+                <Link
+                  href="/vision-marker"
+                  className="px-6 py-3.5 rounded-2xl bg-card border border-border font-bold text-sm text-foreground flex items-center gap-2 hover:bg-muted transition-all"
                 >
-                  <Mic size={16} className="text-amber-600" />
-                  <span>Try Live AI Speaking Practice</span>
-                </a>
+                  <Camera size={16} className="text-amber-600" />
+                  <span>📸 Handwritten Paper AI Marker</span>
+                </Link>
               </div>
             </div>
 
-            {/* Right Card / Interactive AI Simulator */}
+            {/* Right Card / Live AI Speaking Engine Launcher */}
             <div className="lg:col-span-5">
               <div id="ai-speaking-demo" className="bg-card border border-border rounded-3xl p-6 shadow-xl relative overflow-hidden space-y-4">
                 <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -81,34 +80,27 @@ export default function EnglishLearningPage() {
                       <Mic size={16} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-foreground">AI Speaking Examiner</h3>
-                      <p className="text-[10px] text-muted-foreground">Real-time fluency &amp; accent analyzer</p>
+                      <h3 className="text-sm font-bold text-foreground">Coach Aria — IELTS Speaking Engine</h3>
+                      <p className="text-[10px] text-muted-foreground">Real-time voice speech recognition &amp; band scoring</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-success/10 text-success">LIVE SIMULATOR</span>
+                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-success/10 text-success">ENGINE LIVE</span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-muted/50 border border-border/60 text-xs font-medium text-foreground">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Prompt Sentence to Speak:</p>
-                  <p className="italic font-serif text-sm text-amber-600">&ldquo;Continuous practice and exposure are key to achieving English fluency.&rdquo;</p>
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-foreground space-y-1.5">
+                  <p className="text-[10px] uppercase font-bold text-amber-600">Sample Cue Card Topic:</p>
+                  <p className="font-bold text-sm text-foreground">&ldquo;Describe a goal or achievement you reached after hard work&rdquo;</p>
+                  <p className="text-[11px] text-muted-foreground">Speech recognition · Official Band Descriptors (FC, LR, GRA, PR) · Voice output</p>
                 </div>
 
-                <button
-                  onClick={handleSimulatePractice}
-                  disabled={isRecording}
-                  className={`w-full py-3.5 rounded-xl font-extrabold text-xs text-white flex items-center justify-center gap-2 transition-all ${
-                    isRecording ? 'bg-error animate-pulse' : 'bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-600/20'
-                  }`}
+                <Link
+                  href="/english/speaking"
+                  className="w-full py-4 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-600/20 transition-all"
                 >
-                  <Mic size={16} />
-                  <span>{isRecording ? 'Analyzing Voice Intonation...' : 'Record Voice & Get Instant AI Score'}</span>
-                </button>
-
-                {aiFeedback && (
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs font-medium text-amber-950 dark:text-amber-200 animate-fadeIn">
-                    {aiFeedback}
-                  </div>
-                )}
+                  <Mic size={18} />
+                  <span>Start Live Speaking Test Engine</span>
+                  <ArrowRight size={14} />
+                </Link>
               </div>
             </div>
           </div>
@@ -160,51 +152,90 @@ export default function EnglishLearningPage() {
           </button>
         </div>
 
-        {/* Tab Cards */}
+        {/* Interactive Specialization Modules Grid */}
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-amber-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xl">
-              🗣️
+          {/* Card 1: Duolingo DET IT Engine */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-cyan-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-600 flex items-center justify-center font-bold text-xl">
+                💻
+              </div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-foreground">Duolingo DET (IT Sector)</h3>
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600">SCALE 10-160</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Adaptive Duolingo English Test practice for US/UK Computer Science MS applicants and remote IT developers.
+              </p>
+              <ul className="space-y-2 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-cyan-600" /> Read &amp; Select Real Word Matrix</li>
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-cyan-600" /> 5-Min Interactive IT Essay</li>
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-cyan-600" /> US/UK CS MS Admission Benchmarks</li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-foreground">Live Conversation Rooms</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Practice 1-on-1 and group speaking topics with fellow learners and native mentors every evening.
-            </p>
-            <ul className="space-y-2 text-xs font-medium text-foreground pt-2">
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Daily Topic Prompts</li>
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Job Interview Preparation</li>
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Public Speaking Drills</li>
-            </ul>
+            <Link
+              href="/english/duolingo"
+              className="w-full py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all mt-4"
+            >
+              <span>Launch Duolingo DET Engine</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
 
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-amber-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xl">
-              🎓
+          {/* Card 2: Cambridge Books 1-19 Vault */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-violet-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-violet-500/10 text-violet-600 flex items-center justify-center font-bold text-xl">
+                📚
+              </div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-foreground">Cambridge Books 1–19 Vault</h3>
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-600">BAND 9.0</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Official Cambridge Academic Reading passages, True/False/Not Given solvers, and Band 9 examiner model essays.
+              </p>
+              <ul className="space-y-2 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-violet-600" /> Academic Reading Passages (C1/C2)</li>
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-violet-600" /> True / False / Not Given Solvers</li>
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-violet-600" /> Band 9 Examiner Model Essays</li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-foreground">IELTS Band 8.0 Strategy</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Master Writing Task 1 &amp; 2 structures, Academic Reading speed skimming, and Listening keywords.
-            </p>
-            <ul className="space-y-2 text-xs font-medium text-foreground pt-2">
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Full Mock Tests with Band Score</li>
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Essay Correction by Mentors</li>
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> 500 High-Frequency Academic Words</li>
-            </ul>
+            <Link
+              href="/english/cambridge"
+              className="w-full py-3 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all mt-4"
+            >
+              <span>Open Cambridge Vault</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
 
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-amber-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-xl">
-              🤖
+          {/* Card 3: IT Sector Tech Interview Masterclass */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-blue-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-xl">
+                👨‍💻
+              </div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-foreground">IT &amp; Tech Interview English</h3>
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600">GLOBAL JOBS</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Specialized English fluency for software engineers, IT job interviews, technical terminology, and pull request communication.
+              </p>
+              <ul className="space-y-2 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-blue-600" /> Silicon Valley Recruiter AI Feedback</li>
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-blue-600" /> STAR Tech Interview Method</li>
+                <li className="flex items-center gap-2"><CheckCircle size={14} className="text-blue-600" /> Software Terms Vocabulary Vault</li>
+              </ul>
             </div>
-            <h3 className="text-lg font-bold text-foreground">AI Grammar &amp; Speech Feedback</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Get instant sentence corrections, vocabulary upgrades, and voice pitch analysis powered by AI.
-            </p>
-            <ul className="space-y-2 text-xs font-medium text-foreground pt-2">
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Instant Error Explanations</li>
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> CEFR Level Assessment (A1-C2)</li>
-              <li className="flex items-center gap-2"><CheckCircle size={14} className="text-amber-600" /> Certificate of Proficiency</li>
-            </ul>
+            <Link
+              href="/english/it-english"
+              className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 transition-all mt-4"
+            >
+              <span>Start IT English Masterclass</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
 

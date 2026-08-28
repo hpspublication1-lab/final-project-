@@ -15,6 +15,7 @@ import AnnouncementBar from './AnnouncementBar';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 
 import SectorsShowcase from './SectorsShowcase';
+import SamyakIntelligenceSection from '@/components/SamyakIntelligenceSection';
 import FeaturedInstructors from './FeaturedInstructors';
 
 export default function HomepageClient() {
@@ -36,6 +37,7 @@ export default function HomepageClient() {
         <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} announcementHeight={announceOpen ? 40 : 0} />
         <HeroSection />
         <SectorsShowcase />
+        <SamyakIntelligenceSection />
         <StatsSection />
         <SubjectsSection />
         <FeaturedInstructors />

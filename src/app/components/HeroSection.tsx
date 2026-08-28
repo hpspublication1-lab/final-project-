@@ -56,7 +56,7 @@ const SECTOR_HIGHLIGHTS: Record<string, { key: string; text: string }[]> = {
   cee_medical: [
     { key: 'hl-mcq', text: '15,000+ CEE MCQs with detailed explanations' },
     { key: 'hl-notes', text: 'Sub-chapter high-yield notes (Bio, Chem, Physics)' },
-    { key: 'hl-live', text: 'Live MEC mock exams on Soumya Guru App' },
+    { key: 'hl-live', text: 'Live MEC mock exams on Samyak Guru App' },
     { key: 'hl-battle', text: 'Real-time 2-player entrance battle arena' },
   ],
   see_class_10: [
@@ -269,28 +269,101 @@ export default function HeroSection() {
 
           {/* Left Column (7 cols) */}
           <div className="lg:col-span-7 space-y-6 animate-fade-in">
+            
+            {/* Top Motto Badge */}
             <div className="flex flex-wrap items-center gap-3">
-              <ProgramSwitcher size="md" />
-
-              <div className="inline-flex items-center gap-2 bg-card/90 backdrop-blur-md border border-primary/30 text-foreground text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm">
-                <Sparkles size={13} className="text-primary animate-pulse" />
-                <span>Nepal #1 {programDetails.shortName} Prep System</span>
-              </div>
+              <span className="px-3.5 py-1.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+                <Sparkles size={14} /> ONE PLATFORM. YOUR ENTIRE LEARNING JOURNEY.
+              </span>
             </div>
 
             <h1 className="text-hero-xl text-foreground font-black tracking-tight leading-[1.05]">
-              Ace Your Exam{' '}
-              <span className="bg-gradient-to-r from-primary via-[#7C6BFF] to-accent bg-clip-text text-transparent drop-shadow-sm">
-                {programDetails.name}
+              SEE • CEE • IELTS •{' '}
+              <span className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 bg-clip-text text-transparent drop-shadow-sm">
+                Digital Marketing • AI
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
-              {programDetails.description} Live interactive classes, video lectures, practice MCQs, and past paper solutions on Samyak Guru App.
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl font-medium">
+              Nepal&apos;s premier 5-in-1 multi-course AI education platform. Learn with 24/7 AI Teachers, practice MCQs, past papers, and band evaluators.
             </p>
 
+            {/* Choose Your Goal Label */}
+            <div className="pt-2">
+              <p className="text-xs font-black uppercase tracking-wider text-amber-600 mb-2.5 flex items-center gap-1.5">
+                <span>[ Choose Your Goal ]</span>
+              </p>
 
-            <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-3">
+              {/* 5-Path Interactive Card Selector Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => setProgram('see')}
+                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                    program === 'see' || program === 'see_class_10'
+                      ? 'bg-emerald-500/10 border-emerald-500 text-foreground ring-2 ring-emerald-500/30'
+                      : 'bg-card/80 border-border hover:border-emerald-500/40 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🎓</div>
+                  <div className="font-extrabold text-sm text-foreground">Samyak SEE</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">Class 10 Board</div>
+                </button>
+
+                <button
+                  onClick={() => setProgram('cee')}
+                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                    program === 'cee' || program === 'cee_medical'
+                      ? 'bg-indigo-500/10 border-indigo-500 text-foreground ring-2 ring-indigo-500/30'
+                      : 'bg-card/80 border-border hover:border-indigo-500/40 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🩺</div>
+                  <div className="font-extrabold text-sm text-foreground">Samyak CEE</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">Medical Entrance</div>
+                </button>
+
+                <button
+                  onClick={() => setProgram('ielts')}
+                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                    program === 'ielts' || program === 'english'
+                      ? 'bg-amber-500/10 border-amber-500 text-foreground ring-2 ring-amber-500/30'
+                      : 'bg-card/80 border-border hover:border-amber-500/40 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🌍</div>
+                  <div className="font-extrabold text-sm text-foreground">Samyak IELTS</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">English Band 8.5+</div>
+                </button>
+
+                <button
+                  onClick={() => setProgram('digital_marketing')}
+                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                    program === 'digital_marketing'
+                      ? 'bg-rose-500/10 border-rose-500 text-foreground ring-2 ring-rose-500/30'
+                      : 'bg-card/80 border-border hover:border-rose-500/40 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">📈</div>
+                  <div className="font-extrabold text-sm text-foreground">Samyak Digital</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">Career Skills</div>
+                </button>
+
+                <button
+                  onClick={() => setProgram('artificial_intelligence')}
+                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                    program === 'artificial_intelligence' || program === 'digital'
+                      ? 'bg-purple-500/10 border-purple-500 text-foreground ring-2 ring-purple-500/30'
+                      : 'bg-card/80 border-border hover:border-purple-500/40 text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">🤖</div>
+                  <div className="font-extrabold text-sm text-foreground">Samyak AI</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">AI &amp; Automation</div>
+                </button>
+              </div>
+            </div>
+
+            <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-3 pt-2">
               {highlights.map((h) => (
                 <li key={h.key} className="flex items-center gap-3 text-sm font-bold text-foreground bg-card/70 backdrop-blur-md border border-primary/15 rounded-2xl px-4 py-2.5 shadow-xs hover:border-primary/40 hover:shadow-md transition-all">
                   <CheckCircle2 size={18} className="text-success shrink-0" />
@@ -301,12 +374,12 @@ export default function HeroSection() {
 
             <div className="flex flex-wrap gap-3 pt-2 items-center">
               <Link href="/sign-up-login-screen" className="btn-primary gap-2.5 text-base py-4 px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:scale-[1.02] transition-all font-black rounded-2xl">
-                Start Free Today
+                Start Free Path
                 <ArrowRight size={19} />
               </Link>
-              <Link href="/courses" className="btn-secondary gap-2.5 text-base py-4 px-7 font-bold border-primary/30 hover:border-primary hover:bg-primary/5 rounded-2xl">
+              <Link href={program === 'ielts' ? '/english' : program === 'see' ? '/see' : '/courses'} className="btn-secondary gap-2.5 text-base py-4 px-7 font-bold border-primary/30 hover:border-primary hover:bg-primary/5 rounded-2xl">
                 <Sparkles size={17} className="text-primary" />
-                Explore 4 Sectors
+                Launch Path Workspace
               </Link>
             </div>
 
@@ -382,14 +455,14 @@ export default function HeroSection() {
                     <span className="text-xs font-black text-foreground ml-1">4.9/5</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                    Trusted by <span className="font-bold text-foreground">40,000+ CEE aspirants</span> across Nepal
+                    Powered by <span className="font-bold text-foreground">15,000+ MCQs &amp; 1,200+ Notes</span>
                   </p>
                 </div>
               </div>
 
               <div className="hidden sm:flex items-center gap-2 bg-success/10 border border-success/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-success">
                 <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span>14,290 MCQs solved today</span>
+                <span>24/7 AI Teachers &amp; Evaluators Active</span>
               </div>
             </div>
           </div>
@@ -532,7 +605,7 @@ export default function HeroSection() {
                   </div>
 
                   <Link href="/sign-up-login-screen" className="btn-primary w-full justify-center text-xs sm:text-sm font-bold py-2.5">
-                    Join 40,000+ Students
+                    Start Free Today
                   </Link>
                 </div>
               )}

@@ -48,7 +48,7 @@ const footerLinks = [
       { key: 'fl-all-courses', label: 'All Batches & Courses', href: '/courses' },
       { key: 'fl-prebook', label: 'Prebook Crash Course', href: '/prebook' },
       { key: 'fl-notes', label: 'Chapter Notes & Subjects', href: '/subjects' },
-      { key: 'fl-app-guru', label: 'Soumya Guru App', href: '/app-feature' },
+      { key: 'fl-app-guru', label: 'Samyak Guru App', href: '/app-feature' },
     ],
   },
   {
@@ -84,7 +84,7 @@ export default function HomepageFooter() {
             <div className="flex items-center gap-2.5">
               <AppLogo size={36} />
               <div className="flex flex-col leading-none">
-                <span className="font-extrabold text-base text-white tracking-tight">Soumya</span>
+                <span className="font-extrabold text-base text-white tracking-tight">Samyak</span>
                 <span className="text-xs font-bold text-primary">Guru Platform</span>
               </div>
             </div>
@@ -144,7 +144,7 @@ export default function HomepageFooter() {
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            © 2026 Soumya Guru Education Platform. All rights reserved.
+            © 2026 Samyak Guru Education Platform. All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/40">Payments powered by</span>

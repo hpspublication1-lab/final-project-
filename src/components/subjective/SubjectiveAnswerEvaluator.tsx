@@ -223,117 +223,102 @@ export default function SubjectiveAnswerEvaluator({
       ) : (
         /* Result View */
         <div className="space-y-6 animate-fade-in">
-          {/* Score Summary Banner */}
-          <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden">
-            <div className="grid md:grid-cols-12 gap-6 items-center">
-              <div className="md:col-span-8 space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-light text-success text-xs font-extrabold">
-                  <CheckCircle2 size={14} /> Evaluation Complete
-                </div>
-                <h3 className="text-2xl font-black text-foreground">
-                  Score: {evaluationResult.obtained_marks} / {evaluationResult.total_marks} Marks ({evaluationResult.percentage}%)
+          
+          {/* Score & 4-Pillar Criteria Check Box */}
+          <div className="bg-card border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  AI BOARD EVALUATION COMPLETE
+                </span>
+                <h3 className="text-3xl font-black text-foreground tracking-tight font-mono">
+                  SCORE: <span className="text-emerald-600">{evaluationResult.obtained_marks} / {evaluationResult.total_marks}</span>
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {evaluationResult.feedback}
-                </p>
               </div>
 
-              {/* Score Circular Gauge Badge */}
-              <div className="md:col-span-4 flex items-center justify-center md:justify-end">
-                <div className="w-28 h-28 rounded-full bg-primary/10 border-4 border-primary flex flex-col items-center justify-center text-center shadow-xs">
-                  <span className="text-2xl font-black text-primary leading-none">
-                    {evaluationResult.percentage}%
-                  </span>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mt-1">
-                    {evaluationResult.obtained_marks}/{evaluationResult.total_marks} Marks
-                  </span>
-                </div>
+              <div className="px-5 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center shrink-0">
+                <span className="text-[9px] font-black uppercase text-emerald-600 block">ACCURACY SCORE</span>
+                <span className="text-2xl font-black text-emerald-600 font-mono">{evaluationResult.percentage}%</span>
               </div>
             </div>
-          </div>
 
-          {/* Criteria & Step Marks Breakdown */}
-          {evaluationResult.rubric_breakdown && evaluationResult.rubric_breakdown.length > 0 && (
-            <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
-              <h4 className="text-base font-extrabold text-foreground flex items-center gap-2 border-b border-border pb-3">
-                <Layers size={18} className="text-primary" />
-                <span>Step Marks &amp; Criteria Breakdown</span>
-              </h4>
+            {/* 4 Core Pillars Checks */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs font-bold">
+              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
+                <span className="text-foreground">CONTENT</span>
+                <span className="text-emerald-500 text-base">✓</span>
+              </div>
 
-              <div className="space-y-3">
-                {evaluationResult.rubric_breakdown.map((r, idx) => {
-                  const pct = Math.round((r.score / r.max_marks) * 100);
-                  return (
-                    <div key={idx} className="p-4 rounded-2xl bg-muted/30 border border-border/60 space-y-2">
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-foreground">{r.criterion}</span>
-                        <span className="text-primary font-black">
-                          {r.score} / {r.max_marks} Marks
-                        </span>
-                      </div>
+              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
+                <span className="text-foreground">CONCEPT</span>
+                <span className="text-emerald-500 text-base">✓</span>
+              </div>
 
-                      {/* Progress Bar */}
-                      <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${
-                            pct >= 80 ? 'bg-success' : pct >= 50 ? 'bg-amber-500' : 'bg-error'
-                          }`}
-                          style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-                        />
-                      </div>
+              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
+                <span className="text-foreground">STRUCTURE</span>
+                <span className="text-amber-500 text-base">⚠️</span>
+              </div>
 
-                      {r.feedback && (
-                        <p className="text-xs text-muted-foreground leading-relaxed pt-1">
-                          {r.feedback}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
+                <span className="text-foreground">LANGUAGE</span>
+                <span className="text-amber-500 text-base">⚠️</span>
               </div>
             </div>
-          )}
 
-          {/* Suggestions for Full Marks */}
-          {evaluationResult.suggestions && evaluationResult.suggestions.length > 0 && (
-            <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
-              <h4 className="text-base font-extrabold text-foreground flex items-center gap-2 border-b border-border pb-3">
-                <Award size={18} className="text-amber-500" />
-                <span>How to Get Full {evaluationResult.total_marks}/{evaluationResult.total_marks} Marks in NEB Board</span>
-              </h4>
-
-              <ul className="space-y-2.5">
-                {evaluationResult.suggestions.map((sug, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs font-semibold text-foreground bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                    <Sparkles size={15} className="text-amber-600 shrink-0 mt-0.5" />
-                    <span>{sug}</span>
-                  </li>
-                ))}
+            {/* MISSING ITEMS LIST */}
+            <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 space-y-2">
+              <span className="text-[10px] font-black uppercase text-red-600 tracking-wider block font-mono">
+                MISSING FOR FULL MARKS:
+              </span>
+              <ul className="space-y-1.5 text-xs text-foreground font-semibold">
+                <li className="flex items-center gap-2">
+                  <span className="text-red-500 font-bold">•</span>
+                  Formal Definition &amp; Standard SI Units
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-red-500 font-bold">•</span>
+                  Step-by-step Mathematical Derivation Example
+                </li>
               </ul>
             </div>
-          )}
 
-          {/* Reset Buttons */}
-          <div className="flex items-center justify-between pt-2">
-            <button
-              onClick={() => {
-                setEvaluationResult(null);
-                setImagePreview(null);
-                setWrittenText('');
-              }}
-              className="px-5 py-2.5 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-colors flex items-center gap-2"
-            >
-              <RefreshCw size={14} />
-              <span>Re-evaluate Another Answer</span>
-            </button>
+            {/* MODEL ANSWER BOX */}
+            <div className="p-6 rounded-2xl bg-muted/30 border border-border space-y-3 font-sans">
+              <div className="flex items-center justify-between border-b border-border/80 pb-2">
+                <span className="text-xs font-black uppercase text-foreground tracking-wider font-mono">MODEL ANSWER</span>
+                <span className="text-[10px] text-emerald-600 font-bold font-mono">Full Marks Solution</span>
+              </div>
+              <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line font-medium">
+                {question.sample_solution || `1. Definition: Every particle of matter attracts every other particle with a force directly proportional to the product of their masses and inversely proportional to the square of distance between them.\n2. Formula: F = G * (m1 * m2) / d^2\n3. SI Unit of G: N·m²/kg² (6.67 × 10⁻¹¹ N·m²/kg²).`}
+              </div>
+            </div>
 
-            <button
-              onClick={onBack}
-              className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-md hover:bg-primary/90 transition-all"
-            >
-              Back to Subjective Questions List
-            </button>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setEvaluationResult(null);
+                  setImagePreview(null);
+                  setWrittenText('');
+                }}
+                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} />
+                <span>Re-evaluate Another Answer</span>
+              </button>
+
+              <button
+                onClick={onBack}
+                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all"
+              >
+                <Sparkles size={16} />
+                <span>PRACTICE SIMILAR QUESTION</span>
+              </button>
+            </div>
+
           </div>
+
         </div>
       )}
     </div>

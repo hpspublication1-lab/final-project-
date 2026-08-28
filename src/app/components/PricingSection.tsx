@@ -3,298 +3,242 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, X, Star, Zap, Gem, MessageCircle, Smartphone, Loader2 } from 'lucide-react';
+import { CheckCircle2, X, Star, Zap, Gem, MessageCircle, Flame, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { SUPPORT_CONFIG } from '@/lib/config/support';
-import { PAYMENT_METHODS, enabledMethodsLabel } from '@/lib/config/payments';
+import { useProgram } from '@/contexts/ProgramContext';
 import { createClient } from '@/lib/supabase/client';
 
 const WHATSAPP_NUMBER = SUPPORT_CONFIG.whatsappNumber;
 
-const plans = [
-  {
-    key: 'plan-free',
-    name: 'Free',
-    icon: Zap,
-    price: { monthly: 0, yearly: 0 },
-    currency: 'NPR',
-    tagline: 'Get started with CEE prep',
-    badge: null,
-    color: 'text-muted-foreground',
-    bg: 'bg-muted',
-    borderClass: 'border-border',
-    features: [
-      { key: 'f-notes', text: '20 free chapter notes', included: true },
-      { key: 'f-mcq', text: '200 practice MCQs/month', included: true },
-      { key: 'f-leaderboard', text: 'Public leaderboard access', included: true },
-      { key: 'f-videos', text: 'Video Lectures (Soumya Guru App)', included: true },
-      { key: 'f-mock', text: 'Full mock exams', included: false },
-      { key: 'f-battle', text: 'Battle Arena access', included: false },
-      { key: 'f-analytics', text: 'Advanced analytics', included: false },
-      { key: 'f-ai', text: 'AI Tutor access', included: false },
-      { key: 'f-live', text: 'Live Classes (Soumya Guru App)', included: false },
-    ],
-    cta: 'Start Free',
-    isFree: true,
-  },
-  {
-    key: 'plan-student',
-    name: 'Student',
-    icon: Star,
-    price: { monthly: 799, yearly: 7190 },
-    currency: 'NPR',
-    tagline: 'Everything you need for your target course',
-    badge: 'Most Popular',
-    color: 'text-primary',
-    bg: 'bg-secondary',
-    borderClass: 'border-primary/40',
-    features: [
-      { key: 'f-notes', text: 'All 1,200+ premium notes', included: true },
-      { key: 'f-mcq', text: 'Unlimited practice MCQs', included: true },
-      { key: 'f-leaderboard', text: 'Full leaderboard + rank', included: true },
-      { key: 'f-videos', text: 'Video Lectures (Soumya Guru App)', included: true },
-      { key: 'f-mock', text: 'Chapter & subject tests', included: true },
-      { key: 'f-battle', text: 'Battle Arena access', included: true },
-      { key: 'f-analytics', text: 'Standard analytics', included: true },
-      { key: 'f-ai', text: 'AI Tutor access', included: false },
-      { key: 'f-live', text: 'Live Classes (Soumya Guru App)', included: true },
-    ],
-    isFree: false,
-  },
-  {
-    key: 'plan-pro',
-    name: 'Pro',
-    icon: Gem,
-    price: { monthly: 1299, yearly: 11690 },
-    currency: 'NPR',
-    tagline: 'Maximum edge for top achievers',
-    badge: 'Best Value',
-    color: 'text-ma',
-    bg: 'bg-ma-light',
-    borderClass: 'border-ma/30',
-    features: [
-      { key: 'f-notes', text: 'All 1,200+ sub-chapter notes', included: true },
-      { key: 'f-mcq', text: 'Unlimited practice MCQs', included: true },
-      { key: 'f-leaderboard', text: 'Full leaderboard + rank', included: true },
-      { key: 'f-videos', text: 'Video Lectures (Soumya Guru App)', included: true },
-      { key: 'f-mock', text: 'Full mock exams + analysis', included: true },
-      { key: 'f-battle', text: 'Battle Arena + Tournaments', included: true },
-      { key: 'f-analytics', text: 'Advanced analytics + weak topics', included: true },
-      { key: 'f-ai', text: 'AI Tutor (unlimited)', included: true },
-      { key: 'f-live', text: 'All Live Classes (Soumya Guru App)', included: true },
-    ],
-    isFree: false,
-  },
-];
-
-function buildWhatsAppUrl(planName: string, price: number, yearly: boolean): string {
-  const period = yearly ? 'yearly' : 'monthly';
-  const priceStr = price > 0 ? `NPR ${price.toLocaleString()}/${period}` : 'Free';
-  const message = `Hi! I want to activate the *${planName} Plan* (${priceStr}) on Soumya Guru. Please send me the activation code. Thank you!`;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-}
+// Model C — Hybrid Pricing Structure Matrix
+const COURSE_PRICING = {
+  see: { name: 'Samyak SEE Board Pass', price: 2990, badge: 'NEB Board Pass', path: '/see' },
+  cee: { name: 'Samyak CEE Medical Pass', price: 2299, badge: 'MEC Entrance Pass', path: '/courses?sector=cee' },
+  ielts: { name: 'Samyak IELTS English Pass', price: 1490, badge: '4-Skill English Pass', path: '/english' },
+  digital_marketing: { name: 'Samyak Digital Marketing Pass', price: 1990, badge: 'Career Skills Pass', path: '/digital-marketing' },
+  artificial_intelligence: { name: 'Samyak AI Academy Pass', price: 1490, badge: 'AI & Python Pass', path: '/ai-tutor' },
+};
 
 export default function PricingSection() {
-  const [yearly, setYearly] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const { program } = useProgram();
   const router = useRouter();
 
-  // Require login BEFORE checkout: if the visitor isn't signed in, send them to
-  // the auth screen with a redirect back to this exact checkout.
-  const startCheckout = async (sku: string) => {
-    setCheckoutLoading(sku);
-    const dest = `/checkout?plan=${sku}`;
-    try {
-      const supabase = createClient();
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        router.push(dest);
-      } else {
-        router.push(`/sign-up-login-screen?redirect=${encodeURIComponent(dest)}`);
-      }
-    } catch {
-      // If the auth check fails, still gate through login to be safe.
-      router.push(`/sign-up-login-screen?redirect=${encodeURIComponent(dest)}`);
-    }
+  const activeCoursePrice = COURSE_PRICING[program as keyof typeof COURSE_PRICING] || COURSE_PRICING.cee;
+
+  const buildWhatsAppUrl = (planName: string, priceStr: string) => {
+    const message = `Hi! I want to enroll in the *${planName}* (${priceStr}) on Samyak Guru. Please send me the Fonepay QR / activation details. Thank you!`;
+    return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
   return (
-    <section id="pricing" className="py-16 bg-muted/30">
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="text-center mb-10">
-          <p className="section-label mb-2">Pricing</p>
-          <h2 className="text-hero-md text-foreground">Simple, Transparent Plans</h2>
-          <p className="text-muted-foreground mt-2">
-            {PAYMENT_METHODS.whatsappCode
-              ? 'Choose a plan, contact us on WhatsApp, and get your activation code instantly.'
-              : 'Choose a plan and pay securely with Fonepay — your access unlocks the moment payment is confirmed.'}
+    <section id="pricing" className="py-20 bg-background border-t border-border/60 relative overflow-hidden">
+      
+      {/* Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-r from-amber-500/10 via-primary/10 to-purple-500/10 blur-3xl pointer-events-none" />
+
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 relative z-10 space-y-12">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 text-amber-600 text-xs font-black border border-amber-500/20">
+            <Flame size={14} /> Transparent Course-Specific Pricing &amp; All-Access Path
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-black text-foreground tracking-tight">
+            Single Course vs. <span className="text-amber-600">🔥 Samyak All-Access</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl mx-auto">
+            Choose a single course pass or unlock every learning portal, 24/7 AI Teachers, and AI Vision Marker with Samyak All-Access.
           </p>
+        </div>
 
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <span className={`text-sm font-medium ${!yearly ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
-            <button
-              onClick={() => setYearly(!yearly)}
-              className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${yearly ? 'bg-primary' : 'bg-muted'}`}
-              aria-label="Toggle billing period"
+        {/* 4-Tier Pricing Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+
+          {/* Tier 1: Samyak Pass (FREE) */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">SAMYAK PASS</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground">STARTER</span>
+              </div>
+              <div>
+                <div className="text-3xl font-black text-foreground">FREE</div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Explore sample notes &amp; AI tools</p>
+              </div>
+
+              <ul className="space-y-2.5 text-xs text-muted-foreground pt-2 border-t border-border">
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>20 Free Chapter Notes</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>200 Practice MCQs</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>Sample AI Examiner Evaluation</span>
+                </li>
+                <li className="flex items-center gap-2 opacity-50">
+                  <X size={15} className="text-muted-foreground shrink-0" />
+                  <span>Full Mock Exams</span>
+                </li>
+              </ul>
+            </div>
+
+            <Link
+              href="/sign-up-login-screen"
+              className="w-full py-3 rounded-2xl bg-muted/60 border border-border text-foreground font-bold text-xs hover:bg-muted text-center transition-all"
             >
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${yearly ? 'translate-x-7' : 'translate-x-1'}`} />
-            </button>
-            <span className={`text-sm font-medium ${yearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Yearly
-              <span className="ml-1.5 bg-success-light text-success text-xs font-bold px-1.5 py-0.5 rounded-full">Save 25%</span>
+              Start Free Pass
+            </Link>
+          </div>
+
+          {/* Tier 2: Selected Course Pass (Course-Specific) */}
+          <div className="bg-card border-2 border-primary/40 rounded-3xl p-6 shadow-md flex flex-col justify-between space-y-6 relative">
+            <span className="absolute -top-3 right-6 text-[10px] font-black uppercase px-3 py-0.5 rounded-full bg-primary text-white shadow-xs">
+              {activeCoursePrice.badge}
             </span>
-          </div>
-        </div>
 
-        {/* 45-Day Crash Course Prebooking Highlight Banner */}
-        <div className="max-w-5xl mx-auto mb-8 p-5 bg-gradient-to-r from-primary/10 via-secondary to-primary/5 border border-primary/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl shrink-0">
-              🚀
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="bg-primary/20 text-primary font-bold text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider">7-Week Launch Offer</span>
-                <span className="text-xs font-semibold text-success">Save Rs 700</span>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-primary">SINGLE COURSE</span>
               </div>
-              <h3 className="font-bold text-base text-foreground mt-0.5">45-Day CEE Crash Course Prebooking</h3>
-              <p className="text-xs text-muted-foreground">Reserve your seat for <strong>Rs 300</strong> today & get the course for <strong>Rs 2,299</strong> (instead of Rs 2,999).</p>
-            </div>
-          </div>
-          <Link
-            href="/prebook"
-            className="btn-primary shrink-0 text-sm py-2.5 px-5 font-bold shadow-md hover:shadow-lg transition-all"
-          >
-            Prebook Seat (Rs 300) →
-          </Link>
-        </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {plans?.map((plan) => {
-            const price = yearly ? Math.round(plan?.price?.yearly / 12) : plan?.price?.monthly;
-            const whatsappUrl = buildWhatsAppUrl(plan.name, yearly ? plan.price.yearly : plan.price.monthly, yearly);
-
-            return (
-              <div
-                key={plan?.key}
-                className={`card-base border-2 ${plan?.borderClass} flex flex-col relative ${plan?.badge === 'Most Popular' ? 'shadow-primary' : 'shadow-card'}`}
-              >
-                {plan?.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${plan?.badge === 'Most Popular' ? 'bg-primary text-white' : 'bg-ma text-white'}`}>
-                      {plan?.badge}
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-5">
-                  <div className={`w-10 h-10 rounded-xl ${plan?.bg} flex items-center justify-center mb-3`}>
-                    <plan.icon size={20} className={plan?.color} />
-                  </div>
-                  <h3 className="font-bold text-xl text-foreground">{plan?.name}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{plan?.tagline}</p>
+              <div>
+                <h3 className="text-base font-black text-foreground">{activeCoursePrice.name}</h3>
+                <div className="text-3xl font-black text-foreground mt-1">
+                  NPR {activeCoursePrice.price.toLocaleString()}
+                  <span className="text-xs font-normal text-muted-foreground"> / one-time</span>
                 </div>
-
-                <div className="mb-5">
-                  {plan?.price?.monthly === 0 ? (
-                    <p className="text-3xl font-bold text-foreground">Free</p>
-                  ) : (
-                    <div>
-                      <span className="text-3xl font-bold text-foreground tabular-nums">
-                        NPR {price?.toLocaleString()}
-                      </span>
-                      <span className="text-sm text-muted-foreground">/month</span>
-                      {yearly && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Billed NPR {plan?.price?.yearly?.toLocaleString()} yearly
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                <ul className="space-y-2 mb-6 flex-1">
-                  {plan?.features?.map((f) => (
-                    <li key={f?.key} className="flex items-center gap-2">
-                      {f?.included ? (
-                        <CheckCircle2 size={15} className="text-success shrink-0" />
-                      ) : (
-                        <X size={15} className="text-muted-foreground shrink-0" />
-                      )}
-                      <span className={`text-sm ${f?.included ? 'text-foreground' : 'text-muted-foreground line-through'}`}>
-                        {f?.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {plan?.isFree ? (
-                  <Link href="/practice" className="btn-secondary w-full justify-center text-center">
-                    Start Free
-                  </Link>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {PAYMENT_METHODS.fonepay && (() => {
-                      const sku = `${plan.name.toLowerCase()}-${yearly ? 'yearly' : 'monthly'}`;
-                      const loading = checkoutLoading === sku;
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => startCheckout(sku)}
-                          disabled={loading}
-                          className="btn-primary w-full justify-center flex items-center gap-2 text-center disabled:opacity-70"
-                        >
-                          {loading ? <Loader2 size={16} className="animate-spin" /> : <Smartphone size={16} />}
-                          {loading ? 'Opening…' : 'Pay with Fonepay'}
-                        </button>
-                      );
-                    })()}
-                    {PAYMENT_METHODS.whatsappCode && (
-                      <>
-                        <a
-                          href={whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`${PAYMENT_METHODS.fonepay ? 'btn-secondary' : 'btn-primary'} w-full justify-center flex items-center gap-2 text-center`}
-                        >
-                          <MessageCircle size={16} />
-                          Get {plan?.name} Plan
-                        </a>
-                        <Link
-                          href="/activate-plan"
-                          className="text-xs text-center text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          Already have a code? Activate →
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                )}
+                <p className="text-[11px] text-muted-foreground mt-0.5">Full course access for 1 year</p>
               </div>
-            );
-          })}
+
+              <ul className="space-y-2.5 text-xs text-muted-foreground pt-2 border-t border-border">
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>Full Course Video Lessons</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>All Question Banks &amp; Notes</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>Course Mock Exams</span>
+                </li>
+                <li className="flex items-center gap-2 opacity-50">
+                  <X size={15} className="text-muted-foreground shrink-0" />
+                  <span>Other Portal Access</span>
+                </li>
+              </ul>
+            </div>
+
+            <a
+              href={buildWhatsAppUrl(activeCoursePrice.name, `NPR ${activeCoursePrice.price.toLocaleString()}`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-2xl bg-primary text-white font-black text-xs hover:bg-primary-dark text-center transition-all shadow-sm"
+            >
+              Enroll in {activeCoursePrice.name.split(' ')[0]} (NPR {activeCoursePrice.price.toLocaleString()})
+            </a>
+          </div>
+
+          {/* Tier 3: Pro Course Pass */}
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">PRO COURSE</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-muted text-muted-foreground">INTENSIVE</span>
+              </div>
+
+              <div>
+                <div className="text-3xl font-black text-foreground">
+                  NPR 2,490
+                  <span className="text-xs font-normal text-muted-foreground"> / year</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Course + AI Doubt Solver</p>
+              </div>
+
+              <ul className="space-y-2.5 text-xs text-muted-foreground pt-2 border-t border-border">
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>Everything in Single Course Pass</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>AI Agent Doubts Solver (24/7)</span>
+                </li>
+                <li className="flex items-center gap-2 font-medium text-foreground">
+                  <CheckCircle2 size={15} className="text-success shrink-0" />
+                  <span>Weak-Topic Analysis Report</span>
+                </li>
+              </ul>
+            </div>
+
+            <a
+              href={buildWhatsAppUrl('Pro Course Pass', 'NPR 2,490/yr')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-2xl bg-card border border-border text-foreground font-bold text-xs hover:bg-muted text-center transition-all"
+            >
+              Get Pro Course (NPR 2,490)
+            </a>
+          </div>
+
+          {/* Tier 4: 🔥 Samyak All-Access Pass (UPSELL HERO TIER) */}
+          <div className="bg-gradient-to-br from-amber-600 via-amber-700 to-amber-800 text-white rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-6 relative overflow-hidden ring-4 ring-amber-500/30">
+            <span className="absolute -top-3 right-6 text-[10px] font-black uppercase px-3 py-0.5 rounded-full bg-white text-amber-900 shadow-md flex items-center gap-1">
+              <Flame size={12} /> BEST VALUE UPSELL
+            </span>
+
+            <div className="space-y-4 relative z-10">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-200">🔥 SAMYAK ALL-ACCESS</span>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-black text-white">Unlock Every Single Portal</h3>
+                <div className="text-3.5xl font-black text-white mt-1">
+                  NPR 3,490
+                  <span className="text-xs font-normal text-amber-200"> / year</span>
+                </div>
+                <p className="text-[11px] text-amber-100 mt-0.5 font-medium">Access SEE + CEE + IELTS + Marketing + AI</p>
+              </div>
+
+              <ul className="space-y-2.5 text-xs text-amber-50 pt-2 border-t border-amber-500/30">
+                <li className="flex items-center gap-2 font-bold">
+                  <CheckCircle2 size={15} className="text-white shrink-0" />
+                  <span>ALL 5 Learning Portals Included</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold">
+                  <CheckCircle2 size={15} className="text-white shrink-0" />
+                  <span>24/7 Live AI Teacher Classroom</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold">
+                  <CheckCircle2 size={15} className="text-white shrink-0" />
+                  <span>AI Vision Marker (Handwritten Papers)</span>
+                </li>
+                <li className="flex items-center gap-2 font-bold">
+                  <CheckCircle2 size={15} className="text-white shrink-0" />
+                  <span>Master Weakness Engine Analytics</span>
+                </li>
+              </ul>
+            </div>
+
+            <a
+              href={buildWhatsAppUrl('🔥 Samyak All-Access Pass', 'NPR 3,490/yr')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 rounded-2xl bg-white text-amber-900 font-black text-xs hover:bg-amber-50 text-center transition-all shadow-lg flex items-center justify-center gap-1.5 relative z-10"
+            >
+              <Flame size={14} />
+              <span>Unlock Samyak All-Access (NPR 3,490)</span>
+            </a>
+          </div>
+
         </div>
 
-        <div className="mt-8 max-w-xl mx-auto bg-card border border-border rounded-xl p-4 text-center">
-          <p className="text-sm font-medium text-foreground mb-1">How it works</p>
-          {PAYMENT_METHODS.whatsappCode ? (
-            <ol className="text-xs text-muted-foreground space-y-1 text-left list-decimal list-inside">
-              <li>Click <strong>Get Plan</strong> — it opens WhatsApp with a pre-filled message</li>
-              <li>Send the message to our team and complete your payment</li>
-              <li>Receive your unique activation code over WhatsApp</li>
-              <li>Enter the code on the <Link href="/activate-plan" className="text-primary hover:underline">Activate Plan</Link> page to unlock your plan</li>
-            </ol>
-          ) : (
-            <ol className="text-xs text-muted-foreground space-y-1 text-left list-decimal list-inside">
-              <li>Click <strong>Pay with Fonepay</strong> on your chosen plan</li>
-              <li>Scan the QR with any mobile-banking or wallet app that supports Fonepay</li>
-              <li>Your plan unlocks automatically the moment the payment is confirmed</li>
-            </ol>
-          )}
-        </div>
-
-        <p className="text-center text-xs text-muted-foreground mt-4">
-          Payments via {enabledMethodsLabel()}. All prices in NPR. 7-day refund policy.
-        </p>
       </div>
     </section>
   );

@@ -1,7 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import CoursePortalHeader from './CoursePortalHeader';
+import TodayPersonalizedOSWidget from '@/components/TodayPersonalizedOSWidget';
+import { COURSE_PORTAL_CONFIGS } from '@/lib/config/courseFeatures';
 import KPIBentoGrid from '@/app/student-dashboard/components/KPIBentoGrid';
 import SubjectMasteryRings from '@/app/student-dashboard/components/SubjectMasteryRings';
 import AccuracyTrendChart from '@/app/student-dashboard/components/AccuracyTrendChart';
@@ -10,145 +13,212 @@ import UpcomingSchedule from '@/app/student-dashboard/components/UpcomingSchedul
 import RecentExamsTable from '@/app/student-dashboard/components/RecentExamsTable';
 import StudyPlanTasks from '@/app/student-dashboard/components/StudyPlanTasks';
 import LiveClassesCard from '@/app/student-dashboard/components/LiveClassesCard';
-import { Zap, FileText, Bot, Swords, BookOpen, Video, ArrowRight, ClipboardList, Stethoscope, Trophy, Sparkles, Brain } from 'lucide-react';
+import {
+  Zap,
+  FileText,
+  Bot,
+  Swords,
+  BookOpen,
+  ArrowRight,
+  ClipboardList,
+  Stethoscope,
+  Trophy,
+  Sparkles,
+  Brain,
+  Timer,
+  CheckCircle,
+  AlertTriangle,
+  History,
+  TrendingUp,
+} from 'lucide-react';
 
 interface PortalViewProps {
   displayName: string;
-  isPro: boolean;
-  profile: any;
+  isEnrolled?: boolean;
+  isPro?: boolean;
+  profile?: any;
+  onOpenCourseSelector?: () => void;
 }
 
-const ceeQuickActions = [
-  {
-    key: 'qa-practice',
-    label: 'Practice CEE MCQs',
-    desc: '15,000+ Topicwise Questions',
-    href: '/practice',
-    icon: Zap,
-    color: 'bg-primary/10 text-primary',
-    border: 'border-primary/20',
-  },
-  {
-    key: 'qa-mock',
-    label: 'MEC Mock Exam',
-    desc: '200-Q Timed Simulation',
-    href: '/mock-tests',
-    icon: FileText,
-    color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    border: 'border-emerald-500/20',
-  },
-  {
-    key: 'qa-battle',
-    label: 'Battle Arena',
-    desc: 'Real-Time 2-Player Match',
-    href: '/battle-arena',
-    icon: Swords,
-    color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
-    border: 'border-rose-500/20',
-  },
-  {
-    key: 'qa-ai',
-    label: 'AI Medical Tutor',
-    desc: 'Instant Step-by-Step Help',
-    href: '/ai-tutor',
-    icon: Bot,
-    color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
-    border: 'border-cyan-500/20',
-  },
-  {
-    key: 'qa-subjects',
-    label: 'Medical Subjects',
-    desc: 'Bio, Chem, Physics & MAT',
-    href: '/subjects',
-    icon: BookOpen,
-    color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-    border: 'border-indigo-500/20',
-  },
-  {
-    key: 'qa-flashcards',
-    label: 'SM-2 Flashcards',
-    desc: 'Spaced Repetition High-Yield',
-    href: '/flashcards',
-    icon: Brain,
-    color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    border: 'border-amber-500/20',
-  },
-];
+export default function CeePortalView({
+  displayName,
+  isEnrolled = true,
+  isPro = false,
+  profile,
+  onOpenCourseSelector,
+}: PortalViewProps) {
+  const config = COURSE_PORTAL_CONFIGS.cee_medical;
 
-export default function CeePortalView({ displayName, isPro, profile }: PortalViewProps) {
   return (
     <div className="space-y-6">
-      {/* Portal Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-primary/15 via-card to-indigo-500/10 border border-primary/20 shadow-sm">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-xl bg-primary text-white text-xs font-bold flex items-center gap-1 shadow-xs">
-              <Stethoscope size={14} /> CEE Medical Entrance Portal
-            </span>
-            <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              MECEE 2026 Batch
-            </span>
+      {/* 1. Header Identity */}
+      <CoursePortalHeader
+        displayName={displayName}
+        isEnrolled={isEnrolled}
+        isPro={isPro}
+        onOpenCourseSelector={onOpenCourseSelector}
+      />
+
+      {/* 2. Today Personal AI Education OS Stream */}
+      <TodayPersonalizedOSWidget />
+
+      {/* 2. Medical Entrance Countdown & Target Bar */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white border border-indigo-500/30 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0">
+            <Timer size={28} className="text-indigo-400 animate-pulse" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            Welcome back, {displayName} 🩺
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Targeting MBBS / BDS / B.Sc Nursing · Current Rating: <strong className="text-foreground">{profile?.battle_rating || 1200} ELO</strong>
-            {profile?.study_streak ? <span className="ml-2 text-primary font-bold">🔥 {profile.study_streak} Day Streak</span> : null}
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+                MECEE 2026 Countdown
+              </span>
+              <span className="text-xs text-indigo-200 font-semibold">Nepal Medical Commission</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black mt-0.5">Target: Top 100 Government Scholarship</h3>
+            <p className="text-xs text-indigo-200/80">MBBS · BDS · B.Sc Nursing · B.Pharm · BPT</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className={`flex items-center gap-1.5 border text-xs font-bold px-3.5 py-2 rounded-2xl ${
-            isPro ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-muted border-border text-muted-foreground'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${isPro ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
-            {isPro ? 'CEE Pro Access Active' : 'Free Trial Mode'}
+        <div className="flex items-center gap-2.5 shrink-0 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/15">
+          <div className="text-center px-2">
+            <p className="text-xl sm:text-2xl font-black text-white">128</p>
+            <p className="text-[9px] uppercase font-bold text-white/70">Days Left</p>
           </div>
-          <Link href="/practice" className="btn-primary text-xs sm:text-sm py-2 px-4.5 gap-1.5 rounded-xl shadow-md">
-            Start CEE Practice
-            <ArrowRight size={15} />
-          </Link>
+          <span className="text-white/40 font-light text-xl">:</span>
+          <div className="text-center px-2">
+            <p className="text-xl sm:text-2xl font-black text-white">14</p>
+            <p className="text-[9px] uppercase font-bold text-white/70">Hours</p>
+          </div>
+          <span className="text-white/40 font-light text-xl">:</span>
+          <div className="text-center px-2">
+            <p className="text-xl sm:text-2xl font-black text-indigo-300">45</p>
+            <p className="text-[9px] uppercase font-bold text-white/70">Mins</p>
+          </div>
         </div>
       </div>
 
-      {/* CEE Quick Actions */}
+      {/* 3. CEE Quick Actions Launchpad */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm sm:text-base font-extrabold text-foreground flex items-center gap-2">
-            <Sparkles size={16} className="text-primary" /> CEE Entrance Quick Launchpad
-          </h2>
+          <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
+            <Sparkles size={16} className="text-primary" /> CEE High-Yield Entrance Launchpad
+          </h3>
           <Link href="/study-plan" className="flex items-center gap-1 text-xs text-primary font-bold hover:underline">
             <ClipboardList size={13} />
-            View CEE Daily Schedule
+            View CEE Daily Plan
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {ceeQuickActions.map((action) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {config.quickActions.map((qa) => (
             <Link
-              key={action.key}
-              href={action.href}
-              className={`flex flex-col items-center text-center gap-2.5 p-4 rounded-2xl border bg-card hover:shadow-md transition-all duration-150 hover:-translate-y-0.5 ${action.border}`}
+              key={qa.key}
+              href={qa.href}
+              className="p-4 rounded-2xl bg-card border border-border hover:border-indigo-500/40 hover:shadow-md transition-all duration-150 flex flex-col justify-between space-y-2 group"
             >
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${action.color}`}>
-                <action.icon size={22} />
+              <div className="flex items-center justify-between">
+                <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 group-hover:scale-110 transition-transform">
+                  <Zap size={18} />
+                </span>
+                {qa.badge && (
+                  <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
+                    {qa.badge}
+                  </span>
+                )}
               </div>
               <div>
-                <p className="text-xs font-bold text-foreground leading-tight">{action.label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{action.desc}</p>
+                <p className="text-xs font-bold text-foreground group-hover:text-indigo-600 transition-colors">{qa.label}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{qa.desc}</p>
               </div>
             </Link>
           ))}
         </div>
       </div>
 
-      {/* Live Classes (Bunny.net) */}
+      {/* 4. Live Classes (Bunny.net HD Stream) */}
       <LiveClassesCard />
 
-      {/* KPI Bento Grid */}
+      {/* 5. KPI Bento Grid (Accuracy, Speed, Questions Solved, Rank) */}
       <KPIBentoGrid />
 
-      {/* Accuracy & Weak Topics */}
+      {/* 6. Medical Subjects (Zoology, Botany, Chemistry, Physics, MAT) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+              <BookOpen size={18} className="text-indigo-500" /> CEE Medical Subjects ({config.defaultSubjects.length})
+            </h3>
+            <p className="text-xs text-muted-foreground">High-yield syllabus with weightage distribution.</p>
+          </div>
+          <Link href="/subjects" className="text-xs font-bold text-indigo-600 hover:underline">
+            All Chapters →
+          </Link>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-3">
+          {config.defaultSubjects.map((sub) => (
+            <div
+              key={sub.id}
+              className="p-4 rounded-2xl bg-card border border-border hover:border-indigo-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">{sub.icon}</span>
+                <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
+                  {sub.weightage}
+                </span>
+              </div>
+              <div>
+                <h4 className="text-xs font-extrabold text-foreground">{sub.name}</h4>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{sub.chaptersCount} Chapters</p>
+              </div>
+              <Link
+                href="/subjects"
+                className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-between pt-2 border-t border-border/50"
+              >
+                <span>Practice MCQs</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 7. Previous Years' Questions & MEC Mock Sets */}
+      <div className="p-6 rounded-3xl bg-card border border-border space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm sm:text-base font-extrabold text-foreground flex items-center gap-2">
+            <History size={16} className="text-indigo-500" /> Previous Years&apos; CEE / IOM / BPKIHS Solved Sets
+          </h3>
+          <Link href="/mock-tests" className="text-xs font-bold text-indigo-600 hover:underline">
+            All Past Papers →
+          </Link>
+        </div>
+        <div className="grid md:grid-cols-3 gap-3">
+          {pastPapers.map((pp) => (
+            <div
+              key={pp.id}
+              className="p-4 rounded-2xl bg-muted/40 border border-border hover:border-indigo-500/30 flex flex-col justify-between space-y-3 transition-all"
+            >
+              <div>
+                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600">
+                  {pp.type}
+                </span>
+                <h5 className="text-xs font-bold text-foreground mt-2 leading-snug">{pp.title}</h5>
+                <p className="text-[10px] text-muted-foreground mt-1">{pp.marks}</p>
+              </div>
+              <Link
+                href="/mock-tests"
+                className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span>{pp.solved ? 'Review Solution' : 'Start Timed Test'}</span>
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 8. Accuracy Trend & Weak Topics Review */}
       <div className="grid lg:grid-cols-3 xl:grid-cols-4 gap-5">
         <div className="lg:col-span-2 xl:col-span-3">
           <AccuracyTrendChart />
@@ -158,7 +228,7 @@ export default function CeePortalView({ displayName, isPro, profile }: PortalVie
         </div>
       </div>
 
-      {/* Subject mastery & schedule */}
+      {/* 9. Subject Mastery & Schedule */}
       <div className="grid lg:grid-cols-3 xl:grid-cols-4 gap-5">
         <div className="lg:col-span-2 xl:col-span-2">
           <SubjectMasteryRings />
@@ -171,7 +241,7 @@ export default function CeePortalView({ displayName, isPro, profile }: PortalVie
         </div>
       </div>
 
-      {/* Recent exams */}
+      {/* 10. Recent Exams Table */}
       <RecentExamsTable />
     </div>
   );

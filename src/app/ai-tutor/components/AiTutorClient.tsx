@@ -9,11 +9,21 @@ import { Bot, Send, User, Sparkles, RefreshCw, Copy, Check, Lightbulb, Zap, Tras
 import { MathText } from '@/components/MathText';
 import toast from 'react-hot-toast';
 
+interface AgentInfo {
+  id: string;
+  name: string;
+  emoji: string;
+  latencyMs?: number;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  agents?: AgentInfo[];
+  isMultiAgent?: boolean;
+  intent?: string;
 }
 
 const CEE_PROMPTS: Record<string, { title: string; prompt: string }[]> = {
@@ -156,6 +166,8 @@ export default function AiTutorClient() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [neuralMode, setNeuralMode] = useState(true);
+  const [activeAgents, setActiveAgents] = useState<AgentInfo[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
 
@@ -225,24 +237,60 @@ export default function AiTutorClient() {
 
         const isVisualRequest = /\b(draw|diagram|illustrate|picture|image|photo|structure|flowchart)\b/i.test(text);
 
-        const res = await fetch('/api/ai/chat-completion', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [
-              { role: 'system', content: buildSystemPrompt(subject, program) },
-              ...historyForApi,
-              { role: 'user', content: text },
-            ],
-            temperature: 0.7,
-            max_tokens: 1000,
-          }),
-        });
+        let replyContent = '';
+        let agentInfos: AgentInfo[] = [];
+        let isMultiAgent = false;
+        let intent = '';
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.details || data.error || 'Failed to get AI response');
+        if (neuralMode) {
+          // ── Neural Schema Mode: route through orchestrator ──
+          const courseIdMap: Record<string, string> = {
+            cee: 'cee_medical',
+            see: 'see_class_10',
+            english: 'ielts',
+            digital: 'digital_marketing',
+          };
 
-        let replyContent = data.choices?.[0]?.message?.content ?? data.reply ?? data.text ?? 'No response received.';
+          setActiveAgents([{ id: 'orchestrator', name: 'SamyakGURU Brain', emoji: '🧠' }]);
+
+          const res = await fetch('/api/ai/neural/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: text,
+              courseId: courseIdMap[program] || 'cee_medical',
+              conversationHistory: historyForApi.slice(-6),
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.details || data.error || 'Neural AI error');
+
+          replyContent = data.response || 'No response received.';
+          agentInfos = data.agents || [];
+          isMultiAgent = data.isMultiAgent || false;
+          intent = data.intent || '';
+          setActiveAgents([]);
+        } else {
+          // ── Legacy Mode: direct chat-completion ──
+          const res = await fetch('/api/ai/chat-completion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [
+                { role: 'system', content: buildSystemPrompt(subject, program) },
+                ...historyForApi,
+                { role: 'user', content: text },
+              ],
+              temperature: 0.7,
+              max_tokens: 1000,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.details || data.error || 'Failed to get AI response');
+          replyContent = data.choices?.[0]?.message?.content ?? data.reply ?? data.text ?? 'No response received.';
+        }
 
         // Strip any raw legacy image links from AI text response
         replyContent = replyContent.replace(/!\[.*?\]\(https?:\/\/(?:image\.pollinations\.ai|[\w.-]+)\/.*?\)/gi, '');
@@ -266,17 +314,19 @@ export default function AiTutorClient() {
           }
         }
 
-
-
         const aiMsg: Message = {
           id: `ai-${Date.now()}`,
           role: 'assistant',
           content: replyContent,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          agents: agentInfos,
+          isMultiAgent,
+          intent,
         };
 
         setMessages((prev) => [...prev, aiMsg]);
       } catch (err: any) {
+        setActiveAgents([]);
         toast.error(err.message || 'Something went wrong. Please try again.');
         const errorMsg: Message = {
           id: `err-${Date.now()}`,
@@ -287,6 +337,7 @@ export default function AiTutorClient() {
         setMessages((prev) => [...prev, errorMsg]);
       } finally {
         setLoading(false);
+        setActiveAgents([]);
       }
     });
   };
@@ -324,7 +375,19 @@ export default function AiTutorClient() {
           </div>
 
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <span className="text-xs text-muted-foreground font-semibold">Active Program Section:</span>
+            {/* Neural Mode Toggle */}
+            <button
+              onClick={() => setNeuralMode(!neuralMode)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                neuralMode
+                  ? 'bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400'
+                  : 'bg-card border-border text-muted-foreground hover:border-primary/40'
+              }`}
+              title={neuralMode ? 'Neural Schema Active — 8 AI Agents coordinating' : 'Legacy Mode — Direct single-model calls'}
+            >
+              <span className={`w-2 h-2 rounded-full ${neuralMode ? 'bg-violet-500 animate-pulse' : 'bg-muted-foreground'}`} />
+              {neuralMode ? '🧠 Neural' : '⚡ Legacy'}
+            </button>
             <ProgramSwitcher size="md" />
           </div>
         </div>
@@ -389,8 +452,12 @@ export default function AiTutorClient() {
                   className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {m.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-xs">
-                      <Bot size={18} />
+                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-xs" title={m.agents?.map(a => `${a.emoji} ${a.name}`).join(', ') || 'SamyakGURU AI'}>
+                      {m.agents && m.agents.length > 0 ? (
+                        <span className="text-sm">{m.agents[0].emoji}</span>
+                      ) : (
+                        <Bot size={18} />
+                      )}
                     </div>
                   )}
 
@@ -402,6 +469,24 @@ export default function AiTutorClient() {
                     }`}
                   >
                     <MathText text={m.content} />
+                    {/* Agent badges for neural mode */}
+                    {m.role === 'assistant' && m.agents && m.agents.length > 0 && (
+                      <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                        {m.agents.map((a) => (
+                          <span
+                            key={a.id}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-semibold border border-violet-500/20"
+                            title={`${a.name} • ${a.latencyMs ? `${(a.latencyMs / 1000).toFixed(1)}s` : ''}`}
+                          >
+                            <span>{a.emoji}</span>
+                            <span>{a.name}</span>
+                          </span>
+                        ))}
+                        {m.isMultiAgent && (
+                          <span className="text-[10px] text-cyan-600 dark:text-cyan-400 font-bold">✦ Multi-Agent</span>
+                        )}
+                      </div>
+                    )}
                     <div className={`flex items-center justify-between text-[10px] pt-1 ${m.role === 'user' ? 'text-white/70' : 'text-muted-foreground'}`}>
                       <span>{m.timestamp}</span>
                       {m.role === 'assistant' && (
@@ -428,11 +513,33 @@ export default function AiTutorClient() {
             {loading && (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-xs animate-pulse">
-                  <Bot size={18} />
+                  {neuralMode && activeAgents.length > 0 ? (
+                    <span className="text-sm">{activeAgents[0].emoji}</span>
+                  ) : (
+                    <Bot size={18} />
+                  )}
                 </div>
-                <div className="bg-muted/60 border border-border rounded-2xl p-3.5 text-xs text-muted-foreground flex items-center gap-2">
-                  <RefreshCw size={14} className="animate-spin text-primary" />
-                  Analyzing {subject} curriculum database &amp; generating response...
+                <div className="bg-muted/60 border border-border rounded-2xl p-3.5 text-xs text-muted-foreground space-y-1">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw size={14} className="animate-spin text-primary" />
+                    {neuralMode ? (
+                      <span>
+                        <span className="text-violet-600 dark:text-violet-400 font-bold">🧠 Neural Schema</span>
+                        {' '}— Orchestrator routing to specialized agents...
+                      </span>
+                    ) : (
+                      <span>Analyzing {subject} curriculum database &amp; generating response...</span>
+                    )}
+                  </div>
+                  {neuralMode && activeAgents.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {activeAgents.map((a) => (
+                        <span key={a.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[10px] font-semibold text-violet-600 dark:text-violet-400 animate-pulse">
+                          {a.emoji} {a.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

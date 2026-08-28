@@ -6,6 +6,8 @@ import AppLogo from '@/components/ui/AppLogo';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import ProgramSelectorModal from '@/components/ProgramSelectorModal';
 import { Menu, X, ChevronDown, Sun, Moon, BookOpen, Download, Zap, FileText, Bot, Swords, Trophy, ClipboardList, Rocket, LayoutDashboard, Stethoscope, GraduationCap, Languages, Cpu, Sparkles, TrendingUp } from 'lucide-react';
+import AiDoubtSolverModal from '@/components/AiDoubtSolverModal';
+import SmartNotificationsDrawer from '@/components/SmartNotificationsDrawer';
 
 
 
@@ -14,26 +16,15 @@ type NavLink = { label: string; href: string; key: string; badge?: string; child
 
 const navLinks: NavLink[] = [
   {
-    label: 'Courses & Portals',
+    label: 'Learn',
     href: '/courses',
-    key: 'nav-sectors',
-    badge: '5 PATHS',
-    children: [
-      { label: 'SEE Class 10 Board', href: '/courses?sector=see', icon: GraduationCap, key: 'nav-see', desc: 'Grade 10 NEB Model Sets & AI Grading' },
-      { label: 'CEE Medical Entrance', href: '/courses?sector=cee', icon: Stethoscope, key: 'nav-cee', desc: 'MBBS, BDS, 15,000+ MCQs & Arena' },
-      { label: 'IELTS & English Mastery', href: '/english', icon: Languages, key: 'nav-eng', desc: 'AI Speaking Cue Cards & Writing Task 1/2' },
-      { label: 'Digital Marketing Skills', href: '/courses?sector=digital', icon: TrendingUp, key: 'nav-dm', desc: 'Meta Ads, TikTok Viral Hooks & SEO' },
-      { label: 'Artificial Intelligence (AI)', href: '/digital', icon: Cpu, key: 'nav-ai-port', desc: 'Prompt Studio, Python & Automations' },
-    ],
-  },
-  {
-    label: 'Study',
-    href: '/subjects',
     key: 'nav-learn',
     children: [
-      { label: 'Notes & Subjects', href: '/subjects', icon: BookOpen, key: 'nav-notes', desc: 'Chapter-wise notes' },
-      { label: 'Study Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-plan', desc: 'Daily schedule' },
-      { label: 'Samyak Guru App', href: '/app-feature', icon: Download, key: 'nav-app', desc: 'Live & Video App' },
+      { label: 'Samyak SEE', href: '/see', icon: GraduationCap, key: 'nav-see', desc: 'Class 10 Board Exam Prep & NEB Model Papers' },
+      { label: 'Samyak CEE', href: '/courses?sector=cee', icon: Stethoscope, key: 'nav-cee', desc: 'Medical Entrance 15,000+ MCQs & Notes' },
+      { label: 'Samyak IELTS', href: '/english', icon: Languages, key: 'nav-eng', desc: 'Academic & General Band 8.5+ Mastery' },
+      { label: 'Samyak Digital', href: '/digital-marketing', icon: TrendingUp, key: 'nav-dm', desc: 'Meta Ads, TikTok Growth & SEO Playbooks' },
+      { label: 'Samyak AI', href: '/ai-tutor', icon: Cpu, key: 'nav-ai-tech', desc: 'Generative AI, Python & Automation Agents' },
     ],
   },
   {
@@ -41,23 +32,45 @@ const navLinks: NavLink[] = [
     href: '/practice',
     key: 'nav-practice',
     children: [
-      { label: 'Practice MCQs', href: '/practice', icon: Zap, key: 'nav-mcq', desc: 'Quick question sets' },
-      { label: 'SEE Subjective Answers', href: '/practice/subjective', icon: Sparkles, key: 'nav-subj', desc: 'AI Handwritten Grading', badge: 'NEW' },
-      { label: 'Mock Tests', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Full exam simulation' },
-      { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai', desc: 'Ask any question' },
+      { label: 'Practice MCQs', href: '/practice', icon: Zap, key: 'nav-mcq', desc: 'Chapter-wise test question drills' },
+      { label: 'Mock Tests', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Full exam simulations with negative marks' },
+      { label: 'Speaking Simulator', href: '/english/speaking/simulator', icon: Languages, key: 'nav-speak', desc: '3-Part Cue Card Voice Recorder' },
+      { label: 'Writing Evaluator', href: '/english/writing/rubric', icon: FileText, key: 'nav-write', desc: 'Task 1 & 2 Examiner Rubric Grader' },
+      { label: 'Coding & AI Drills', href: '/ai-tutor', icon: Cpu, key: 'nav-code', desc: 'Python Syntax & Prompt Engineering' },
     ],
   },
   {
     label: 'Compete',
-    href: '/battle-arena',
+    href: '/match-lobby',
     key: 'nav-compete',
     children: [
-      { label: 'Battle Arena', href: '/battle-arena', icon: Swords, key: 'nav-battle', desc: '2-player quiz duels', badge: 'LIVE' },
-      { label: 'Leaderboard', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Rankings & rank predictor' },
+      { label: '⚔️ Samyak Arena', href: '/match-lobby', icon: Swords, key: 'nav-arena', desc: 'Real-time 1v1 multi-vertical quiz duels', badge: 'LIVE' },
+      { label: 'Leaderboard', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Rankings & ELO ratings' },
     ],
   },
-  { label: 'All Courses', href: '/courses', key: 'nav-courses' },
-  { label: 'Batches', href: '/batches', key: 'nav-batches' },
+  {
+    label: 'AI',
+    href: '/live-teacher',
+    key: 'nav-ai-suite',
+    badge: 'AI SUITE',
+    children: [
+      { label: 'AI Teacher Avatar', href: '/live-teacher', icon: Bot, key: 'nav-ai-teacher', desc: '1-on-1 WebRTC spoken teacher stage', badge: 'REALTIME' },
+      { label: 'AI Tutor Agent', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', desc: '24/7 instant doubt solver' },
+      { label: 'AI Vision Marker', href: '/vision-marker', icon: Sparkles, key: 'nav-ai-eval', desc: 'Handwritten exam paper OCR marker' },
+      { label: 'AI Study Planner', href: '/study-plan', icon: ClipboardList, key: 'nav-ai-plan', desc: 'Personalized curriculum roadmap' },
+    ],
+  },
+  {
+    label: 'My Learning',
+    href: '/student-dashboard',
+    key: 'nav-my-learning',
+    children: [
+      { label: 'Student Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dash', desc: 'Active Today Stream & Course Portals' },
+      { label: 'Learning Progress', href: '/student-dashboard', icon: TrendingUp, key: 'nav-prog', desc: 'Mastery rings & accuracy trends' },
+      { label: 'Mistake Analyser', href: '/mistake-analyser', icon: Sparkles, key: 'nav-weak', desc: 'AI detected weakness bottlenecks' },
+      { label: 'Certificates & Orders', href: '/account/purchases', icon: Rocket, key: 'nav-cert', desc: 'Enrolled courses & verified credentials' },
+    ],
+  },
 ];
 
 
@@ -81,6 +94,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [showAiDoubtModal, setShowAiDoubtModal] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
 
   // Auth-aware: signed-in visitors see a "Dashboard" button (→ the student
@@ -253,6 +267,19 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
 
           {/* Right actions — col 3, pinned to the right edge */}
           <div className="flex items-center gap-1.5 shrink-0 justify-self-end">
+            
+            {/* Smart Behavior Notifications Bell */}
+            <SmartNotificationsDrawer />
+
+            {/* 🤖 ASK SAMYAK AI Button */}
+            <button
+              onClick={() => setShowAiDoubtModal(true)}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all border border-emerald-500/30"
+            >
+              <Bot size={15} />
+              <span>🤖 ASK SAMYAK AI</span>
+            </button>
+
             {/* Prebook — highlighted conversion CTA */}
             <Link
               href="/prebook"
@@ -418,6 +445,11 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
           </div>
         </div>
       )}
+      {/* AI Doubt Solver Modal */}
+      <AiDoubtSolverModal
+        isOpen={showAiDoubtModal}
+        onClose={() => setShowAiDoubtModal(false)}
+      />
     </nav>
   );
 }

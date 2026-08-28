@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Users, BookOpen, Target, Trophy, Video, TrendingUp, Sparkles } from 'lucide-react';
+import { BookOpen, Target, Video, Cpu, ShieldCheck, Sparkles, Award } from 'lucide-react';
 
 const stats = [
-  { key: 'stat-students', raw: '40,000+', value: 40000, suffix: '+', label: 'Active Students', icon: Users, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
-  { key: 'stat-mcq', raw: '15,000+', value: 15000, suffix: '+', label: 'MCQs with Explanations', icon: Target, color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/20' },
-  { key: 'stat-accuracy', raw: '92%', value: 92, suffix: '%', label: 'Avg. Accuracy Improvement', icon: TrendingUp, color: 'text-success', bg: 'bg-success-light', border: 'border-success/20' },
-  { key: 'stat-notes', raw: '1,200+', value: 1200, suffix: '+', label: 'Premium Sub-Chapter Notes', icon: BookOpen, color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/20' },
-  { key: 'stat-videos', raw: '300+', value: 300, suffix: '+', label: 'Video Lectures (in App)', icon: Video, color: 'text-physics', bg: 'bg-physics-light', border: 'border-physics/20' },
-  { key: 'stat-rank', raw: '98%', value: 98, suffix: '%', label: 'Students Improved Rank', icon: Trophy, color: 'text-ma', bg: 'bg-ma-light', border: 'border-ma/20' },
+  { key: 'stat-mcq', raw: '15,000+', value: 15000, suffix: '+', label: 'Verified Practice MCQs', icon: Target, color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/20' },
+  { key: 'stat-notes', raw: '1,200+', value: 1200, suffix: '+', label: 'Sub-Chapter Notes', icon: BookOpen, color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/20' },
+  { key: 'stat-agents', raw: '8', value: 8, suffix: '', label: 'Specialized AI Agents', icon: Cpu, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20' },
+  { key: 'stat-stages', raw: '10', value: 10, suffix: ' Stages', label: 'IELTS Evaluation Pipeline', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  { key: 'stat-videos', raw: '300+', value: 300, suffix: '+', label: 'Structured Video Lessons', icon: Video, color: 'text-physics', bg: 'bg-physics-light', border: 'border-physics/20' },
+  { key: 'stat-curriculum', raw: '100%', value: 100, suffix: '%', label: 'NEB & MEC Syllabus Aligned', icon: ShieldCheck, color: 'text-success', bg: 'bg-success-light', border: 'border-success/20' },
 ];
 
 function useCountUp(target: number, active: boolean) {
@@ -70,21 +70,21 @@ export default function StatsSection() {
   }, []);
 
   return (
-    <section ref={ref} className="py-20 bg-gradient-to-b from-card via-muted/40 to-card border-y border-border/60 relative overflow-hidden">
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 relative z-10">
-        <div className="text-center mb-12">
-          <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider bg-primary/10 text-primary px-4 py-1.5 rounded-full mb-3 border border-primary/20 shadow-xs">
-            <Sparkles size={14} className="animate-pulse" /> Real Platform Impact
-          </span>
-          <h2 className="text-hero-md text-foreground font-black tracking-tight">Numbers That Speak for Themselves</h2>
-          <p className="text-muted-foreground mt-2 max-w-lg mx-auto text-sm sm:text-base font-medium">
-            Empowering 40,000+ Nepal CEE aspirants to achieve medical entrance success.
+    <section ref={ref} className="py-16 bg-muted/30 border-y border-border/60 relative overflow-hidden">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
+        <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black">
+            <Sparkles size={14} /> Evidence-Based Architecture
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-black text-foreground">Built on Verified Learning Assets</h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Structured course materials, algorithmic evaluators, and syllabus-aligned question banks.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {stats.map((stat) => (
-            <StatCard key={stat.key} stat={stat} active={active} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {stats.map((s) => (
+            <StatCard key={s.key} stat={s} active={active} />
           ))}
         </div>
       </div>
