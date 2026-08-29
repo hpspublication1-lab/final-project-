@@ -26,7 +26,7 @@ import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import PasswordStrength from './PasswordStrength';
 
 type Step = 'email' | 'otp';
-type AuthMode = 'otp' | 'password';
+type AuthMode = 'password' | 'otp' | 'forgot_password';
 type PasswordAction = 'signin' | 'signup';
 
 const RESEND_SECONDS = 30;
@@ -65,9 +65,9 @@ function friendlyError(err: unknown): string {
 }
 
 export default function AuthPageClient() {
-  const { signInWithEmailOtp, verifyEmailOtp, signIn, signUp, signInWithOAuth } = useAuth();
+  const { signInWithEmailOtp, verifyEmailOtp, signIn, signUp, signInWithOAuth, resetPasswordForEmail } = useAuth();
 
-  const [authMode, setAuthMode] = useState<AuthMode>('otp');
+  const [authMode, setAuthMode] = useState<AuthMode>('password');
   const [passwordAction, setPasswordAction] = useState<PasswordAction>('signin');
   const [step, setStep] = useState<Step>('email');
 
@@ -409,21 +409,6 @@ export default function AuthPageClient() {
                   <button
                     type="button"
                     onClick={() => {
-                      setAuthMode('otp');
-                      setError(null);
-                    }}
-                    className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                      authMode === 'otp'
-                        ? 'bg-card text-foreground shadow-sm font-bold'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    <KeyRound size={15} />
-                    Code / OTP
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
                       setAuthMode('password');
                       setError(null);
                     }}
@@ -436,10 +421,25 @@ export default function AuthPageClient() {
                     <Lock size={15} />
                     Password
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('otp');
+                      setError(null);
+                    }}
+                    className={`py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                      authMode === 'otp'
+                        ? 'bg-card text-foreground shadow-sm font-bold'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <KeyRound size={15} />
+                    Magic Link
+                  </button>
                 </div>
 
                 {authMode === 'otp' ? (
-                  /* ── OTP Mode Form ───────────────────────────── */
+                  /* ── OTP / Magic Link Mode Form ───────────────────────────── */
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -448,10 +448,10 @@ export default function AuthPageClient() {
                   >
                     <div>
                       <h1 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight">
-                        Sign in with Passcode
+                        Sign in with Magic Link
                       </h1>
                       <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        Enter your email and we&apos;ll send a 6-digit code — no password needed.
+                        Enter your email and we&apos;ll send a secure link or 6-digit code.
                       </p>
 
                       <div className="mt-5">
@@ -496,6 +496,98 @@ export default function AuthPageClient() {
                         ) : (
                           <>
                             Send Code
+                            <ArrowRight size={18} />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : authMode === 'forgot_password' ? (
+                  /* ── Forgot Password Form ──────────────────────── */
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!emailValid) {
+                        setError('Enter a valid email address');
+                        return;
+                      }
+                      setLoading(true);
+                      setError(null);
+                      try {
+                        await resetPasswordForEmail(email.trim());
+                        toast.success('Password reset email sent! Check your inbox.');
+                        setAuthMode('password');
+                      } catch (err) {
+                        setError(friendlyError(err));
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <h1 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight">
+                          Reset Password
+                        </h1>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthMode('password');
+                            setError(null);
+                          }}
+                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                        >
+                          <ArrowLeft size={14} /> Back to login
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
+                        Enter your email address and we&apos;ll send you a link to reset your password.
+                      </p>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label htmlFor="reset-email" className="block text-xs font-bold text-foreground uppercase tracking-wider mb-1.5">
+                            Email address
+                          </label>
+                          <div className="relative">
+                            <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <input
+                              id="reset-email"
+                              type="email"
+                              inputMode="email"
+                              autoComplete="email"
+                              placeholder="you@example.com"
+                              value={email}
+                              onChange={(e) => {
+                                setEmail(e.target.value);
+                                setError(null);
+                              }}
+                              className={`input-field pl-9 ${error ? 'border-error focus:border-error' : ''}`}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {error && (
+                        <p className="text-xs text-error mt-3 flex items-center gap-1.5">
+                          <AlertCircle size={13} className="shrink-0" />
+                          {error}
+                        </p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn-primary w-full justify-center py-3 text-base font-bold shadow-md mt-6 disabled:opacity-60"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 size={18} className="animate-spin" />
+                            Sending link…
+                          </>
+                        ) : (
+                          <>
+                            Send Reset Link
                             <ArrowRight size={18} />
                           </>
                         )}
@@ -567,12 +659,16 @@ export default function AuthPageClient() {
                               Password
                             </label>
                             {passwordAction === 'signin' && (
-                              <Link
-                                href="/reset-password"
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAuthMode('forgot_password');
+                                  setError(null);
+                                }}
                                 className="text-xs font-semibold text-primary hover:underline"
                               >
                                 Forgot password?
-                              </Link>
+                              </button>
                             )}
                           </div>
                           <div className="relative">
