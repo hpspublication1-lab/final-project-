@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrial } from '@/contexts/TrialContext';
 import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
+import { COURSE_PORTAL_CONFIGS } from '@/lib/config/courseFeatures';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { BookOpen, ChevronRight, CheckCircle2, Lock, PlayCircle, Zap, Clock, TrendingUp, Search, FileText, Loader2, GraduationCap, Stethoscope } from 'lucide-react';
 
@@ -193,16 +194,47 @@ export default function SubjectsPageClient() {
     return () => { cancelled = true; };
   }, [user?.id, isFree]);
 
-  // Filter subjects by active program (CEE vs SEE)
+  // Filter subjects by active program (CEE vs SEE vs IELTS vs Digital/AI)
   const isSeeSubject = (name: string) =>
     ['compulsory_science', 'compulsory_math', 'optional_math', 'english', 'social_studies', 'science', 'math', 'opt_math', 'social'].includes(
       name.toLowerCase()
     );
   
-  const programFilteredSubjects = subjects.filter((s) => {
+  let programFilteredSubjects = subjects.filter((s) => {
     if (canonicalId === 'see_class_10') return isSeeSubject(s.name);
     return !isSeeSubject(s.name); // CEE or general
   });
+
+  // Fallback to portal curriculum config if program has no custom DB records yet
+  if (programFilteredSubjects.length === 0 && COURSE_PORTAL_CONFIGS[canonicalId]?.defaultSubjects) {
+    const portalConfig = COURSE_PORTAL_CONFIGS[canonicalId];
+    programFilteredSubjects = portalConfig.defaultSubjects.map((ds, idx) => ({
+      id: ds.id || `sub-fallback-${idx}`,
+      name: ds.name.toLowerCase().replace(/\s+/g, '_'),
+      displayName: ds.name,
+      icon: ds.icon || 'BookOpen',
+      color: ds.color || '#5A45E8',
+      bgLight: 'bg-primary/10',
+      textColor: 'text-primary',
+      borderColor: 'border-primary/20',
+      chapters: Array.from({ length: ds.chaptersCount || 5 }, (_, cIdx) => ({
+        id: `ch-${ds.id}-${cIdx + 1}`,
+        subjectId: ds.id,
+        title: `Module ${cIdx + 1}: Core Concepts & High-Yield Strategy`,
+        chapterNumber: cIdx + 1,
+        isPremium: cIdx > 1,
+        mcqCount: 25,
+        videoCount: 2,
+        videoDurationSec: 1800,
+        progress: cIdx === 0 ? 60 : 0,
+        masteryLevel: cIdx === 0 ? 'Practiced' : 'Not Started',
+        isLocked: isFree && cIdx > 1,
+      })),
+      totalMCQs: (ds.chaptersCount || 5) * 25,
+      completedChapters: 0,
+      masteryPercent: 0,
+    }));
+  }
 
   // Ensure activeSubject points to a valid subject in the currently active program
   useEffect(() => {

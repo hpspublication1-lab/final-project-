@@ -197,6 +197,32 @@ export default function MockTestsPageClient() {
 
 
   // Online status
+  // Check for ongoing exam session on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('samyak_active_mock_exam');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const remaining = Math.max(0, Math.floor((parsed.targetEndTime - Date.now()) / 1000));
+        if (remaining > 10 && parsed.questions?.length > 0 && parsed.selectedExam) {
+          setSelectedExam(parsed.selectedExam);
+          setQuestions(parsed.questions);
+          setAnswers(parsed.answers || {});
+          setMarkedForReview(new Set(parsed.markedForReview || []));
+          setAttemptId(parsed.attemptId || null);
+          setCurrentIdx(parsed.currentIdx || 0);
+          setTimeLeft(remaining);
+          setExamMode('active');
+          sonnerToast.success('Restored your active exam in progress');
+        } else {
+          localStorage.removeItem('samyak_active_mock_exam');
+        }
+      }
+    } catch {
+      localStorage.removeItem('samyak_active_mock_exam');
+    }
+  }, []);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -205,9 +231,54 @@ export default function MockTestsPageClient() {
     return () => { window.removeEventListener('online', handleOnline); window.removeEventListener('offline', handleOffline); };
   }, []);
 
+  // Prevent accidental unload during active exam
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (examMode === 'active') {
+        e.preventDefault();
+        e.returnValue = 'You have an active exam in progress. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [examMode]);
+
+  // Persist active exam answers & status
+  useEffect(() => {
+    if (examMode === 'active' && selectedExam && questions.length > 0) {
+      try {
+        const currentSaved = localStorage.getItem('samyak_active_mock_exam');
+        let targetEndTime = Date.now() + timeLeft * 1000;
+        if (currentSaved) {
+          try {
+            const p = JSON.parse(currentSaved);
+            if (p.targetEndTime && p.selectedExam?.id === selectedExam.id) {
+              targetEndTime = p.targetEndTime;
+            }
+          } catch {}
+        }
+        localStorage.setItem(
+          'samyak_active_mock_exam',
+          JSON.stringify({
+            selectedExam,
+            questions,
+            answers,
+            markedForReview: Array.from(markedForReview),
+            attemptId,
+            currentIdx,
+            targetEndTime,
+          })
+        );
+      } catch (err) {
+        console.warn('Failed to cache active exam state:', err);
+      }
+    }
+  }, [examMode, selectedExam, questions, answers, markedForReview, attemptId, currentIdx]);
+
   // Timer
   useEffect(() => {
-    if (examMode === 'active' && selectedExam) {
+    if (examMode === 'active' && selectedExam && timeLeft === 0) {
       setTimeLeft(selectedExam.duration * 60);
     }
   }, [examMode, selectedExam]);
@@ -488,6 +559,10 @@ export default function MockTestsPageClient() {
         // silently continue to results
       }
     }
+
+    try {
+      localStorage.removeItem('samyak_active_mock_exam');
+    } catch {}
 
     setSubmitting(false);
     setExamMode('result');
@@ -774,11 +849,22 @@ export default function MockTestsPageClient() {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => { setExamMode('list'); setQuestions([]); }} className="flex-1 btn-secondary py-2.5 gap-2">
+            <button
+              onClick={() => {
+                try { localStorage.removeItem('samyak_active_mock_exam'); } catch {}
+                setExamMode('list');
+                setQuestions([]);
+              }}
+              className="flex-1 btn-secondary py-2.5 gap-2"
+            >
               <RotateCcw size={15} /> Back to Tests
             </button>
             <button
-              onClick={() => { setExamMode('confirm'); setQuestions([]); }}
+              onClick={() => {
+                try { localStorage.removeItem('samyak_active_mock_exam'); } catch {}
+                setExamMode('confirm');
+                setQuestions([]);
+              }}
               className="flex-1 btn-primary py-2.5 gap-2"
             >
               <Play size={15} /> Retake
