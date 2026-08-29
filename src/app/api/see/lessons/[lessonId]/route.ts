@@ -29,14 +29,42 @@ export async function GET(
     }
 
     // 1. Fetch lesson details
-    const { data: lesson, error: lessonError } = await admin
+    let lesson: any = null;
+    const { data: seeLesson } = await admin
       .from('see_lessons')
       .select('*')
       .eq('id', lessonId)
       .eq('is_published', true)
       .maybeSingle();
 
-    if (lessonError || !lesson) {
+    if (seeLesson) {
+      lesson = seeLesson;
+    } else {
+      const { data: vid } = await admin
+        .from('video_lectures')
+        .select('*')
+        .eq('id', lessonId)
+        .maybeSingle();
+
+      if (vid) {
+        lesson = {
+          id: vid.id,
+          course_id: 'see_class_10',
+          subject_slug: 'physics',
+          chapter_name: 'Science & Technology',
+          title: vid.title.replace(/\.mp4$/i, '').trim(),
+          description: vid.description || 'Full HD video lecture for SEE preparation.',
+          video_url: vid.video_url,
+          thumbnail_url: vid.thumbnail_url,
+          duration_sec: vid.duration_sec || 900,
+          lesson_order: 1,
+          is_free: false,
+          is_published: true,
+        };
+      }
+    }
+
+    if (!lesson) {
       return NextResponse.json({ error: 'Lesson not found or unavailable' }, { status: 404 });
     }
 

@@ -17,25 +17,77 @@ export async function GET(request: NextRequest) {
     const chapterName = searchParams.get('chapter');
 
     // Fetch lessons from see_lessons or fallback to video_lectures
-    let query = admin
+    let lessons: any[] = [];
+    const { data: seeData, error: seeErr } = await admin
       .from('see_lessons')
       .select('*')
       .eq('is_published', true)
       .order('lesson_order', { ascending: true });
 
+    if (!seeErr && seeData && seeData.length > 0) {
+      lessons = seeData;
+    } else {
+      // Fallback: Query all Bunny.net synced video_lectures
+      const { data: vids, error: vidErr } = await admin
+        .from('video_lectures')
+        .select('*')
+        .eq('is_active', true);
+
+      if (vids && vids.length > 0) {
+        lessons = vids.map((v: any, idx: number) => {
+          const t = (v.title || '').toLowerCase();
+          let slug = 'physics';
+          let chapter = 'General Science';
+
+          if (t.includes('see-om') || t.includes('continuity') || t.includes('vector') || t.includes('calculus') || t.includes('matrix') || t.includes('trigonometry') || t.includes('opt math')) {
+            slug = 'opt_math';
+            chapter = t.includes('continuity') ? 'Continuity & Limits' : t.includes('vector') ? 'Vector Geometry' : 'Optional Mathematics Core';
+          } else if (t.includes('compound interest') || t.includes('probability') || t.includes('arithmetic') || t.includes('geometry') || t.includes('math')) {
+            slug = 'math';
+            chapter = t.includes('compound interest') ? 'Compound Interest & Depreciation' : t.includes('probability') ? 'Probability & Statistics' : 'Compulsory Mathematics Core';
+          } else if (t.includes('periodic table') || t.includes('block') || t.includes('chemistry')) {
+            slug = 'chemistry';
+            chapter = 'Modern Periodic Table & Chemical Reactions';
+          } else if (t.includes('transformer') || t.includes('force') || t.includes('gravity') || t.includes('physics') || t.includes('kinematics')) {
+            slug = 'physics';
+            chapter = t.includes('transformer') ? 'Electricity & Magnetism' : 'Force & Gravitation';
+          } else if (t.includes('genetics') || t.includes('biology')) {
+            slug = 'biology';
+            chapter = 'Heredity & Genetics';
+          } else if (t.includes('q.no') || t.includes('q1') || t.includes('writing') || t.includes('unseen') || t.includes('adjective') || t.includes('drama') || t.includes('story') || t.includes('english')) {
+            slug = 'english';
+            chapter = t.includes('writing') ? 'Free Writing & Essays' : t.includes('unseen') ? 'Reading Comprehension' : 'Grammar & Vocabulary';
+          } else if (t.includes('so u') || t.includes('so l') || t.includes('social')) {
+            slug = 'social';
+            chapter = 'Social Studies & Contemporary Society';
+          } else if (t.includes('nepali')) {
+            slug = 'nepali';
+            chapter = 'Nepali Language & Literature';
+          }
+
+          return {
+            id: v.id,
+            course_id: 'see_class_10',
+            subject_slug: slug,
+            chapter_name: chapter,
+            title: v.title.replace(/\.mp4$/i, '').trim(),
+            description: v.description || `HD Video Lecture (${Math.round((v.duration_sec || 0)/60)} mins)`,
+            video_url: v.video_url,
+            thumbnail_url: v.thumbnail_url,
+            duration_sec: v.duration_sec || 900,
+            lesson_order: idx + 1,
+            is_free: idx < 3,
+            is_published: true,
+          };
+        });
+      }
+    }
+
     if (subjectSlug && subjectSlug !== 'all') {
-      query = query.eq('subject_slug', subjectSlug);
+      lessons = lessons.filter((l: any) => l.subject_slug === subjectSlug);
     }
-
     if (chapterName) {
-      query = query.eq('chapter_name', chapterName);
-    }
-
-    const { data: lessons, error } = await query;
-
-    if (error || !lessons) {
-      console.warn('see_lessons query error or empty, using fallback:', error?.message);
-      return NextResponse.json({ lessons: [], subjects: [] });
+      lessons = lessons.filter((l: any) => l.chapter_name === chapterName);
     }
 
     // If user is authenticated, fetch their watch progress for all lessons
