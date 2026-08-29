@@ -14,12 +14,12 @@ export default function DedicatedSeeLandingPage() {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
 
   const seeSubjects = [
-    { name: 'Compulsory Science', chapters: 24, icon: '🔬', desc: 'Physics, Chemistry, Biology & Astronomy', color: 'border-emerald-500/20 bg-emerald-500/5' },
-    { name: 'Compulsory Mathematics', chapters: 20, icon: '📐', desc: 'Arithmetic, Algebra, Geometry & Mensuration', color: 'border-blue-500/20 bg-blue-500/5' },
-    { name: 'Optional Mathematics', chapters: 16, icon: '📊', desc: 'Trigonometry, Coordinate Geometry & Vectors', color: 'border-purple-500/20 bg-purple-500/5' },
-    { name: 'English Language', chapters: 15, icon: '📚', desc: 'Grammar, Reading Comprehension & Writing', color: 'border-amber-500/20 bg-amber-500/5' },
-    { name: 'Nepali (व्याकरण र पाठ्यपुस्तक)', chapters: 16, icon: '🇳🇵', desc: 'नेपाली व्याकरण, उत्तर लेखन र मोडल प्रश्न समाधान', color: 'border-red-500/20 bg-red-500/5' },
-    { name: 'Social Studies & Life Skills', chapters: 18, icon: '🌍', desc: 'History, Geography, Civics & Culture', color: 'border-orange-500/20 bg-orange-500/5' },
+    { name: 'Compulsory Science', href: '/see/subject/science', chapters: 24, icon: '🔬', desc: 'Physics, Chemistry, Biology & Astronomy', color: 'border-emerald-500/20 bg-emerald-500/5' },
+    { name: 'Compulsory Mathematics', href: '/see/subject/mathematics', chapters: 20, icon: '📐', desc: 'Arithmetic, Algebra, Geometry & Mensuration', color: 'border-blue-500/20 bg-blue-500/5' },
+    { name: 'Optional Mathematics', href: '/see/subject/opt_math', chapters: 16, icon: '📊', desc: 'Trigonometry, Coordinate Geometry & Vectors', color: 'border-purple-500/20 bg-purple-500/5' },
+    { name: 'English Language', href: '/see/subject/english', chapters: 15, icon: '📚', desc: 'Grammar, Reading Comprehension & Writing', color: 'border-amber-500/20 bg-amber-500/5' },
+    { name: 'Nepali (व्याकरण र पाठ्यपुस्तक)', href: '/see/subject/nepali', chapters: 16, icon: '🇳🇵', desc: 'नेपाली व्याकरण, उत्तर लेखन र मोडल प्रश्न समाधान', color: 'border-red-500/20 bg-red-500/5' },
+    { name: 'Social Studies & Life Skills', href: '/see/subject/social', chapters: 18, icon: '🌍', desc: 'History, Geography, Civics & Culture', color: 'border-orange-500/20 bg-orange-500/5' },
   ];
 
   return (
@@ -164,22 +164,34 @@ export default function DedicatedSeeLandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {seeSubjects.map((sub) => (
-              <div key={sub.name} className={`p-6 rounded-3xl border ${sub.color} space-y-3 flex flex-col justify-between`}>
+              <Link
+                key={sub.name}
+                href={sub.href}
+                className={`p-6 rounded-3xl border ${sub.color} space-y-3 flex flex-col justify-between hover:scale-[1.02] hover:shadow-xl transition-all group`}
+              >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-3xl">{sub.icon}</span>
-                    <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-card text-emerald-600 border border-emerald-500/20">
+                    <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-card text-emerald-600 border border-emerald-500/20 font-mono">
                       {sub.chapters} CHAPTERS
                     </span>
                   </div>
-                  <h3 className="text-base font-black text-foreground">{sub.name}</h3>
+                  <h3 className="text-base font-black text-foreground group-hover:text-emerald-600 transition-colors flex items-center justify-between">
+                    <span>{sub.name}</span>
+                    <ArrowRight size={16} className="text-emerald-500 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">{sub.desc}</p>
                 </div>
 
-                <div className="pt-3 border-t border-border/40 text-[11px] font-bold text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 size={14} /> Video Notes + NEB Solutions Included
+                <div className="pt-3 border-t border-border/40 text-[11px] font-bold text-emerald-600 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle2 size={14} /> Video Notes + Solved Past Papers
+                  </span>
+                  <span className="text-[10px] font-mono uppercase bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                    Explore →
+                  </span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </section>
