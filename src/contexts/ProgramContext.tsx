@@ -214,6 +214,12 @@ export interface ProgramContextType {
   setProgram: (p: ProgramType) => void;
   programDetails: ProgramDetails;
   allCourses: ProgramDetails[];
+  isSee: boolean;
+  isCee: boolean;
+  isIelts: boolean;
+  isDigitalMarketing: boolean;
+  isAi: boolean;
+  isDigitalOrAi: boolean;
 }
 
 const ProgramContext = createContext<ProgramContextType>({
@@ -222,6 +228,12 @@ const ProgramContext = createContext<ProgramContextType>({
   setProgram: () => {},
   programDetails: COURSES_MAP.cee_medical,
   allCourses: CANONICAL_COURSES.map((id) => COURSES_MAP[id]),
+  isSee: false,
+  isCee: true,
+  isIelts: false,
+  isDigitalMarketing: false,
+  isAi: false,
+  isDigitalOrAi: false,
 });
 
 export function ProgramProvider({ children }: { children: React.ReactNode }) {
@@ -251,6 +263,13 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
   const programDetails = COURSES_MAP[program] || COURSES_MAP.cee_medical;
   const allCourses = CANONICAL_COURSES.map((id) => COURSES_MAP[id]);
 
+  const isSee = program === 'see_class_10';
+  const isCee = program === 'cee_medical';
+  const isIelts = program === 'ielts';
+  const isDigitalMarketing = program === 'digital_marketing';
+  const isAi = program === 'artificial_intelligence';
+  const isDigitalOrAi = isDigitalMarketing || isAi;
+
   return (
     <ProgramContext.Provider
       value={{
@@ -259,6 +278,12 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
         setProgram,
         programDetails,
         allCourses,
+        isSee,
+        isCee,
+        isIelts,
+        isDigitalMarketing,
+        isAi,
+        isDigitalOrAi,
       }}
     >
       {children}
@@ -269,4 +294,5 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
 export function useProgram() {
   return useContext(ProgramContext);
 }
+
 

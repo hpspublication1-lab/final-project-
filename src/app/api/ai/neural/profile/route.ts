@@ -24,6 +24,18 @@ export async function GET(request: NextRequest) {
     const courseId = searchParams.get('courseId') || undefined;
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({
+        profile: {
+          weakTopics: [],
+          strongTopics: [],
+          misconceptions: [],
+          preferences: {},
+          recentInteractions: 0,
+          totalInteractions: 0,
+        },
+      });
+    }
 
     // Call the RPC to get the student's learning context
     const { data: profile, error } = await admin.rpc('get_student_learning_context', {
@@ -121,6 +133,9 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ success: true });
+    }
 
     // Upsert each preference
     for (const [key, value] of Object.entries(preferences)) {

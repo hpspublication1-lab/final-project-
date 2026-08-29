@@ -663,8 +663,8 @@ export default function IeltsSpeakingLivePage() {
                   {/* ASR */}
                   <div className="p-3 rounded-2xl bg-muted/40 border border-border space-y-1">
                     <span className="text-[10px] font-bold uppercase text-muted-foreground">ASR Engine</span>
-                    <p className="font-extrabold text-foreground">{(evaluation as any).acousticPipeline.asr?.transcriptionConfidence * 100 || 95}% Confidence</p>
-                    <p className="text-[10px] text-muted-foreground">{(evaluation as any).acousticPipeline.asr?.wordAlignmentsCount || evaluation.wordCount} words aligned</p>
+                    <p className="font-extrabold text-foreground">{(evaluation as any).acousticPipeline?.asr?.transcriptionConfidence * 100 || 95}% Confidence</p>
+                    <p className="text-[10px] text-muted-foreground">{(evaluation as any).acousticPipeline?.asr?.wordAlignmentsCount || (evaluation as any).wordCount || 100} words aligned</p>
                   </div>
 
                   {/* Linguistic */}
@@ -717,7 +717,7 @@ export default function IeltsSpeakingLivePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
                   <div className="p-2.5 rounded-xl bg-card border border-border">
                     <span className="text-[10px] text-muted-foreground font-semibold">Speech Speed</span>
-                    <p className="font-bold text-foreground mt-0.5">{(evaluation as any).preprocessing.fluencyMetrics?.speakingRateWpm || evaluation.estimatedWpm || 120} WPM</p>
+                    <p className="font-bold text-foreground mt-0.5">{(evaluation as any).preprocessing?.fluencyMetrics?.speakingRateWpm || (evaluation as any).estimatedWpm || 120} WPM</p>
                   </div>
                   <div className="p-2.5 rounded-xl bg-card border border-border">
                     <span className="text-[10px] text-muted-foreground font-semibold">Filler Words</span>

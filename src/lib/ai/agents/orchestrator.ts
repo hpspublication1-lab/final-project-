@@ -183,6 +183,7 @@ Student Context:
 
 async function saveConversation(userId: string, courseId: string, sessionId: string, userMsg: string, aiMsg: string, agentsUsed: string) {
   const admin = createAdminClient();
+  if (!admin) return;
   await admin.from('agent_conversations').insert({
     user_id: userId,
     course_id: courseId,

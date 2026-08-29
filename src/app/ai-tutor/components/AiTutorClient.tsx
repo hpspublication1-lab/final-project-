@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useTransition } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { useProgram, ProgramType } from '@/contexts/ProgramContext';
+import { useProgram, ProgramType, normalizeCourseId } from '@/contexts/ProgramContext';
 
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { Bot, Send, User, Sparkles, RefreshCw, Copy, Check, Lightbulb, Zap, Trash2, ArrowUpRight, GraduationCap, Stethoscope } from 'lucide-react';
@@ -133,13 +133,14 @@ const DIGITAL_PROMPTS: Record<string, { title: string; prompt: string }[]> = {
 };
 
 function buildSystemPrompt(subject: string, program: ProgramType): string {
-  if (program === 'english') {
+  const canonical = normalizeCourseId(program);
+  if (canonical === 'ielts') {
     return `You are SamyakGURU AI, an expert ESL & Test Prep tutor for English Fluency, IELTS (Target Band 8+), PTE, and Grammar. You specialize in ${subject}. Focus on practical communication, grammar rules, vocabulary expansion, and test strategies.`;
   }
-  if (program === 'digital') {
-    return `You are SamyakGURU AI, a practical Tech & AI mentor specializing in ChatGPT Prompt Engineering, Python Programming, Digital Marketing, and Canva Design. You specialize in ${subject}. Explain step-by-step with real-world code snippets, prompt templates, and beginner-friendly instructions.`;
+  if (canonical === 'digital_marketing' || canonical === 'artificial_intelligence') {
+    return `You are SamyakGURU AI, a practical Tech & AI mentor specializing in ChatGPT Prompt Engineering, Python Programming, Digital Marketing, and Modern AI Tools. You specialize in ${subject}. Explain step-by-step with real-world code snippets, prompt templates, and beginner-friendly instructions.`;
   }
-  if (program === 'see') {
+  if (canonical === 'see_class_10') {
     return `You are SamyakGURU AI, Nepal's premier AI Tutor for Class 10 NEB Secondary Education Examination (SEE). You specialize in ${subject === 'General' ? 'all SEE subjects (Science, Math, Opt Math, English, Social Studies)' : subject}.
 
 Your Core Objectives:
@@ -172,6 +173,7 @@ export default function AiTutorClient() {
   const [, startTransition] = useTransition();
 
   const { program, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
 
   const ceeSubjects = ['General', 'Biology', 'Chemistry', 'Physics', 'Mental Agility'];
   const seeSubjects = ['General', 'Compulsory Science', 'Compulsory Mathematics', 'Optional Mathematics', 'English', 'Social Studies'];
@@ -179,20 +181,24 @@ export default function AiTutorClient() {
   const digitalSubjects = ['General', 'AI & Prompts', 'Python Coding', 'Digital Marketing', 'Canva Design'];
 
   const getSubjectsList = () => {
-    switch (program) {
-      case 'see': return seeSubjects;
-      case 'english': return englishSubjects;
-      case 'digital': return digitalSubjects;
+    switch (canonicalId) {
+      case 'see_class_10': return seeSubjects;
+      case 'ielts': return englishSubjects;
+      case 'digital_marketing':
+      case 'artificial_intelligence': return digitalSubjects;
+      case 'cee_medical':
       default: return ceeSubjects;
     }
   };
 
   const subjectsList = getSubjectsList();
   const getQuickPromptsMap = () => {
-    switch (program) {
-      case 'see': return SEE_PROMPTS;
-      case 'english': return ENGLISH_PROMPTS;
-      case 'digital': return DIGITAL_PROMPTS;
+    switch (canonicalId) {
+      case 'see_class_10': return SEE_PROMPTS;
+      case 'ielts': return ENGLISH_PROMPTS;
+      case 'digital_marketing':
+      case 'artificial_intelligence': return DIGITAL_PROMPTS;
+      case 'cee_medical':
       default: return CEE_PROMPTS;
     }
   };
@@ -202,7 +208,7 @@ export default function AiTutorClient() {
     if (!subjectsList.includes(subject)) {
       setSubject('General');
     }
-  }, [program, subjectsList, subject]);
+  }, [canonicalId, subjectsList, subject]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

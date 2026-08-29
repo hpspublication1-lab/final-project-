@@ -89,6 +89,8 @@ export default function LeaderboardClient({ currentUserId }: LeaderboardClientPr
   const PROVINCES = ['Bagmati Province', 'Koshi Province', 'Gandaki Province', 'Lumbini Province', 'Madhesh Province', 'Sudurpashchim Province', 'Karnali Province'];
   const DISTRICTS = ['Kathmandu', 'Lalitpur', 'Kaski (Pokhara)', 'Chitwan', 'Rupandehi', 'Morang', 'Jhapa', 'Bhaktapur'];
   const SCHOOLS = ["St. Xavier's College", "Budhanilkantha School", "SOS Hermann Gmeiner", "Trinity International", "Global College of Science", "Little Angels' High School"];
+  const [period, setPeriod] = useState<'all_time' | 'weekly' | 'monthly'>('weekly');
+  const [subject, setSubject] = useState<string>('all');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [myRank, setMyRank] = useState<MyRank | null>(null);
   const [loading, setLoading] = useState(true);

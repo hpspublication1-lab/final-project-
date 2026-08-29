@@ -84,19 +84,23 @@ export async function computeStudentDualProfile(userId: string): Promise<Student
   const admin = createAdminClient();
 
   // Fetch recent attempts from english_practice_attempts
-  const { data: attempts } = await admin
-    .from('english_practice_attempts')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(20);
+  const attempts = admin
+    ? (await admin
+        .from('english_practice_attempts')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(20)).data
+    : null;
 
   // Fetch memory metrics from agent_memory
-  const { data: memoryRows } = await admin
-    .from('agent_memory')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('course_id', 'ielts');
+  const memoryRows = admin
+    ? (await admin
+        .from('agent_memory')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('course_id', 'ielts')).data
+    : null;
 
   // Default Baseline Profiles
   let ieltsProfile: IeltsProfile = {

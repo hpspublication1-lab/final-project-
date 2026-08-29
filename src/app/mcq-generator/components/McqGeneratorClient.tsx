@@ -8,6 +8,8 @@ import toast from 'react-hot-toast';
 import Icon from '@/components/ui/AppIcon';
 
 
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
+
 interface MCQOption {
   key: 'A' | 'B' | 'C' | 'D';
   text: string;
@@ -22,13 +24,48 @@ interface MCQ {
   difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 
-const SUBJECTS = ['Biology', 'Chemistry', 'Physics', 'Mental Agility'];
-const CHAPTERS: Record<string, string[]> = {
-  Biology: ['Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Human Physiology', 'Plant Physiology', 'Microbiology', 'Biotechnology'],
-  Chemistry: ['Atomic Structure', 'Chemical Bonding', 'Thermodynamics', 'Electrochemistry', 'Organic Chemistry', 'Coordination Compounds', 'Equilibrium', 'Periodic Table'],
-  Physics: ['Mechanics', 'Thermodynamics', 'Waves & Optics', 'Electrostatics', 'Magnetism', 'Modern Physics', 'Fluid Mechanics', 'Gravitation'],
-  'Mental Agility': ['Number Series', 'Logical Reasoning', 'Blood Relations', 'Coding-Decoding', 'Analogies', 'Data Interpretation', 'Spatial Reasoning', 'Verbal Reasoning'],
+const TRACK_SUBJECTS: Record<string, string[]> = {
+  cee_medical: ['Biology', 'Chemistry', 'Physics', 'Mental Agility'],
+  see_class_10: ['Compulsory Science', 'Compulsory Math', 'Optional Math', 'English', 'Social Studies'],
+  ielts: ['Grammar & Vocabulary', 'Reading Comprehension', 'Listening Drills', 'Writing Tasks'],
+  digital_marketing: ['Meta & Instagram Ads', 'SEO Optimization', 'Copywriting & Funnels', 'TikTok Growth'],
+  artificial_intelligence: ['Prompt Engineering', 'Python for AI', 'Modern AI Tools', 'AI Automation'],
 };
+
+const TRACK_CHAPTERS: Record<string, Record<string, string[]>> = {
+  cee_medical: {
+    Biology: ['Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Human Physiology', 'Plant Physiology', 'Microbiology'],
+    Chemistry: ['Atomic Structure', 'Chemical Bonding', 'Thermodynamics', 'Electrochemistry', 'Organic Chemistry', 'Equilibrium'],
+    Physics: ['Mechanics', 'Thermodynamics', 'Waves & Optics', 'Electrostatics', 'Magnetism', 'Modern Physics'],
+    'Mental Agility': ['Number Series', 'Logical Reasoning', 'Blood Relations', 'Coding-Decoding', 'Analogies'],
+  },
+  see_class_10: {
+    'Compulsory Science': ['Force and Gravity', 'Pressure', 'Energy and Heat', 'Light and Sound', 'Chemical Reaction', 'Heredity'],
+    'Compulsory Math': ['Sets', 'Compound Interest', 'Mensuration', 'Quadratic Equations', 'Geometry Circles', 'Statistics'],
+    'Optional Math': ['Functions and Polynomials', 'Matrices', 'Coordinate Geometry', 'Trigonometry', 'Vectors'],
+    English: ['Reading Comprehension', 'Grammar Transformation', 'Guided Writing', 'Essay Writing'],
+    'Social Studies': ['We and Our Society', 'Constitution of Nepal', 'Social Problems', 'International Relations'],
+  },
+  ielts: {
+    'Grammar & Vocabulary': ['Academic Word List 500', 'Collocations & Idioms', 'Tense Structures', 'Conditionals'],
+    'Reading Comprehension': ['Skimming & Scanning', 'True / False / Not Given', 'Matching Headings', 'Summary Completion'],
+    'Listening Drills': ['Section 1 Everyday Conversation', 'Section 2 Monologue', 'Section 3 Academic Discussion', 'Section 4 Lecture Notes'],
+    'Writing Tasks': ['Task 1 Bar & Line Charts', 'Task 1 Process Diagrams', 'Task 2 Opinion Essays', 'Task 2 Problem-Solution'],
+  },
+  digital_marketing: {
+    'Meta & Instagram Ads': ['Pixel & Conversion API', 'Audience Targeting', 'Ad Creative Formats', 'Budget Scaling'],
+    'SEO Optimization': ['Keyword Research', 'On-Page SEO', 'Technical SEO', 'Backlink Acquisition'],
+    'Copywriting & Funnels': ['AIDA Framework', 'Landing Page Headlines', 'Email Sequence Writing', 'Conversion Optimization'],
+    'TikTok Growth': ['Short-Form Hooks', 'Algorithm Mechanics', 'Scripting & Trends', 'Organic Funneling'],
+  },
+  artificial_intelligence: {
+    'Prompt Engineering': ['Zero-Shot & Few-Shot', 'Chain-of-Thought Prompting', 'Persona-Based Prompts', 'Role Frameworks'],
+    'Python for AI': ['Python Basics & Data Structures', 'Requests & Web Scraping', 'OpenAI SDK Integration', 'API Automation'],
+    'Modern AI Tools': ['ChatGPT Advanced Features', 'Claude Artifacts', 'Midjourney & Image Gen', 'Perplexity Deep Research'],
+    'AI Automation': ['Make.com Scenarios', 'Zapier Triggers & Actions', 'n8n Workflow Nodes', 'Autonomous Agents'],
+  },
+};
+
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Mixed'];
 const COUNTS = [5, 10, 15, 20];
 
@@ -37,18 +74,11 @@ const SUBJECT_ICONS: Record<string, React.ElementType> = {
   Chemistry: FlaskConical,
   Physics: Atom,
   'Mental Agility': Brain,
-};
-const SUBJECT_COLORS: Record<string, string> = {
-  Biology: 'text-bio',
-  Chemistry: 'text-chem',
-  Physics: 'text-physics',
-  'Mental Agility': 'text-ma',
-};
-const SUBJECT_BG: Record<string, string> = {
-  Biology: 'bg-bio-light border-bio/20',
-  Chemistry: 'bg-chem-light border-chem/20',
-  Physics: 'bg-physics-light border-physics/20',
-  'Mental Agility': 'bg-ma-light border-ma/20',
+  'Compulsory Science': BookOpen,
+  'Compulsory Math': Atom,
+  'Optional Math': FlaskConical,
+  English: BookOpen,
+  'Social Studies': Brain,
 };
 
 function parseMCQs(raw: string): MCQ[] {
@@ -65,8 +95,6 @@ function parseMCQs(raw: string): MCQ[] {
           { key: 'C', text: q.options?.C || q.C },
           { key: 'D', text: q.options?.D || q.D },
         ],
-        // Normalise the AI's answer to a bare uppercase letter A–D so grading
-        // (selected === correct) is reliable regardless of "A" / "a" / "A)" etc.
         correct: String(q.correct ?? q.answer ?? '').trim().toUpperCase().replace(/[^A-D]/g, '').slice(0, 1) || 'A',
         explanation: q.explanation || '',
         difficulty: q.difficulty || 'Medium',
@@ -77,15 +105,28 @@ function parseMCQs(raw: string): MCQ[] {
 }
 
 export default function McqGeneratorClient() {
+  const { program, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
+
+  const subjects = TRACK_SUBJECTS[canonicalId] || TRACK_SUBJECTS.cee_medical;
+  const chaptersMap = TRACK_CHAPTERS[canonicalId] || TRACK_CHAPTERS.cee_medical;
+
   const [isDark, setIsDark] = useState(false);
-  const [subject, setSubject] = useState('Biology');
-  const [chapter, setChapter] = useState(CHAPTERS['Biology'][0]);
+  const [subject, setSubject] = useState(subjects[0]);
+  const [chapter, setChapter] = useState(chaptersMap[subjects[0]]?.[0] || 'Introduction');
   const [difficulty, setDifficulty] = useState('Mixed');
   const [count, setCount] = useState(10);
   const [mcqs, setMcqs] = useState<MCQ[]>([]);
   const [selected, setSelected] = useState<Record<number, string>>({});
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const [generated, setGenerated] = useState(false);
+
+  useEffect(() => {
+    setSubject(subjects[0]);
+    setChapter(chaptersMap[subjects[0]]?.[0] || 'Introduction');
+    setMcqs([]);
+    setGenerated(false);
+  }, [canonicalId]);
 
   const { response, isLoading, error, sendMessage } = useChat('OPEN_AI', 'gpt-4o', false);
 
@@ -108,7 +149,7 @@ export default function McqGeneratorClient() {
 
   const handleSubjectChange = (s: string) => {
     setSubject(s);
-    setChapter(CHAPTERS[s][0]);
+    setChapter(chaptersMap[s]?.[0] || 'Introduction');
     setMcqs([]);
     setGenerated(false);
   };
@@ -186,15 +227,15 @@ Rules:
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Subject</p>
             <div className="flex flex-wrap gap-2">
-              {SUBJECTS.map((s) => {
-                const Icon = SUBJECT_ICONS[s];
+              {subjects.map((s) => {
+                const Icon = SUBJECT_ICONS[s] || BookOpen;
                 const active = subject === s;
                 return (
                   <button
                     key={s}
                     onClick={() => handleSubjectChange(s)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                      active ? `${SUBJECT_BG[s]} ${SUBJECT_COLORS[s]} border-current/30` : 'bg-muted text-muted-foreground border-transparent hover:border-border'
+                      active ? 'bg-primary/10 text-primary border-primary/30' : 'bg-muted text-muted-foreground border-transparent hover:border-border'
                     }`}
                   >
                     <Icon size={14} />
@@ -209,7 +250,7 @@ Rules:
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Chapter / Topic</p>
             <div className="flex flex-wrap gap-2">
-              {CHAPTERS[subject]?.map((ch) => (
+              {chaptersMap[subject]?.map((ch) => (
                 <button
                   key={ch}
                   onClick={() => setChapter(ch)}

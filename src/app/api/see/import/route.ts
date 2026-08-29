@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+    }
 
     // Check admin privileges
     const { data: profile } = await admin
@@ -91,7 +94,7 @@ export async function POST(request: NextRequest) {
       const title = (rec.lesson_title || rec.title || '').trim();
       const subject = (rec.subject || rec.subject_slug || 'physics').toLowerCase().trim();
       const chapter = (rec.chapter || rec.chapter_name || 'General').trim();
-      const videoUrl = (rec.video_url || '').trim();
+      const videoUrl = (rec.video_url || (rec as any).video_id || '').trim();
       const thumbnailUrl = (rec.thumbnail || rec.thumbnail_url || '').trim();
       const description = (rec.description || '').trim();
       const pdfUrl = (rec.pdf_url || '').trim();
@@ -116,7 +119,7 @@ export async function POST(request: NextRequest) {
         rec.is_free === true ||
         rec.is_free === 'true' ||
         rec.is_free === '1' ||
-        rec.is_free === 1;
+        (rec.is_free as any) === 1;
 
       // 1. Validation: Missing required fields
       if (!title || !subject || !chapter) {

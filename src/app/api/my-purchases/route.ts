@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ purchases: [] });
+    }
 
     // 1. Fetch course orders
     const { data: orders } = await admin

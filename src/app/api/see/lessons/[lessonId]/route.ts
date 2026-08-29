@@ -24,6 +24,9 @@ export async function GET(
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+    }
 
     // 1. Fetch lesson details
     const { data: lesson, error: lessonError } = await admin

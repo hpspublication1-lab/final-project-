@@ -154,6 +154,9 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+    }
 
     // 4. Load student learning context
     let learningContext: Record<string, unknown> = {};
@@ -450,7 +453,7 @@ async function extractLearningSignals(
   aiResponse: string,
   intent: string
 ): Promise<void> {
-  if (!OPENAI_API_KEY) return;
+  if (!OPENAI_API_KEY || !admin) return;
 
   try {
     const extractionPrompt = `Analyze this student-AI interaction and extract learning signals.

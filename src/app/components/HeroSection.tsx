@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
-import { useProgram, ProgramType } from '@/contexts/ProgramContext';
+import { useProgram, ProgramType, normalizeCourseId } from '@/contexts/ProgramContext';
 import { ArrowRight, Star, Zap, CheckCircle2, Sparkles, Brain, Check, X, RotateCcw, RefreshCw } from 'lucide-react';
 
 
@@ -99,7 +99,7 @@ interface HeroMCQ {
   explanation: string;
 }
 
-const SECTOR_MCQ_POOLS: Record<ProgramType, HeroMCQ[]> = {
+const SECTOR_MCQ_POOLS: Record<string, HeroMCQ[]> = {
   cee: [
     {
       subject: 'Botany · Photosynthesis',
@@ -244,12 +244,13 @@ const SECTOR_MCQ_POOLS: Record<ProgramType, HeroMCQ[]> = {
 export default function HeroSection() {
   const countdown = useCEECountdown();
   const { program, setProgram, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'countdown' | 'demo'>('demo');
   const [currentMcqIdx, setCurrentMcqIdx] = useState(0);
 
-  const highlights = SECTOR_HIGHLIGHTS[program] || SECTOR_HIGHLIGHTS.cee;
-  const currentMcqPool = SECTOR_MCQ_POOLS[program] || SECTOR_MCQ_POOLS.cee;
+  const highlights = SECTOR_HIGHLIGHTS[canonicalId] || SECTOR_HIGHLIGHTS[program] || SECTOR_HIGHLIGHTS.cee;
+  const currentMcqPool = SECTOR_MCQ_POOLS[canonicalId] || SECTOR_MCQ_POOLS[program] || SECTOR_MCQ_POOLS.cee;
   const currentMcq = currentMcqPool[currentMcqIdx % currentMcqPool.length];
 
   const handleNextQuestion = () => {
@@ -297,9 +298,9 @@ export default function HeroSection() {
               {/* 5-Path Interactive Card Selector Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <button
-                  onClick={() => setProgram('see')}
+                  onClick={() => setProgram('see_class_10')}
                   className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
-                    program === 'see' || program === 'see_class_10'
+                    canonicalId === 'see_class_10'
                       ? 'bg-emerald-500/10 border-emerald-500 text-foreground ring-2 ring-emerald-500/30'
                       : 'bg-card/80 border-border hover:border-emerald-500/40 text-muted-foreground hover:text-foreground'
                   }`}
@@ -310,9 +311,9 @@ export default function HeroSection() {
                 </button>
 
                 <button
-                  onClick={() => setProgram('cee')}
+                  onClick={() => setProgram('cee_medical')}
                   className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
-                    program === 'cee' || program === 'cee_medical'
+                    canonicalId === 'cee_medical'
                       ? 'bg-indigo-500/10 border-indigo-500 text-foreground ring-2 ring-indigo-500/30'
                       : 'bg-card/80 border-border hover:border-indigo-500/40 text-muted-foreground hover:text-foreground'
                   }`}
@@ -325,7 +326,7 @@ export default function HeroSection() {
                 <button
                   onClick={() => setProgram('ielts')}
                   className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
-                    program === 'ielts' || program === 'english'
+                    canonicalId === 'ielts'
                       ? 'bg-amber-500/10 border-amber-500 text-foreground ring-2 ring-amber-500/30'
                       : 'bg-card/80 border-border hover:border-amber-500/40 text-muted-foreground hover:text-foreground'
                   }`}
@@ -338,7 +339,7 @@ export default function HeroSection() {
                 <button
                   onClick={() => setProgram('digital_marketing')}
                   className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
-                    program === 'digital_marketing'
+                    canonicalId === 'digital_marketing'
                       ? 'bg-rose-500/10 border-rose-500 text-foreground ring-2 ring-rose-500/30'
                       : 'bg-card/80 border-border hover:border-rose-500/40 text-muted-foreground hover:text-foreground'
                   }`}
@@ -351,7 +352,7 @@ export default function HeroSection() {
                 <button
                   onClick={() => setProgram('artificial_intelligence')}
                   className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
-                    program === 'artificial_intelligence' || program === 'digital'
+                    canonicalId === 'artificial_intelligence'
                       ? 'bg-purple-500/10 border-purple-500 text-foreground ring-2 ring-purple-500/30'
                       : 'bg-card/80 border-border hover:border-purple-500/40 text-muted-foreground hover:text-foreground'
                   }`}
@@ -377,7 +378,7 @@ export default function HeroSection() {
                 Start Free Path
                 <ArrowRight size={19} />
               </Link>
-              <Link href={program === 'ielts' ? '/english' : program === 'see' ? '/see' : '/courses'} className="btn-secondary gap-2.5 text-base py-4 px-7 font-bold border-primary/30 hover:border-primary hover:bg-primary/5 rounded-2xl">
+              <Link href={normalizeCourseId(program) === 'ielts' ? '/english' : normalizeCourseId(program) === 'see_class_10' ? '/see' : '/courses'} className="btn-secondary gap-2.5 text-base py-4 px-7 font-bold border-primary/30 hover:border-primary hover:bg-primary/5 rounded-2xl">
                 <Sparkles size={17} className="text-primary" />
                 Launch Path Workspace
               </Link>

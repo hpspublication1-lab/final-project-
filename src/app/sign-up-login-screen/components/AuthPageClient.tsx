@@ -120,10 +120,10 @@ export default function AuthPageClient() {
       const res = await fetch('/api/profile/me');
       if (res.ok) {
         const me = await res.json();
-        if (!me.college || !me.cee_year) {
-          destination = safeRedirect
-            ? `/onboarding?redirect=${encodeURIComponent(safeRedirect)}`
-            : '/onboarding';
+        const emailPrefix = (me?.email || '').split('@')[0];
+        const isNewIncomplete = !me?.full_name || me.full_name === emailPrefix || !me?.phone;
+        if (isNewIncomplete && !safeRedirect) {
+          destination = '/onboarding';
         }
       }
     } catch {

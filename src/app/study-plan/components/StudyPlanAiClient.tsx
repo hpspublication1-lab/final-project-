@@ -10,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import Icon from '@/components/ui/AppIcon';
 
 
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
+
 interface StudyTask {
   day: string;
   subject: string;
@@ -40,31 +42,61 @@ interface LivePerformanceData {
   recentExamScore?: number;
 }
 
-const SUBJECTS = ['Biology', 'Chemistry', 'Physics', 'Mental Agility'];
+const TRACK_SUBJECTS: Record<string, string[]> = {
+  cee_medical: ['Biology', 'Chemistry', 'Physics', 'Mental Agility'],
+  see_class_10: ['Compulsory Science', 'Compulsory Math', 'Optional Math', 'English', 'Social Studies'],
+  ielts: ['Listening Module', 'Reading Module', 'Writing Task 1 & 2', 'Speaking Simulator', 'Grammar & Vocabulary'],
+  digital_marketing: ['Meta & Instagram Ads', 'TikTok Viral Growth', 'SEO Optimization', 'Copywriting & Funnels', 'Freelancing'],
+  artificial_intelligence: ['Prompt Engineering', 'Modern AI Tools', 'Python for AI', 'AI Automation', 'Real-World Projects'],
+};
+
+const TRACK_CHAPTERS: Record<string, Record<string, string[]>> = {
+  cee_medical: {
+    Biology: ['Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Human Physiology', 'Plant Physiology'],
+    Chemistry: ['Atomic Structure', 'Chemical Bonding', 'Thermodynamics', 'Organic Chemistry', 'Equilibrium', 'Electrochemistry'],
+    Physics: ['Mechanics', 'Thermodynamics', 'Waves & Optics', 'Electrostatics', 'Magnetism', 'Modern Physics'],
+    'Mental Agility': ['Number Series', 'Logical Reasoning', 'Blood Relations', 'Coding-Decoding', 'Analogies', 'Data Interpretation'],
+  },
+  see_class_10: {
+    'Compulsory Science': ['Force and Gravity', 'Pressure', 'Energy and Heat', 'Light and Sound', 'Chemical Reaction', 'Heredity and Evolution'],
+    'Compulsory Math': ['Sets', 'Compound Interest', 'Mensuration', 'Quadratic Equations', 'Geometry Circles', 'Statistics'],
+    'Optional Math': ['Functions and Polynomials', 'Matrices', 'Coordinate Geometry', 'Trigonometry', 'Vectors'],
+    English: ['Reading Comprehension', 'Grammar Transformation', 'Guided Writing', 'Essay Writing'],
+    'Social Studies': ['We and Our Society', 'Constitution of Nepal', 'Social Problems', 'International Relations'],
+  },
+  ielts: {
+    'Listening Module': ['Section 1 Everyday Conversation', 'Section 2 Monologue', 'Section 3 Academic Discussion', 'Section 4 Lecture Notes'],
+    'Reading Module': ['Skimming & Scanning', 'True / False / Not Given', 'Matching Headings', 'Summary Completion'],
+    'Writing Task 1 & 2': ['Task 1 Bar & Line Charts', 'Task 1 Process Diagrams', 'Task 2 Opinion Essays', 'Task 2 Problem-Solution'],
+    'Speaking Simulator': ['Part 1 Introduction', 'Part 2 Cue Card Monologue', 'Part 3 In-Depth Discussion', 'Fluency & Lexical Drills'],
+    'Grammar & Vocabulary': ['Academic Word List 500', 'Collocations & Idioms', 'Complex Sentence Structures', 'Cohesive Devices'],
+  },
+  digital_marketing: {
+    'Meta & Instagram Ads': ['Pixel & Conversion API', 'Audience Targeting', 'Ad Creative Formats', 'Budget Scaling'],
+    'TikTok Viral Growth': ['Short-Form Hooks', 'Algorithm Mechanics', 'Scripting & Trends', 'Organic Funneling'],
+    'SEO Optimization': ['Keyword Research', 'On-Page SEO', 'Technical SEO', 'Backlink Acquisition'],
+    'Copywriting & Funnels': ['AIDA Framework', 'Landing Page Headlines', 'Email Sequence Writing', 'Conversion Optimization'],
+    Freelancing: ['Upwork Profile Setup', 'Proposal Writing', 'Client Retention', 'Pricing & Invoicing'],
+  },
+  artificial_intelligence: {
+    'Prompt Engineering': ['Zero-Shot & Few-Shot', 'Chain-of-Thought Prompting', 'Persona-Based Prompts', 'Role Frameworks'],
+    'Modern AI Tools': ['ChatGPT Advanced Features', 'Claude Artifacts', 'Midjourney & Image Gen', 'Perplexity Deep Research'],
+    'Python for AI': ['Python Basics & Data Structures', 'Requests & Web Scraping', 'OpenAI SDK Integration', 'API Automation'],
+    'AI Automation': ['Make.com Scenarios', 'Zapier Triggers & Actions', 'n8n Workflow Nodes', 'Autonomous Agents'],
+    'Real-World Projects': ['Custom Support Chatbot', 'Automated Lead Generator', 'AI Content Repurposer', 'AI SaaS MVP'],
+  },
+};
+
 const SUBJECT_ICONS: Record<string, React.ElementType> = {
   Biology: BookOpen,
   Chemistry: FlaskConical,
   Physics: Atom,
   'Mental Agility': Brain,
-};
-const SUBJECT_COLORS: Record<string, string> = {
-  Biology: 'text-bio',
-  Chemistry: 'text-chem',
-  Physics: 'text-physics',
-  'Mental Agility': 'text-ma',
-};
-const SUBJECT_BG: Record<string, string> = {
-  Biology: 'bg-bio-light',
-  Chemistry: 'bg-chem-light',
-  Physics: 'bg-physics-light',
-  'Mental Agility': 'bg-ma-light',
-};
-
-const CHAPTERS: Record<string, string[]> = {
-  Biology: ['Cell Biology', 'Genetics', 'Evolution', 'Ecology', 'Human Physiology', 'Plant Physiology'],
-  Chemistry: ['Atomic Structure', 'Chemical Bonding', 'Thermodynamics', 'Organic Chemistry', 'Equilibrium', 'Electrochemistry'],
-  Physics: ['Mechanics', 'Thermodynamics', 'Waves & Optics', 'Electrostatics', 'Magnetism', 'Modern Physics'],
-  'Mental Agility': ['Number Series', 'Logical Reasoning', 'Blood Relations', 'Coding-Decoding', 'Analogies', 'Data Interpretation'],
+  'Compulsory Science': BookOpen,
+  'Compulsory Math': Atom,
+  'Optional Math': FlaskConical,
+  English: BookOpen,
+  'Social Studies': Brain,
 };
 
 function parsePlan(raw: string): StudyPlan | null {
@@ -95,10 +127,21 @@ const subjectNameMap: Record<string, string> = {
   chemistry: 'Chemistry',
   physics: 'Physics',
   mental_agility: 'Mental Agility',
+  compulsory_science: 'Compulsory Science',
+  compulsory_math: 'Compulsory Math',
+  optional_math: 'Optional Math',
+  english: 'English',
+  social_studies: 'Social Studies',
 };
 
 export default function StudyPlanAiClient() {
   const { user } = useAuth();
+  const { program, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
+
+  const subjects = TRACK_SUBJECTS[canonicalId] || TRACK_SUBJECTS.cee_medical;
+  const chaptersMap = TRACK_CHAPTERS[canonicalId] || TRACK_CHAPTERS.cee_medical;
+
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'));
@@ -110,22 +153,29 @@ export default function StudyPlanAiClient() {
   const [liveLoading, setLiveLoading] = useState(false);
 
   // Study plan state inputs
-  const [targetGpa, setTargetGpa] = useState('3.8 GPA');
-  const [currentScore, setCurrentScore] = useState('68%');
+  const [targetGpa, setTargetGpa] = useState(canonicalId === 'see_class_10' ? '4.0 GPA' : canonicalId === 'ielts' ? 'Band 8.0' : 'Top 100 Rank');
+  const [currentScore, setCurrentScore] = useState('70%');
   const [daysToExam, setDaysToExam] = useState(42);
   const [hoursPerDay, setHoursPerDay] = useState(4);
-  const [weakSubjects, setWeakSubjects] = useState<string[]>(['Mathematics', 'Physics']);
-  const [strongSubjects, setStrongSubjects] = useState<string[]>(['English', 'Nepali']);
+  const [weakSubjects, setWeakSubjects] = useState<string[]>([subjects[0] || 'Physics', subjects[1] || 'Chemistry']);
+  const [strongSubjects, setStrongSubjects] = useState<string[]>([subjects[2] || 'Biology']);
   const [studyPlan, setStudyPlan] = useState<StudyPlan | null>(null);
   const [tasks, setTasks] = useState<StudyTask[]>([]);
   const [planGenerated, setPlanGenerated] = useState(false);
 
   // Summary state
-  const [summarySubject, setSummarySubject] = useState('Biology');
-  const [summaryChapter, setSummaryChapter] = useState('Cell Biology');
+  const [summarySubject, setSummarySubject] = useState(subjects[0]);
+  const [summaryChapter, setSummaryChapter] = useState(chaptersMap[subjects[0]]?.[0] || 'Introduction');
   const [summary, setSummary] = useState<RevisionSummary | null>(null);
   const [summaryGenerated, setSummaryGenerated] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['keyPoints']));
+
+  useEffect(() => {
+    setSummarySubject(subjects[0]);
+    setSummaryChapter(chaptersMap[subjects[0]]?.[0] || 'Introduction');
+    setWeakSubjects([subjects[0], subjects[1]].filter(Boolean));
+    setStrongSubjects([subjects[2]].filter(Boolean));
+  }, [canonicalId]);
 
   const { response: planResponse, isLoading: planLoading, error: planError, sendMessage: sendPlan } = useChat('OPEN_AI', 'gpt-4o', false);
   const { response: summaryResponse, isLoading: summaryLoading, error: summaryError, sendMessage: sendSummary } = useChat('OPEN_AI', 'gpt-4o', false);
@@ -548,7 +598,7 @@ Rules:
                   Weak Subjects {liveData && Object.keys(liveData.subjectAccuracy).length > 0 && <span className="text-emerald-600">(auto-detected)</span>}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {['Mathematics', 'Physics', 'Chemistry', 'Biology', 'English', 'Nepali', 'Social Studies'].map((s) => (
+                  {subjects.map((s) => (
                     <button key={s} onClick={() => toggleSubjectWeak(s)}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${weakSubjects.includes(s) ? 'bg-red-500/10 text-red-600 border-red-500/30' : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
                       {s}
@@ -593,12 +643,12 @@ Rules:
                               <button onClick={() => toggleTask(globalIdx)} className="shrink-0">
                                 {task.done ? <CheckSquare size={16} className="text-success" /> : <Square size={16} className="text-muted-foreground" />}
                               </button>
-                              <Icon size={14} className={`shrink-0 ${SUBJECT_COLORS[task.subject]}`} />
+                              <Icon size={14} className="shrink-0 text-primary" />
                               <div className="flex-1 min-w-0">
                                 <p className={`text-sm font-medium leading-snug ${task.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{task.topic}</p>
                                 <p className="text-xs text-muted-foreground">{task.subject} · {task.duration}</p>
                               </div>
-                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${TASK_TYPE_COLORS[task.type]}`}>{task.type}</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${TASK_TYPE_COLORS[task.type] || 'bg-muted text-muted-foreground'}`}>{task.type}</span>
                             </div>
                           );
                         })}
@@ -633,11 +683,12 @@ Rules:
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Subject</p>
                 <div className="flex flex-wrap gap-2">
-                  {SUBJECTS.map((s) => {
-                    const Icon = SUBJECT_ICONS[s];
+                  {subjects.map((s) => {
+                    const Icon = SUBJECT_ICONS[s] || BookOpen;
+                    const isActive = summarySubject === s;
                     return (
-                      <button key={s} onClick={() => { setSummarySubject(s); setSummaryChapter(CHAPTERS[s][0]); setSummary(null); }}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-all ${summarySubject === s ? `${SUBJECT_BG[s]} ${SUBJECT_COLORS[s]} border-current/20` : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
+                      <button key={s} onClick={() => { setSummarySubject(s); setSummaryChapter(chaptersMap[s]?.[0] || 'Intro'); setSummary(null); }}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold border transition-all ${isActive ? 'bg-primary/10 text-primary border-primary/30' : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
                         <Icon size={13} />{s}
                       </button>
                     );
@@ -647,7 +698,7 @@ Rules:
               <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Chapter</p>
                 <div className="flex flex-wrap gap-2">
-                  {CHAPTERS[summarySubject]?.map((ch) => (
+                  {chaptersMap[summarySubject]?.map((ch) => (
                     <button key={ch} onClick={() => { setSummaryChapter(ch); setSummary(null); }}
                       className={`px-3 py-1.5 rounded-xl text-sm font-medium border transition-all ${summaryChapter === ch ? 'bg-secondary text-primary border-primary/20' : 'bg-muted text-muted-foreground border-transparent hover:border-border'}`}>
                       {ch}
@@ -662,9 +713,9 @@ Rules:
 
             {summary && (
               <div className="space-y-3">
-                <div className={`flex items-center gap-2 px-4 py-3 rounded-2xl border ${SUBJECT_BG[summary.subject]}`}>
-                  {React.createElement(SUBJECT_ICONS[summary.subject] || BookOpen, { size: 16, className: SUBJECT_COLORS[summary.subject] })}
-                  <span className={`text-sm font-bold ${SUBJECT_COLORS[summary.subject]}`}>{summary.subject} · {summary.chapter}</span>
+                <div className="flex items-center gap-2 px-4 py-3 rounded-2xl border bg-secondary border-primary/20">
+                  {React.createElement(SUBJECT_ICONS[summary.subject] || BookOpen, { size: 16, className: 'text-primary' })}
+                  <span className="text-sm font-bold text-primary">{summary.subject} · {summary.chapter}</span>
                 </div>
 
                 {[

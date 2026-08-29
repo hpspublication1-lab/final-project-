@@ -26,14 +26,16 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     // STAGE 1: Knowledge Retrieval (RAG) & Student Profile
-    const profile = await getStudentProfile(user.id, 'ielts');
+    const profile = await getStudentProfile(user.id);
+    const weakTopics: string[] = (profile as any)?.weak_topics || (profile as any)?.weakTopics || [];
+    const targetBand: number = (profile as any)?.targetBand || (profile as any)?.learning_preferences?.targetBand || 8.0;
 
     // STAGE 2: Teacher Reasoning & Personalization via OpenAI Realtime Engine
-    let responseText = `Welcome back! I am your AI teacher. Let us focus on improving your ${profile?.weakTopics?.[0] || 'English fluency'} today.`;
+    let responseText = `Welcome back! I am your AI teacher. Let us focus on improving your ${weakTopics[0] || 'English fluency'} today.`;
 
     if (studentInput && OPENAI_API_KEY) {
       const ragPrompt = `You are Live Teacher ${persona.toUpperCase()}.
-Student Profile: Target Band ${profile?.targetBand || 8.0}, Weak Areas: ${profile?.weakTopics?.join(', ') || 'Fluency'}.
+Student Profile: Target Band ${targetBand}, Weak Areas: ${weakTopics.join(', ') || 'Fluency'}.
 Student Spoke/Typed: "${studentInput}"
 
 Provide a highly personalized, academic, 2-sentence direct spoken response suitable for video avatar lip-syncing:`;
@@ -75,8 +77,8 @@ Provide a highly personalized, academic, 2-sentence direct spoken response suita
       heygenDispatched,
       session: newSession,
       personalizedContext: {
-        weakTopics: profile?.weakTopics || [],
-        targetBand: profile?.targetBand || 8.0,
+        weakTopics,
+        targetBand,
       },
     });
   } catch (error) {

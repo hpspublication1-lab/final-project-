@@ -136,16 +136,18 @@ Return ONLY valid JSON matching this schema:
     try {
       const parsed = JSON.parse(rawJson);
       const admin = createAdminClient();
-      await admin.from('english_practice_attempts').insert({
-        user_id: user.id,
-        task_type_slug: `ielts-${essayType}`,
-        prompt_text: promptText || `IELTS Writing ${essayType}`,
-        response_text: essayText,
-        band_score: parsed.overallBand || 7.0,
-        rubric_scores: parsed.rubric,
-        feedback: JSON.stringify(parsed.strengths.concat(parsed.improvements)),
-        weakest_criterion: `Writing Lexical Resource (Band ${parsed.rubric?.lexicalResource?.band || 7.0})`,
-      });
+      if (admin && user?.id) {
+        await admin.from('english_practice_attempts').insert({
+          user_id: user.id,
+          task_type_slug: `ielts-${essayType}`,
+          prompt_text: promptText || `IELTS Writing ${essayType}`,
+          response_text: essayText,
+          band_score: parsed.overallBand || 7.0,
+          rubric_scores: parsed.rubric,
+          feedback: JSON.stringify(parsed.strengths.concat(parsed.improvements)),
+          weakest_criterion: `Writing Lexical Resource (Band ${parsed.rubric?.lexicalResource?.band || 7.0})`,
+        });
+      }
       return NextResponse.json({ ...parsed, wordCount, wordCountStatus });
     } catch {
       return NextResponse.json(getFallbackWritingEvaluation(wordCount, wordCountStatus));

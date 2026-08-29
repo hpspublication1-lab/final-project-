@@ -78,6 +78,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
       if (!error && data) {
         setProfile(data as UserProfile);
+        return;
+      }
+    } catch {
+      // Direct supabase fetch failed, fallback below
+    }
+
+    try {
+      const res = await fetch('/api/profile/me');
+      if (res.ok) {
+        const me = await res.json();
+        if (me && !me.error) {
+          setProfile(me as UserProfile);
+        }
       }
     } catch {
       // Profile fetch failed silently

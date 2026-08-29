@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getStudentProfile } from '@/lib/ai/agents/studentProfile';
-import { VOICE_PERSONAS } from '@/app/api/ai/tts/route';
+import { VOICE_PERSONAS } from '@/lib/ai/voices';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const { persona = 'coach_aria', subject = 'IELTS Masterclass' } = await request.json();
 
     // Fetch RAG Student Context
-    const profile = userId !== 'guest_student' ? await getStudentProfile(userId, 'ielts') : null;
+    const profile = userId !== 'guest_student' ? await getStudentProfile(userId) : null;
 
     const voiceId = VOICE_PERSONAS[persona as keyof typeof VOICE_PERSONAS] || VOICE_PERSONAS.coach_aria;
 
@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
       subject,
       voiceId,
       ragContext: {
-        strongTopics: profile?.strongTopics || [],
-        weakTopics: profile?.weakTopics || ['Grammatical Range', 'Coherence & Cohesion'],
-        targetBand: profile?.targetBand || 8.0,
+        strongTopics: (profile as any)?.strong_topics || (profile as any)?.strongTopics || [],
+        weakTopics: (profile as any)?.weak_topics || (profile as any)?.weakTopics || ['Grammatical Range', 'Coherence & Cohesion'],
+        targetBand: (profile as any)?.targetBand || (profile as any)?.learning_preferences?.targetBand || 8.0,
       },
       instructions: `You are Live Teacher ${persona.toUpperCase()} conducting a 1-on-1 spoken class on ${subject}. Respond with crisp, encouraging, academic English. Keep responses under 3 sentences for fluid voice conversation.`,
       wsEndpoint: 'wss://api.openai.com/v1/realtime',

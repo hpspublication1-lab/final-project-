@@ -58,7 +58,7 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           key: 'group-see-syllabus',
           items: [
             { label: '5 Core Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Science, Math, Opt Math...' },
-            { label: 'Video Classes', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'HD', desc: 'Chapter-wise lectures' },
+            { label: 'Video Classes', href: '/see', icon: Video, key: 'nav-see-videos', badge: 'HD', desc: 'Chapter-wise lectures' },
             { label: 'Revision Cards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Formula sheets' },
             { label: 'Class 10 Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Batch enrollments' },
           ],
@@ -107,19 +107,20 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           label: '4 Core Skills Hub',
           key: 'group-ielts-skills',
           items: [
-            { label: 'Speaking Simulator', href: '/english', icon: Mic, key: 'nav-speaking', badge: 'AI LIVE', desc: 'Part 1, 2, 3 AI scoring' },
-            { label: 'Writing Evaluator', href: '/english', icon: FileEdit, key: 'nav-writing', badge: 'RUBRIC', desc: 'Task 1 & 2 essay checks' },
-            { label: 'Listening Audio Sets', href: '/courses?sector=english', icon: Headphones, key: 'nav-listening', desc: 'Audio sections 1-4' },
-            { label: 'Reading Speed Drills', href: '/courses?sector=english', icon: BookOpen, key: 'nav-reading', desc: 'Academic & GT passages' },
+            { label: 'Speaking Simulator', href: '/english/speaking', icon: Mic, key: 'nav-speaking', badge: 'AI LIVE', desc: 'Part 1, 2, 3 AI scoring' },
+            { label: 'Writing Evaluator', href: '/english/writing/rubric', icon: FileEdit, key: 'nav-writing', badge: 'RUBRIC', desc: 'Task 1 & 2 essay checks' },
+            { label: 'Listening Audio Sets', href: '/english/listening', icon: Headphones, key: 'nav-listening', badge: 'AUDIO', desc: 'Audio sections 1-4' },
+            { label: 'Reading Speed Drills', href: '/english/reading/speed-drills', icon: BookOpen, key: 'nav-reading', badge: 'SPEED', desc: 'Academic & GT passages' },
+            { label: 'Vocabulary & AWL', href: '/english/vocabulary', icon: Zap, key: 'nav-vocab', badge: 'AWL', desc: '500 High-frequency words' },
           ],
         },
         {
           label: 'Mock Tests & Grammar',
           key: 'group-ielts-mock',
           items: [
-            { label: 'Full Mock Exams', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Band score prediction' },
-            { label: 'Vocabulary & Grammar', href: '/practice', icon: Zap, key: 'nav-grammar', desc: 'AWL 500 academic words' },
-            { label: 'Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Collocations & idioms' },
+            { label: 'Band Predictor', href: '/english/band-predictor', icon: Sparkles, key: 'nav-predictor', badge: 'AI', desc: 'Estimate your overall band' },
+            { label: 'Full Mock Exams', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Timed mock tests' },
+            { label: 'Grammar Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Collocations & idioms' },
           ],
         },
         {
@@ -153,22 +154,13 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           ],
         },
         {
-          label: 'Marketing Tracks',
+          label: 'Practical Marketing Hub',
           key: 'group-dm-tracks',
           items: [
-            { label: 'Meta & Instagram Ads', href: '/courses?sector=digital', icon: TrendingUp, key: 'nav-meta', badge: 'HIGH ROAS', desc: 'Pixel & ad setup' },
-            { label: 'TikTok Viral Growth', href: '/courses?sector=digital', icon: Share2, key: 'nav-tiktok', desc: 'Hook formulas & scripts' },
-            { label: 'Search Engine SEO', href: '/courses?sector=digital', icon: Search, key: 'nav-seo', desc: 'Rank #1 on Google' },
-            { label: 'Copywriting & Funnels', href: '/courses?sector=digital', icon: FileText, key: 'nav-copy', desc: 'High-converting pages' },
-          ],
-        },
-        {
-          label: 'Practical Hub',
-          key: 'group-dm-practical',
-          items: [
-            { label: 'Swipe Files & Templates', href: '/digital', icon: Layers, key: 'nav-swipe', badge: 'PRO', desc: 'Proven ad copy' },
-            { label: 'Video Playbooks', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'HD', desc: 'Step-by-step walkthrus' },
+            { label: 'Video Playbooks', href: '/courses', icon: TrendingUp, key: 'nav-meta', badge: 'HD', desc: 'Meta Ads, SEO & Funnels' },
+            { label: 'Swipe Files & Prompts', href: '/digital', icon: Layers, key: 'nav-swipe', badge: 'PRO', desc: 'Proven ad copy & scripts' },
             { label: 'Marketing Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Live cohorts' },
+            { label: 'Practice Drills', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Marketing MCQs & quizzes' },
           ],
         },
         {
@@ -177,6 +169,7 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           items: [
             { label: 'Marketing AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Ad angle brainstorming' },
             { label: 'Prompt Studio', href: '/digital', icon: Sparkles, key: 'nav-prompt', desc: 'Marketing prompt tests' },
+            { label: 'Quiz Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate marketing quizzes' },
           ],
         },
         {
@@ -202,22 +195,13 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           ],
         },
         {
-          label: 'AI Specialization Tracks',
+          label: 'Specialization Tracks',
           key: 'group-ai-tracks',
           items: [
             { label: 'Prompt Studio Sandbox', href: '/digital', icon: Bot, key: 'nav-prompt-studio', badge: 'LIVE AI', desc: 'Test & score prompts' },
-            { label: 'Modern AI Tools', href: '/digital', icon: Zap, key: 'nav-ai-tools', desc: 'ChatGPT, Claude, Midjourney' },
-            { label: 'Python for AI', href: '/courses?sector=digital', icon: Code, key: 'nav-python', desc: '5 Real-world projects' },
-            { label: 'AI Automation & Agents', href: '/courses?sector=digital', icon: Terminal, key: 'nav-agents', desc: 'No-code workflows' },
-          ],
-        },
-        {
-          label: 'Hands-On Practice',
-          key: 'group-ai-practice',
-          items: [
-            { label: 'Coding Exercises', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Syntax & logic tests' },
-            { label: 'Project Submissions', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'BUILD', desc: 'Portfolio projects' },
+            { label: 'Python & AI Practice', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Syntax & logic tests' },
             { label: 'AI Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Core terms & concepts' },
+            { label: 'AI Live Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Structured AI cohorts' },
           ],
         },
         {
@@ -226,6 +210,7 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           items: [
             { label: 'Master AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Ask coding & AI questions' },
             { label: 'Prompt Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate test cases' },
+            { label: 'Mistake Analyser', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Analyze incorrect answers' },
           ],
         },
         {
@@ -256,7 +241,7 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
           key: 'group-cee-study',
           items: [
             { label: 'Medical Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Bio, Chem, Physics & MAT' },
-            { label: 'Bunny Video Lectures', href: '/app-feature', icon: Video, key: 'nav-app-guru', badge: 'APP', desc: 'Live & recorded classes' },
+            { label: 'Video Lectures', href: '/lecture-videos', icon: Video, key: 'nav-video-lectures', badge: 'HD', desc: 'Live & recorded classes' },
             { label: 'SM-2 Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Spaced-repetition high-yield' },
             { label: 'Target Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Structured medical batches' },
           ],
@@ -298,23 +283,23 @@ function getCourseMobileNavItems(canonicalId: CanonicalCourseId) {
     case 'see_class_10':
       return [
         { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
+        { label: 'Subjects', href: '/subjects', icon: BookOpen, key: 'mob-subjects' },
         { label: 'Subjective', href: '/practice/subjective', icon: Sparkles, key: 'mob-subjective' },
         { label: 'Papers', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
-        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
         { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
       ];
     case 'ielts':
       return [
         { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Speaking', href: '/english', icon: Mic, key: 'mob-speaking' },
+        { label: 'Speaking', href: '/english/speaking', icon: Mic, key: 'mob-speaking' },
+        { label: 'Listening', href: '/english/listening', icon: Headphones, key: 'mob-listening' },
         { label: 'Mocks', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
-        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
         { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
       ];
     case 'digital_marketing':
       return [
         { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Modules', href: '/courses?sector=digital', icon: TrendingUp, key: 'mob-modules' },
+        { label: 'Playbooks', href: '/courses', icon: TrendingUp, key: 'mob-modules' },
         { label: 'Swipe Files', href: '/digital', icon: Layers, key: 'mob-swipe' },
         { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
         { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
@@ -323,7 +308,7 @@ function getCourseMobileNavItems(canonicalId: CanonicalCourseId) {
       return [
         { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
         { label: 'Studio', href: '/digital', icon: Bot, key: 'mob-studio' },
-        { label: 'Code', href: '/courses?sector=digital', icon: Code, key: 'mob-code' },
+        { label: 'Practice', href: '/practice', icon: Zap, key: 'mob-code' },
         { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
         { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
       ];

@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
     const completed = isCompleted === true || percentage >= 90;
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+    }
 
     const { data, error } = await admin
       .from('user_video_progress')

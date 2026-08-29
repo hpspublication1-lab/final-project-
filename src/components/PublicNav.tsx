@@ -75,8 +75,8 @@ const navLinks: NavLink[] = [
 
 
 interface PublicNavProps {
-  isDark: boolean;
-  onToggleDark: () => void;
+  isDark?: boolean;
+  onToggleDark?: () => void;
   /** Height (px) of an announcement bar above the nav. The nav parks below it
    *  and slides up to top:0 as that bar scrolls away. Defaults to 0 (no bar). */
   announcementHeight?: number;

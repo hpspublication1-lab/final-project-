@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { FileText, Clock, ChevronRight, ChevronLeft, Flag, AlertTriangle, Wifi, WifiOff, BookmarkPlus, Play, Shield, RotateCcw, Trophy, Loader2, CheckCircle, XCircle, MinusCircle, BookOpen, Grid } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgram } from '@/contexts/ProgramContext';
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { useAntiCheat } from '@/lib/hooks/useAntiCheat';
 
@@ -106,14 +106,16 @@ export default function MockTestsPageClient() {
           return;
         }
 
+        const canonicalId = normalizeCourseId(program);
+
         // Filter by program
         const isSeeExam = (e: any) => {
           const title = (e.title || '').toLowerCase();
-          return e.program_type === 'see' || title.includes('see');
+          return e.program_type === 'see' || e.program_type === 'see_class_10' || title.includes('see');
         };
 
         const filteredData = data.filter((e: any) => {
-          if (program === 'see') return isSeeExam(e);
+          if (canonicalId === 'see_class_10') return isSeeExam(e);
           return !isSeeExam(e); // CEE
         });
 
@@ -148,8 +150,8 @@ export default function MockTestsPageClient() {
           totalQuestions: qCountMap[e.id] || 0,
           totalMarks: e.total_marks,
           duration: e.duration_minutes,
-          negativeMarking: e.negative_marking ?? (program === 'cee'),
-          type: program === 'see' ? 'SEE Model Test' : 'Full CEE Mock',
+          negativeMarking: e.negative_marking ?? (canonicalId === 'cee_medical'),
+          type: canonicalId === 'see_class_10' ? 'SEE Model Test' : 'Full CEE Mock',
           difficulty: 'Medium',
           attempts: countMap[e.id] || 0,
           avgScore: 0,
@@ -176,7 +178,7 @@ export default function MockTestsPageClient() {
             { id: 'see-soc-1', title: 'SEE Class 10 Social Studies Board Model Paper', description: 'Nepal Constitution, geography, history, civic awareness & international relations set.', totalQuestions: 50, totalMarks: 50, duration: 90, negativeMarking: false, type: 'SEE Board Mock', difficulty: 'Medium', attempts: 1430, avgScore: 43, isPremium: false },
           ];
 
-          setExams(program === 'see' ? SEE_PRELOADED : CEE_PRELOADED);
+          setExams(canonicalId === 'see_class_10' ? SEE_PRELOADED : CEE_PRELOADED);
         }
       } catch {
         const CEE_FALLBACK: MockExam[] = [
@@ -185,7 +187,7 @@ export default function MockTestsPageClient() {
         const SEE_FALLBACK: MockExam[] = [
           { id: 'see-sci-1', title: 'SEE Class 10 Compulsory Science Model Exam', description: 'Full Class 10 NEB Board Science examination.', totalQuestions: 75, totalMarks: 75, duration: 135, negativeMarking: false, type: 'SEE Board Mock', difficulty: 'Medium', attempts: 1540, avgScore: 58, isPremium: false },
         ];
-        setExams(program === 'see' ? SEE_FALLBACK : CEE_FALLBACK);
+        setExams(normalizeCourseId(program) === 'see_class_10' ? SEE_FALLBACK : CEE_FALLBACK);
       } finally {
         setExamsLoading(false);
       }

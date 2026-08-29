@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
-import { useProgram } from '@/contexts/ProgramContext';
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 
 interface SubjectData {
   key: string;
@@ -141,7 +141,7 @@ export default function SubjectMasteryRingsInner() {
       // Build subject list based on active program (CEE vs SEE)
       const ceeOrder = ['biology', 'chemistry', 'physics', 'mental_agility'];
       const seeOrder = ['compulsory_science', 'compulsory_math', 'optional_math', 'english', 'social_studies'];
-      const subjectOrder = program === 'see' ? seeOrder : ceeOrder;
+      const subjectOrder = normalizeCourseId(program) === 'see_class_10' ? seeOrder : ceeOrder;
 
       const result: SubjectData[] = subjectOrder.map((key) => {
 

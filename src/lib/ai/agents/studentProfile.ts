@@ -12,6 +12,7 @@ export interface StudentLearningProfile {
 
 export async function getStudentProfile(userId: string): Promise<StudentLearningProfile | null> {
   const admin = createAdminClient();
+  if (!admin) return null;
   const { data, error } = await admin.rpc('get_student_learning_context', {
     p_user_id: userId
   });
@@ -26,6 +27,7 @@ export async function getStudentProfile(userId: string): Promise<StudentLearning
 
 export async function updateStudentMemory(userId: string, updates: Partial<StudentLearningProfile>) {
   const admin = createAdminClient();
+  if (!admin) return;
   const { error } = await admin
     .from('agent_memory')
     .upsert({

@@ -17,6 +17,9 @@ export async function POST(request: NextRequest) {
 
     const { courseId = 'see_class_10', couponCode } = await request.json();
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+    }
 
     // 1. Fetch admin-configured pricing for the course
     const { data: pricingRow } = await admin

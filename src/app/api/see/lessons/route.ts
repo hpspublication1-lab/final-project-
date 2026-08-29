@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getSessionUser();
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ lessons: [], subjects: [] });
+    }
     const { searchParams } = new URL(request.url);
     const subjectSlug = searchParams.get('subject');
     const chapterName = searchParams.get('chapter');

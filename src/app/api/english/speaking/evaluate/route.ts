@@ -83,6 +83,8 @@ export interface AcousticSpeakingPipelineResult {
   modelAnswer: string;
 }
 
+export type SpeakingEvaluationResult = AcousticSpeakingPipelineResult;
+
 /** Official Cambridge IELTS Half-Band Rounding Algorithm */
 function calibrateIeltsBand(rawAverage: number): number {
   const decimal = rawAverage % 1;
@@ -270,9 +272,10 @@ Return ONLY valid JSON matching this schema:
 
     // Persist to DB
     const admin = createAdminClient();
-    try {
-      await admin.from('english_practice_attempts').insert({
-        user_id: user.id,
+    if (admin && user?.id) {
+      try {
+        await admin.from('english_practice_attempts').insert({
+          user_id: user.id,
         task_type_slug: 'acoustic-speaking-pipeline',
         prompt_text: prompt_text || `IELTS Speaking Part ${part}`,
         response_text,
@@ -286,8 +289,9 @@ Return ONLY valid JSON matching this schema:
         }),
         weakest_criterion: `${result.weakestSkill.criterion} (Band ${result.weakestSkill.score})`,
       });
-    } catch (dbErr) {
-      console.warn('Acoustic pipeline database save warning:', dbErr);
+      } catch (dbErr) {
+        console.warn('Acoustic pipeline database save warning:', dbErr);
+      }
     }
 
     return NextResponse.json(result);

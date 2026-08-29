@@ -196,47 +196,7 @@ export const COURSE_PORTAL_CONFIGS: Record<CanonicalCourseId, CoursePortalConfig
     ],
   },
 
-  digital_marketing: {
-    id: 'digital_marketing',
-    brandName: 'Samyak Digital',
-    courseTitle: 'SAMYAK DIGITAL MARKETING SKILLS',
-    portalSubtitle: 'Target Band 8.0+ Language Learning Hub with Real-Time AI Examiner Evaluation',
-    targetBadge: 'Target: Band 8.0+ · CEFR C1/C2',
-    themeColor: 'amber',
-    accentGradient: 'from-amber-600 via-orange-600 to-amber-700',
-    borderAccent: 'border-amber-500/30',
-    features: [
-      'continue_learning',
-      'videos',
-      'listening',
-      'reading',
-      'writing',
-      'speaking',
-      'band_score',
-      'vocab_grammar',
-      'resources',
-      'announcements',
-    ],
-    defaultSubjects: [
-      { id: 'speaking', name: 'Speaking Module (Parts 1, 2, 3)', icon: '🗣️', chaptersCount: 18, weightage: 'Band 9.0 Max', color: 'text-amber-500' },
-      { id: 'writing_1', name: 'Writing Task 1 (Charts & Reports)', icon: '📊', chaptersCount: 12, weightage: '150 Words', color: 'text-blue-500' },
-      { id: 'writing_2', name: 'Writing Task 2 (Academic Essay)', icon: '✍️', chaptersCount: 16, weightage: '250 Words', color: 'text-purple-500' },
-      { id: 'listening', name: 'Listening Passages (Sections 1-4)', icon: '🎧', chaptersCount: 20, weightage: '40 Questions', color: 'text-emerald-500' },
-      { id: 'reading', name: 'Reading Skimming & GT Texts', icon: '📖', chaptersCount: 22, weightage: '40 Questions', color: 'text-rose-500' },
-      { id: 'awl_vocab', name: 'Academic Word List (AWL) & Collocations', icon: '💡', chaptersCount: 25, weightage: 'Lexical Bank', color: 'text-teal-500' },
-    ],
-    quickActions: [
-      { key: 'qa-speak', label: 'AI Speaking Cue Card', desc: 'Voice recording with fluency & pronunciation', href: '/english', iconName: 'Mic', badge: 'AI VOICE' },
-      { key: 'qa-write', label: 'Writing Task 1 & 2 Grader', desc: 'Instant Band 8.0+ rubric essay feedback', href: '/english', iconName: 'FileEdit', badge: 'ESSAY RUBRIC' },
-      { key: 'qa-listen', label: 'Listening Audio Simulators', desc: 'Cambridge standard 40-Q audio drills', href: '/english', iconName: 'Headphones' },
-      { key: 'qa-read', label: 'Speed Reading Passages', desc: 'True/False/Not Given timed drills', href: '/english', iconName: 'BookOpen' },
-    ],
-    announcements: [
-      { id: 'i-1', title: 'New 2026 Cambridge Speaking Part 2 Cue Cards added to AI Examiner', date: 'New Prompts', tag: 'Speaking', important: true },
-      { id: 'i-2', title: 'Band 8.5+ Sample Academic Essays available for download', date: 'Study Materials', tag: 'Writing' },
-      { id: 'i-3', title: 'Top 500 Academic Word List (AWL) Flashcard deck now live', date: 'Vocabulary', tag: 'Vocab' },
-    ],
-  },
+
 
   digital_marketing: {
     id: 'digital_marketing',

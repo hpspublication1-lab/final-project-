@@ -14,6 +14,9 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
+    }
 
     // 1. Fetch order record
     const { data: order, error: fetchError } = await admin
@@ -47,12 +50,9 @@ export async function POST(request: NextRequest) {
       env: process.env.FONEPAY_ENV || 'production',
     };
 
-    const verifyResult = await checkFonepayStatus({
-      prn: order.order_number,
-      config: fonepayConfig,
-    });
+    const verifyResult = await checkFonepayStatus(order.order_number, fonepayConfig);
 
-    const isPaid = verifyResult.paid === true;
+    const isPaid = verifyResult.status === 'success';
 
     if (!isPaid) {
       return NextResponse.json({

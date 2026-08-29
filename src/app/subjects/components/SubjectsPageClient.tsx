@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrial } from '@/contexts/TrialContext';
-import { useProgram, PROGRAMS } from '@/contexts/ProgramContext';
+import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { BookOpen, ChevronRight, CheckCircle2, Lock, PlayCircle, Zap, Clock, TrendingUp, Search, FileText, Loader2, GraduationCap, Stethoscope } from 'lucide-react';
 
@@ -68,6 +68,7 @@ export default function SubjectsPageClient() {
   const [subjects, setSubjects] = useState<SubjectView[]>([]);
 
   const { program, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
   const { user, profile } = useAuth();
   const supabase = createClient();
   const { isTrialActive } = useTrial();
@@ -193,11 +194,14 @@ export default function SubjectsPageClient() {
   }, [user?.id, isFree]);
 
   // Filter subjects by active program (CEE vs SEE)
-  const isSeeSubject = (name: string) => ['compulsory_science', 'compulsory_math', 'optional_math', 'english', 'social_studies'].includes(name);
+  const isSeeSubject = (name: string) =>
+    ['compulsory_science', 'compulsory_math', 'optional_math', 'english', 'social_studies', 'science', 'math', 'opt_math', 'social'].includes(
+      name.toLowerCase()
+    );
   
   const programFilteredSubjects = subjects.filter((s) => {
-    if (program === 'see') return isSeeSubject(s.name);
-    return !isSeeSubject(s.name); // CEE
+    if (canonicalId === 'see_class_10') return isSeeSubject(s.name);
+    return !isSeeSubject(s.name); // CEE or general
   });
 
   // Ensure activeSubject points to a valid subject in the currently active program
@@ -208,10 +212,9 @@ export default function SubjectsPageClient() {
         setActiveSubject(programFilteredSubjects[0].id);
       }
     }
-  }, [program, programFilteredSubjects, activeSubject]);
+  }, [canonicalId, programFilteredSubjects, activeSubject]);
 
   const selectedSubjectObj = programFilteredSubjects.find((s) => s.id === activeSubject) || programFilteredSubjects[0];
-
 
   const filteredChapters = (selectedSubjectObj?.chapters ?? []).filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
@@ -231,7 +234,7 @@ export default function SubjectsPageClient() {
               <span className="text-xs text-muted-foreground font-medium">Official Curriculum</span>
             </div>
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-              {program === 'cee' ? <Stethoscope className="text-primary" size={24} /> : <GraduationCap className="text-bio" size={24} />}
+              {canonicalId === 'cee_medical' ? <Stethoscope className="text-primary" size={24} /> : <GraduationCap className="text-bio" size={24} />}
               {programDetails.name} Subjects
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-xl">

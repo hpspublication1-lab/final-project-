@@ -24,20 +24,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const fullName = typeof body.fullName === 'string' ? body.fullName.trim() : '';
     const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
-    const college = typeof body.college === 'string' ? body.college.trim() : '';
-    const ceeYear = parseInt(String(body.ceeYear), 10);
+    const college = typeof body.college === 'string' ? body.college.trim() : (typeof body.school === 'string' ? body.school.trim() : '');
+    const program = typeof body.program === 'string' ? body.program.trim() : (typeof body.targetProgram === 'string' ? body.targetProgram.trim() : 'cee_medical');
+    
+    let ceeYear: number | null = null;
+    if (body.ceeYear && !isNaN(parseInt(String(body.ceeYear), 10))) {
+      ceeYear = parseInt(String(body.ceeYear), 10);
+    } else if (program.includes('cee')) {
+      ceeYear = new Date().getFullYear();
+    }
 
     if (fullName.length < 2) {
       return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
     }
-    if (!/^\+977[9][6-9]\d{8}$/.test(phone)) {
+    if (phone && !/^\+977[9][6-9]\d{8}$/.test(phone)) {
       return NextResponse.json({ error: 'Enter a valid Nepal mobile number.' }, { status: 400 });
-    }
-    if (!college) {
-      return NextResponse.json({ error: 'Please enter your school or college.' }, { status: 400 });
-    }
-    if (![2026, 2027, 2028].includes(ceeYear)) {
-      return NextResponse.json({ error: 'Please select a valid CEE target year.' }, { status: 400 });
     }
 
     const admin = createAdminClient();
@@ -45,15 +46,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 503 });
     }
 
+    const updatePayload: Record<string, any> = {
+      full_name: fullName,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (phone) updatePayload.phone = phone;
+    if (college) updatePayload.college = college;
+    if (ceeYear !== null) updatePayload.cee_year = ceeYear;
+
     const { error } = await admin
       .from('user_profiles')
-      .update({
-        full_name: fullName,
-        phone,
-        college,
-        cee_year: ceeYear,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', user.id); // only ever the caller's own row
 
     if (error) {
@@ -61,7 +65,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Could not save your details. Please try again.' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, program });
   } catch (err) {
     console.error('profile/complete error:', err);
     return NextResponse.json({ error: 'Could not save your details. Please try again.' }, { status: 500 });

@@ -135,7 +135,7 @@ export default function BatchesPageClient() {
               <span className="text-xs text-muted-foreground font-medium">Structured Courses</span>
             </div>
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-              {program === 'cee' ? <Stethoscope className="text-primary" size={24} /> : <GraduationCap className="text-bio" size={24} />}
+              {canonicalId === 'cee_medical' ? <Stethoscope className="text-primary" size={24} /> : <GraduationCap className="text-bio" size={24} />}
               {programDetails.name} Batches
             </h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-xl">

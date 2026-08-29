@@ -7,7 +7,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 import { useEntitlements } from '@/lib/hooks/useEntitlements';
 import { ProgramSelectorModal } from '@/components/ProgramSelectorModal';
-import ContinueLearningBar from '@/components/ContinueLearningBar';
 import { Loader2 } from 'lucide-react';
 
 import CeePortalView from '@/components/portals/CeePortalView';
@@ -114,7 +113,6 @@ export default function DashboardPageClient() {
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-16 py-6 space-y-6">
-        <ContinueLearningBar />
         {renderActivePortal()}
       </div>
 

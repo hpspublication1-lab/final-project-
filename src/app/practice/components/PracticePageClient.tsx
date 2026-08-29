@@ -8,7 +8,7 @@ import { fetchPracticeQuestions, savePracticeAttempt, type QuestionRow } from '.
 import { createClient } from '@/lib/supabase/client';
 import { useChat } from '@/lib/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgram, PROGRAMS } from '@/contexts/ProgramContext';
+import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { MathText } from '@/components/MathText';
 
@@ -82,7 +82,8 @@ export default function PracticePageClient() {
   const [isPending, startTransition] = useTransition();
 
   const { user } = useAuth();
-  const { program, programDetails } = useProgram();
+  const { program, programDetails, isSee, isCee, isIelts, isDigitalOrAi } = useProgram();
+  const canonicalId = normalizeCourseId(program);
 
   const ceeSubjectsList = [
     { name: 'Biology', icon: '🧬', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
@@ -99,7 +100,28 @@ export default function PracticePageClient() {
     { name: 'Social Studies', icon: '🌍', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
   ];
 
-  const availableSubjects = program === 'see' ? seeSubjectsList : ceeSubjectsList;
+  const ieltsSubjectsList = [
+    { name: 'Grammar & Vocabulary', icon: '📖', color: 'text-ma', bg: 'bg-ma-light', border: 'border-ma/30' },
+    { name: 'Reading Comprehension', icon: '📚', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
+    { name: 'Listening Drills', icon: '🎧', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
+    { name: 'Writing Tasks', icon: '✍️', color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/30' },
+  ];
+
+  const digitalSubjectsList = [
+    { name: 'Prompt Engineering & AI', icon: '🤖', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
+    { name: 'Python for AI', icon: '🐍', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
+    { name: 'Meta & Search Ads', icon: '📱', color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/30' },
+    { name: 'SEO & Copywriting', icon: '📝', color: 'text-physics', bg: 'bg-physics-light', border: 'border-physics/30' },
+  ];
+
+  const availableSubjects =
+    canonicalId === 'see_class_10'
+      ? seeSubjectsList
+      : canonicalId === 'ielts'
+      ? ieltsSubjectsList
+      : isDigitalOrAi
+      ? digitalSubjectsList
+      : ceeSubjectsList;
 
   // Auto-switch selected subject when program changes
   useEffect(() => {
@@ -107,7 +129,7 @@ export default function PracticePageClient() {
     if (!isCurrentValid && availableSubjects.length > 0) {
       setSelectedSubject(availableSubjects[0].name);
     }
-  }, [program, availableSubjects, selectedSubject]);
+  }, [canonicalId, availableSubjects, selectedSubject]);
 
 
   // Persist a bookmark toggle to the DB (optimistic). Previously this button

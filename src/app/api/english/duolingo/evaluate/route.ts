@@ -121,16 +121,18 @@ Return ONLY valid JSON matching this schema:
     try {
       const parsed = JSON.parse(rawJson);
       const admin = createAdminClient();
-      await admin.from('english_practice_attempts').insert({
-        user_id: user.id,
-        task_type_slug: `det-${taskType}`,
-        prompt_text: promptText || 'DET Test Task',
-        response_text: userResponse,
-        band_score: (parsed.overallScore || 115) / 15, // Map 120 -> ~8.0 equivalent
-        rubric_scores: parsed.subscores,
-        feedback: JSON.stringify(parsed.feedback),
-        weakest_criterion: `DET Production (${parsed.subscores?.production || 110})`,
-      });
+      if (admin && user?.id) {
+        await admin.from('english_practice_attempts').insert({
+          user_id: user.id,
+          task_type_slug: `det-${taskType}`,
+          prompt_text: promptText || 'DET Test Task',
+          response_text: userResponse,
+          band_score: (parsed.overallScore || 115) / 15, // Map 120 -> ~8.0 equivalent
+          rubric_scores: parsed.subscores,
+          feedback: JSON.stringify(parsed.feedback),
+          weakest_criterion: `DET Production (${parsed.subscores?.production || 110})`,
+        });
+      }
       return NextResponse.json(parsed);
     } catch {
       return NextResponse.json(getFallbackDetEvaluation(userResponse));

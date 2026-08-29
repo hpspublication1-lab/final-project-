@@ -14,6 +14,7 @@ export interface AgentMessage {
 
 export async function sendAgentMessage(message: Omit<AgentMessage, 'id' | 'timestamp'>) {
   const admin = createAdminClient();
+  if (!admin) return null;
   const { data, error } = await admin
     .from('agent_tasks')
     .insert({
@@ -36,6 +37,7 @@ export async function sendAgentMessage(message: Omit<AgentMessage, 'id' | 'times
 
 export async function getAgentTasks(agentId: AgentId) {
   const admin = createAdminClient();
+  if (!admin) return [];
   const { data, error } = await admin
     .from('agent_tasks')
     .select('*')
@@ -53,6 +55,7 @@ export async function getAgentTasks(agentId: AgentId) {
 
 export async function completeTask(taskId: string, output: any) {
   const admin = createAdminClient();
+  if (!admin) return null;
   const { data, error } = await admin
     .from('agent_tasks')
     .update({
