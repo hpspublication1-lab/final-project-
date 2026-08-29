@@ -49,16 +49,29 @@ interface SubjectGroup {
   chapters: ChapterGroup[];
 }
 
-// ─── Style maps (matches Subjects / Chapter Detail pages) ─────────────────────
-
 const SUBJECT_STYLES: Record<string, { bgLight: string; textColor: string }> = {
-  biology: { bgLight: 'bg-bio-light', textColor: 'text-bio' },
-  chemistry: { bgLight: 'bg-chem-light', textColor: 'text-chem' },
-  physics: { bgLight: 'bg-physics-light', textColor: 'text-physics' },
-  mental_agility: { bgLight: 'bg-ma-light', textColor: 'text-ma' },
+  compulsory_science: { bgLight: 'bg-teal-500/10', textColor: 'text-teal-500' },
+  compulsory_math: { bgLight: 'bg-indigo-500/10', textColor: 'text-indigo-500' },
+  optional_math: { bgLight: 'bg-purple-500/10', textColor: 'text-purple-500' },
+  english: { bgLight: 'bg-rose-500/10', textColor: 'text-rose-500' },
+  social_studies: { bgLight: 'bg-amber-500/10', textColor: 'text-amber-500' },
+  physics: { bgLight: 'bg-blue-500/10', textColor: 'text-blue-500' },
+  chemistry: { bgLight: 'bg-amber-500/10', textColor: 'text-amber-500' },
+  biology: { bgLight: 'bg-emerald-500/10', textColor: 'text-emerald-500' },
+  mental_agility: { bgLight: 'bg-cyan-500/10', textColor: 'text-cyan-500' },
 };
 
-const SUBJECT_ORDER: Record<string, number> = { biology: 0, chemistry: 1, physics: 2, mental_agility: 3 };
+const SUBJECT_ORDER: Record<string, number> = {
+  compulsory_science: 0,
+  compulsory_math: 1,
+  optional_math: 2,
+  english: 3,
+  social_studies: 4,
+  physics: 5,
+  chemistry: 6,
+  biology: 7,
+  mental_agility: 8,
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -553,25 +566,120 @@ export default function LectureVideosClient() {
 
       const buildVideo = (v: any): LectureVideo => {
         const p = watchProgressRef.current.get(v.id);
+        const raw = (v.title || '').replace(/\.mp4$/i, '').trim();
+
+        // Format clean human-readable title
+        let cleanTitle = raw;
+        cleanTitle = cleanTitle.replace(/^SEE-S&T-[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^SEE-S&T-EM-[A-Z]+-U(\d+)-P(\d+)\(?/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-L(\d+)-V(\d+)-?/i, 'Unit $1 Lesson $2: ');
+        cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-V(\d+)-?/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^SEE-OM-EM-\s*[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^SEE-CM-[A-Z]+-U(\d+)-L(\d+)-V(\d+)-?/i, 'Unit $1 Lesson $2: ');
+        cleanTitle = cleanTitle.replace(/^SO\s+U(\d+)\s+L(\d+)\s+/i, 'Unit $1: ');
+        cleanTitle = cleanTitle.replace(/^SO\s+U(\d+)\s+P(\d+)\s+/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^SO\s+L(\d+)\s+V(\d+)\s*/i, 'Lesson $1 Video $2: ');
+        cleanTitle = cleanTitle.replace(/^HRT\s+U(\d+)\s+P(\d+)\s*(V\d+)?/i, 'Unit $1 Part $2: ');
+        cleanTitle = cleanTitle.replace(/^Q\.?\s*NO\s*(\d+)\s*/i, 'Q$1: ');
+        cleanTitle = cleanTitle.replace(/^Q(\d+)\s*-\s*EM\s*-\s*[A-Z]+\s*-\s*/i, 'Q$1: ');
+        cleanTitle = cleanTitle.replace(/^Q(\d+)\s*-\s*STORY\s*-\s*V\s*(\d+)\s*-\s*/i, 'Q$1 Story (Video $2): ');
+        cleanTitle = cleanTitle.replace(/_1$|_new$|_001_new$|_002_new$|_NEW01$/i, '');
+        cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+        cleanTitle = cleanTitle.replace(/\s*:\s*$/, '');
+
         return {
           id: v.id,
-          title: v.title,
-          description: v.description ?? '',
+          title: cleanTitle,
+          description: v.description ?? `HD Video Lecture (${Math.round((v.duration_sec || 0)/60)} mins)`,
           duration: v.duration_sec ?? 0,
           thumbnailUrl: v.thumbnail_url,
           videoUrl: v.video_url,
-          isPremium: v.is_premium,
+          isPremium: v.is_premium ?? false,
           watchedSeconds: p?.watched ?? 0,
           isCompleted: p?.completed ?? false,
         };
       };
 
+      // Map each raw video to its designated subject & chapter unit
+      const dynamicChaptersBySubject = new Map<string, Map<string, LectureVideo[]>>();
+
+      (videosRes.data ?? []).forEach((v: any) => {
+        const vid = buildVideo(v);
+        const raw = (v.title || '').replace(/\.mp4$/i, '').trim();
+        const t = raw.toLowerCase();
+
+        let subName = 'compulsory_science';
+        let chTitle = 'Unit 1: Force & Gravitation';
+
+        // 1. Optional Math
+        if (/^see-om/i.test(t) || /om-em/i.test(t) || t.includes('opt math') || t.includes('continuity') || t.includes('polynomial') || t.includes('vector geometry') || t.includes('determinant') || t.includes('linear programming') || t.includes('sequences and series')) {
+          subName = 'optional_math';
+          if (t.includes('continuity')) chTitle = 'Unit 2: Limits & Continuity';
+          else if (t.includes('matrix') || t.includes('determinant')) chTitle = 'Unit 3: Matrices & Determinants';
+          else if (t.includes('trigonometry') || t.includes('height and distance') || t.includes('trig')) chTitle = 'Unit 5: Trigonometry';
+          else if (t.includes('vector')) chTitle = 'Unit 6: Vector Geometry';
+          else if (t.includes('transformation') || t.includes('inversion')) chTitle = 'Unit 7: Transformation';
+          else if (t.includes('statistics') || t.includes('deviation') || t.includes('dispersion')) chTitle = 'Unit 8: Statistics';
+          else chTitle = 'Unit 1: Functions, Polynomials & Sequences';
+        }
+        // 2. Compulsory Math
+        else if (/^see-cm/i.test(t) || t.includes('compound interest') || t.includes('money exchange') || t.includes('pyramid') || t.includes('cone') || t.includes('solid') || t.includes('cost estimation') || t.includes('quadratic equation') || t.includes('probability') || (t.startsWith('u1 set') || t.startsWith('u1 p') || t.startsWith('u2 arithmetic'))) {
+          subName = 'compulsory_math';
+          if (t.includes('set')) chTitle = 'Unit 1: Sets (समूह)';
+          else if (t.includes('pyramid') || t.includes('cone') || t.includes('solid') || t.includes('cost estimation') || t.includes('mensuration')) chTitle = 'Unit 3: Mensuration & Solids (क्षेत्रमिति)';
+          else if (t.includes('quadratic') || t.includes('algebra')) chTitle = 'Unit 4: Algebra & Quadratic Equations (बीजगणित)';
+          else if (t.includes('probability')) chTitle = 'Unit 6: Probability & Statistics (सम्भाव्यता)';
+          else chTitle = 'Unit 2: Arithmetic & Money Exchange (अङ्कगणित)';
+        }
+        // 3. Science & Technology
+        else if (/^see-s&t/i.test(t) || /^hrt\s*u/i.test(t) || t.includes('science') || t.includes('transformer') || t.includes('periodic table') || t.includes('metals') || t.includes('some gases') || t.includes('chemical') || t.includes('radical') || t.includes('gravit') || t.includes('blood') || t.includes('mitosis') || t.includes('dna') || t.includes('physiological') || t.includes('kinematics') || t.includes('organic reaction') || t.includes('genetics')) {
+          subName = 'compulsory_science';
+          if (t.includes('mitosis') || t.includes('cell division') || t.includes('dna') || t.includes('genetics')) chTitle = 'Unit 4: Heredity & Cell Biology';
+          else if (t.includes('blood') || t.includes('physiological') || t.includes('life process')) chTitle = 'Unit 5: Physiological Structure & Life Processes';
+          else if (t.includes('transformer') || t.includes('electricity') || t.includes('magnetism') || t.includes('hrt u4')) chTitle = 'Unit 7: Current Electricity & Magnetism';
+          else if (t.includes('periodic table') || t.includes('block') || t.includes('hrt u5')) chTitle = 'Unit 14: Modern Periodic Table & Classification';
+          else if (t.includes('radical') || t.includes('reaction') || t.includes('displacenent') || t.includes('displacement')) chTitle = 'Unit 15: Chemical Reactions & Radicals';
+          else if (t.includes('gases') || t.includes('gas')) chTitle = 'Unit 16: Atmospheric Gases (CO₂, NH₃)';
+          else if (t.includes('metals') || t.includes('metal')) chTitle = 'Unit 17: Metals & Metallurgy';
+          else if (t.includes('chemical used in daily') || t.includes('daily life')) chTitle = 'Unit 19: Applied Chemicals in Daily Life';
+          else chTitle = 'Unit 1: Force & Gravitation';
+        }
+        // 4. English
+        else if (/^q[\.\s\d]/i.test(t) || t.includes('writing') || t.includes('unseen') || t.includes('adjective') || t.includes('grammar') || t.includes('modals') || t.includes('pronoun') || t.includes('story') || t.includes('drama') || t.includes('poem') || t.includes('olympic') || t.includes('driverless') || t.includes('cabbage') || t.includes('wisdom')) {
+          subName = 'english';
+          if (t.includes('writing') || t.includes('essay') || t.includes('diary')) chTitle = 'Free Writing & Composition';
+          else if (t.includes('unseen') || t.includes('passage') || t.includes('editorial') || t.includes('report') || t.includes('driverless') || t.includes('olympic')) chTitle = 'Reading Comprehension & Passages';
+          else if (t.includes('story') || t.includes('drama') || t.includes('poem') || t.includes('wisdom') || t.includes('cabbage') || t.includes('farmer')) chTitle = 'Literature, Stories & Poems';
+          else chTitle = 'Grammar & Language Structures';
+        }
+        // 5. Social Studies
+        else if (/^so\s/i.test(t) || t.includes('social') || t.includes('samajik')) {
+          subName = 'social_studies';
+          if (t.includes('u5')) chTitle = 'Unit 5: Civic Awareness & Governance';
+          else if (t.includes('u6')) chTitle = 'Unit 6: Economic Development';
+          else if (t.includes('l3')) chTitle = 'Unit 8: Geography & Climate';
+          else chTitle = 'Unit 7: International Affairs & Contemporary World';
+        }
+
+        if (!dynamicChaptersBySubject.has(subName)) {
+          dynamicChaptersBySubject.set(subName, new Map());
+        }
+        const subMap = dynamicChaptersBySubject.get(subName)!;
+        if (!subMap.has(chTitle)) {
+          subMap.set(chTitle, []);
+        }
+        subMap.get(chTitle)!.push(vid);
+      });
+
       const groups: SubjectGroup[] = (subjectsRes.data ?? [])
       .slice()
       .sort((a: any, b: any) => (SUBJECT_ORDER[a.name] ?? 99) - (SUBJECT_ORDER[b.name] ?? 99))
       .map((s: any) => {
-        const style = SUBJECT_STYLES[s.name] ?? SUBJECT_STYLES.biology;
-        const chapters: ChapterGroup[] = (chaptersBySubject.get(s.id) ?? [])
+        const style = SUBJECT_STYLES[s.name] ?? { bgLight: 'bg-primary/10', textColor: 'text-primary' };
+
+        // Predefined database chapters
+        const predefinedChapters: ChapterGroup[] = (chaptersBySubject.get(s.id) ?? [])
         .slice()
         .sort((a: any, b: any) => (a.chapter_number ?? 99) - (b.chapter_number ?? 99))
         .map((c: any) => ({
@@ -582,10 +690,17 @@ export default function LectureVideosClient() {
         }))
         .filter((c) => c.videos.length > 0);
 
-        const looseVideos = (videosByChapter.get(`__none__:${s.id}`) ?? []).map(buildVideo);
-        if (looseVideos.length > 0) {
-          chapters.push({ id: `general-${s.id}`, title: 'General', chapterNumber: null, videos: looseVideos });
-        }
+        // Dynamic playlists categorized from Bunny.net
+        const dynMap = dynamicChaptersBySubject.get(s.name) || new Map<string, LectureVideo[]>();
+        const dynamicChapters: ChapterGroup[] = Array.from(dynMap.entries()).map(([chTitle, vids], idx) => ({
+          id: `${s.name}-ch-${idx}`,
+          title: chTitle,
+          chapterNumber: idx + 1,
+          videos: vids,
+        }));
+
+        // Combine chapters
+        const chapters = predefinedChapters.length > 0 ? predefinedChapters : dynamicChapters;
 
         // Recorded live classes for this subject → their own chapter at the end.
         const recordings = recordingsBySubject.get(s.id) ?? [];
@@ -597,13 +712,14 @@ export default function LectureVideosClient() {
           id: s.id,
           name: s.name,
           displayName: s.display_name,
-          icon: s.icon ?? '📘',
-          color: s.color ?? '#2563EB',
+          icon: s.icon ?? (s.name.includes('math') ? '📐' : s.name.includes('science') ? '⚡' : s.name.includes('english') ? '📚' : s.name.includes('social') ? '🌍' : '📘'),
+          color: s.color ?? '#5243E0',
           bgLight: style.bgLight,
           textColor: style.textColor,
           chapters,
         };
-      });
+      })
+      .filter((s) => s.chapters.length > 0);
 
       setSubjectsData(groups);
       setLoadState('ready');
