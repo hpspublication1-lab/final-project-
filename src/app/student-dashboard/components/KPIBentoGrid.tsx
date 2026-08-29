@@ -134,83 +134,87 @@ export default function KPIBentoGrid() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-4 gap-4">
       {/* HERO: CEE Countdown — spans 2 cols, 2 rows */}
-      <div className="col-span-2 row-span-2 bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-5 sm:p-6 text-white relative overflow-hidden flex flex-col justify-between min-h-[160px]">
-        <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-white/5 -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/2" />
+      <div className="col-span-2 row-span-2 bg-gradient-to-br from-primary via-primary-dark to-[#3726B0] rounded-3xl p-6 sm:p-7 text-white relative overflow-hidden flex flex-col justify-between min-h-[170px] shadow-xl border border-white/15">
+        <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-white/10 -translate-y-1/2 translate-x-1/2 blur-2xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-36 h-36 rounded-full bg-white/5 translate-y-1/2 -translate-x-1/2 blur-xl pointer-events-none" />
         <div className="relative z-10">
-          <p className="text-white/70 text-xs font-medium uppercase tracking-wider mb-1">CEE 2026 Countdown</p>
-          <p className="font-mono text-5xl sm:text-6xl font-bold tabular-nums leading-none">{ceeDays}</p>
-          <p className="text-white/70 text-sm mt-1">days remaining</p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/80 bg-black/25 px-2.5 py-0.5 rounded-full border border-white/15">Countdown</span>
+            <span className="text-xs font-bold text-white/90">CEE Medical 2026</span>
+          </div>
+          <p className="font-mono text-5xl sm:text-6xl font-black tabular-nums leading-none tracking-tight">{ceeDays}</p>
+          <p className="text-white/80 text-xs font-semibold mt-1.5 uppercase tracking-wide">Days Remaining Until Entrance</p>
         </div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex-1 bg-white/20 rounded-full h-2">
-              <div className="bg-white h-2 rounded-full" style={{ width: `${Math.min(100, Math.round(((365 - ceeDays) / 365) * 100))}%` }} />
+        <div className="relative z-10 pt-4">
+          <div className="flex items-center gap-2.5 mb-3">
+            <div className="flex-1 bg-white/25 rounded-full h-2 overflow-hidden backdrop-blur-sm">
+              <div className="bg-gradient-to-r from-emerald-300 to-white h-2 rounded-full shadow-xs transition-all duration-500" style={{ width: `${Math.min(100, Math.round(((365 - ceeDays) / 365) * 100))}%` }} />
             </div>
-            <span className="text-xs font-bold text-white/80 tabular-nums">
-              {Math.round(((365 - ceeDays) / 365) * 100)}% prep time used
+            <span className="text-xs font-black text-white/90 tabular-nums">
+              {Math.round(((365 - ceeDays) / 365) * 100)}%
             </span>
           </div>
-          <Link href="/study-plan" className="flex items-center gap-1 text-sm font-semibold text-white/80 hover:text-white transition-colors">
-            View Study Plan <ArrowRight size={13} />
+          <Link href="/study-plan" className="inline-flex items-center gap-1.5 text-xs font-bold text-white/90 hover:text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-all border border-white/20">
+            <span>View Today&apos;s Study Plan</span>
+            <ArrowRight size={13} />
           </Link>
         </div>
       </div>
 
       {/* Streak */}
-      <div className="card-base flex flex-col gap-2 relative overflow-hidden">
+      <div className="card-luxury p-5 flex flex-col gap-2 relative overflow-hidden">
         <div className="flex items-center justify-between">
-          <p className="section-label">Study Streak</p>
-          <div className="w-8 h-8 rounded-lg bg-ma-light flex items-center justify-center">
-            <Flame size={16} className="text-ma" />
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Study Streak</p>
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+            <Flame size={16} className="text-amber-500" />
           </div>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-2"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
+          <div className="flex items-center justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
         ) : (
           <>
             <div>
-              <p className="font-mono text-3xl font-bold text-foreground tabular-nums">{stats?.studyStreak ?? 0}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">consecutive days</p>
+              <p className="font-mono text-3xl font-black text-foreground tabular-nums">{stats?.studyStreak ?? 0}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Consecutive days</p>
             </div>
-            <div className="flex gap-1 mt-auto">
+            <div className="flex gap-1 mt-auto pt-2">
               {Array.from({ length: 7 })?.map((_, i) => (
                 <div
                   key={`streak-day-${i}`}
-                  className={`flex-1 h-1.5 rounded-full ${i < Math.min(7, stats?.studyStreak || 0) ? 'bg-ma' : 'bg-border'}`}
+                  className={`flex-1 h-1.5 rounded-full ${i < Math.min(7, stats?.studyStreak || 0) ? 'bg-amber-500' : 'bg-muted'}`}
                 />
               ))}
             </div>
             {(stats?.studyStreak || 0) > 0 && (
-              <p className="text-xs text-success font-medium">🔥 Keep it up!</p>
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">🔥 On a roll!</p>
             )}
           </>
         )}
       </div>
 
       {/* Overall Accuracy */}
-      <div className="card-base flex flex-col gap-2">
+      <div className="card-luxury p-5 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="section-label">Overall Accuracy</p>
-          <div className="w-8 h-8 rounded-lg bg-success-light flex items-center justify-center">
-            <Target size={16} className="text-success" />
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Overall Accuracy</p>
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+            <Target size={16} className="text-emerald-500" />
           </div>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-2"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
+          <div className="flex items-center justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
         ) : (
           <>
             <div>
-              <p className="font-mono text-3xl font-bold text-foreground tabular-nums">{stats?.overallAccuracy ?? 0}%</p>
-              <p className="text-xs text-muted-foreground mt-0.5">last 30 days</p>
+              <p className="font-mono text-3xl font-black text-foreground tabular-nums">{stats?.overallAccuracy ?? 0}%</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">Last 30 days drills</p>
             </div>
-            <div className="flex items-center gap-1 mt-auto">
+            <div className="flex items-center gap-1 mt-auto pt-2">
               {(stats?.accuracyDelta || 0) >= 0 ? (
-                <TrendingUp size={13} className="text-success" />
+                <TrendingUp size={13} className="text-emerald-500" />
               ) : (
-                <TrendingDown size={13} className="text-error" />
+                <TrendingDown size={13} className="text-rose-500" />
               )}
-              <span className={`text-xs font-semibold ${(stats?.accuracyDelta || 0) >= 0 ? 'text-success' : 'text-error'}`}>
+              <span className={`text-[11px] font-bold ${(stats?.accuracyDelta || 0) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                 {(stats?.accuracyDelta || 0) >= 0 ? '+' : ''}{stats?.accuracyDelta ?? 0}% vs last month
               </span>
             </div>
@@ -219,59 +223,59 @@ export default function KPIBentoGrid() {
       </div>
 
       {/* Rank */}
-      <div className="card-base flex flex-col gap-2">
+      <div className="card-luxury p-5 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="section-label">All-India Rank</p>
-          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">National Rank</p>
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
             <Trophy size={16} className="text-primary" />
           </div>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-2"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
+          <div className="flex items-center justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
         ) : (
           <>
             <div>
-              <p className="font-mono text-3xl font-bold text-foreground tabular-nums">
+              <p className="font-mono text-3xl font-black text-foreground tabular-nums">
                 {stats?.rankPosition ? `#${stats.rankPosition.toLocaleString()}` : '—'}
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {stats?.totalStudents ? `of ${stats.totalStudents.toLocaleString()} students` : 'Complete exams to rank'}
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                {stats?.totalStudents ? `of ${stats.totalStudents.toLocaleString()} students` : 'Complete tests to rank'}
               </p>
             </div>
-            <div className="flex items-center gap-1 mt-auto">
-              <TrendingUp size={13} className="text-success" />
-              <span className="text-xs text-success font-semibold">Based on your profile</span>
+            <div className="flex items-center gap-1 mt-auto pt-2">
+              <TrendingUp size={13} className="text-primary" />
+              <span className="text-[11px] text-primary font-bold">Verified percentile</span>
             </div>
           </>
         )}
       </div>
 
       {/* Battle Win Rate */}
-      <div className="card-base flex flex-col gap-2">
+      <div className="card-luxury p-5 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <p className="section-label">Battle Win Rate</p>
-          <div className="w-8 h-8 rounded-lg bg-chem-light flex items-center justify-center">
-            <Swords size={16} className="text-chem" />
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Battle Arena</p>
+          <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+            <Swords size={16} className="text-purple-500" />
           </div>
         </div>
         {loading ? (
-          <div className="flex items-center justify-center py-2"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
+          <div className="flex items-center justify-center py-4"><Loader2 size={16} className="animate-spin text-muted-foreground" /></div>
         ) : (
           <>
             <div>
-              <p className="font-mono text-3xl font-bold text-foreground tabular-nums">{battleWinRate}%</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {stats?.battleWins ?? 0} wins / {stats?.battleTotal ?? 0} battles
+              <p className="font-mono text-3xl font-black text-foreground tabular-nums">{battleWinRate}%</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                {stats?.battleWins ?? 0} wins / {stats?.battleTotal ?? 0} matches
               </p>
             </div>
-            <div className="flex items-center gap-1 mt-auto">
+            <div className="flex items-center gap-1 mt-auto pt-2">
               {battleWinRate >= 50 ? (
-                <TrendingUp size={13} className="text-success" />
+                <TrendingUp size={13} className="text-emerald-500" />
               ) : (
-                <TrendingDown size={13} className="text-error" />
+                <TrendingDown size={13} className="text-rose-500" />
               )}
-              <span className={`text-xs font-semibold ${battleWinRate >= 50 ? 'text-success' : 'text-error'}`}>
-                {battleWinRate >= 50 ? 'Above average' : 'Keep battling!'}
+              <span className={`text-[11px] font-bold ${battleWinRate >= 50 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                {battleWinRate >= 50 ? 'Above average' : 'Join live duels'}
               </span>
             </div>
           </>

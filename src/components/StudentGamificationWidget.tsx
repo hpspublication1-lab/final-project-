@@ -6,6 +6,8 @@ import {
   Sparkles, Swords, Star, Crown
 } from 'lucide-react';
 
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
+
 interface GamificationProps {
   levelNumber?: number;
   levelTitle?: string;
@@ -18,7 +20,7 @@ interface GamificationProps {
 
 export default function StudentGamificationWidget({
   levelNumber = 7,
-  levelTitle = 'SEE WARRIOR ⚔️',
+  levelTitle,
   xpPoints = 7420,
   nextLevelXp = 10000,
   coinsCount = 1250,
@@ -27,21 +29,32 @@ export default function StudentGamificationWidget({
     { id: 'b1', title: '100 MCQs', unlocked: true, icon: '⚡' },
     { id: 'b2', title: '7-Day Streak', unlocked: true, icon: '🔥' },
     { id: 'b3', title: 'First Mock', unlocked: true, icon: '📝' },
-    { id: 'b4', title: 'Science Master', unlocked: true, icon: '🔬' },
+    { id: 'b4', title: 'Syllabus Master', unlocked: true, icon: '🔬' },
     { id: 'b5', title: 'Arena Duelist', unlocked: false, icon: '⚔️' },
     { id: 'b6', title: 'Top 10% Nepal', unlocked: false, icon: '🏆' },
   ],
 }: GamificationProps) {
+  const { program } = useProgram();
+  const canonicalId = normalizeCourseId(program);
+
+  const defaultTitle = 
+    canonicalId === 'see_class_10' ? 'SEE BOARD SCHOLAR ⚔️' :
+    canonicalId === 'ielts' ? 'IELTS BAND 8.5+ 🌍' :
+    canonicalId === 'digital_marketing' ? 'GROWTH STRATEGIST 📈' :
+    canonicalId === 'artificial_intelligence' ? 'AI ARCHITECT 🤖' :
+    'FUTURE DOCTOR 🩺';
+
+  const activeLevelTitle = levelTitle || defaultTitle;
   const xpPercentage = Math.min(100, Math.round((xpPoints / nextLevelXp) * 100));
 
   return (
-    <div className="bg-card border-2 border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+    <div className="card-luxury p-6 sm:p-7 shadow-luxury space-y-6 relative overflow-hidden">
       
       {/* Background Glow */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Level Banner & Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-border/80">
         
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/15 border-2 border-amber-500/30 flex flex-col items-center justify-center text-center shrink-0 shadow-md">
@@ -51,12 +64,12 @@ export default function StudentGamificationWidget({
 
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 font-mono">
-                STUDENT RANK BADGE
+              <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 font-mono">
+                STUDENT BADGE
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              {levelTitle}
+              {activeLevelTitle}
             </h2>
             <div className="flex items-center gap-3 text-xs font-mono font-bold">
               <span className="text-amber-600">XP {xpPoints.toLocaleString()}</span>

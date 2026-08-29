@@ -77,13 +77,13 @@ export default function StudyPlanTasks() {
   }, [user?.id]);
 
   return (
-    <div className="card-base h-full flex flex-col">
+    <div className="card-luxury p-5 sm:p-6 shadow-luxury h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="font-semibold text-foreground">Recommended for You</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Based on your weak topics &amp; mastery accuracy</p>
+          <p className="text-sm font-extrabold text-foreground">Personalized AI Study Path</p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-medium">Based on your weak topics &amp; diagnostic accuracy</p>
         </div>
-        <Link href="/subjects" className="text-xs text-primary font-medium hover:underline flex items-center gap-0.5">
+        <Link href="/subjects" className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5">
           Browse all <ArrowRight size={11} />
         </Link>
       </div>

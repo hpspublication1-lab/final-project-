@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { FileText, TrendingUp, TrendingDown, Eye, BarChart2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -133,16 +134,16 @@ export default function RecentExamsTable() {
   };
 
   return (
-    <div className="card-base">
+    <div className="card-luxury p-5 sm:p-6 shadow-luxury">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <FileText size={16} className="text-primary" />
-          <p className="font-semibold text-foreground">Recent Exam Results</p>
+          <FileText size={17} className="text-primary" />
+          <p className="text-sm font-extrabold text-foreground">Recent Exam Results &amp; Benchmarks</p>
           {!loading && (
-            <span className="text-xs bg-secondary text-primary font-bold px-1.5 py-0.5 rounded-full">{exams.length}</span>
+            <span className="text-[10px] bg-primary/10 text-primary border border-primary/20 font-black px-2 py-0.5 rounded-full font-mono">{exams.length}</span>
           )}
         </div>
-        <button className="text-xs text-primary font-medium hover:underline">View all results</button>
+        <Link href="/mock-tests" className="text-xs text-primary font-bold hover:underline">View all results</Link>
       </div>
 
       {loading ? (

@@ -7,13 +7,13 @@ const SubjectMasteryRingsInner = dynamic(() => import('./SubjectMasteryRingsInne
 
 export default function SubjectMasteryRings() {
   return (
-    <div className="card-base h-full">
+    <div className="card-luxury p-5 sm:p-6 shadow-luxury h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="font-semibold text-foreground">Subject Mastery</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Chapters completed × accuracy score</p>
+          <p className="text-sm font-extrabold text-foreground">Subject Mastery Diagnostic</p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-medium">Chapters completed × accuracy score</p>
         </div>
-        <button className="text-xs text-primary font-medium hover:underline">View Details</button>
+        <button className="text-xs text-primary font-bold hover:underline">View Details</button>
       </div>
       <SubjectMasteryRingsInner />
     </div>

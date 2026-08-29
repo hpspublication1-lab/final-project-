@@ -77,25 +77,25 @@ export default function DigitalMarketingPortalView({
       />
 
       {/* 2. Career Progression Summary Card */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-rose-500/30 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="space-y-1 max-w-xl">
+      <div className="p-5 rounded-3xl card-luxury shadow-luxury flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1.5 max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-600 border border-rose-500/20 font-mono">
               Career Track Progress
             </span>
             <span className="text-xs text-muted-foreground font-semibold">Specialization: Performance Marketer</span>
           </div>
           <h2 className="text-base sm:text-lg font-black text-foreground">
-            Practical Project Completion: <span className="text-rose-600">65%</span>
+            Practical Project Completion: <span className="text-rose-600 font-mono">65%</span>
           </h2>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground font-medium">
             Complete 3 live client projects to unlock the verified Samyak Digital Marketing Certificate.
           </p>
         </div>
 
         <Link
           href="/courses"
-          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-600/20 transition-all shrink-0"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-600/20 transition-all shrink-0 active:scale-95"
         >
           <Upload size={14} />
           <span>Submit Project</span>
@@ -123,7 +123,7 @@ export default function DigitalMarketingPortalView({
               {config.defaultSubjects.map((mod) => (
                 <div
                   key={mod.id}
-                  className="p-4 rounded-2xl bg-card border border-border hover:border-rose-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3"
+                  className="p-4 rounded-2xl card-luxury shadow-xs hover:border-rose-500/50 hover:shadow-luxury transition-all flex flex-col justify-between space-y-3"
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">

@@ -126,10 +126,10 @@ export default function SeePortalView({
       />
 
       {/* 2. Compact Continue Learning Card */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-emerald-500/30 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="p-5 rounded-3xl card-luxury shadow-luxury flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1.5 max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-mono">
               Continue Learning
             </span>
             <span className="text-xs text-muted-foreground font-semibold">
@@ -140,21 +140,21 @@ export default function SeePortalView({
             {lastLesson?.title || 'Science: Force & Gravity — Universal Gravitation'}
           </h2>
           <div className="flex items-center gap-3">
-            <div className="w-36 sm:w-48 h-2 rounded-full bg-muted overflow-hidden">
+            <div className="w-36 sm:w-48 h-2.5 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
                 style={{ width: `${Math.max(10, lastLesson?.percentage || 52)}%` }}
               />
             </div>
-            <span className="text-xs font-bold text-emerald-600">
-              {lastLesson?.percentage ? `${lastLesson.percentage}%` : '52%'} Completed
+            <span className="text-xs font-bold text-emerald-600 font-mono">
+              {lastLesson?.percentage ? `${lastLesson.percentage}%` : '52%'} Done
             </span>
           </div>
         </div>
 
         <Link
           href={lastLesson?.id ? `/see/lessons/${lastLesson.id}` : '/subjects'}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all shrink-0"
+          className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all shrink-0 active:scale-95"
         >
           <Play size={15} />
           <span>Resume Lesson</span>
@@ -177,7 +177,7 @@ export default function SeePortalView({
                 <Link
                   key={qa.key}
                   href={qa.href}
-                  className="p-3.5 rounded-2xl bg-card border border-border hover:border-emerald-500/40 hover:shadow-md transition-all flex flex-col justify-between space-y-2 group"
+                  className="p-4 rounded-2xl card-luxury hover:border-emerald-500/50 hover:shadow-luxury transition-all flex flex-col justify-between space-y-2 group shadow-xs"
                 >
                   <div className="flex items-center justify-between">
                     <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:scale-110 transition-transform">

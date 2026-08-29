@@ -6,31 +6,31 @@ import { Radio, Download, ArrowRight, Smartphone } from 'lucide-react';
 
 export default function UpcomingSchedule() {
   return (
-    <div className="card-base h-full flex flex-col justify-between">
+    <div className="card-luxury p-5 sm:p-6 shadow-luxury h-full flex flex-col justify-between">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <p className="font-semibold text-foreground">Live Classes</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Samyak Guru App</p>
+          <p className="text-sm font-extrabold text-foreground">Interactive Live Classes</p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-medium">Samyak Guru Mobile App</p>
         </div>
-        <Link href="/app-feature?feature=live-classes" className="text-xs text-primary font-medium hover:underline flex items-center gap-0.5">
+        <Link href="/app-feature?feature=live-classes" className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5">
           Open App <ArrowRight size={11} />
         </Link>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 my-2">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-3">
-          <Smartphone size={24} className="text-primary" />
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-5 bg-muted/30 rounded-2xl border border-border/80 my-2">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3 border border-primary/20 shadow-xs">
+          <Smartphone size={22} className="text-primary" />
         </div>
-        <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+        <h4 className="text-sm font-extrabold text-foreground mb-1">
           Stream Live on Samyak Guru App
         </h4>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xs leading-relaxed">
-          Interactive HD live classes, Q&A, and teacher chat are hosted on our official mobile app.
+        <p className="text-xs text-muted-foreground mb-4 max-w-xs leading-relaxed font-medium">
+          Interactive HD live classes, real-time polling, Q&amp;A, and mentor chat on Android &amp; iOS.
         </p>
 
         <Link
           href="/app-feature?feature=live-classes"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl shadow-xs hover:bg-primary/90 transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-xs font-extrabold rounded-xl shadow-md shadow-primary/25 transition-all active:scale-95"
         >
           <Download size={13} /> Get Samyak Guru App
         </Link>

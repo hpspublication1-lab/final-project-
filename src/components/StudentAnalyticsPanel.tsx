@@ -22,7 +22,7 @@ interface StudentAnalyticsProps {
 }
 
 export default function StudentAnalyticsPanel({
-  displayName = 'Suraj',
+  displayName = 'Student',
   totalStudyHours = 48.5,
   videosCompleted = 108,
   totalVideos = 147,
@@ -36,17 +36,17 @@ export default function StudentAnalyticsPanel({
   predictedReadinessPct = 84,
 }: StudentAnalyticsProps) {
   return (
-    <div className="bg-card border-2 border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+    <div className="card-luxury p-6 sm:p-7 shadow-luxury space-y-6 relative overflow-hidden">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/80">
         <div className="space-y-1">
-          <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-mono">
-            SAMYAK LEARNING INTELLIGENCE &amp; ANALYTICS
+          <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-mono">
+            LEARNING INTELLIGENCE &amp; METRICS
           </span>
           <h2 className="text-xl sm:text-2xl font-black text-foreground flex items-center gap-2">
-            <BarChart2 size={24} className="text-emerald-600" />
-            STUDENT PERFORMANCE ANALYTICS
+            <BarChart2 size={22} className="text-primary" />
+            Performance &amp; Accuracy Diagnostic
           </h2>
         </div>
 

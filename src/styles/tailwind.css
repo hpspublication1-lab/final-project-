@@ -5,86 +5,85 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root {
-  /* Refined "sleek & premium" palette. Cooler near-white surfaces, a deeper
-     richer indigo-violet brand, a refined teal accent, higher-contrast text,
-     and a soft neutral border. --primary-rgb powers rings/shadows so they
-     always track the brand color. */
-  --background: #F7F8FB;
-  --foreground: #0F1526;
-  --primary: #5A45E8;
-  --primary-rgb: 90, 69, 232;
-  --primary-dark: #4536C4;
+  /* Premium Luxury Palette (Linear / Apple / Vercel Grade) */
+  --background: #F8FAFC;
+  --foreground: #090D1A;
+  --primary: #5243E0;
+  --primary-rgb: 82, 67, 224;
+  --primary-dark: #3F30C8;
   --primary-foreground: #FFFFFF;
   --secondary: #EEEDFE;
-  --secondary-foreground: #5A45E8;
-  --accent: #0FB5A6;
+  --secondary-foreground: #5243E0;
+  --accent: #00BFA5;
   --accent-foreground: #FFFFFF;
-  --muted: #F0F2F7;
-  --muted-foreground: #5D6675;
+  --muted: #F1F4F9;
+  --muted-foreground: #5B6579;
   --card: #FFFFFF;
-  --card-foreground: #0F1526;
-  --border: #E7E9F1;
-  --input: #F0F2F7;
-  --ring: #5A45E8;
-  --radius: 14px;
+  --card-foreground: #090D1A;
+  --border: #E2E6F0;
+  --input: #F1F4F9;
+  --ring: #5243E0;
+  --radius: 16px;
   --font-sans: var(--font-plus-jakarta-sans), sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
-  /* Layered, low-opacity elevation scale — the core of the premium feel. */
-  --shadow-xs: 0 1px 2px rgba(16, 21, 38, 0.05);
-  --shadow-sm: 0 1px 2px rgba(16, 21, 38, 0.04), 0 2px 6px rgba(16, 21, 38, 0.05);
-  --shadow-md: 0 2px 4px rgba(16, 21, 38, 0.04), 0 8px 20px rgba(16, 21, 38, 0.07);
-  --shadow-lg: 0 4px 8px rgba(16, 21, 38, 0.05), 0 16px 40px rgba(16, 21, 38, 0.10);
+  /* Layered elevation scale */
+  --shadow-xs: 0 1px 2px rgba(9, 13, 26, 0.04);
+  --shadow-sm: 0 2px 4px rgba(9, 13, 26, 0.04), 0 4px 12px rgba(9, 13, 26, 0.05);
+  --shadow-md: 0 4px 8px rgba(9, 13, 26, 0.04), 0 12px 28px rgba(9, 13, 26, 0.08);
+  --shadow-lg: 0 8px 16px rgba(9, 13, 26, 0.05), 0 24px 56px rgba(9, 13, 26, 0.12);
+  --shadow-luxury: 0 0 0 1px rgba(9, 13, 26, 0.06), 0 8px 24px -4px rgba(82, 67, 224, 0.12), 0 20px 48px -8px rgba(9, 13, 26, 0.08);
 
-  --bio: #16A36A;
+  --bio: #10B981;
   --bio-light: #ECFDF5;
   --chem: #8B5CF6;
   --chem-light: #F5F3FF;
-  --physics: #2563EB;
+  --physics: #3B82F6;
   --physics-light: #EFF6FF;
-  --ma: #E59A18;
+  --ma: #F59E0B;
   --ma-light: #FFFBEB;
 
-  --error: #D92D20;
-  --error-light: #FEF3F2;
-  --warning: #E59A18;
+  --error: #EF4444;
+  --error-light: #FEF2F2;
+  --warning: #F59E0B;
   --warning-light: #FFFBEB;
-  --success: #16A36A;
+  --success: #10B981;
   --success-light: #ECFDF5;
 }
 
 .dark {
-  --background: #0B0E17;
-  --foreground: #EAEDF6;
-  --primary: #8C80FF;
-  --primary-rgb: 140, 128, 255;
-  --primary-dark: #5A45E8;
+  /* Deep Obsidian Luxury Dark Palette */
+  --background: #07090E;
+  --foreground: #F1F4FA;
+  --primary: #8176FF;
+  --primary-rgb: 129, 118, 255;
+  --primary-dark: #5243E0;
   --primary-foreground: #FFFFFF;
-  --secondary: #1B1938;
-  --secondary-foreground: #B4ACFF;
-  --accent: #17C5B6;
-  --accent-foreground: #FFFFFF;
-  --muted: #161A28;
-  --muted-foreground: #8B95AD;
-  --card: #131725;
-  --card-foreground: #EAEDF6;
-  --border: #232839;
-  --input: #161A28;
-  --ring: #8C80FF;
+  --secondary: #131728;
+  --secondary-foreground: #C7C0FF;
+  --accent: #00E5CC;
+  --accent-foreground: #07090E;
+  --muted: #111524;
+  --muted-foreground: #8E98B0;
+  --card: #0D111C;
+  --card-foreground: #F1F4FA;
+  --border: #1D2338;
+  --input: #111524;
+  --ring: #8176FF;
 
-  /* Heavier shadows read better against the dark background. */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.45), 0 10px 24px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 6px 12px rgba(0, 0, 0, 0.5), 0 20px 48px rgba(0, 0, 0, 0.6);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5), 0 14px 32px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6), 0 28px 64px rgba(0, 0, 0, 0.75);
+  --shadow-luxury: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 32px -4px rgba(0, 0, 0, 0.8), 0 0 40px -10px rgba(129, 118, 255, 0.15);
 
-  --bio-light: #052E1A;
-  --chem-light: #1E0A3C;
-  --physics-light: #0A1830;
-  --ma-light: #2A1F00;
-  --error-light: #2C0A09;
-  --warning-light: #2A1F00;
-  --success-light: #052E1A;
+  --bio-light: #032A18;
+  --chem-light: #1A0B33;
+  --physics-light: #08162E;
+  --ma-light: #261A02;
+  --error-light: #2A0808;
+  --warning-light: #261A02;
+  --success-light: #032A18;
 }
 
 @layer base {
@@ -292,19 +291,84 @@
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
   }
 
   .dark .glass {
-    background: rgba(19, 23, 37, 0.82);
+    background: rgba(13, 17, 28, 0.80);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .glass-card-interactive {
+  .glass-luxury {
     background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(226, 230, 240, 0.8);
+    box-shadow: 0 4px 24px -1px rgba(9, 13, 26, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  }
+
+  .dark .glass-luxury {
+    background: rgba(13, 17, 28, 0.85);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  }
+
+  .glass-pill {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 10px rgba(9, 13, 26, 0.04);
+  }
+
+  .dark .glass-pill {
+    background: rgba(17, 21, 36, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #9D93FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-accent {
+    background: linear-gradient(135deg, #00BFA5 0%, #60EFFF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .card-luxury {
+    background-color: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-luxury:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--primary-rgb), 0.35);
+    box-shadow: var(--shadow-luxury);
+  }
+
+  .glass-card-interactive {
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(var(--primary-rgb), 0.15);
@@ -313,15 +377,15 @@
   }
 
   .dark .glass-card-interactive {
-    background: rgba(19, 23, 37, 0.88);
-    border: 1px solid rgba(140, 128, 255, 0.2);
-    box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.5), 0 4px 15px rgba(140, 128, 255, 0.08);
+    background: rgba(13, 17, 28, 0.90);
+    border: 1px solid rgba(129, 118, 255, 0.22);
+    box-shadow: 0 12px 35px -10px rgba(0, 0, 0, 0.6), 0 4px 15px rgba(129, 118, 255, 0.08);
   }
 
   .glass-card-interactive:hover {
-    transform: translateY(-4px) scale(1.01);
-    border-color: rgba(var(--primary-rgb), 0.4);
-    box-shadow: 0 20px 40px -12px rgba(var(--primary-rgb), 0.22), 0 8px 24px rgba(16, 21, 38, 0.08);
+    transform: translateY(-3px) scale(1.005);
+    border-color: rgba(var(--primary-rgb), 0.45);
+    box-shadow: 0 20px 40px -12px rgba(var(--primary-rgb), 0.24), 0 8px 24px rgba(16, 21, 38, 0.08);
   }
 
   .animate-pulse-glow {

@@ -260,10 +260,10 @@ export default function HeroSection() {
 
   return (
     <section className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
-      {/* Background Gradient & Animated Glow Orbs */}
+      {/* Background Gradient & Animated Luxury Glow Orbs */}
       <div className="absolute inset-0 gradient-hero" />
-      <div className="absolute top-[-100px] right-[-100px] w-[650px] h-[650px] blob-primary opacity-70 pointer-events-none animate-pulse-glow" />
-      <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] blob-accent opacity-50 pointer-events-none" />
+      <div className="absolute top-[-140px] right-[-140px] w-[700px] h-[700px] blob-primary opacity-60 pointer-events-none animate-pulse-glow" />
+      <div className="absolute bottom-[-140px] left-[-140px] w-[550px] h-[550px] blob-accent opacity-40 pointer-events-none" />
 
       <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -273,102 +273,106 @@ export default function HeroSection() {
             
             {/* Top Motto Badge */}
             <div className="flex flex-wrap items-center gap-3">
-              <span className="px-3.5 py-1.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
-                <Sparkles size={14} /> ONE PLATFORM. YOUR ENTIRE LEARNING JOURNEY.
+              <span className="px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/25 text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-xs backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span>Next-Gen Multi-Track Education Platform</span>
               </span>
             </div>
 
             <h1 className="text-hero-xl text-foreground font-black tracking-tight leading-[1.05]">
-              SEE • CEE • IELTS •{' '}
-              <span className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 bg-clip-text text-transparent drop-shadow-sm">
-                Digital Marketing • AI
+              Master SEE, CEE &amp; IELTS with{' '}
+              <span className="text-gradient-primary">
+                AI Copilot Power
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl font-medium">
-              Nepal&apos;s premier 5-in-1 multi-course AI education platform. Learn with 24/7 AI Teachers, practice MCQs, past papers, and band evaluators.
+              Nepal&apos;s most advanced 5-in-1 academic &amp; skill acceleration platform. Realtime AI doubt solver, 15,000+ MCQs, 2-player battle arena, and live examiners.
             </p>
 
             {/* Choose Your Goal Label */}
             <div className="pt-2">
-              <p className="text-xs font-black uppercase tracking-wider text-amber-600 mb-2.5 flex items-center gap-1.5">
-                <span>[ Choose Your Goal ]</span>
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <span>Select Active Program Track</span>
+                </p>
+                <span className="text-[11px] font-bold text-primary">5 Comprehensive Portals</span>
+              </div>
 
               {/* 5-Path Interactive Card Selector Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                 <button
                   onClick={() => setProgram('see_class_10')}
-                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
                     canonicalId === 'see_class_10'
-                      ? 'bg-emerald-500/10 border-emerald-500 text-foreground ring-2 ring-emerald-500/30'
-                      : 'bg-card/80 border-border hover:border-emerald-500/40 text-muted-foreground hover:text-foreground'
+                      ? 'bg-emerald-500/10 border-emerald-500 text-foreground ring-2 ring-emerald-500/30 shadow-md scale-[1.02]'
+                      : 'bg-card/70 border-border/80 hover:border-emerald-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
                   }`}
                 >
                   <div className="text-2xl mb-1">🎓</div>
-                  <div className="font-extrabold text-sm text-foreground">Samyak SEE</div>
+                  <div className="font-extrabold text-xs text-foreground truncate">Samyak SEE</div>
                   <div className="text-[10px] text-muted-foreground font-semibold">Class 10 Board</div>
                 </button>
 
                 <button
                   onClick={() => setProgram('cee_medical')}
-                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
                     canonicalId === 'cee_medical'
-                      ? 'bg-indigo-500/10 border-indigo-500 text-foreground ring-2 ring-indigo-500/30'
-                      : 'bg-card/80 border-border hover:border-indigo-500/40 text-muted-foreground hover:text-foreground'
+                      ? 'bg-indigo-500/10 border-indigo-500 text-foreground ring-2 ring-indigo-500/30 shadow-md scale-[1.02]'
+                      : 'bg-card/70 border-border/80 hover:border-indigo-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
                   }`}
                 >
                   <div className="text-2xl mb-1">🩺</div>
-                  <div className="font-extrabold text-sm text-foreground">Samyak CEE</div>
+                  <div className="font-extrabold text-xs text-foreground truncate">Samyak CEE</div>
                   <div className="text-[10px] text-muted-foreground font-semibold">Medical Entrance</div>
                 </button>
 
                 <button
                   onClick={() => setProgram('ielts')}
-                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
                     canonicalId === 'ielts'
-                      ? 'bg-amber-500/10 border-amber-500 text-foreground ring-2 ring-amber-500/30'
-                      : 'bg-card/80 border-border hover:border-amber-500/40 text-muted-foreground hover:text-foreground'
+                      ? 'bg-amber-500/10 border-amber-500 text-foreground ring-2 ring-amber-500/30 shadow-md scale-[1.02]'
+                      : 'bg-card/70 border-border/80 hover:border-amber-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
                   }`}
                 >
                   <div className="text-2xl mb-1">🌍</div>
-                  <div className="font-extrabold text-sm text-foreground">Samyak IELTS</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">English Band 8.5+</div>
+                  <div className="font-extrabold text-xs text-foreground truncate">Samyak IELTS</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">Band 8.5+ Prep</div>
                 </button>
 
                 <button
                   onClick={() => setProgram('digital_marketing')}
-                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
                     canonicalId === 'digital_marketing'
-                      ? 'bg-rose-500/10 border-rose-500 text-foreground ring-2 ring-rose-500/30'
-                      : 'bg-card/80 border-border hover:border-rose-500/40 text-muted-foreground hover:text-foreground'
+                      ? 'bg-rose-500/10 border-rose-500 text-foreground ring-2 ring-rose-500/30 shadow-md scale-[1.02]'
+                      : 'bg-card/70 border-border/80 hover:border-rose-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
                   }`}
                 >
                   <div className="text-2xl mb-1">📈</div>
-                  <div className="font-extrabold text-sm text-foreground">Samyak Digital</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">Career Skills</div>
+                  <div className="font-extrabold text-xs text-foreground truncate">Digital Pro</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">Growth &amp; Ads</div>
                 </button>
 
                 <button
                   onClick={() => setProgram('artificial_intelligence')}
-                  className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
                     canonicalId === 'artificial_intelligence'
-                      ? 'bg-purple-500/10 border-purple-500 text-foreground ring-2 ring-purple-500/30'
-                      : 'bg-card/80 border-border hover:border-purple-500/40 text-muted-foreground hover:text-foreground'
+                      ? 'bg-purple-500/10 border-purple-500 text-foreground ring-2 ring-purple-500/30 shadow-md scale-[1.02]'
+                      : 'bg-card/70 border-border/80 hover:border-purple-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
                   }`}
                 >
                   <div className="text-2xl mb-1">🤖</div>
-                  <div className="font-extrabold text-sm text-foreground">Samyak AI</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">AI &amp; Automation</div>
+                  <div className="font-extrabold text-xs text-foreground truncate">AI Academy</div>
+                  <div className="text-[10px] text-muted-foreground font-semibold">Agents &amp; Code</div>
                 </button>
               </div>
             </div>
 
             <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-3 pt-2">
               {highlights.map((h) => (
-                <li key={h.key} className="flex items-center gap-3 text-sm font-bold text-foreground bg-card/70 backdrop-blur-md border border-primary/15 rounded-2xl px-4 py-2.5 shadow-xs hover:border-primary/40 hover:shadow-md transition-all">
-                  <CheckCircle2 size={18} className="text-success shrink-0" />
-                  {h.text}
+                <li key={h.key} className="flex items-center gap-3 text-xs sm:text-sm font-bold text-foreground bg-card/70 backdrop-blur-md border border-border/80 rounded-2xl px-4 py-3 shadow-xs hover:border-primary/40 hover:shadow-luxury transition-all">
+                  <CheckCircle2 size={17} className="text-success shrink-0" />
+                  <span>{h.text}</span>
                 </li>
               ))}
             </ul>

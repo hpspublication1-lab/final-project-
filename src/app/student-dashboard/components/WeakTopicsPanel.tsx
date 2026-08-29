@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { AlertTriangle, ArrowRight, BookOpen, Zap, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -97,55 +98,55 @@ export default function WeakTopicsPanel() {
   }, [user?.id]);
 
   return (
-    <div className="card-base h-full flex flex-col">
+    <div className="card-luxury p-5 sm:p-6 shadow-luxury h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <AlertTriangle size={16} className="text-error" />
-          <p className="font-semibold text-foreground">Weak Topics</p>
+          <AlertTriangle size={17} className="text-error" />
+          <p className="text-sm font-extrabold text-foreground">AI Weakness Diagnostic</p>
           {!loading && (
-            <span className="text-xs bg-error-light text-error font-bold px-1.5 py-0.5 rounded-full">{topics.length}</span>
+            <span className="text-[10px] bg-rose-500/10 text-rose-600 border border-rose-500/20 font-black px-2 py-0.5 rounded-full font-mono">{topics.length}</span>
           )}
         </div>
-        <button className="text-xs text-primary font-medium hover:underline">View all</button>
+        <Link href="/mistake-analyser" className="text-xs text-primary font-bold hover:underline">View analysis</Link>
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center py-6">
           <Loader2 size={20} className="animate-spin text-muted-foreground" />
         </div>
       ) : topics.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center py-6">
-          <div className="w-10 h-10 rounded-full bg-success-light flex items-center justify-center">
-            <Zap size={18} className="text-success" />
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+            <Zap size={18} className="text-emerald-500" />
           </div>
-          <p className="text-sm font-semibold text-foreground">No weak topics!</p>
-          <p className="text-xs text-muted-foreground">Keep practicing to track your mastery.</p>
+          <p className="text-sm font-bold text-foreground">No weak topics detected!</p>
+          <p className="text-xs text-muted-foreground">Keep practicing MCQs to track your topic mastery.</p>
         </div>
       ) : (
         <div className="space-y-3 flex-1">
           {topics.map((t) => (
-            <div key={t.id} className="flex items-start gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors group">
-              <div className={`w-8 h-8 rounded-lg ${t.subjectBg} flex items-center justify-center shrink-0 mt-0.5`}>
+            <div key={t.id} className="flex items-start gap-3 p-3.5 rounded-2xl bg-muted/40 hover:bg-muted/70 transition-all border border-border/60 group">
+              <div className={`w-8 h-8 rounded-xl ${t.subjectBg} flex items-center justify-center shrink-0 mt-0.5 border border-current/20`}>
                 <BookOpen size={14} className={t.subjectColor} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="text-sm font-semibold text-foreground leading-tight">{t.topic}</p>
-                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full shrink-0 ${t.severityClass}`}>
+                  <p className="text-xs font-extrabold text-foreground leading-tight truncate">{t.topic}</p>
+                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0 font-mono ${t.severityClass}`}>
                     {t.severity}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-medium ${t.subjectColor}`}>{t.subject}</span>
-                  <span className="text-xs text-muted-foreground">·</span>
-                  <span className="text-xs text-muted-foreground font-mono tabular-nums">{t.accuracy}% acc</span>
-                  <span className="text-xs text-muted-foreground">·</span>
-                  <span className="text-xs text-muted-foreground">{t.attempts} attempts</span>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <span className={`font-bold ${t.subjectColor}`}>{t.subject}</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground font-mono tabular-nums">{t.accuracy}% acc</span>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{t.attempts} tests</span>
                 </div>
-                <div className="mt-2 h-1 bg-border rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-border/60 rounded-full overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-error transition-all"
-                    style={{ width: `${t.accuracy}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-rose-500 to-amber-500 transition-all duration-500"
+                    style={{ width: `${Math.max(10, t.accuracy)}%` }}
                   />
                 </div>
               </div>
@@ -154,11 +155,14 @@ export default function WeakTopicsPanel() {
         </div>
       )}
 
-      <button className="mt-4 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-error-light text-error text-sm font-semibold hover:bg-error/20 transition-colors border border-error/20">
+      <Link
+        href="/mistake-analyser"
+        className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-extrabold hover:bg-rose-500/20 transition-all border border-rose-500/25 active:scale-95 shadow-xs"
+      >
         <Zap size={14} />
-        Start Revision Session
+        <span>Fix Weak Topics with AI</span>
         <ArrowRight size={14} />
-      </button>
+      </Link>
     </div>
   );
 }

@@ -68,38 +68,38 @@ export default function IeltsPortalView({
       />
 
       {/* 2. Band Score Tracker Hero Card */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-card border border-amber-500/30 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-        <div className="space-y-1 max-w-xl">
+      <div className="p-5 rounded-3xl card-luxury shadow-luxury flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div className="space-y-1.5 max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 font-mono">
               Band Score Tracker
             </span>
             <span className="text-xs text-muted-foreground font-semibold">CEFR Level: C1 Advanced</span>
           </div>
           <h2 className="text-base sm:text-lg font-black text-foreground">
-            Current Score: <span className="text-amber-600">Band 7.5</span> → Goal: <span className="text-emerald-600">Band 8.5</span>
+            Current Score: <span className="text-amber-600 font-mono">Band 7.5</span> → Goal: <span className="text-emerald-600 font-mono">Band 8.5</span>
           </h2>
-          <p className="text-xs text-muted-foreground">
-            Targeting Canadian &amp; Australian PR or UK university admission.
+          <p className="text-xs text-muted-foreground font-medium">
+            Targeting Canadian &amp; Australian PR or UK university direct entry.
           </p>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 w-full lg:w-auto">
-          <div className="text-center p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300">Listening</p>
-            <p className="text-base font-black text-amber-600">8.5</p>
+        <div className="grid grid-cols-4 gap-2.5 w-full lg:w-auto">
+          <div className="text-center p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25">
+            <p className="text-[10px] font-extrabold uppercase text-amber-700 dark:text-amber-300">Listening</p>
+            <p className="text-lg font-black text-amber-600 font-mono">8.5</p>
           </div>
-          <div className="text-center p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-            <p className="text-[10px] font-bold text-blue-700 dark:text-blue-300">Reading</p>
-            <p className="text-base font-black text-blue-600">8.0</p>
+          <div className="text-center p-3 rounded-2xl bg-blue-500/10 border border-blue-500/25">
+            <p className="text-[10px] font-extrabold uppercase text-blue-700 dark:text-blue-300">Reading</p>
+            <p className="text-lg font-black text-blue-600 font-mono">8.0</p>
           </div>
-          <div className="text-center p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
-            <p className="text-[10px] font-bold text-purple-700 dark:text-purple-300">Writing</p>
-            <p className="text-base font-black text-purple-600">7.0</p>
+          <div className="text-center p-3 rounded-2xl bg-purple-500/10 border border-purple-500/25">
+            <p className="text-[10px] font-extrabold uppercase text-purple-700 dark:text-purple-300">Writing</p>
+            <p className="text-lg font-black text-purple-600 font-mono">7.0</p>
           </div>
-          <div className="text-center p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-            <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300">Speaking</p>
-            <p className="text-base font-black text-emerald-600">8.0</p>
+          <div className="text-center p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
+            <p className="text-[10px] font-extrabold uppercase text-emerald-700 dark:text-emerald-300">Speaking</p>
+            <p className="text-lg font-black text-emerald-600 font-mono">8.0</p>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@ export default function IeltsPortalView({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Link
                 href="/english/speaking"
-                className="p-3.5 rounded-2xl bg-card border border-border hover:border-amber-500/40 hover:shadow-md transition-all flex flex-col justify-between space-y-2 group"
+                className="card-luxury p-4 shadow-xs hover:border-amber-500/50 hover:shadow-luxury transition-all flex flex-col justify-between space-y-3 group"
               >
                 <div className="flex items-center justify-between">
                   <span className="p-2 rounded-xl bg-amber-500/10 text-amber-600 group-hover:scale-110 transition-transform">

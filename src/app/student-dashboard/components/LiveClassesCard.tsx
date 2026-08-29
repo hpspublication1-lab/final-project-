@@ -103,11 +103,11 @@ export default function LiveClassesCard() {
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl border p-5 ${
+    <div className={`relative overflow-hidden rounded-3xl p-5 sm:p-6 card-luxury shadow-luxury ${
       isLive ? 'border-error/40 bg-gradient-to-br from-error/10 via-card to-card' : 'border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card'
     }`}>
-      <div className="absolute -top-16 -right-12 w-40 h-40 rounded-full blur-3xl pointer-events-none opacity-60"
-        style={{ background: isLive ? 'rgba(239,68,68,0.18)' : 'rgba(30,58,95,0.18)' }} />
+      <div className="absolute -top-16 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-60"
+        style={{ background: isLive ? 'rgba(239,68,68,0.22)' : 'rgba(82,67,224,0.18)' }} />
 
       <div className="relative flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3 min-w-0">

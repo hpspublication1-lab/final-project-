@@ -39,6 +39,10 @@ export default function CeePortalView({
 }: PortalViewProps) {
   const config = COURSE_PORTAL_CONFIGS.cee_medical;
 
+  const targetDate = new Date('2026-04-15T08:00:00');
+  const now = new Date();
+  const ceeDays = Math.max(0, Math.floor((targetDate.getTime() - now.getTime()) / 86400000));
+
   const pastPapers = [
     { id: 'cee-2025', title: 'CEE Medical 2025 Official Entrance Paper', type: 'MEC Past Paper', marks: '200 MCQs · 180 Mins', solved: true },
     { id: 'cee-2024', title: 'CEE Medical 2024 Official Entrance Paper', type: 'MEC Past Paper', marks: '200 MCQs · 180 Mins', solved: false },
@@ -56,25 +60,26 @@ export default function CeePortalView({
       />
 
       {/* 2. Compact Medical Entrance Target & Countdown Ribbon */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white border border-indigo-500/30 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0">
-            <Timer size={20} className="text-indigo-400" />
+      <div className="p-5 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white border border-indigo-500/30 shadow-luxury flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="flex items-center gap-3.5 relative z-10">
+          <div className="w-11 h-11 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 shadow-xs">
+            <Timer size={22} className="text-indigo-400" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 font-mono">
                 MECEE 2026 Target
               </span>
-              <span className="text-xs text-indigo-200 font-semibold">Nepal Medical Commission</span>
+              <span className="text-xs text-indigo-200 font-semibold">Medical Education Commission Nepal</span>
             </div>
-            <h3 className="text-sm sm:text-base font-black mt-0.5">Target: Top 100 Government Scholarship</h3>
+            <h3 className="text-sm sm:text-base font-black mt-1">Target: Top 100 Government Scholarship Ranking</h3>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 bg-white/10 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/15 text-xs font-bold">
-          <span className="text-white font-black text-sm">128</span>
-          <span className="text-white/70 text-[10px] uppercase">Days Left</span>
+        <div className="flex items-center gap-2 shrink-0 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-xs font-bold relative z-10 shadow-xs">
+          <span className="text-white font-black text-base font-mono">{ceeDays}</span>
+          <span className="text-white/80 text-[10px] uppercase font-semibold">Days Left</span>
         </div>
       </div>
 
@@ -100,7 +105,7 @@ export default function CeePortalView({
                 <Link
                   key={qa.key}
                   href={qa.href}
-                  className="p-3.5 rounded-2xl bg-card border border-border hover:border-indigo-500/40 hover:shadow-md transition-all flex flex-col justify-between space-y-2 group"
+                  className="card-luxury p-4 flex flex-col justify-between space-y-2 group shadow-xs hover:border-primary/50"
                 >
                   <div className="flex items-center justify-between">
                     <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 group-hover:scale-110 transition-transform">
