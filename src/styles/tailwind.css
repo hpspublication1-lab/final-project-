@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import 'katex/dist/katex.min.css';
 
 :root {
   /* Premium Luxury Palette (Linear / Apple / Vercel Grade) */

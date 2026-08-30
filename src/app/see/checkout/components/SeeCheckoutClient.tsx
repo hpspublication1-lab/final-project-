@@ -110,9 +110,9 @@ export default function SeeCheckoutClient() {
       setIsSuccess(true);
       toast.success('Payment Verified! SEE Master Batch Activated.');
 
-      // Redirect to SEE Dashboard after 1.5 seconds
+      // Redirect to Student Dashboard after 1.5 seconds
       setTimeout(() => {
-        router.push('/see');
+        router.push('/student-dashboard');
       }, 1500);
     }, 1500);
   };

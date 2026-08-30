@@ -5,9 +5,11 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
-import ProgramSwitcher from '@/components/ProgramSwitcher';
-import { Search, Calendar, CheckCircle2, Loader2, GraduationCap, Layers, UserRound, Stethoscope } from 'lucide-react';
+import {
+  Search, Calendar, CheckCircle2, Loader2, GraduationCap, Layers,
+  UserRound, Video, Sparkles, BookOpen, Tv, ArrowRight,
+  ShieldCheck, Check, Globe, Play
+} from 'lucide-react';
 
 interface BatchSubject {
   display_name: string;
@@ -28,7 +30,7 @@ interface Batch {
   price_npr: number;
   is_premium: boolean;
   program_type?: string;
-  subject: BatchSubject | BatchSubject[] | null;
+  subject?: BatchSubject | BatchSubject[] | null;
 }
 
 function getSubject(batch: Batch): BatchSubject | null {
@@ -46,12 +48,12 @@ function formatDateRange(start: string | null, end: string | null): string | nul
 export default function BatchesPageClient() {
   const [isDark, setIsDark] = useState(false);
   const { user } = useAuth();
-  const { program, programDetails } = useProgram();
+
   const [batches, setBatches] = useState<Batch[]>([]);
   const [enrolledIds, setEnrolledIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [yearFilter, setYearFilter] = useState<string>('all');
+  const [mediumFilter, setMediumFilter] = useState<'all' | 'english' | 'nepali'>('all');
   const [tab, setTab] = useState<'all' | 'enrolled'>('all');
 
   const fetchData = useCallback(async () => {
@@ -66,7 +68,16 @@ export default function BatchesPageClient() {
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
-    setBatches((data as unknown as Batch[]) || []);
+    const allBatches = (data as unknown as Batch[]) || [];
+    
+    // Strict filter for SEE Batches only
+    const seeOnly = allBatches.filter((b) => {
+      const s = (b.slug || '').toLowerCase();
+      const t = (b.title || '').toLowerCase();
+      return s.includes('see') || t.includes('see') || t.includes('नेपाली माध्यम');
+    });
+
+    setBatches(seeOnly);
 
     if (user?.id) {
       const { data: enrollments } = await supabase
@@ -85,204 +96,278 @@ export default function BatchesPageClient() {
     fetchData();
   }, [fetchData]);
 
-  const canonicalId = normalizeCourseId(program);
-
-  const isSeeBatch = (b: Batch) => {
-    const slug = (b.slug || '').toLowerCase();
-    const title = (b.title || '').toLowerCase();
-    return b.program_type === 'see' || b.program_type === 'see_class_10' || slug.includes('see-') || slug.includes('-see') || title.includes('see');
-  };
-
-  const programBatches = batches.filter((b) => {
-    if (canonicalId === 'see_class_10') return isSeeBatch(b);
-    if (canonicalId === 'ielts') {
-      const s = (b.slug || '').toLowerCase() + (b.title || '').toLowerCase();
-      return s.includes('ielts') || s.includes('english') || s.includes('spoken') || s.includes('pte');
-    }
-    if (canonicalId === 'digital_marketing') {
-      const s = (b.slug || '').toLowerCase() + (b.title || '').toLowerCase();
-      return s.includes('market') || s.includes('ads') || s.includes('seo') || s.includes('canva');
-    }
-    if (canonicalId === 'artificial_intelligence') {
-      const s = (b.slug || '').toLowerCase() + (b.title || '').toLowerCase();
-      return s.includes('ai') || s.includes('chatgpt') || s.includes('python') || s.includes('prompt');
-    }
-    return !isSeeBatch(b); // CEE
-  });
-
-  const years = Array.from(new Set(programBatches.map((b) => b.cee_year).filter((y): y is number => !!y))).sort(
-    (a, b) => a - b
-  );
-
-  const filtered = programBatches.filter((b) => {
+  // Filter batches based on Medium and Search
+  const filtered = batches.filter((b) => {
     if (tab === 'enrolled' && !enrolledIds.has(b.id)) return false;
-    if (yearFilter !== 'all' && String(b.cee_year) !== yearFilter) return false;
-    if (search && !b.title.toLowerCase().includes(search.toLowerCase())) return false;
+
+    // Medium filter
+    const isNepali = b.slug.includes('nepali') || b.title.includes('नेपाली') || b.title.includes('Nepali');
+    if (mediumFilter === 'nepali' && !isNepali) return false;
+    if (mediumFilter === 'english' && isNepali) return false;
+
+    // Search filter
+    if (search) {
+      const q = search.toLowerCase();
+      const matchTitle = (b.title || '').toLowerCase().includes(q);
+      const matchDesc = (b.description || '').toLowerCase().includes(q);
+      const matchInstructor = (b.instructor_name || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchDesc && !matchInstructor) return false;
+    }
+
     return true;
   });
 
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* Header & Program Switcher */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card border border-border rounded-2xl p-6 shadow-sm mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${programDetails.badgeBg} ${programDetails.badgeText}`}>
-                {programDetails.badge}
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">Structured Courses</span>
+        {/* Header Bar */}
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 font-mono">
+                  SEE 2026 OFFICIAL BATCHES
+                </span>
+                <span className="text-xs text-muted-foreground font-semibold">1080p HD Streaming</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2.5">
+                <GraduationCap className="text-emerald-500" size={30} />
+                <span>SEE Class 10 Preparation Batches</span>
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+                Official Class 10 Board preparation batches available in <strong>English Medium</strong> (Player ID 379737) and <strong>Nepali Medium (नेपाली माध्यम)</strong> (Player ID 367785).
+              </p>
             </div>
-            <h1 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-              {canonicalId === 'cee_medical' ? <Stethoscope className="text-primary" size={24} /> : <GraduationCap className="text-bio" size={24} />}
-              {programDetails.name} Batches
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 max-w-xl">
-              Comprehensive live &amp; recorded batches curated specifically for {programDetails.shortName} aspirants.
-            </p>
+
+            <Link
+              href="/lecture-videos"
+              className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md flex items-center gap-2 transition-all shrink-0"
+            >
+              <Video size={15} />
+              <span>Video Lecture Hub →</span>
+            </Link>
           </div>
 
-          <div className="flex flex-col items-end gap-2 shrink-0">
-            <span className="text-xs text-muted-foreground font-semibold">Active Program Section:</span>
-            <ProgramSwitcher size="md" />
+          {/* Medium Selector Chips */}
+          <div className="p-3 rounded-2xl bg-muted/40 border border-border flex flex-wrap items-center justify-between gap-3 pt-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-muted-foreground ml-1 flex items-center gap-1.5 mr-2">
+                <Globe size={14} className="text-emerald-500" /> Choose Medium:
+              </span>
+              <button
+                onClick={() => setMediumFilter('all')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                  mediumFilter === 'all'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+              >
+                All Batches (2)
+              </button>
+              <button
+                onClick={() => setMediumFilter('english')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  mediumFilter === 'english'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>🇬🇧 English Medium</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20">379737</span>
+              </button>
+              <button
+                onClick={() => setMediumFilter('nepali')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  mediumFilter === 'nepali'
+                    ? 'bg-red-600 text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>🇳🇵 Nepali Medium (नेपाली माध्यम)</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20">367785</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl shrink-0 border border-border">
+        {/* Search & Enrolled Tab Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-2xl shrink-0 border border-border">
             <button
               onClick={() => setTab('all')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                tab === 'all' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+                tab === 'all' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              All Batches ({programBatches.length})
+              All Batches ({batches.length})
             </button>
             <button
               onClick={() => setTab('enrolled')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                tab === 'enrolled' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+                tab === 'enrolled' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              My Enrolled ({programBatches.filter((b) => enrolledIds.has(b.id)).length})
+              My Enrolled ({batches.filter((b) => enrolledIds.has(b.id)).length})
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            {years.length > 0 && (
-              <select
-                value={yearFilter}
-                onChange={(e) => setYearFilter(e.target.value)}
-                className="bg-card border border-border rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          <div className="relative flex-1 sm:max-w-md">
+            <Search size={14} className="absolute left-3.5 top-3 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search batches by title or instructor..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-card border border-border rounded-2xl text-xs text-foreground focus:outline-none focus:border-emerald-500 shadow-xs"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-2.5 p-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                <option value="all">All Years</option>
-                {years.map((y) => (
-                  <option key={y} value={String(y)}>
-                    Target {y}
-                  </option>
-                ))}
-              </select>
+                ✕
+              </button>
             )}
-
-            <div className="relative flex-1 sm:w-64">
-              <Search size={15} className="absolute left-3 top-2.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search batches..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-xl text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
           </div>
         </div>
 
-        {/* Content */}
+        {/* Batches Grid Display */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <Loader2 size={32} className="animate-spin text-primary mb-3" />
-            <p className="text-sm text-muted-foreground">Loading batches...</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <Loader2 size={36} className="animate-spin text-emerald-500" />
+            <p className="text-xs font-mono font-bold text-muted-foreground">Loading SEE batches...</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-card border border-border rounded-2xl p-12 text-center max-w-lg mx-auto">
-            <Layers size={36} className="text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-base font-bold text-foreground">No batches found</h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              {tab === 'enrolled'
-                ? "You haven't enrolled in any batches for this program section yet."
-                : `No active batches match your search criteria for ${programDetails.shortName}.`}
-            </p>
+          <div className="bg-card border border-border rounded-3xl p-12 text-center max-w-lg mx-auto space-y-4 shadow-sm">
+            <Layers size={40} className="text-muted-foreground mx-auto opacity-50" />
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-foreground">No Batches Found</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {tab === 'enrolled'
+                  ? "You haven't enrolled in any batch yet."
+                  : "No batches matched your search filter."}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setMediumFilter('all');
+                setSearch('');
+                setTab('all');
+              }}
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md transition-all"
+            >
+              Show All SEE Batches
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filtered.map((b) => {
-              const subj = getSubject(b);
               const enrolled = enrolledIds.has(b.id);
               const dateRange = formatDateRange(b.start_date, b.end_date);
+              const isNepali = b.slug.includes('nepali') || b.title.includes('नेपाली') || b.title.includes('Nepali');
+              const playerId = isNepali ? '367785' : '379737';
 
               return (
                 <div
                   key={b.id}
-                  className="bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-card-hover transition-all flex flex-col justify-between group"
+                  className={`bg-card border rounded-3xl overflow-hidden transition-all flex flex-col justify-between group shadow-sm hover:shadow-xl ${
+                    isNepali
+                      ? 'hover:border-red-500/50 border-red-500/20'
+                      : 'hover:border-blue-500/50 border-blue-500/20'
+                  }`}
                 >
-                  <div className="p-5 space-y-4">
+                  <div className="p-6 space-y-5">
+                    
+                    {/* Header Badges */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 font-bold">
-                        {subj?.icon || <GraduationCap size={24} />}
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="text-sm font-black text-foreground">
-                          {b.price_npr > 0 ? `Rs. ${b.price_npr.toLocaleString()}` : 'Free'}
-                        </span>
-                        {b.is_premium && (
-                          <span className="text-[10px] font-bold bg-warning-light text-warning px-2 py-0.5 rounded-full">
-                            PRO
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isNepali ? (
+                          <span className="px-3 py-1 rounded-xl bg-red-500/10 text-red-600 border border-red-500/30 text-xs font-black flex items-center gap-1.5">
+                            <span>🇳🇵</span>
+                            <span>नेपाली माध्यम (Nepali Medium)</span>
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 rounded-xl bg-blue-500/10 text-blue-600 border border-blue-500/30 text-xs font-black flex items-center gap-1.5">
+                            <span>🇬🇧</span>
+                            <span>English Medium</span>
                           </span>
                         )}
+
+                        <span className="px-2 py-0.5 rounded-lg bg-muted text-muted-foreground font-mono text-[10px] font-bold border border-border">
+                          ID: {playerId}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col items-end">
+                        <span className="text-base font-black text-foreground">
+                          {b.price_npr > 0 ? `Rs. ${b.price_npr.toLocaleString()}` : 'Free'}
+                        </span>
+                        <span className="text-[10px] font-bold text-emerald-600 font-mono">FULL ACCESS</span>
                       </div>
                     </div>
 
-                    <div>
-                      <h2 className="text-base font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                    {/* Batch Title & Description */}
+                    <div className="space-y-2">
+                      <h2 className="text-lg sm:text-xl font-black text-foreground group-hover:text-emerald-600 transition-colors leading-snug">
                         {b.title}
                       </h2>
-                      {b.description && (
-                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-                          {b.description}
-                        </p>
-                      )}
+                      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+                        {b.description}
+                      </p>
                     </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-border/60 text-xs text-muted-foreground">
-                      {b.instructor_name && (
-                        <p className="flex items-center gap-1.5 font-medium">
-                          <UserRound size={13} className="text-primary" /> {b.instructor_name}
-                        </p>
-                      )}
-                      {dateRange && (
-                        <p className="flex items-center gap-1.5 font-mono">
-                          <Calendar size={13} /> {dateRange}
-                        </p>
-                      )}
+                    {/* Feature Highlights */}
+                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border/60 text-xs">
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle2 size={14} className={isNepali ? 'text-red-500' : 'text-blue-500'} />
+                        <span>147+ HD Video Lectures</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle2 size={14} className={isNepali ? 'text-red-500' : 'text-blue-500'} />
+                        <span>Formula &amp; Revision Notes</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle2 size={14} className={isNepali ? 'text-red-500' : 'text-blue-500'} />
+                        <span>10-Year NEB Past Sets</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground font-medium">
+                        <CheckCircle2 size={14} className={isNepali ? 'text-red-500' : 'text-blue-500'} />
+                        <span>AI Subjective Marking</span>
+                      </div>
                     </div>
+
+                    {/* Instructor & Target */}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-3 border-t border-border/40 font-mono">
+                      <span className="flex items-center gap-1.5 font-sans font-bold text-foreground">
+                        <UserRound size={13} className={isNepali ? 'text-red-500' : 'text-blue-500'} />
+                        {b.instructor_name || 'Faculty Team'}
+                      </span>
+                      <span>Target {b.cee_year || 2026} Board</span>
+                    </div>
+
                   </div>
 
-                  <div className="p-4 bg-muted/30 border-t border-border/60 flex items-center justify-between">
+                  {/* Card Action Footer */}
+                  <div className="p-4 bg-muted/30 border-t border-border flex items-center justify-between">
                     {enrolled ? (
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-success bg-success-light px-3 py-1.5 rounded-xl">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
                         <CheckCircle2 size={14} /> Enrolled
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold text-muted-foreground">Open Access</span>
+                      <span className="text-xs font-bold text-muted-foreground">Open Enrollment</span>
                     )}
 
                     <Link
                       href={`/batches/${b.slug}`}
-                      className="btn-primary py-1.5 px-4 text-xs font-bold rounded-xl"
+                      className={`py-2.5 px-5 text-xs font-black rounded-xl text-white shadow-md flex items-center gap-1.5 transition-all ${
+                        isNepali
+                          ? 'bg-red-600 hover:bg-red-700'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
                     >
-                      View Details →
+                      <span>Explore Batch &amp; Lectures</span>
+                      <ArrowRight size={14} />
                     </Link>
                   </div>
                 </div>

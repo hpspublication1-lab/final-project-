@@ -1,9 +1,240 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/supabase/route-auth';
 
 export const dynamic = 'force-dynamic';
+
+function cleanAndCategorize(rawTitle: string) {
+  let title = (rawTitle || '').replace(/\.mp4$/i, '').trim();
+  const lower = title.toLowerCase();
+
+  let subjectSlug = 'physics';
+  let unit = 'Unit 1: Force & Gravitation';
+  let part = 1;
+  let unitOrder = 1;
+
+  // 1. OPTIONAL MATHEMATICS
+  if (
+    lower.includes('see-om') ||
+    lower.includes('om-em') ||
+    lower.includes('opt math') ||
+    lower.includes('continuity') ||
+    lower.includes('polynomial') ||
+    lower.includes('matrix') ||
+    lower.includes('determinant') ||
+    lower.includes('trig') ||
+    lower.includes('vector') ||
+    lower.includes('transformation') ||
+    lower.includes('inversion') ||
+    lower.includes('dispersion') ||
+    lower.includes('standard deviation')
+  ) {
+    subjectSlug = 'opt_math';
+    if (lower.includes('continuity') || lower.includes('limit')) {
+      unit = 'Unit 2: Limits & Continuity';
+      unitOrder = 2;
+    } else if (lower.includes('matrix') || lower.includes('determinant')) {
+      unit = 'Unit 3: Matrices & Determinants';
+      unitOrder = 3;
+    } else if (lower.includes('trig') || lower.includes('compound angle') || lower.includes('multiple angle') || lower.includes('height and distance')) {
+      unit = 'Unit 5: Trigonometry';
+      unitOrder = 5;
+    } else if (lower.includes('vector') || lower.includes('scalar product')) {
+      unit = 'Unit 6: Vector Geometry';
+      unitOrder = 6;
+    } else if (lower.includes('transformation') || lower.includes('inversion')) {
+      unit = 'Unit 7: Transformation';
+      unitOrder = 7;
+    } else if (lower.includes('statistic') || lower.includes('dispersion') || lower.includes('deviation')) {
+      unit = 'Unit 8: Statistics & Probability';
+      unitOrder = 8;
+    } else {
+      unit = 'Unit 1: Functions, Polynomials & Sequences';
+      unitOrder = 1;
+    }
+  }
+
+  // 2. COMPULSORY MATHEMATICS
+  else if (
+    lower.includes('see-cm') ||
+    lower.includes('compound interest') ||
+    lower.includes('money exchange') ||
+    lower.includes('currency') ||
+    lower.includes('pyramid') ||
+    lower.includes('cone') ||
+    lower.includes('cylinder') ||
+    lower.includes('sphere') ||
+    lower.includes('prism') ||
+    lower.includes('solid') ||
+    lower.includes('mensuration') ||
+    lower.includes('quadratic') ||
+    lower.includes('indices') ||
+    lower.includes('surds') ||
+    lower.includes('probability') ||
+    lower.includes('u1 set') ||
+    lower.startsWith('u1 p') ||
+    lower.startsWith('u2 arithmetic') ||
+    lower.includes('u2 l2')
+  ) {
+    subjectSlug = 'math';
+    if (lower.includes('set') || lower.startsWith('u1 p') || lower.startsWith('u1 set')) {
+      unit = 'Unit 1: Sets (Samuha)';
+      unitOrder = 1;
+    } else if (lower.includes('pyramid') || lower.includes('cone') || lower.includes('cylinder') || lower.includes('sphere') || lower.includes('mensuration') || lower.includes('solid')) {
+      unit = 'Unit 3: Mensuration & Solids';
+      unitOrder = 3;
+    } else if (lower.includes('quadratic') || lower.includes('algebra') || lower.includes('indices') || lower.includes('surds')) {
+      unit = 'Unit 4: Algebra & Equations';
+      unitOrder = 4;
+    } else if (lower.includes('probability')) {
+      unit = 'Unit 6: Probability & Statistics';
+      unitOrder = 6;
+    } else {
+      unit = 'Unit 2: Arithmetic & Money Exchange';
+      unitOrder = 2;
+    }
+  }
+
+  // 3. ENGLISH LANGUAGE
+  else if (
+    lower.startsWith('q') ||
+    lower.includes('grammar') ||
+    lower.includes('adjective') ||
+    lower.includes('adverb') ||
+    lower.includes('modals') ||
+    lower.includes('pronoun') ||
+    lower.includes('preposition') ||
+    lower.includes('tense') ||
+    lower.includes('writing') ||
+    lower.includes('story') ||
+    lower.includes('poem') ||
+    lower.includes('passage') ||
+    lower.includes('unseen') ||
+    lower.includes('driverless') ||
+    lower.includes('olmypic') ||
+    lower.includes('olympic') ||
+    lower.includes('cabbage') ||
+    lower.includes('wisdom')
+  ) {
+    subjectSlug = 'english';
+    if (lower.includes('writing') || lower.includes('essay') || lower.includes('letter') || lower.includes('news report') || lower.includes('story')) {
+      unit = 'Section B: Free Writing & Composition';
+      unitOrder = 2;
+    } else if (lower.includes('passage') || lower.includes('unseen') || lower.includes('driverless') || lower.includes('olympic') || lower.includes('olmypic')) {
+      unit = 'Section C: Reading Comprehension & Passages';
+      unitOrder = 3;
+    } else if (lower.includes('poem') || lower.includes('cabbage') || lower.includes('wisdom') || lower.includes('literature')) {
+      unit = 'Section D: Literature, Poems & Stories';
+      unitOrder = 4;
+    } else {
+      unit = 'Section A: Grammar & Language Structures';
+      unitOrder = 1;
+    }
+  }
+
+  // 4. SOCIAL STUDIES & LIFE SKILLS
+  else if (
+    lower.startsWith('so') ||
+    lower.includes('social') ||
+    lower.includes('civic') ||
+    lower.includes('constitution') ||
+    lower.includes('governance') ||
+    lower.includes('geography') ||
+    lower.includes('international')
+  ) {
+    subjectSlug = 'social';
+    if (lower.includes('civic') || lower.includes('constitution') || lower.includes('governance') || lower.includes('u5')) {
+      unit = 'Unit 5: Civic Awareness & Governance';
+      unitOrder = 5;
+    } else if (lower.includes('economic') || lower.includes('u6')) {
+      unit = 'Unit 6: Economic Development & Finance';
+      unitOrder = 6;
+    } else if (lower.includes('international') || lower.includes('u7')) {
+      unit = 'Unit 7: International Affairs & Peace';
+      unitOrder = 7;
+    } else if (lower.includes('geography') || lower.includes('earth') || lower.includes('climate') || lower.includes('u8')) {
+      unit = 'Unit 8: Geography & Earth Environment';
+      unitOrder = 8;
+    } else {
+      unit = 'Unit 1: We, Our Society & Values';
+      unitOrder = 1;
+    }
+  }
+
+  // 5. SCIENCE & TECHNOLOGY
+  else {
+    subjectSlug = 'physics';
+    if (lower.includes('mitosis') || lower.includes('cell') || lower.includes('dna') || lower.includes('genetics') || lower.includes('heredity') || lower.includes('u4')) {
+      unit = 'Unit 4: Heredity & Cell Biology';
+      unitOrder = 4;
+    } else if (lower.includes('blood') || lower.includes('physiological') || lower.includes('circulation') || lower.includes('gland') || lower.includes('u5')) {
+      unit = 'Unit 5: Physiological Structure & Life Processes';
+      unitOrder = 5;
+    } else if (lower.includes('transformer') || lower.includes('electricity') || lower.includes('magnetism') || lower.includes('u7') || lower.includes('hrt u4')) {
+      unit = 'Unit 7: Current Electricity & Magnetism';
+      unitOrder = 7;
+    } else if (lower.includes('periodic') || lower.includes('block') || lower.includes('u14') || lower.includes('hrt u5')) {
+      unit = 'Unit 14: Modern Periodic Table & Classification';
+      unitOrder = 14;
+    } else if (lower.includes('radical') || lower.includes('reaction') || lower.includes('chemical') || lower.includes('u15')) {
+      unit = 'Unit 15: Chemical Reactions & Radicals';
+      unitOrder = 15;
+    } else if (lower.includes('gas') || lower.includes('ammonia') || lower.includes('carbon dioxide') || lower.includes('u16')) {
+      unit = 'Unit 16: Atmospheric Gases (CO₂, NH₃)';
+      unitOrder = 16;
+    } else if (lower.includes('metal') || lower.includes('iron') || lower.includes('aluminium') || lower.includes('copper') || lower.includes('u17')) {
+      unit = 'Unit 17: Metals & Metallurgy';
+      unitOrder = 17;
+    } else if (lower.includes('daily life') || lower.includes('soap') || lower.includes('detergent') || lower.includes('cement') || lower.includes('chemical used') || lower.includes('u19')) {
+      unit = 'Unit 19: Applied Chemicals in Daily Life';
+      unitOrder = 19;
+    } else {
+      unit = 'Unit 1: Force & Gravitation';
+      unitOrder = 1;
+    }
+  }
+
+    // Format clean human-readable title
+  let cleanTitle = title;
+  cleanTitle = cleanTitle.replace(/^chain of learning video/i, 'Orientation: Concept Mastery & Learning Framework');
+  cleanTitle = cleanTitle.replace(/^chain of learning/i, 'Orientation: SEE Preparation Strategy & Chain of Learning');
+  cleanTitle = cleanTitle.replace(/^website video/i, 'Orientation: Navigating Video Lectures & AI Marker');
+  cleanTitle = cleanTitle.replace(/^gridsheet/i, 'Specification Grid: Board Exam Mark Distribution & Blueprint');
+  cleanTitle = cleanTitle.replace(/^SEE-S&T-[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^SEE-S&T-EM-[A-Z]+-U(\d+)-P(\d+)\(?/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-L(\d+)-V(\d+)-?/i, 'Unit $1 Lesson $2 Part $3: ');
+  cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-V(\d+)-?/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^SEE-OM-EM-\s*[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^SEE-CM-[A-Z]+-U(\d+)-L(\d+)-V(\d+)-?/i, 'Unit $1 Lesson $2 Part $3: ');
+  cleanTitle = cleanTitle.replace(/^SO\s+U(\d+)\s+L(\d+)\s+/i, 'Unit $1 Lesson $2: ');
+  cleanTitle = cleanTitle.replace(/^SO\s+U(\d+)\s+P(\d+)\s+/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^SO\s+L(\d+)\s+V(\d+)\s*/i, 'Lesson $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^HRT\s+U(\d+)\s+P(\d+)\s*(V\d+)?/i, 'Unit $1 Part $2: ');
+  cleanTitle = cleanTitle.replace(/^U(\d+)\s+Set\s*(\d+)?\s*P(\d+)/i, 'Unit $1 Part $3: Sets Problem Solving');
+  cleanTitle = cleanTitle.replace(/^U(\d+)\s+P(\d+)/i, 'Unit $1 Part $2');
+  cleanTitle = cleanTitle.replace(/^U(\d+)\s+Arithmetic\s+P(\d+)/i, 'Unit $1 Part $2: Arithmetic & Money Exchange');
+  cleanTitle = cleanTitle.replace(/^U(\d+)\s+L(\d+)\s+Compound\s+Interest/i, 'Unit $1 Part $2: Compound Interest');
+  cleanTitle = cleanTitle.replace(/^compound interest part 1 and part 2/i, 'Unit 2 Part 1: Compound Interest Fundamentals');
+  cleanTitle = cleanTitle.replace(/^Unit 15 Radical -p1 and p2/i, 'Unit 15 Part 1: Radicals & Electrovalency');
+  cleanTitle = cleanTitle.replace(/^Unit 7 part 2_p1p2p3p4/i, 'Unit 7 Part 2: Current Electricity & Resistance');
+  cleanTitle = cleanTitle.replace(/^Genetics Made Easy/i, 'Unit 4 Part 1: Genetics & DNA Structure');
+  cleanTitle = cleanTitle.replace(/^Organic Reaction Mechanisms/i, 'Unit 19 Part 1: Organic Reaction Mechanisms');
+  cleanTitle = cleanTitle.replace(/^Kinematics\s*—?\s*Full Concept/i, 'Unit 1 Part 1: Kinematics & Laws of Motion');
+  cleanTitle = cleanTitle.replace(/^Q\.?\s*NO\s*(\d+)\s*/i, 'Q$1: ');
+  cleanTitle = cleanTitle.replace(/^Q(\d+)\s*-\s*EM\s*-\s*[A-Z]+\s*-\s*/i, 'Q$1: ');
+  cleanTitle = cleanTitle.replace(/^Q(\d+)\s*-\s*STORY\s*-\s*V\s*(\d+)\s*-\s*/i, 'Q$1 Story Part $2: ');
+  cleanTitle = cleanTitle.replace(/_1$|_new$|_001_new$|_002_new$|_NEW01$/i, '');
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+  cleanTitle = cleanTitle.replace(/\s*:\s*$/, '');
+
+  const pMatch = cleanTitle.match(/Part\s*(\d+)|Lesson\s*(\d+)|V(\d+)|P(\d+)/i);
+  if (pMatch) {
+    part = parseInt(pMatch[1] || pMatch[2] || pMatch[3] || pMatch[4] || '1', 10);
+  }
+
+  return { subjectSlug, unit, unitOrder, cleanTitle, part };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,130 +244,74 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ lessons: [], subjects: [] });
     }
     const { searchParams } = new URL(request.url);
-    const subjectSlug = searchParams.get('subject');
+    const subjectQuery = (searchParams.get('subject') || '').toLowerCase();
     const chapterName = searchParams.get('chapter');
 
-    // Fetch lessons from see_lessons or fallback to video_lectures
-    let lessons: any[] = [];
-    const { data: seeData, error: seeErr } = await admin
-      .from('see_lessons')
+    // Query all Bunny.net synced video_lectures
+    const { data: vids, error: vidErr } = await admin
+      .from('video_lectures')
       .select('*')
-      .eq('is_published', true)
-      .order('lesson_order', { ascending: true });
+      .eq('is_active', true);
 
-    if (!seeErr && seeData && seeData.length > 0) {
-      lessons = seeData;
-    } else {
-      // Fallback: Query all Bunny.net synced video_lectures
-      const { data: vids, error: vidErr } = await admin
-        .from('video_lectures')
-        .select('*')
-        .eq('is_active', true);
-
-      if (vids && vids.length > 0) {
-        lessons = vids.map((v: any, idx: number) => {
-          const raw = (v.title || '').replace(/\.mp4$/i, '').trim();
-          const t = raw.toLowerCase();
-
-          let slug = 'physics';
-          let chapter = 'Unit 1: Force & Gravitation';
-
-          // 1. Optional Math
-          if (/^see-om/i.test(t) || /om-em/i.test(t) || t.includes('opt math') || t.includes('continuity') || t.includes('polynomial') || t.includes('vector geometry') || t.includes('determinant') || t.includes('linear programming') || t.includes('sequences and series')) {
-            slug = 'opt_math';
-            if (t.includes('continuity')) chapter = 'Unit 2: Limits & Continuity';
-            else if (t.includes('matrix') || t.includes('determinant')) chapter = 'Unit 3: Matrices & Determinants';
-            else if (t.includes('trigonometry') || t.includes('height and distance') || t.includes('trig')) chapter = 'Unit 5: Trigonometry';
-            else if (t.includes('vector')) chapter = 'Unit 6: Vector Geometry';
-            else if (t.includes('transformation') || t.includes('inversion')) chapter = 'Unit 7: Transformation';
-            else if (t.includes('statistics') || t.includes('deviation') || t.includes('dispersion')) chapter = 'Unit 8: Statistics';
-            else chapter = 'Unit 1: Functions, Polynomials & Sequences';
-          }
-          // 2. Compulsory Math
-          else if (/^see-cm/i.test(t) || t.includes('compound interest') || t.includes('money exchange') || t.includes('pyramid') || t.includes('cone') || t.includes('solid') || t.includes('cost estimation') || t.includes('quadratic equation') || t.includes('probability') || (t.startsWith('u1 set') || t.startsWith('u1 p') || t.startsWith('u2 arithmetic'))) {
-            slug = 'math';
-            if (t.includes('set')) chapter = 'Unit 1: Sets (समूह)';
-            else if (t.includes('pyramid') || t.includes('cone') || t.includes('solid') || t.includes('cost estimation') || t.includes('mensuration')) chapter = 'Unit 3: Mensuration & Solids (क्षेत्रमिति)';
-            else if (t.includes('quadratic') || t.includes('algebra')) chapter = 'Unit 4: Algebra & Quadratic Equations (बीजगणित)';
-            else if (t.includes('probability')) chapter = 'Unit 6: Probability & Statistics (सम्भाव्यता)';
-            else chapter = 'Unit 2: Arithmetic & Money Exchange (अङ्कगणित)';
-          }
-          // 3. Science & Technology
-          else if (/^see-s&t/i.test(t) || /^hrt\s*u/i.test(t) || t.includes('science') || t.includes('transformer') || t.includes('periodic table') || t.includes('metals') || t.includes('some gases') || t.includes('chemical') || t.includes('radical') || t.includes('gravit') || t.includes('blood') || t.includes('mitosis') || t.includes('dna') || t.includes('physiological') || t.includes('kinematics') || t.includes('organic reaction') || t.includes('genetics')) {
-            slug = 'physics';
-            if (t.includes('mitosis') || t.includes('cell division') || t.includes('dna') || t.includes('genetics')) chapter = 'Unit 4: Heredity & Cell Biology';
-            else if (t.includes('blood') || t.includes('physiological') || t.includes('life process')) chapter = 'Unit 5: Physiological Structure & Life Processes';
-            else if (t.includes('transformer') || t.includes('electricity') || t.includes('magnetism') || t.includes('hrt u4')) chapter = 'Unit 7: Current Electricity & Magnetism';
-            else if (t.includes('periodic table') || t.includes('block') || t.includes('hrt u5')) chapter = 'Unit 14: Modern Periodic Table & Classification';
-            else if (t.includes('radical') || t.includes('reaction') || t.includes('displacenent') || t.includes('displacement')) chapter = 'Unit 15: Chemical Reactions & Radicals';
-            else if (t.includes('gases') || t.includes('gas')) chapter = 'Unit 16: Atmospheric Gases (CO₂, NH₃)';
-            else if (t.includes('metals') || t.includes('metal')) chapter = 'Unit 17: Metals & Metallurgy';
-            else if (t.includes('chemical used in daily') || t.includes('daily life')) chapter = 'Unit 19: Applied Chemicals in Daily Life';
-            else chapter = 'Unit 1: Force & Gravitation';
-          }
-          // 4. English
-          else if (/^q[\.\s\d]/i.test(t) || t.includes('writing') || t.includes('unseen') || t.includes('adjective') || t.includes('grammar') || t.includes('modals') || t.includes('pronoun') || t.includes('story') || t.includes('drama') || t.includes('poem') || t.includes('olympic') || t.includes('driverless') || t.includes('cabbage') || t.includes('wisdom')) {
-            slug = 'english';
-            if (t.includes('writing') || t.includes('essay') || t.includes('diary')) chapter = 'Free Writing & Composition';
-            else if (t.includes('unseen') || t.includes('passage') || t.includes('editorial') || t.includes('report') || t.includes('driverless') || t.includes('olympic')) chapter = 'Reading Comprehension & Passages';
-            else if (t.includes('story') || t.includes('drama') || t.includes('poem') || t.includes('wisdom') || t.includes('cabbage') || t.includes('farmer')) chapter = 'Literature, Stories & Poems';
-            else chapter = 'Grammar & Language Structures';
-          }
-          // 5. Social Studies
-          else if (/^so\s/i.test(t) || t.includes('social') || t.includes('samajik')) {
-            slug = 'social';
-            if (t.includes('u5')) chapter = 'Unit 5: Civic Awareness & Governance';
-            else if (t.includes('u6')) chapter = 'Unit 6: Economic Development';
-            else if (t.includes('l3')) chapter = 'Unit 8: Geography & Climate';
-            else chapter = 'Unit 7: International Affairs & Contemporary World';
-          }
-
-          // Clean title
-          let cleanTitle = raw;
-          cleanTitle = cleanTitle.replace(/^SEE-S&T-[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^SEE-S&T-EM-[A-Z]+-U(\d+)-P(\d+)\(?/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-L(\d+)-V(\d+)-?/i, 'Unit $1 Lesson $2: ');
-          cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-V(\d+)-?/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^SEE-OM-EM-[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^SEE-OM-EM-\s*[A-Z]+-U(\d+)-P(\d+)-?/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^SEE-CM-[A-Z]+-U(\d+)-L(\d+)-V(\d+)-?/i, 'Unit $1 Lesson $2: ');
-          cleanTitle = cleanTitle.replace(/^SO\s+U(\d+)\s+L(\d+)\s+/i, 'Unit $1: ');
-          cleanTitle = cleanTitle.replace(/^SO\s+U(\d+)\s+P(\d+)\s+/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^SO\s+L(\d+)\s+V(\d+)\s*/i, 'Lesson $1 Video $2: ');
-          cleanTitle = cleanTitle.replace(/^HRT\s+U(\d+)\s+P(\d+)\s*(V\d+)?/i, 'Unit $1 Part $2: ');
-          cleanTitle = cleanTitle.replace(/^Q\.?\s*NO\s*(\d+)\s*/i, 'Q$1: ');
-          cleanTitle = cleanTitle.replace(/^Q(\d+)\s*-\s*EM\s*-\s*[A-Z]+\s*-\s*/i, 'Q$1: ');
-          cleanTitle = cleanTitle.replace(/^Q(\d+)\s*-\s*STORY\s*-\s*V\s*(\d+)\s*-\s*/i, 'Q$1 Story (Video $2): ');
-          cleanTitle = cleanTitle.replace(/_1$|_new$|_001_new$|_002_new$|_NEW01$/i, '');
-          cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
-          cleanTitle = cleanTitle.replace(/\s*:\s*$/, '');
-
-          return {
-            id: v.id,
-            course_id: 'see_class_10',
-            subject_slug: slug,
-            chapter_name: chapter,
-            title: cleanTitle,
-            description: v.description || `HD Video Lecture (${Math.round((v.duration_sec || 0)/60)} mins)`,
-            video_url: v.video_url,
-            thumbnail_url: v.thumbnail_url,
-            duration_sec: v.duration_sec || 900,
-            lesson_order: idx + 1,
-            is_free: idx < 3,
-            is_published: true,
-          };
-        });
-      }
+    if (vidErr || !vids) {
+      return NextResponse.json({ lessons: [], subjects: [] });
     }
 
-    if (subjectSlug && subjectSlug !== 'all') {
-      lessons = lessons.filter((l: any) => l.subject_slug === subjectSlug);
+    // Process & categorize all videos
+    let parsedLessons = vids.map((v: any) => {
+      const res = cleanAndCategorize(v.title);
+      return {
+        id: v.id,
+        course_id: 'see_class_10',
+        subject_slug: res.subjectSlug,
+        chapter_name: res.unit,
+        unit_order: res.unitOrder,
+        part_order: res.part,
+        title: res.cleanTitle,
+        description: v.description || `HD Video Lecture (${Math.round((v.duration_sec || 0) / 60)} mins)`,
+        video_url: v.video_url,
+        thumbnail_url: v.thumbnail_url,
+        duration_sec: v.duration_sec || 900,
+        lesson_order: res.unitOrder * 100 + res.part,
+        is_free: res.part === 1,
+        is_published: true,
+      };
+    });
+
+    // Sort in natural order: unitOrder ASC, part ASC
+    parsedLessons.sort((a, b) => {
+      if (a.unit_order !== b.unit_order) return a.unit_order - b.unit_order;
+      return a.part_order - b.part_order;
+    });
+
+    // Filter by subject
+    if (subjectQuery && subjectQuery !== 'all') {
+      parsedLessons = parsedLessons.filter((l) => {
+        if (subjectQuery === 'science' || subjectQuery === 'physics' || subjectQuery === 'compulsory_science') {
+          return l.subject_slug === 'physics';
+        }
+        if (subjectQuery === 'mathematics' || subjectQuery === 'math' || subjectQuery === 'compulsory_math') {
+          return l.subject_slug === 'math';
+        }
+        if (subjectQuery === 'opt_math' || subjectQuery === 'optional_mathematics') {
+          return l.subject_slug === 'opt_math';
+        }
+        if (subjectQuery === 'english') {
+          return l.subject_slug === 'english';
+        }
+        if (subjectQuery === 'social' || subjectQuery === 'social_studies') {
+          return l.subject_slug === 'social';
+        }
+        return l.subject_slug === subjectQuery;
+      });
     }
+
+    // Filter by chapter
     if (chapterName) {
-      lessons = lessons.filter((l: any) => l.chapter_name === chapterName);
+      parsedLessons = parsedLessons.filter((l) => l.chapter_name === chapterName);
     }
 
-    // If user is authenticated, fetch their watch progress for all lessons
+    // If user is authenticated, fetch their watch progress
     let userProgressMap: Record<string, { watchedSeconds: number; percentage: number; isCompleted: boolean }> = {};
     if (user?.id) {
       const { data: progressRows } = await admin
@@ -144,7 +319,7 @@ export async function GET(request: NextRequest) {
         .select('lesson_id, watched_seconds, percentage, is_completed')
         .eq('user_id', user.id);
 
-      (progressRows || []).forEach((row) => {
+      (progressRows || []).forEach((row: any) => {
         userProgressMap[row.lesson_id] = {
           watchedSeconds: row.watched_seconds || 0,
           percentage: row.percentage || 0,
@@ -153,56 +328,46 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Group into subjects and chapters
-    const subjectsMap: Record<string, any> = {
-      physics: { slug: 'physics', name: 'Physics (Science)', icon: '⚡', chapters: {} },
-      chemistry: { slug: 'chemistry', name: 'Chemistry (Science)', icon: '🧪', chapters: {} },
-      biology: { slug: 'biology', name: 'Biology & Astronomy', icon: '🔬', chapters: {} },
-      math: { slug: 'math', name: 'Compulsory Mathematics', icon: '📐', chapters: {} },
-      opt_math: { slug: 'opt_math', name: 'Optional Mathematics', icon: '📊', chapters: {} },
-      english: { slug: 'english', name: 'English (Reading & Writing)', icon: '📚', chapters: {} },
-      nepali: { slug: 'nepali', name: 'Compulsory Nepali', icon: '🇳🇵', chapters: {} },
-      social: { slug: 'social', name: 'Social Studies & Life Skills', icon: '🌍', chapters: {} },
-    };
-
-    const enrichedLessons = lessons.map((lesson) => {
-      const prog = userProgressMap[lesson.id] || { watchedSeconds: 0, percentage: 0, isCompleted: false };
-      const subSlug = lesson.subject_slug || 'physics';
-
-      if (!subjectsMap[subSlug]) {
-        subjectsMap[subSlug] = {
-          slug: subSlug,
-          name: subSlug.toUpperCase(),
-          icon: '📖',
-          chapters: {},
-        };
-      }
-
-      const chName = lesson.chapter_name || 'General';
-      if (!subjectsMap[subSlug].chapters[chName]) {
-        subjectsMap[subSlug].chapters[chName] = {
-          name: chName,
-          lessons: [],
-        };
-      }
-
-      const lessonData = {
-        ...lesson,
+    // Enrich with progress
+    const enrichedLessons = parsedLessons.map((l) => {
+      const prog = userProgressMap[l.id] || { watchedSeconds: 0, percentage: 0, isCompleted: false };
+      return {
+        ...l,
         watchedSeconds: prog.watchedSeconds,
         percentage: prog.percentage,
         isCompleted: prog.isCompleted,
       };
+    });
 
-      subjectsMap[subSlug].chapters[chName].lessons.push(lessonData);
+    // Group into organized subject curriculum
+    const subjectsMap: Record<string, any> = {
+      physics: { slug: 'science', name: 'Compulsory Science & Technology', icon: '🔬', chapters: {} },
+      math: { slug: 'mathematics', name: 'Compulsory Mathematics', icon: '📐', chapters: {} },
+      opt_math: { slug: 'opt_math', name: 'Optional Mathematics', icon: '📊', chapters: {} },
+      english: { slug: 'english', name: 'English Language', icon: '📚', chapters: {} },
+      social: { slug: 'social', name: 'Social Studies & Life Skills', icon: '🌍', chapters: {} },
+    };
 
-      return lessonData;
+    enrichedLessons.forEach((lesson) => {
+      const subSlug = lesson.subject_slug;
+      if (subjectsMap[subSlug]) {
+        const chName = lesson.chapter_name;
+        if (!subjectsMap[subSlug].chapters[chName]) {
+          subjectsMap[subSlug].chapters[chName] = {
+            name: chName,
+            unitOrder: lesson.unit_order,
+            lessons: [],
+          };
+        }
+        subjectsMap[subSlug].chapters[chName].lessons.push(lesson);
+      }
     });
 
     const structuredSubjects = Object.values(subjectsMap).map((sub: any) => ({
       slug: sub.slug,
       name: sub.name,
       icon: sub.icon,
-      chapters: Object.values(sub.chapters),
+      chapters: Object.values(sub.chapters).sort((a: any, b: any) => a.unitOrder - b.unitOrder),
     }));
 
     return NextResponse.json({

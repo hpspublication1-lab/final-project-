@@ -7,7 +7,7 @@ import HomepageFooter from '@/app/components/HomepageFooter';
 import SeeFreeDiagnosticModal from '@/components/see/SeeFreeDiagnosticModal';
 import {
   GraduationCap, BookOpen, Sparkles, CheckCircle2, ArrowRight, ShieldCheck,
-  Zap, Play, FileText, Award, Users, Star, Lock, Check, HelpCircle, Target
+  Zap, Play, FileText, Award, Users, Star, Lock, Check, HelpCircle, Target, Download
 } from 'lucide-react';
 
 export default function DedicatedSeeLandingPage() {
@@ -52,61 +52,74 @@ export default function DedicatedSeeLandingPage() {
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
+                <Link
+                  href="/lecture-videos"
+                  className="px-7 py-4 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all"
+                >
+                  <Play size={16} className="fill-slate-950" />
+                  <span>START WATCHING LECTURES</span>
+                </Link>
+
+                <Link
+                  href="/student-dashboard"
+                  className="px-7 py-4 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-black text-xs sm:text-sm flex items-center gap-2 border border-white/20 shadow-xl transition-all"
+                >
+                  <GraduationCap size={16} />
+                  <span>STUDENT DASHBOARD</span>
+                </Link>
+
                 <button
                   onClick={() => setIsDiagnosticOpen(true)}
-                  className="px-7 py-4 rounded-2xl bg-white text-emerald-950 hover:bg-emerald-50 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all"
+                  className="px-6 py-4 rounded-2xl bg-white text-emerald-950 hover:bg-emerald-50 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all"
                 >
                   <Target size={16} className="text-emerald-600 animate-pulse" />
-                  <span>🎯 TAKE FREE SEE DIAGNOSTIC</span>
+                  <span>🎯 FREE DIAGNOSTIC</span>
                 </button>
-
-                <a
-                  href="#curriculum"
-                  className="px-7 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all"
-                >
-                  <span>EXPLORE SEE COURSE</span>
-                  <ArrowRight size={16} />
-                </a>
               </div>
             </div>
 
-            {/* Quick Batch Overview Card */}
-            <div className="lg:col-span-5 bg-card/95 backdrop-blur border border-emerald-500/30 rounded-3xl p-6 sm:p-8 text-foreground shadow-2xl space-y-6">
-              <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase text-emerald-600">OFFICIAL BATCH SPECS</span>
-                <h3 className="text-xl font-black text-foreground">Samyak SEE 4.0 GPA Batch</h3>
+            {/* 2 Official Batches: English & Nepali Medium */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="bg-card/95 backdrop-blur border border-blue-500/30 rounded-3xl p-5 text-foreground shadow-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/30 text-[10px] font-black">
+                    🇬🇧 ENGLISH MEDIUM (ID: 379737)
+                  </span>
+                  <span className="text-xs font-black text-foreground">NPR 1,999</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-foreground">SEE 2026 — English Medium Mastery</h3>
+                  <p className="text-[11px] text-muted-foreground">Complete English Medium lectures, derivations &amp; formulas.</p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <Link href="/batches/see-2026-english-medium" className="text-xs font-bold text-blue-600 hover:underline">
+                    View Curriculum →
+                  </Link>
+                  <Link href="/batches/see-2026-english-medium" className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-sm">
+                    Enroll English Medium
+                  </Link>
+                </div>
               </div>
 
-              <ul className="space-y-3 text-xs font-semibold text-muted-foreground">
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>147 Chapter HD Video Lectures &amp; Notes</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>10-Year NEB Past Questions &amp; Model Solutions</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>AI Handwritten Subjective Answer Sheet Marking</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>Chapter-wise Model Test Sets &amp; Practice Drills</span>
-                </li>
-              </ul>
-
-              <div className="pt-4 border-t border-border flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-bold text-muted-foreground block">ONE-TIME FEE</span>
-                  <span className="text-2xl font-black text-foreground">NPR 2,990</span>
+              <div className="bg-card/95 backdrop-blur border border-red-500/30 rounded-3xl p-5 text-foreground shadow-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/30 text-[10px] font-black">
+                    🇳🇵 NEPALI MEDIUM (ID: 367785)
+                  </span>
+                  <span className="text-xs font-black text-foreground">NPR 1,999</span>
                 </div>
-                <Link
-                  href="/see/checkout"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-black text-xs hover:bg-emerald-700 transition-colors"
-                >
-                  Get Instant Access
-                </Link>
+                <div>
+                  <h3 className="text-sm font-black text-foreground">SEE 2026 — Nepali Medium (नेपाली माध्यम)</h3>
+                  <p className="text-[11px] text-muted-foreground">नेपाली माध्यमका सम्पूर्ण भिडियो कक्षाहरू, नोट तथा मोडल समाधान।</p>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <Link href="/batches/see-2026-nepali-medium" className="text-xs font-bold text-red-600 hover:underline">
+                    पाठ्यक्रम हेर्नुहोस् →
+                  </Link>
+                  <Link href="/batches/see-2026-nepali-medium" className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-sm">
+                    Enroll Nepali Medium
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -147,6 +160,101 @@ export default function DedicatedSeeLandingPage() {
                   <span>Try AI Answer Sheet Marker</span>
                 </Link>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 🌟 STAGE 2.5: 4-WAY MARK QUESTION BANK & DIGESTION HUB */}
+        <section className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="p-8 sm:p-10 rounded-3xl bg-card border border-border shadow-lg space-y-6">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-black">
+                  <HelpCircle size={14} /> NEW: NEB 4-WAY QUESTION BANK &amp; DIGEST
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-foreground">
+                  Complete SEE Question Bank with Step-by-Step Solutions
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+                  Every board question categorized by exact mark weightage with official marking rubrics and downloadable formula capsules.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/see/question-bank"
+                  className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-2"
+                >
+                  <BookOpen size={15} />
+                  <span>Open Question Bank (1-4 Marks) →</span>
+                </Link>
+                <Link
+                  href="/see/question-bank"
+                  className="px-5 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/30 font-black text-xs flex items-center gap-2"
+                >
+                  <Download size={15} />
+                  <span>Download Formula Digests</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* 4 Mark Section Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              <Link
+                href="/see/question-bank"
+                className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-black text-blue-600">Section 1</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-700">1 MARK</span>
+                </div>
+                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
+                  Group A: Very Short Definitions &amp; Laws
+                </h4>
+                <p className="text-[11px] text-muted-foreground">Standard definitions, SI units, and 1-line conceptual answers.</p>
+              </Link>
+
+              <Link
+                href="/see/question-bank"
+                className="p-4 rounded-2xl border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition-all space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-black text-indigo-600">Section 2</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-700">2 MARKS</span>
+                </div>
+                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
+                  Group B: Short Answers &amp; Give Reasons
+                </h4>
+                <p className="text-[11px] text-muted-foreground">Scientific causes, differences between terms, and short equations.</p>
+              </Link>
+
+              <Link
+                href="/see/question-bank"
+                className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-all space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-black text-amber-600">Section 3</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-700">3 MARKS</span>
+                </div>
+                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
+                  Group C: Problem Solving &amp; Numericals
+                </h4>
+                <p className="text-[11px] text-muted-foreground">Mathematical word problems, chemical balancing, and diagrams.</p>
+              </Link>
+
+              <Link
+                href="/see/question-bank"
+                className="p-4 rounded-2xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-all space-y-2 group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-black text-purple-600">Section 4</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-700">4 MARKS</span>
+                </div>
+                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
+                  Group D: Long Proofs &amp; Theorems
+                </h4>
+                <p className="text-[11px] text-muted-foreground">Geometry theorem proofs, Cramer rule, essays, and multi-step questions.</p>
+              </Link>
             </div>
           </div>
         </section>

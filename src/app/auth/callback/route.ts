@@ -16,26 +16,32 @@ function safeNextPath(next: string | null): string {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = safeNextPath(searchParams.get('next'));
-  const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
+  try {
+    const { searchParams, origin } = new URL(request.url);
+    const code = searchParams.get('code');
+    const next = safeNextPath(searchParams.get('next'));
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
 
-  // Handle OAuth errors
-  if (error) {
-    const redirectUrl = new URL('/sign-up-login-screen', origin);
-    redirectUrl.searchParams.set('error', errorDescription || error);
-    return NextResponse.redirect(redirectUrl.toString());
-  }
-
-  if (code) {
-    const supabase = await createClient();
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    if (!exchangeError) {
-      return NextResponse.redirect(`${origin}${next}`);
+    // Handle OAuth errors
+    if (error) {
+      const redirectUrl = new URL('/sign-up-login-screen', origin);
+      redirectUrl.searchParams.set('error', errorDescription || error);
+      return NextResponse.redirect(redirectUrl.toString());
     }
-  }
 
-  return NextResponse.redirect(`${origin}/sign-up-login-screen`);
+    if (code) {
+      const supabase = await createClient();
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      if (!exchangeError) {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+      console.warn('OAuth code exchange failed:', exchangeError.message);
+    }
+
+    return NextResponse.redirect(`${origin}/sign-up-login-screen?error=AuthenticationFailed`);
+  } catch (err: any) {
+    console.error('Auth callback exception:', err);
+    return NextResponse.redirect(new URL('/sign-up-login-screen?error=SessionExchangeError', request.url).toString());
+  }
 }

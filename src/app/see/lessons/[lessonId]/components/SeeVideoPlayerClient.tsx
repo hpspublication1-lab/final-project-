@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, Settings,
-  ChevronLeft, ChevronRight, CheckCircle2, FileText, Download, Lock,
-  ArrowRight, Clock, Sparkles, BookOpen, Loader2, AlertCircle, Bookmark,
+  Play, Pause, Volume2, VolumeX, Maximize2, Minimize2,
+  ChevronLeft, ChevronRight, CheckCircle2, FileText, Download,
+  ArrowRight, Clock, Sparkles, BookOpen, Loader2, Bookmark,
   MessageSquare, HelpCircle, Target, Award, Subtitles, Layers, Check,
-  RotateCcw, RotateCw, ListVideo, Send, Copy, Trash2
+  RotateCcw, RotateCw, ListVideo, Send, Trash2, Video, RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -75,7 +75,6 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLocked, setIsLocked] = useState(false);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [progress, setProgress] = useState<Progress>({
     watched_seconds: 0,
@@ -95,21 +94,24 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
   // Player controls
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playerContainerRef = useRef<HTMLDivElement | null>(null);
+  const hlsRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
-  const [videoQuality, setVideoQuality] = useState<'1080p' | '720p' | '480p' | 'Auto'>('1080p');
+  const [availableQualities, setAvailableQualities] = useState<string[]>(['Auto']);
+  const [selectedQuality, setSelectedQuality] = useState<string>('Auto');
   const [captionsOn, setCaptionsOn] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showResumePrompt, setShowResumePrompt] = useState(false);
-  const [resumeSeconds, setResumeSeconds] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const controlsTimeoutRef = useRef<any>(null);
 
   // Tabs & Features
-  const [activeTab, setActiveTab] = useState<'playlist' | 'transcript' | 'notes' | 'ai' | 'mcq'>('playlist');
+  const [activeTab, setActiveTab] = useState<'playlist' | 'transcript' | 'notes' | 'ai'>('playlist');
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [userQuestion, setUserQuestion] = useState('');
@@ -134,19 +136,11 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     try {
       setLoading(true);
       setError(null);
-      setIsLocked(false);
 
       const res = await fetch(`/api/see/lessons/${lessonId}`);
       const data = await res.json();
 
-      if (res.status === 403 && data.isLocked) {
-        setIsLocked(true);
-        setLesson(data.lesson);
-        setLoading(false);
-        return;
-      }
-
-      if (!res.ok || data.error) {
+      if (!res.ok || data.error || !data.lesson) {
         setError(data.error || 'Failed to load video lesson');
         setLoading(false);
         return;
@@ -156,10 +150,6 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
       if (data.progress) {
         setProgress(data.progress);
         setIsCompleted(data.progress.is_completed);
-        if (data.progress.watched_seconds > 10 && !data.progress.is_completed) {
-          setResumeSeconds(data.progress.watched_seconds);
-          setShowResumePrompt(true);
-        }
       }
       setNavigation(data.navigation || { prevLesson: null, nextLesson: null });
       setLoading(false);
@@ -185,56 +175,90 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     fetchLessonData();
   }, [fetchLessonData]);
 
-  // HLS Video Stream Integration
+  // Direct HLS Video Stream Integration (Unrestricted Bunny CDN Pull Zone)
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl || !lesson?.video_url) return;
 
     const url = lesson.video_url;
-    const isHls = /\.m3u8(\?|$)/i.test(url) || url.includes('playlist.m3u8');
-    let hlsInstance: any = null;
     let destroyed = false;
 
-    if (!isHls) {
-      videoEl.src = url;
-      return;
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
     }
 
+    // Native Safari / iOS HLS
     if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
       videoEl.src = url;
+      videoEl.load();
       return;
     }
 
+    // Modern Browsers with Hls.js
     (async () => {
       try {
-        const Hls = (await import('hls.js')).default;
+        const HlsModule = await import('hls.js');
+        const Hls = HlsModule.default;
+
         if (destroyed) return;
+
         if (Hls.isSupported()) {
-          hlsInstance = new Hls({
+          const hls = new Hls({
             enableWorker: true,
             capLevelToPlayerSize: true,
             backBufferLength: 90,
+            autoStartLoad: true,
           });
-          hlsInstance.loadSource(url);
-          hlsInstance.attachMedia(videoEl);
+
+          hlsRef.current = hls;
+          hls.loadSource(url);
+          hls.attachMedia(videoEl);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+            if (destroyed) return;
+            const levels = data.levels || [];
+            const qualLabels = ['Auto', ...levels.map((l: any) => `${l.height}p`)];
+            setAvailableQualities(Array.from(new Set(qualLabels)));
+            videoEl.play().then(() => setIsPlaying(true)).catch(() => {});
+          });
+
+          hls.on(Hls.Events.ERROR, (_event, data) => {
+            if (data.fatal) {
+              switch (data.type) {
+                case Hls.ErrorTypes.NETWORK_ERROR:
+                  hls.startLoad();
+                  break;
+                case Hls.ErrorTypes.MEDIA_ERROR:
+                  hls.recoverMediaError();
+                  break;
+                default:
+                  hls.destroy();
+                  break;
+              }
+            }
+          });
         } else {
           videoEl.src = url;
         }
-      } catch {
+      } catch (e) {
+        console.warn('Hls.js init fallback:', e);
         videoEl.src = url;
       }
     })();
 
     return () => {
       destroyed = true;
-      if (hlsInstance) hlsInstance.destroy();
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
     };
   }, [lesson?.video_url]);
 
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in input or textarea
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 
       if (e.code === 'Space' || e.code === 'KeyK') {
@@ -258,9 +282,6 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
       } else if (e.code === 'KeyF') {
         e.preventDefault();
         toggleFullscreen();
-      } else if (e.code === 'KeyC') {
-        e.preventDefault();
-        setCaptionsOn((prev) => !prev);
       }
     };
 
@@ -268,15 +289,21 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
+  const handleMouseMove = () => {
+    setControlsVisible(true);
+    if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (isPlaying) setControlsVisible(false);
+    }, 3000);
+  };
+
   const togglePlay = () => {
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
       setIsPlaying(false);
     } else {
-      videoRef.current.play();
-      setIsPlaying(true);
-      setShowResumePrompt(false);
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   };
 
@@ -285,7 +312,7 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     const target = Math.max(0, Math.min(videoRef.current.currentTime + delta, duration || 100));
     videoRef.current.currentTime = target;
     setCurrentTime(target);
-    toast.success(`${delta > 0 ? '+10s' : '-10s'}`, { duration: 800, position: 'bottom-center' });
+    toast.success(`${delta > 0 ? '+10s' : '-10s'}`, { duration: 700, position: 'bottom-center' });
   };
 
   const adjustVolume = (delta: number) => {
@@ -311,20 +338,28 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     }
   };
 
-  const jumpToTime = (secs: number) => {
-    setCurrentTime(secs);
-    if (videoRef.current) {
-      videoRef.current.currentTime = secs;
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
   const handleSpeedChange = (speed: number) => {
     setPlaybackSpeed(speed);
     if (videoRef.current) {
       videoRef.current.playbackRate = speed;
     }
+    toast.success(`Speed: ${speed}x`, { duration: 800 });
+  };
+
+  const handleQualityChange = (qual: string) => {
+    setSelectedQuality(qual);
+    if (hlsRef.current) {
+      if (qual === 'Auto') {
+        hlsRef.current.currentLevel = -1;
+      } else {
+        const height = parseInt(qual.replace('p', ''), 10);
+        const idx = hlsRef.current.levels.findIndex((l: any) => l.height === height);
+        if (idx !== -1) {
+          hlsRef.current.currentLevel = idx;
+        }
+      }
+    }
+    toast.success(`Quality set to ${qual}`, { duration: 800 });
   };
 
   const toggleFullscreen = () => {
@@ -335,6 +370,14 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     } else {
       document.exitFullscreen().catch(() => {});
       setIsFullscreen(false);
+    }
+  };
+
+  const jumpToTime = (seconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      setCurrentTime(seconds);
+      videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     }
   };
 
@@ -350,7 +393,7 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     setNotes(updated);
     localStorage.setItem(`notes_${lessonId}`, JSON.stringify(updated));
     setNewNoteText('');
-    toast.success(`Note saved at ${formatTime(note.time)}!`);
+    toast.success('Note saved at timestamp!');
   };
 
   const handleDeleteNote = (id: string) => {
@@ -365,11 +408,11 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
     setAiLoading(true);
 
     setTimeout(() => {
-      const resp = `Based on this ${lesson?.title || 'lecture'} (Chapter: ${lesson?.chapter_name || 'General'}), the key concept involves applying standard NEB formulas step-by-step. Remember to always define given parameters, show formula substitution with units, and write concluding remarks for full credit on board examinations.`;
+      const resp = `Based on this lecture (${lesson?.title || 'Topic'}), the key concept involves applying standard NEB formulas step-by-step. Make sure to define given parameters, show formula substitutions with units, and write concluding remarks for full credit on board examinations.`;
       setAiAnswers((prev) => [{ q: query, a: resp, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }, ...prev]);
       setAiLoading(false);
       setUserQuestion('');
-    }, 600);
+    }, 500);
   };
 
   const handleMarkCompleted = async () => {
@@ -394,26 +437,23 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
       <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
         <div className="flex flex-col items-center justify-center py-28 space-y-4">
           <Loader2 size={36} className="animate-spin text-emerald-500" />
-          <p className="text-sm font-bold text-muted-foreground font-mono">Loading HD Video Lesson &amp; AI Player...</p>
+          <p className="text-sm font-bold text-muted-foreground font-mono">Loading HD Video Lesson...</p>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (isLocked) {
+  if (error || !lesson) {
     return (
       <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-2xl mx-auto px-4 py-16 text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 flex items-center justify-center mx-auto shadow-lg">
-            <Lock size={32} />
+        <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">
+          <div className="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 flex items-center justify-center mx-auto">
+            <Video size={28} />
           </div>
-          <h2 className="text-2xl font-black text-foreground">SEE Master Batch Enrollment Required</h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            This premium video lecture is locked. Enroll in the SEE Class 10 Board Master Batch for full access to all 290+ HD video lectures and AI features.
-          </p>
-          <Link href="/see/checkout" className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-lg">
-            <span>Unlock Full SEE Course — NPR 2,990</span>
-            <ArrowRight size={16} />
+          <h2 className="text-xl font-black text-foreground">Lecture Not Found</h2>
+          <p className="text-xs text-muted-foreground">{error || 'Unable to retrieve this video lecture.'}</p>
+          <Link href="/lecture-videos" className="inline-flex px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">
+            Browse All Video Lectures
           </Link>
         </div>
       </DashboardLayout>
@@ -427,7 +467,9 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
         {/* Navigation Breadcrumb */}
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            <Link href="/see" className="hover:text-emerald-600 font-bold">SEE Dashboard</Link>
+            <Link href="/student-dashboard" className="hover:text-emerald-600 font-bold">Student Dashboard</Link>
+            <span>/</span>
+            <Link href="/lecture-videos" className="hover:text-emerald-600 font-bold">Lectures</Link>
             <span>/</span>
             <Link href={`/see/subject/${lesson?.subject_slug || 'science'}`} className="capitalize font-bold text-foreground hover:text-emerald-600">
               {lesson?.subject_slug?.replace('_', ' ')}
@@ -437,9 +479,9 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 font-mono text-[10px] font-bold border border-emerald-500/20">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 font-mono text-[10px] font-bold border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              BUNNY STREAM HD
+              1080P DIRECT STREAM
             </span>
             <button onClick={() => setShowPostQuiz(true)} className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 font-black border border-emerald-500/20 text-xs hover:bg-emerald-500/20 transition-all">
               🎯 Knowledge Drill
@@ -455,11 +497,14 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
             
             {/* Player Container with Ambient Lighting */}
             <div className="relative">
-              {/* Ambient Glow */}
               <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600/20 via-primary/20 to-blue-600/20 rounded-[28px] blur-xl opacity-70 pointer-events-none" />
 
-              <div ref={playerContainerRef} className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group select-none">
-                
+              <div
+                ref={playerContainerRef}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={() => isPlaying && setControlsVisible(false)}
+                className="relative aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 group select-none"
+              >
                 <video
                   ref={videoRef}
                   poster={lesson?.thumbnail_url || undefined}
@@ -467,6 +512,12 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                   onClick={togglePlay}
                   onTimeUpdate={() => videoRef.current && setCurrentTime(videoRef.current.currentTime)}
                   onLoadedMetadata={() => videoRef.current && setDuration(videoRef.current.duration)}
+                  onWaiting={() => setIsBuffering(true)}
+                  onPlaying={() => {
+                    setIsBuffering(false);
+                    setIsPlaying(true);
+                  }}
+                  onPause={() => setIsPlaying(false)}
                   onEnded={() => {
                     setIsPlaying(false);
                     handleMarkCompleted();
@@ -474,8 +525,15 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                   playsInline
                 />
 
-                {/* Big Center Play/Pause Button on Hover */}
-                {!isPlaying && (
+                {/* Buffering Indicator */}
+                {isBuffering && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none">
+                    <Loader2 size={40} className="animate-spin text-emerald-500" />
+                  </div>
+                )}
+
+                {/* Big Center Play/Pause Button */}
+                {!isPlaying && !isBuffering && (
                   <div
                     onClick={togglePlay}
                     className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer backdrop-blur-[2px] transition-all"
@@ -483,29 +541,6 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                     <div className="w-20 h-20 rounded-full bg-emerald-500/90 text-white flex items-center justify-center shadow-2xl hover:scale-110 transition-transform">
                       <Play size={36} className="ml-1 fill-white" />
                     </div>
-                  </div>
-                )}
-
-                {/* Resume Watching Prompt */}
-                {showResumePrompt && (
-                  <div className="absolute top-4 left-4 z-20 p-3 rounded-2xl bg-card/95 backdrop-blur border border-emerald-500/30 shadow-2xl flex items-center gap-3 text-xs">
-                    <Clock size={16} className="text-emerald-500 shrink-0" />
-                    <span className="font-medium text-foreground">Resume from {formatTime(resumeSeconds)}?</span>
-                    <button
-                      onClick={() => {
-                        jumpToTime(resumeSeconds);
-                        setShowResumePrompt(false);
-                      }}
-                      className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700"
-                    >
-                      Resume
-                    </button>
-                    <button
-                      onClick={() => setShowResumePrompt(false)}
-                      className="text-muted-foreground hover:text-foreground text-[11px]"
-                    >
-                      Dismiss
-                    </button>
                   </div>
                 )}
 
@@ -518,10 +553,13 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                   </div>
                 )}
 
-                {/* Player Controls Bar */}
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 flex flex-col gap-2 transition-opacity">
-                  
-                  {/* Progress Seekbar */}
+                {/* Custom Video Controls Overlay */}
+                <div
+                  className={`absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-4 flex flex-col gap-2 transition-opacity duration-300 ${
+                    controlsVisible || !isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  {/* Progress Scrubber */}
                   <input
                     type="range"
                     min={0}
@@ -539,7 +577,7 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                       <button onClick={() => seekRelative(-10)} className="p-1 rounded-lg hover:bg-white/20 transition-colors" title="Rewind 10s (J / Left)">
                         <RotateCcw size={15} />
                       </button>
-                      <button onClick={() => seekRelative(10)} className="p-1 rounded-lg hover:bg-white/20 transition-colors" title="Fast Forward 10s (L / Right)">
+                      <button onClick={() => seekRelative(10)} className="p-1 rounded-lg hover:bg-white/20 transition-colors" title="Forward 10s (L / Right)">
                         <RotateCw size={15} />
                       </button>
 
@@ -573,18 +611,18 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                     </div>
 
                     <div className="flex items-center gap-2">
-                      
-                      {/* Quality Selector */}
-                      <select
-                        value={videoQuality}
-                        onChange={(e) => setVideoQuality(e.target.value as any)}
-                        className="bg-white/10 text-white rounded-lg px-2 py-1 text-[10px] font-bold focus:outline-none cursor-pointer"
-                      >
-                        <option value="1080p" className="text-black">1080p Full HD</option>
-                        <option value="720p" className="text-black">720p HD</option>
-                        <option value="480p" className="text-black">480p</option>
-                        <option value="Auto" className="text-black">Auto</option>
-                      </select>
+                      {/* Quality Switcher */}
+                      {availableQualities.length > 1 && (
+                        <select
+                          value={selectedQuality}
+                          onChange={(e) => handleQualityChange(e.target.value)}
+                          className="bg-white/10 text-white rounded-lg px-2 py-1 text-[10px] font-bold focus:outline-none cursor-pointer"
+                        >
+                          {availableQualities.map((q) => (
+                            <option key={q} value={q} className="text-black">{q}</option>
+                          ))}
+                        </select>
+                      )}
 
                       {/* Captions Toggle */}
                       <button
@@ -594,11 +632,10 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                         }`}
                         title="Captions (C)"
                       >
-                        <Subtitles size={12} className="inline mr-1" />
-                        CC
+                        <Subtitles size={12} className="inline mr-1" /> CC
                       </button>
 
-                      {/* Speed Selector */}
+                      {/* Speed Options */}
                       <div className="hidden sm:flex items-center gap-1 bg-white/10 rounded-xl px-2 py-0.5 text-[10px] font-bold">
                         {[0.75, 1, 1.25, 1.5, 2].map((spd) => (
                           <button
@@ -618,7 +655,6 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                       </button>
                     </div>
                   </div>
-
                 </div>
 
               </div>
@@ -630,7 +666,7 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-mono">
-                      Lesson {lesson?.lesson_order}
+                      Part {lesson?.lesson_order}
                     </span>
                     <span className="text-xs text-muted-foreground font-semibold">
                       {lesson?.chapter_name}
@@ -649,270 +685,256 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                   }`}
                 >
                   <CheckCircle2 size={16} />
-                  <span>{isCompleted ? 'Completed ✓' : 'Mark as Completed'}</span>
+                  <span>{isCompleted ? 'Completed ✓' : 'Mark Completed'}</span>
                 </button>
               </div>
 
-              {/* Keyboard Shortcuts Hint */}
-              <div className="pt-3 border-t border-border/60 flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground font-mono">
-                <span className="font-bold text-foreground">Shortcuts:</span>
-                <span>[Space / K] Play/Pause</span>
-                <span>[J / L] ±10s</span>
-                <span>[↑ / ↓] Volume</span>
-                <span>[M] Mute</span>
-                <span>[F] Fullscreen</span>
+              {/* Resource & Tools Action Bar */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
+                <button
+                  onClick={() => setActiveTab('notes')}
+                  className="px-3.5 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <FileText size={14} className="text-emerald-500" />
+                  <span>My Notes ({notes.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('ai')}
+                  className="px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Sparkles size={14} />
+                  <span>Ask AI Tutor</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('transcript')}
+                  className="px-3.5 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Clock size={14} className="text-blue-500" />
+                  <span>Timestamps</span>
+                </button>
               </div>
             </div>
 
           </div>
 
-          {/* Sidebar Column: Interactive Player Tabs */}
+          {/* Sidebar Tabs Column */}
           <div className="lg:col-span-4 space-y-4">
             
-            {/* Tab Pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 font-mono">
+            {/* Tab Buttons Header */}
+            <div className="grid grid-cols-4 gap-1 p-1 bg-card rounded-2xl border border-border">
               {[
-                { id: 'playlist', label: '📑 Playlist' },
-                { id: 'notes', label: '📝 My Notes' },
-                { id: 'transcript', label: '📜 Milestones' },
-                { id: 'ai', label: '🤖 AI Tutor' },
-                { id: 'mcq', label: '🎯 Drill' },
-              ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setActiveTab(t.id as any)}
-                  className={`px-3 py-2 rounded-xl text-xs font-black shrink-0 transition-all border ${
-                    activeTab === t.id
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                      : 'bg-card text-muted-foreground border-border hover:text-foreground'
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+                { id: 'playlist', label: 'Playlist', icon: ListVideo },
+                { id: 'transcript', label: 'Outline', icon: Clock },
+                { id: 'notes', label: 'Notes', icon: FileText },
+                { id: 'ai', label: 'AI Tutor', icon: Sparkles },
+              ].map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id as any)}
+                    className={`py-2 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      activeTab === t.id
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    <Icon size={13} />
+                    <span className="hidden sm:inline">{t.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Tab Contents */}
-            <div className="p-5 rounded-3xl bg-card border border-border min-h-[460px] max-h-[600px] overflow-y-auto space-y-4">
-              
-              {/* PLAYLIST TAB */}
-              {activeTab === 'playlist' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase text-foreground font-mono">Course Playlist</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">{playlistLessons.length} Lectures</span>
-                  </div>
+            {/* TAB 1: In-Player Playlist Drawer */}
+            {activeTab === 'playlist' && (
+              <div className="p-4 rounded-3xl bg-card border border-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase text-foreground font-mono">
+                    Subject Video Lectures ({playlistLessons.length})
+                  </span>
+                  <span className="text-[10px] text-emerald-600 font-bold font-mono">
+                    1080p HD
+                  </span>
+                </div>
 
+                <input
+                  type="text"
+                  placeholder="Search lectures or units..."
+                  value={playlistSearch}
+                  onChange={(e) => setPlaylistSearch(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-muted/60 border border-border focus:outline-none focus:border-emerald-500"
+                />
+
+                <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                  {filteredPlaylist.map((pl, idx) => {
+                    const isCur = pl.id === lessonId;
+                    return (
+                      <button
+                        key={pl.id}
+                        onClick={() => {
+                          router.push(`/see/lessons/${pl.id}`);
+                        }}
+                        className={`w-full text-left p-3 rounded-2xl border transition-all flex items-start gap-3 ${
+                          isCur
+                            ? 'bg-emerald-500/10 border-emerald-500/40 shadow-sm'
+                            : 'bg-muted/30 border-border hover:bg-muted/60'
+                        }`}
+                      >
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-black font-mono ${
+                          isCur ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {isCur ? <Play size={10} className="fill-white ml-0.5" /> : idx + 1}
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <p className={`text-xs font-bold line-clamp-2 ${isCur ? 'text-emerald-600 font-black' : 'text-foreground'}`}>
+                            {pl.title}
+                          </p>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                            <span className="line-clamp-1">{pl.chapter_name}</span>
+                            <span>{Math.round((pl.duration_sec || 900) / 60)}m</span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: Transcript Timestamps */}
+            {activeTab === 'transcript' && (
+              <div className="p-4 rounded-3xl bg-card border border-border space-y-3">
+                <span className="text-xs font-black uppercase text-foreground font-mono">
+                  Lecture Chapters &amp; Timestamps
+                </span>
+                <div className="space-y-2">
+                  {SAMPLE_TRANSCRIPT.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => jumpToTime(item.time)}
+                      className="w-full text-left p-3 rounded-2xl bg-muted/40 hover:bg-emerald-500/10 border border-border hover:border-emerald-500/30 transition-all flex items-center justify-between group"
+                    >
+                      <span className="text-xs font-bold text-foreground group-hover:text-emerald-600">
+                        {item.text}
+                      </span>
+                      <Play size={12} className="text-muted-foreground group-hover:text-emerald-600 shrink-0 ml-2" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Timestamped Notes */}
+            {activeTab === 'notes' && (
+              <div className="p-4 rounded-3xl bg-card border border-border space-y-3">
+                <span className="text-xs font-black uppercase text-foreground font-mono">
+                  Personal Study Notes ({notes.length})
+                </span>
+
+                <div className="space-y-2">
+                  <textarea
+                    rows={2}
+                    value={newNoteText}
+                    onChange={(e) => setNewNoteText(e.target.value)}
+                    placeholder="Write a formula, theorem, or question..."
+                    className="w-full p-2.5 rounded-xl bg-muted/60 border border-border text-xs focus:outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={handleAddNote}
+                    className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    <Bookmark size={13} />
+                    <span>Save Note at Current Time</span>
+                  </button>
+                </div>
+
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {notes.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-6">No saved notes yet.</p>
+                  ) : (
+                    notes.map((n) => (
+                      <div key={n.id} className="p-3 rounded-2xl bg-muted/30 border border-border space-y-1 relative group">
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                          <button
+                            onClick={() => jumpToTime(n.time)}
+                            className="font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                          >
+                            <Clock size={10} /> {formatTime(n.time)}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteNote(n.id)}
+                            className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 transition-opacity"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                        <p className="text-xs text-foreground font-medium">{n.text}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: Instant AI Doubt Tutor */}
+            {activeTab === 'ai' && (
+              <div className="p-4 rounded-3xl bg-card border border-border space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Sparkles size={14} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-foreground">AI Doubt Tutor</h4>
+                    <p className="text-[10px] text-muted-foreground">Ask anything about this lecture topic</p>
+                  </div>
+                </div>
+
+                {/* Quick Prompts */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Explain core formula',
+                    'Show SEE marking criteria',
+                    'Give a similar practice problem',
+                  ].map((p, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleAskAI(p)}
+                      className="px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-muted text-foreground text-[10px] font-bold border border-border/60 transition-colors"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-1.5">
                   <input
                     type="text"
-                    placeholder="Search lectures..."
-                    value={playlistSearch}
-                    onChange={(e) => setPlaylistSearch(e.target.value)}
-                    className="w-full px-3 py-1.5 rounded-xl bg-muted/50 border border-border text-xs focus:outline-none focus:border-emerald-500"
+                    value={userQuestion}
+                    onChange={(e) => setUserQuestion(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
+                    placeholder="Ask a question..."
+                    className="flex-1 px-3 py-2 text-xs rounded-xl bg-muted/60 border border-border focus:outline-none focus:border-emerald-500"
                   />
-
-                  <div className="space-y-2">
-                    {filteredPlaylist.map((pl, idx) => {
-                      const isCurrent = pl.id === lessonId;
-                      return (
-                        <Link
-                          key={pl.id}
-                          href={`/see/lessons/${pl.id}`}
-                          className={`p-3 rounded-2xl border transition-all flex items-start gap-2.5 block ${
-                            isCurrent
-                              ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 shadow-sm'
-                              : 'bg-muted/30 border-border/80 hover:bg-muted text-foreground'
-                          }`}
-                        >
-                          <div className="mt-0.5 shrink-0">
-                            {isCurrent ? (
-                              <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">
-                                <Play size={10} className="fill-white ml-0.5" />
-                              </div>
-                            ) : (
-                              <span className="w-5 h-5 rounded-full bg-muted border border-border text-[10px] font-mono font-bold flex items-center justify-center">
-                                {idx + 1}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate">{pl.title}</p>
-                            <p className="text-[10px] text-muted-foreground truncate">{pl.chapter_name} • {Math.round(pl.duration_sec / 60)}m</p>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  <button
+                    onClick={() => handleAskAI()}
+                    disabled={aiLoading || !userQuestion.trim()}
+                    className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-50"
+                  >
+                    {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  </button>
                 </div>
-              )}
 
-              {/* NOTES TAB */}
-              {activeTab === 'notes' && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <span className="text-xs font-black uppercase text-foreground font-mono">Add Timestamped Note</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder={`Note at ${formatTime(currentTime)}...`}
-                        value={newNoteText}
-                        onChange={(e) => setNewNoteText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
-                        className="flex-1 px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs focus:outline-none focus:border-emerald-500"
-                      />
-                      <button
-                        onClick={handleAddNote}
-                        className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black hover:bg-emerald-700 transition-colors"
-                      >
-                        Add
-                      </button>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {aiAnswers.map((item, idx) => (
+                    <div key={idx} className="p-3 rounded-2xl bg-muted/30 border border-border space-y-1.5">
+                      <p className="text-[11px] font-bold text-emerald-600 font-mono">Q: {item.q}</p>
+                      <p className="text-xs text-foreground leading-relaxed">{item.a}</p>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    {notes.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground text-xs">
-                        <BookOpen size={24} className="mx-auto mb-2 opacity-50" />
-                        <p>No notes added yet for this lesson.</p>
-                        <p className="text-[10px]">Type above to save notes linked to video timestamps.</p>
-                      </div>
-                    ) : (
-                      notes.map((n) => (
-                        <div key={n.id} className="p-3 rounded-2xl bg-muted/40 border border-border space-y-1 group">
-                          <div className="flex items-center justify-between text-[11px]">
-                            <button
-                              onClick={() => jumpToTime(n.time)}
-                              className="font-mono text-emerald-600 font-bold hover:underline flex items-center gap-1"
-                            >
-                              <Clock size={12} /> {formatTime(n.time)}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteNote(n.id)}
-                              className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                          <p className="text-xs text-foreground">{n.text}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                  ))}
                 </div>
-              )}
-
-              {/* TRANSCRIPT / MILESTONES TAB */}
-              {activeTab === 'transcript' && (
-                <div className="space-y-3">
-                  <h3 className="text-xs font-black uppercase text-foreground font-mono">Lecture Milestones</h3>
-                  <div className="space-y-2 text-xs">
-                    {SAMPLE_TRANSCRIPT.map((tr, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => jumpToTime(tr.time)}
-                        className="p-3 rounded-2xl bg-muted/40 hover:bg-emerald-500/10 border border-border hover:border-emerald-500/30 cursor-pointer transition-all flex items-start gap-2 text-foreground font-medium"
-                      >
-                        <Clock size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{tr.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* AI TUTOR TAB */}
-              {activeTab === 'ai' && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <span className="text-xs font-black uppercase text-foreground font-mono">Ask AI About This Lesson</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="e.g. Give 3 board exam questions..."
-                        value={userQuestion}
-                        onChange={(e) => setUserQuestion(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-                        className="flex-1 px-3 py-2 rounded-xl bg-muted/50 border border-border text-xs focus:outline-none focus:border-emerald-500"
-                      />
-                      <button
-                        onClick={() => handleAskAI()}
-                        disabled={aiLoading}
-                        className="px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-black hover:bg-emerald-700 disabled:opacity-50"
-                      >
-                        {aiLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-                      </button>
-                    </div>
-
-                    {/* Quick Prompt Chips */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {[
-                        'Explain simply',
-                        'Top 3 Board Questions',
-                        'Key Formula Sheet',
-                      ].map((chip) => (
-                        <button
-                          key={chip}
-                          onClick={() => handleAskAI(chip)}
-                          className="px-2.5 py-1 rounded-lg bg-muted text-[10px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-                        >
-                          ✨ {chip}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {aiAnswers.map((item, idx) => (
-                      <div key={idx} className="p-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 space-y-1.5 text-xs">
-                        <p className="font-bold text-emerald-600">Q: {item.q}</p>
-                        <p className="text-foreground leading-relaxed">{item.a}</p>
-                        <span className="text-[9px] text-muted-foreground font-mono">{item.time}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* MCQ DRILL TAB */}
-              {activeTab === 'mcq' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black uppercase text-foreground font-mono">Quick Knowledge Check</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">3 Questions</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {SAMPLE_QUIZ_QUESTIONS.map((q, qIdx) => (
-                      <div key={q.id} className="p-3.5 rounded-2xl bg-muted/40 border border-border space-y-2">
-                        <p className="text-xs font-bold text-foreground">{qIdx + 1}. {q.q}</p>
-                        <div className="space-y-1.5">
-                          {q.options.map((opt, optIdx) => {
-                            const isSelected = quizAnswers[q.id] === optIdx;
-                            const isCorrect = q.correct === optIdx;
-                            return (
-                              <button
-                                key={optIdx}
-                                onClick={() => setQuizAnswers((prev) => ({ ...prev, [q.id]: optIdx }))}
-                                className={`w-full text-left p-2 rounded-xl text-xs transition-all border ${
-                                  isSelected
-                                    ? isCorrect
-                                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-600 font-bold'
-                                      : 'bg-red-500/20 border-red-500 text-red-600 font-bold'
-                                    : 'bg-card border-border hover:bg-muted/60 text-muted-foreground'
-                                }`}
-                              >
-                                {opt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            </div>
+              </div>
+            )}
 
           </div>
 
@@ -920,39 +942,47 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
 
       </div>
 
-      {/* Post-Video Knowledge Modal */}
+      {/* Post-Video Knowledge Drill Modal */}
       {showPostQuiz && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-card rounded-3xl w-full max-w-xl p-6 sm:p-8 space-y-6 shadow-2xl border border-border">
+          <div className="bg-card rounded-3xl w-full max-w-lg p-6 space-y-6 border border-border shadow-2xl">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase text-emerald-600 font-mono">POST-LESSON KNOWLEDGE CHECK</span>
-                <h3 className="text-lg font-black text-foreground">Reinforce What You Learned</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🎯</span>
+                <h3 className="text-base font-black text-foreground">Post-Lesson Knowledge Drill</h3>
               </div>
-              <button onClick={() => setShowPostQuiz(false)} className="text-muted-foreground hover:text-foreground text-sm font-bold">✕</button>
+              <button
+                onClick={() => setShowPostQuiz(false)}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="space-y-4">
               {SAMPLE_QUIZ_QUESTIONS.map((q, idx) => (
-                <div key={q.id} className="p-4 rounded-2xl bg-muted/30 border border-border space-y-2 text-xs">
-                  <p className="font-bold text-foreground">{idx + 1}. {q.q}</p>
+                <div key={q.id} className="space-y-2">
+                  <p className="text-xs font-bold text-foreground">
+                    {idx + 1}. {q.q}
+                  </p>
                   <div className="space-y-1.5">
                     {q.options.map((opt, oIdx) => {
-                      const isSelected = quizAnswers[q.id] === oIdx;
-                      const isCorrect = q.correct === oIdx;
+                      const isSel = quizAnswers[q.id] === oIdx;
+                      const isCorr = q.correct === oIdx;
+                      let btnCls = 'bg-muted/40 border-border text-foreground hover:bg-muted';
+                      if (quizSubmitted) {
+                        if (isCorr) btnCls = 'bg-emerald-500/20 border-emerald-500 text-emerald-600 font-black';
+                        else if (isSel) btnCls = 'bg-red-500/20 border-red-500 text-red-600';
+                      } else if (isSel) {
+                        btnCls = 'bg-emerald-600 text-white font-bold';
+                      }
+
                       return (
                         <button
                           key={oIdx}
+                          disabled={quizSubmitted}
                           onClick={() => setQuizAnswers((prev) => ({ ...prev, [q.id]: oIdx }))}
-                          className={`w-full p-2.5 rounded-xl border text-left font-medium transition-all ${
-                            isSelected
-                              ? quizSubmitted
-                                ? isCorrect
-                                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold'
-                                  : 'bg-red-500/20 border-red-500 text-red-700'
-                                : 'bg-emerald-500/10 border-emerald-500 text-foreground font-bold'
-                              : 'bg-card border-border hover:bg-muted/60 text-muted-foreground'
-                          }`}
+                          className={`w-full text-left p-2.5 rounded-xl border text-xs transition-all ${btnCls}`}
                         >
                           {opt}
                         </button>
@@ -963,25 +993,24 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
               ))}
             </div>
 
-            <div className="pt-4 border-t border-border flex items-center justify-between">
+            {!quizSubmitted ? (
               <button
                 onClick={() => {
                   setQuizSubmitted(true);
-                  toast.success('Diagnostic Drill Submitted!');
+                  toast.success('Quiz submitted! Review your score above.');
                 }}
-                className="px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg"
+                className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg"
               >
-                {quizSubmitted ? 'Score Verified ✓' : 'Submit Answers'}
+                Submit Drill Answers
               </button>
-
+            ) : (
               <button
                 onClick={() => setShowPostQuiz(false)}
-                className="text-xs font-bold text-muted-foreground hover:text-foreground"
+                className="w-full py-3 rounded-2xl bg-muted text-foreground font-black text-xs hover:bg-muted/80"
               >
-                Close &amp; Return to Video
+                Done &amp; Continue Watching
               </button>
-            </div>
-
+            )}
           </div>
         </div>
       )}

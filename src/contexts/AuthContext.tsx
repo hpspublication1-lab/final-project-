@@ -127,6 +127,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           $email: session.user.email,
           $name: session.user.user_metadata?.full_name,
         });
+
+        // Strip long OAuth tokens/code from browser address bar
+        if (
+          typeof window !== 'undefined' &&
+          (window.location.hash.includes('access_token=') ||
+            window.location.search.includes('code=') ||
+            window.location.search.includes('error='))
+        ) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       } else {
         setSession(null);
         setUser(null);

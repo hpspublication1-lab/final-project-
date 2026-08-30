@@ -9,7 +9,7 @@ import {
   User, ChevronLeft, ChevronRight, Sun, Moon, Swords, AlertTriangle, LogOut,
   ClipboardList, Bot, Sparkles, Users, CheckCheck, X, Menu, Home, Trophy,
   Layers, MessageCircleQuestion, Bookmark, Lock, Languages, Cpu, TrendingUp,
-  GraduationCap, Stethoscope, Mic, Headphones, FileEdit, Search, Share2, Code, Terminal, Target
+  GraduationCap, Stethoscope, Mic, Headphones, FileEdit, Search, Share2, Code, Terminal, Target, HelpCircle
 } from 'lucide-react';
 
 // Nav items that require a paid/prebook plan (see PremiumGate). Free users get
@@ -45,49 +45,23 @@ function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
     case 'see_class_10':
       return [
         {
-          label: 'SEE Class 10 Overview',
-          key: 'group-see-home',
+          label: 'Core Learning System',
+          key: 'group-see-core',
           items: [
-            { label: 'SEE Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'GPA Tracker & Stats' },
-            { label: 'Study Schedule', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily revision tasks' },
-            { label: 'Ask Teacher', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask subject teachers' },
+            { label: '🏠 Home', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Overview & Daily Plan' },
+            { label: '📚 Learn (Subjects)', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Science, Math, Opt Math...' },
+            { label: '🧠 Practice (1-10M)', href: '/see/question-bank', icon: HelpCircle, key: 'nav-see-qbank', badge: '1-10M', desc: 'Questions & Solutions' },
+            { label: '📝 Tests (Mock Exams)', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Timed NEB Model Papers' },
           ],
         },
         {
-          label: 'Class 10 Syllabus',
-          key: 'group-see-syllabus',
+          label: 'Student Workspace',
+          key: 'group-see-workspace',
           items: [
-            { label: '5 Core Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Science, Math, Opt Math...' },
-            { label: 'Video Classes', href: '/see', icon: Video, key: 'nav-see-videos', badge: 'HD', desc: 'Chapter-wise lectures' },
-            { label: 'Revision Cards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Formula sheets' },
-            { label: 'Class 10 Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Batch enrollments' },
-          ],
-        },
-        {
-          label: 'Board Exam Preparation',
-          key: 'group-see-exams',
-          items: [
-            { label: 'AI Subjective Grading', href: '/practice/subjective', icon: Sparkles, key: 'nav-subjective', badge: 'AI', desc: 'Handwritten answer check' },
-            { label: 'NEB Model Papers', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: '10-Year Question Sets' },
-            { label: 'Objective Practice', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Unit-wise test drills' },
-          ],
-        },
-        {
-          label: 'AI Study Assistant',
-          key: 'group-see-ai',
-          items: [
-            { label: 'SEE AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Math & Science solver' },
-            { label: 'Question Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Create practice questions' },
-            { label: 'Weakness Fixer', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Fix exam weak spots' },
-          ],
-        },
-        {
-          label: 'My Progress',
-          key: 'group-see-progress',
-          items: [
-            { label: 'Rankings', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Batch rankings' },
-            { label: 'Saved Notes', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Bookmarked questions' },
-            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
+            { label: '🏫 My Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'English & Nepali Medium' },
+            { label: '🔥 Fix Mistakes', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Review missed questions' },
+            { label: '🔖 Bookmarks', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions & formulas' },
+            { label: '🤖 AI Answer Marker', href: '/practice/subjective', icon: Sparkles, key: 'nav-subjective', badge: 'AI', desc: 'Handwritten check' },
           ],
         },
       ];

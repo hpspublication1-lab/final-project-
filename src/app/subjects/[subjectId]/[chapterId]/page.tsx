@@ -1,17 +1,18 @@
-import React from 'react';
-import type { Metadata } from 'next';
-import ChapterDetailClient from './components/ChapterDetailClient';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Chapter Detail — Samyak CEE Mastery',
-  description: 'Study chapter topics, watch videos, and practice MCQs for CEE 2026.',
-};
+import React, { use } from 'react';
+import CanonicalChapterHub from '@/components/see/CanonicalChapterHub';
 
 interface PageProps {
   params: Promise<{ subjectId: string; chapterId: string }>;
 }
 
-export default async function ChapterDetailPage({ params }: PageProps) {
-  const { subjectId, chapterId } = await params;
-  return <ChapterDetailClient subjectId={subjectId} chapterId={chapterId} />;
+export default function ChapterDetailPage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  return (
+    <CanonicalChapterHub
+      subjectId={resolvedParams.subjectId}
+      chapterId={resolvedParams.chapterId}
+    />
+  );
 }

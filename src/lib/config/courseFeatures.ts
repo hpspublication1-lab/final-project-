@@ -101,10 +101,10 @@ export const COURSE_PORTAL_CONFIGS: Record<CanonicalCourseId, CoursePortalConfig
       { id: 'social', name: 'Social Studies & Life Skills', icon: '🌍', chaptersCount: 18, weightage: '100 Marks', color: 'text-orange-500' },
     ],
     quickActions: [
+      { key: 'qa-qbank', label: 'Question Bank (1-4M)', desc: '1, 2, 3, 4 Marks with solutions', href: '/see/question-bank', iconName: 'HelpCircle', badge: '1,2,3,4M' },
+      { key: 'qa-digest', label: 'Digest & Formula Bank', desc: 'Download capsules & formula books', href: '/see/question-bank', iconName: 'FileText', badge: 'PDF DIGEST' },
       { key: 'qa-subjective', label: 'AI Handwritten Grading', desc: 'Instant photo check with step marks', href: '/practice/subjective', iconName: 'Sparkles', badge: 'AI RUBRIC' },
       { key: 'qa-model-papers', label: '10-Year Model Sets', desc: 'NEB past question solutions', href: '/mock-tests', iconName: 'FileText', badge: 'SOLVED' },
-      { key: 'qa-notes', label: 'Formulas & Chapter PDFs', desc: 'Quick revision sheets', href: '/subjects', iconName: 'BookOpen' },
-      { key: 'qa-mcq', label: 'Class 10 MCQ Practice', desc: 'Chapter-wise test drills', href: '/practice', iconName: 'Zap' },
     ],
     announcements: [
       { id: 'a-1', title: 'NEB Class 10 Model Examination Schedule Announced', date: 'Session 2082/2083', tag: 'NEB Routine', important: true },
