@@ -260,10 +260,10 @@ export default function HeroSection() {
 
   return (
     <section className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
-      {/* Background Gradient & Animated Luxury Glow Orbs */}
+      {/* Background Gradient & Subtle Ambient Glow */}
       <div className="absolute inset-0 gradient-hero" />
-      <div className="absolute top-[-140px] right-[-140px] w-[700px] h-[700px] blob-primary opacity-60 pointer-events-none animate-pulse-glow" />
-      <div className="absolute bottom-[-140px] left-[-140px] w-[550px] h-[550px] blob-accent opacity-40 pointer-events-none" />
+      <div className="absolute top-[-100px] right-[-100px] w-[600px] h-[600px] blob-primary opacity-40 pointer-events-none" />
+      <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] blob-accent opacity-30 pointer-events-none" />
 
       <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
@@ -272,13 +272,13 @@ export default function HeroSection() {
           <div className="lg:col-span-7 space-y-6 animate-fade-in">
             
             {/* Small Label */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-black uppercase tracking-wider shadow-xs">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider shadow-xs">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               <span>SAMYAK TUTOR</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-6xl font-black text-foreground tracking-tight leading-[1.08]">
+            <h1 className="text-4xl sm:text-6xl font-extrabold text-foreground tracking-tight leading-[1.08]">
               Learn Smarter.<br />
               <span className="text-gradient-primary">
                 Score Higher.
@@ -287,72 +287,78 @@ export default function HeroSection() {
 
             {/* Supporting Line */}
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl font-medium">
-              Courses, practice, tests, notes and AI-powered learning — all in one place.
+              Courses, practice questions, mock tests, chapter notes, and 24/7 AI-powered learning — all unified in one seamless platform.
             </p>
 
             {/* 2 Clear CTAs */}
             <div className="flex flex-wrap gap-4 pt-2 items-center">
               <Link
                 href="/login?mode=signup"
-                className="btn-primary gap-2.5 text-sm sm:text-base py-3.5 px-8 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all font-black rounded-2xl"
+                className="btn-primary group gap-2.5 text-sm sm:text-base py-3.5 px-8 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all font-bold rounded-2xl"
               >
                 Start Learning
-                <ArrowRight size={18} />
+                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/courses"
-                className="btn-secondary gap-2 text-sm sm:text-base py-3.5 px-7 font-bold border-border hover:border-primary/40 hover:bg-card rounded-2xl"
+                className="btn-secondary gap-2 text-sm sm:text-base py-3.5 px-7 font-bold border-border/80 hover:border-primary/40 hover:bg-card rounded-2xl transition-all"
               >
                 Explore Programs
               </Link>
             </div>
 
             {/* Core Value Pillars */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border/60 max-w-lg">
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border/60 max-w-lg">
               <div className="space-y-0.5">
-                <p className="text-sm font-extrabold text-foreground">Verified</p>
-                <p className="text-xs text-muted-foreground">Master Courses</p>
+                <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-primary shrink-0" /> Verified
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">Master Courses</p>
               </div>
               <div className="space-y-0.5">
-                <p className="text-sm font-extrabold text-foreground">Immediate</p>
-                <p className="text-xs text-muted-foreground">MCQ Practice &amp; Tests</p>
+                <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <Zap size={14} className="text-amber-500 shrink-0" /> Immediate
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">MCQs &amp; Tests</p>
               </div>
               <div className="space-y-0.5">
-                <p className="text-sm font-extrabold text-foreground">24/7 AI</p>
-                <p className="text-xs text-muted-foreground">Samyak Tutor Agent</p>
+                <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-primary shrink-0" /> 24/7 AI
+                </p>
+                <p className="text-xs text-muted-foreground font-medium">Tutor Assistant</p>
               </div>
             </div>
 
-            {/* Aspirants Social Proof & Live Ticker */}
+            {/* Social Proof & Live Indicator */}
             <div className="flex flex-wrap items-center gap-6 pt-2">
               <div className="flex items-center gap-3">
-                <div className="flex -space-x-3">
+                <div className="flex -space-x-2.5">
                   {['P', 'A', 'S', 'R', 'M'].map((initial, i) => (
                     <div
                       key={`avatar-${initial}-${i}`}
-                      className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center text-xs font-black text-white shadow-md transition-transform hover:scale-110 cursor-pointer"
-                      style={{ backgroundColor: ['#5A45E8','#16A36A','#8B5CF6','#2563EB','#E59A18'][i], zIndex: 5 - i }}
+                      className="w-9 h-9 rounded-full border-2 border-background flex items-center justify-center text-xs font-bold text-white shadow-md transition-transform hover:scale-110 cursor-pointer"
+                      style={{ backgroundColor: ['#5A45E8','#10B981','#8B5CF6','#3B82F6','#F59E0B'][i], zIndex: 5 - i }}
                     >
                       {initial}
                     </div>
                   ))}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1 text-warning">
+                  <div className="flex items-center gap-1 text-amber-500">
                     {[...Array(5)].map((_, idx) => (
-                      <Star key={`star-${idx}`} size={14} className="fill-warning" />
+                      <Star key={`star-${idx}`} size={14} className="fill-amber-400 text-amber-400" />
                     ))}
-                    <span className="text-xs font-black text-foreground ml-1">4.9/5</span>
+                    <span className="text-xs font-bold text-foreground ml-1">4.9/5</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                    Powered by <span className="font-bold text-foreground">15,000+ MCQs &amp; 1,200+ Notes</span>
+                    Trusted by <span className="font-semibold text-foreground">5,000+ Students</span>
                   </p>
                 </div>
               </div>
 
-              <div className="hidden sm:flex items-center gap-2 bg-success/10 border border-success/30 px-3.5 py-1.5 rounded-full text-xs font-bold text-success">
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span>24/7 AI Teachers &amp; Evaluators Active</span>
+              <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>24/7 AI Tutor Online</span>
               </div>
             </div>
           </div>
@@ -360,27 +366,27 @@ export default function HeroSection() {
           {/* Right Column (5 cols) — Interactive Widget Card */}
           <div className="lg:col-span-5 relative flex flex-col items-center">
             {/* Ambient Background Glow Ring */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary via-[#7C6BFF] to-accent rounded-3xl blur-xl opacity-40 animate-pulse pointer-events-none" />
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 via-indigo-500/20 to-accent/30 rounded-3xl blur-xl opacity-50 pointer-events-none" />
 
-            <div className="bg-card/90 backdrop-blur-2xl border border-primary/20 rounded-3xl p-6 sm:p-7 w-full max-w-md relative z-10 shadow-2xl">
+            <div className="bg-card/95 backdrop-blur-2xl border border-border/80 dark:border-white/10 rounded-3xl p-6 sm:p-7 w-full max-w-md relative z-10 shadow-xl">
               
               {/* Card Switcher Header */}
-              <div className="flex rounded-2xl bg-muted/80 p-1.5 gap-1.5 mb-6 border border-border/40">
+              <div className="flex rounded-2xl bg-muted/70 p-1.5 gap-1.5 mb-5 border border-border/50">
                 <button
                   onClick={() => setActiveTab('demo')}
-                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'demo' ? 'bg-card text-primary shadow-md border border-primary/20' : 'text-muted-foreground hover:text-foreground'
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                    activeTab === 'demo' ? 'bg-card text-primary shadow-sm border border-border/80' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <Brain size={15} className="text-primary" /> Live MCQ Demo
+                  <Brain size={14} className="text-primary" /> Live MCQ Demo
                 </button>
                 <button
                   onClick={() => setActiveTab('countdown')}
-                  className={`flex-1 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'countdown' ? 'bg-card text-foreground shadow-md border border-warning/20' : 'text-muted-foreground hover:text-foreground'
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                    activeTab === 'countdown' ? 'bg-card text-foreground shadow-sm border border-border/80' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <Zap size={15} className="text-warning" /> CEE 2026 Timer
+                  <Zap size={14} className="text-amber-500" /> CEE 2026 Timer
                 </button>
               </div>
 
@@ -388,7 +394,7 @@ export default function HeroSection() {
               {activeTab === 'demo' && (
                 <div className="space-y-4 animate-fade-in">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={`text-[11px] font-black uppercase tracking-wider ${currentMcq.badgeColor} ${currentMcq.badgeBg} px-3 py-1 rounded-lg border border-current/20 shadow-xs`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${currentMcq.badgeColor} ${currentMcq.badgeBg} px-2.5 py-1 rounded-lg border border-current/20 shadow-xs`}>
                       {currentMcq.subject}
                     </span>
 
@@ -406,26 +412,26 @@ export default function HeroSection() {
 
                       <button
                         onClick={handleNextQuestion}
-                        className="text-xs font-black text-primary flex items-center gap-1.5 hover:scale-105 active:scale-95 bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-lg transition-all border border-primary/30"
+                        className="text-xs font-bold text-primary flex items-center gap-1 hover:bg-primary/10 px-2 py-1 rounded-lg transition-all active:scale-95"
                       >
-                        <RotateCcw size={13} /> Next
+                        <RotateCcw size={12} /> Next
                       </button>
                     </div>
                   </div>
 
-                  <p className="font-extrabold text-sm sm:text-base text-foreground leading-snug pt-1">
+                  <p className="font-bold text-sm sm:text-base text-foreground leading-snug">
                     {currentMcq.question}
                   </p>
 
-                  <div className="space-y-2.5 pt-1">
+                  <div className="space-y-2 pt-1">
                     {currentMcq.options.map((opt) => {
                       const isSelected = selectedOption === opt.id;
                       const isCorrect = opt.id === currentMcq.correctId;
-                      let btnStyle = 'border-border/80 bg-card hover:bg-muted/70 text-foreground hover:border-primary/40';
+                      let btnStyle = 'border-border/80 bg-card hover:bg-muted/50 text-foreground hover:border-primary/40';
                       
                       if (selectedOption) {
-                        if (isCorrect) btnStyle = 'border-success bg-success-light text-success font-black shadow-sm';
-                        else if (isSelected && !isCorrect) btnStyle = 'border-error bg-error-light text-error font-black shadow-sm';
+                        if (isCorrect) btnStyle = 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs';
+                        else if (isSelected && !isCorrect) btnStyle = 'border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300 font-bold shadow-xs';
                         else btnStyle = 'border-border/40 opacity-40';
                       }
 
@@ -433,31 +439,31 @@ export default function HeroSection() {
                         <button
                           key={opt.id}
                           onClick={() => !selectedOption && setSelectedOption(opt.id)}
-                          className={`w-full text-left p-3.5 rounded-2xl border text-xs sm:text-sm transition-all flex items-center justify-between shadow-xs ${btnStyle}`}
+                          className={`w-full text-left p-3 rounded-xl border text-xs sm:text-sm transition-all flex items-center justify-between shadow-xs ${btnStyle}`}
                         >
-                          <span className="flex items-center gap-3">
-                            <span className="w-6 h-6 rounded-lg border border-current/30 flex items-center justify-center font-black text-xs uppercase bg-muted/40">
+                          <span className="flex items-center gap-2.5">
+                            <span className="w-5 h-5 rounded-md border border-current/30 flex items-center justify-center font-bold text-xs uppercase bg-muted/40">
                               {opt.id}
                             </span>
-                            <span className="font-semibold">{opt.text}</span>
+                            <span className="font-medium">{opt.text}</span>
                           </span>
-                          {selectedOption && isCorrect && <Check size={18} className="text-success" />}
-                          {selectedOption && isSelected && !isCorrect && <X size={18} className="text-error" />}
+                          {selectedOption && isCorrect && <Check size={16} className="text-emerald-600" />}
+                          {selectedOption && isSelected && !isCorrect && <X size={16} className="text-rose-600" />}
                         </button>
                       );
                     })}
                   </div>
 
                   {selectedOption && (
-                    <div className="p-3.5 bg-secondary/90 border border-primary/30 rounded-2xl text-xs space-y-1 animate-fade-in shadow-xs">
-                      <p className="font-black text-primary flex items-center gap-1.5">
+                    <div className="p-3 bg-secondary/80 border border-primary/20 rounded-xl text-xs space-y-1 animate-fade-in">
+                      <p className="font-bold text-primary flex items-center gap-1.5">
                         {selectedOption === currentMcq.correctId ? '✨ Correct! (+1.0 Mark)' : '❌ Incorrect (-0.25 Mark)'}
                       </p>
                       <p className="text-muted-foreground font-medium leading-relaxed">{currentMcq.explanation}</p>
                     </div>
                   )}
 
-                  <Link href="/practice" className="btn-primary w-full justify-center text-xs sm:text-sm font-black py-3.5 mt-2 rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.01] transition-all">
+                  <Link href="/practice" className="btn-primary w-full justify-center text-xs sm:text-sm font-bold py-3 mt-2 rounded-xl shadow-md shadow-primary/20 hover:scale-[1.01] transition-all">
                     Practice 15,000+ MCQs →
                   </Link>
                 </div>
@@ -467,10 +473,10 @@ export default function HeroSection() {
               {activeTab === 'countdown' && (
                 <div className="space-y-5 animate-fade-in text-center py-2">
                   <div>
-                    <span className="inline-flex items-center gap-1.5 bg-error-light text-error text-xs font-extrabold px-3 py-1 rounded-full mb-2">
-                      <span className="w-2 h-2 rounded-full bg-error animate-pulse" /> Health Sciences Exam
+                    <span className="inline-flex items-center gap-1.5 bg-rose-500/10 text-rose-600 dark:text-rose-400 text-xs font-bold px-3 py-1 rounded-full mb-2 border border-rose-500/20">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" /> Health Sciences Exam
                     </span>
-                    <h3 className="font-extrabold text-foreground text-base">CEE 2026 Countdown</h3>
+                    <h3 className="font-bold text-foreground text-base">CEE 2026 Countdown</h3>
                   </div>
 
                   <div className="flex items-center justify-center gap-2 sm:gap-2.5">
@@ -485,16 +491,16 @@ export default function HeroSection() {
 
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/20">
-                      <p className="font-black text-lg text-emerald-800 dark:text-emerald-300 tabular-nums">92%</p>
-                      <p className="text-[11px] text-muted-foreground font-semibold">Avg. Accuracy Gain</p>
+                      <p className="font-bold text-lg text-emerald-700 dark:text-emerald-300 tabular-nums">92%</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">Avg. Accuracy Gain</p>
                     </div>
                     <div className="bg-secondary rounded-xl p-3 text-center border border-primary/20">
-                      <p className="font-black text-lg text-primary tabular-nums">4.9★</p>
-                      <p className="text-[11px] text-muted-foreground font-semibold">Student Rating</p>
+                      <p className="font-bold text-lg text-primary tabular-nums">4.9★</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">Student Rating</p>
                     </div>
                   </div>
 
-                  <Link href="/login?mode=signup" className="btn-primary w-full justify-center text-xs sm:text-sm font-bold py-2.5">
+                  <Link href="/login?mode=signup" className="btn-primary w-full justify-center text-xs sm:text-sm font-bold py-3 rounded-xl shadow-md">
                     Start Learning
                   </Link>
                 </div>
@@ -502,16 +508,21 @@ export default function HeroSection() {
 
             </div>
 
-            {/* Floating Chip — Battle Arena */}
-            <div className="absolute -bottom-4 -left-3 sm:-left-5 bg-card/90 backdrop-blur-md border border-primary/20 rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-2.5 animate-float z-20">
-              <span className="w-8 h-8 rounded-lg bg-ma-light flex items-center justify-center shrink-0">
-                <Zap size={16} className="text-ma animate-pulse" />
+            {/* Clickable Floating Chip — Battle Arena */}
+            <Link
+              href="/battle-arena"
+              className="absolute -bottom-4 -left-3 sm:-left-5 bg-card/95 backdrop-blur-md border border-border hover:border-primary/40 rounded-xl px-4 py-2.5 shadow-lg flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95 cursor-pointer z-20 group"
+            >
+              <span className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                <Zap size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
               </span>
               <div>
-                <p className="text-xs font-extrabold text-foreground leading-tight">Battle Arena</p>
+                <p className="text-xs font-bold text-foreground leading-tight group-hover:text-primary transition-colors flex items-center gap-1">
+                  Battle Arena <ArrowRight size={11} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                </p>
                 <p className="text-[10px] text-muted-foreground font-medium">Real-time 2-player MCQs</p>
               </div>
-            </div>
+            </Link>
           </div>
 
         </div>

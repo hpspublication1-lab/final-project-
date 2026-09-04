@@ -41,11 +41,10 @@ export default function ProgramSwitcher({ className = '', size = 'md', onOpenMod
         <button
           type="button"
           onClick={onOpenModal}
-          className="text-[10px] font-bold text-muted-foreground hover:text-primary px-2 py-1 rounded hover:bg-muted transition-colors border-l border-border/60 ml-0.5 flex items-center gap-1"
+          className="text-[10px] font-semibold text-muted-foreground hover:text-primary px-2 py-1 rounded-md hover:bg-card transition-colors border-l border-border/60 ml-0.5 flex items-center gap-1"
           title="Switch Learning Course"
         >
           <span>5 Portals</span>
-          <span>⚡</span>
         </button>
       )}
     </div>

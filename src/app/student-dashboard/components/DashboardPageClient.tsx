@@ -237,17 +237,17 @@ export default function DashboardPageClient() {
         </div>
 
         {/* ── 2. CONTINUED LEARNING HERO CARD ──────────────────────────── */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/95 to-indigo-800 text-white p-6 sm:p-8 shadow-luxury">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-primary/95 text-white p-6 sm:p-8 shadow-xl">
           {/* Subtle background glow */}
           <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-2.5 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs text-[11px] font-black uppercase tracking-wider text-white/90">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs text-[11px] font-bold uppercase tracking-wider text-white/95">
                 <Sparkles size={13} />
                 <span>CURRENT LEARNING FOCUS · {currentProgram.badge}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
                 {activeLesson.topic}
               </h2>
               <p className="text-xs sm:text-sm text-white/80 font-medium leading-relaxed">
@@ -256,7 +256,7 @@ export default function DashboardPageClient() {
 
               {/* Progress Bar */}
               <div className="pt-2 max-w-md">
-                <div className="flex justify-between text-[11px] font-bold text-white/85 mb-1.5">
+                <div className="flex justify-between text-[11px] font-bold text-white/90 mb-1.5">
                   <span>Chapter Progress</span>
                   <span>{activeLesson.progressPct}% Completed</span>
                 </div>
@@ -273,15 +273,15 @@ export default function DashboardPageClient() {
             <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
               <Link
                 href={activeLesson.link}
-                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-white text-primary font-black text-sm rounded-2xl hover:bg-white/90 shadow-md transition-all active:scale-95"
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-white text-primary font-bold text-sm rounded-2xl hover:bg-white/90 shadow-md transition-all active:scale-95"
               >
-                <Play size={16} fill="currentColor" />
+                <Play size={15} fill="currentColor" />
                 <span>CONTINUE LEARNING</span>
                 <ArrowRight size={15} />
               </Link>
               <Link
                 href="/subjects"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-2xl border border-white/20 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-2xl border border-white/20 transition-all"
               >
                 <BookOpen size={14} />
                 <span>Browse All Subjects</span>
@@ -292,46 +292,46 @@ export default function DashboardPageClient() {
 
         {/* ── 3. TODAY'S PROGRESS 4-METRIC STRIP ───────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="card-luxury p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
+          <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <Clock size={22} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Study Time</p>
-              <p className="text-xl sm:text-2xl font-black text-foreground">{metrics.studyMinutes}m</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-foreground tabular-nums">{metrics.studyMinutes}m</p>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Active today</p>
             </div>
           </div>
 
-          <div className="card-luxury p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
+          <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
               <CheckCircle2 size={22} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Questions Solved</p>
-              <p className="text-xl sm:text-2xl font-black text-foreground">{metrics.questionsSolved}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-foreground tabular-nums">{metrics.questionsSolved}</p>
               <p className="text-[11px] text-muted-foreground font-medium mt-0.5">Across all modules</p>
             </div>
           </div>
 
-          <div className="card-luxury p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
+          <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <Target size={22} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Average Accuracy</p>
-              <p className="text-xl sm:text-2xl font-black text-foreground">{metrics.accuracy}%</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-foreground tabular-nums">{metrics.accuracy}%</p>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Target: 80%+</p>
             </div>
           </div>
 
-          <div className="card-luxury p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
+          <div className="bg-card p-4 sm:p-5 rounded-2xl border border-border/80 shadow-xs flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Flame size={22} />
             </div>
             <div>
               <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Daily Streak</p>
-              <p className="text-xl sm:text-2xl font-black text-foreground">{metrics.streak} Days</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-foreground tabular-nums">{metrics.streak} Days</p>
               <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">Keep the fire burning!</p>
             </div>
           </div>
@@ -496,7 +496,7 @@ export default function DashboardPageClient() {
 
         {/* ── 8. REVIEW / FEEDBACK BANNER ───────────────────────────────── */}
         {!reviewDismissed && (
-          <div className="relative p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-card via-card to-amber-500/10 border border-amber-500/30 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="relative p-5 sm:p-6 rounded-3xl bg-card border border-amber-500/20 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <button
               onClick={() => setReviewDismissed(true)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors"
@@ -508,12 +508,12 @@ export default function DashboardPageClient() {
             <div className="space-y-1.5 max-w-2xl pr-6">
               <div className="flex items-center gap-2">
                 <span className="text-amber-400 text-sm">★★★★★</span>
-                <span className="text-xs font-black text-foreground">
+                <span className="text-xs font-bold text-foreground">
                   How is your learning experience on Samyak Tutor, {displayName}?
                 </span>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Your feedback helps us refine the AI evaluation accuracy, chapter videos, and mock tests for fellow students across Nepal.
+                Your feedback helps us refine AI evaluation accuracy, chapter videos, and mock tests for fellow students across Nepal.
               </p>
             </div>
 
@@ -522,7 +522,7 @@ export default function DashboardPageClient() {
                 href="https://www.trustpilot.com/evaluate/samyakcee.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition-all"
+                className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <span>Rate on Trustpilot</span>
                 <ArrowRight size={13} />
@@ -531,7 +531,7 @@ export default function DashboardPageClient() {
                 href={SUPPORT_CONFIG.googleReviewLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                className="flex-1 md:flex-none px-4 py-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground border border-border/80 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all"
               >
                 <span>Rate on Google</span>
               </a>

@@ -115,19 +115,19 @@ export default function SectorsShowcase() {
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
-          <span className="text-[10px] font-black uppercase tracking-widest text-primary font-mono bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-primary bg-primary/10 px-3.5 py-1 rounded-full border border-primary/20">
             PROGRAMS IN SAMYAK TUTOR
           </span>
-          <h2 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
             Choose Your Learning Track
           </h2>
-          <p className="text-muted-foreground text-xs sm:text-base font-medium max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-sm sm:text-base font-medium max-w-2xl mx-auto">
             Everything you need — structured syllabus, practice drills, mock exams, and AI tutoring — seamlessly unified in one place.
           </p>
         </div>
 
         {/* 5 Cards Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4.5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           {SECTOR_CARDS.map((sec) => {
             const Icon = sec.icon;
             const enrolled = isEnrolledIn(sec.id);
@@ -135,22 +135,22 @@ export default function SectorsShowcase() {
             return (
               <div
                 key={sec.id}
-                className={`relative bg-gradient-to-b ${sec.gradient} border border-border rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group`}
+                className={`relative bg-card border border-border/80 hover:border-primary/40 dark:border-white/10 dark:hover:border-primary/40 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group`}
               >
-                <div className="space-y-3.5">
+                <div className="space-y-4">
                   {/* Badge & Icon */}
                   <div className="flex items-center justify-between">
-                    <div className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
-                      <Icon size={20} className="text-foreground" />
+                    <div className="w-12 h-12 rounded-2xl bg-muted/60 border border-border/60 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                      <Icon size={22} className="text-foreground group-hover:text-primary transition-colors" />
                     </div>
-                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${sec.badgeColor}`}>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${sec.badgeColor}`}>
                       {sec.badge}
                     </span>
                   </div>
 
                   {/* Title & Description */}
                   <div>
-                    <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors leading-snug">
+                    <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors leading-snug">
                       {sec.title}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-3">
@@ -159,24 +159,24 @@ export default function SectorsShowcase() {
                   </div>
 
                   {/* Access Status Banner */}
-                  <div className="py-2 px-3 rounded-xl bg-card/70 border border-border/50 text-[11px] font-bold flex items-center justify-between">
+                  <div className="py-2 px-3 rounded-xl bg-muted/40 border border-border/50 text-[11px] font-semibold flex items-center justify-between">
                     <span className="text-muted-foreground">Status:</span>
                     {enrolled ? (
-                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                         <CheckCircle2 size={12} /> Enrolled
                       </span>
                     ) : (
-                      <span className="text-muted-foreground font-semibold">
-                        Available
+                      <span className="text-muted-foreground font-medium flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Available
                       </span>
                     )}
                   </div>
 
                   {/* Key Features */}
-                  <ul className="space-y-1 pt-1">
+                  <ul className="space-y-1.5 pt-1">
                     {sec.features.map((f, idx) => (
-                      <li key={idx} className="flex items-center gap-1.5 text-[11px] font-medium text-foreground">
-                        <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                      <li key={idx} className="flex items-center gap-2 text-[11px] font-medium text-foreground">
+                        <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
                         <span className="truncate">{f}</span>
                       </li>
                     ))}
@@ -184,16 +184,16 @@ export default function SectorsShowcase() {
                 </div>
 
                 {/* Footer / CTA */}
-                <div className="pt-4 mt-5 border-t border-border/50 flex flex-col gap-2">
+                <div className="pt-4 mt-5 border-t border-border/60 flex flex-col gap-2.5">
                   <div className="flex items-baseline justify-between">
-                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Price</span>
-                    <span className="text-sm font-black text-foreground">{sec.price}</span>
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Full Course</span>
+                    <span className="text-base font-extrabold text-foreground">{sec.price}</span>
                   </div>
 
                   <Link
                     href={sec.link}
                     onClick={() => setProgram(sec.id)}
-                    className={`w-full py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-sm transition-all ${sec.btnBg}`}
+                    className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${sec.btnBg}`}
                   >
                     {enrolled ? (
                       <>

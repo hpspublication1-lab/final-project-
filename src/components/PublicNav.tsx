@@ -168,7 +168,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
               >
                 <span>{item.label}</span>
                 {item.badge && (
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                     {item.badge}
                   </span>
                 )}
