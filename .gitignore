@@ -45,3 +45,5 @@ turbo/
 
 .vercel
 .env*
+
+DEPLOY-NOW.bat
