@@ -350,6 +350,50 @@ export default function LeaderboardClient({ currentUserId }: LeaderboardClientPr
               </div>
             )}
 
+            {/* 🥇 🥈 🥉 TOP 3 PODIUM */}
+            {entries.length >= 3 && (
+              <div className="bg-gradient-to-br from-card via-card to-amber-500/5 border border-amber-500/30 rounded-3xl p-6 shadow-sm space-y-4">
+                <span className="text-[10px] font-black uppercase text-amber-600 font-mono tracking-wider block text-center">
+                  👑 SAMYAK CEE NATIONAL CHAMPIONS PODIUM
+                </span>
+                
+                <div className="grid grid-cols-3 gap-3 items-end max-w-lg mx-auto pt-2 text-center">
+                  {/* 🥈 #2 Silver */}
+                  <div className="space-y-2 p-3 rounded-2xl bg-card border border-border/80 shadow-xs">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-400 flex items-center justify-center text-slate-500 font-black text-lg mx-auto">
+                      🥈
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-foreground block truncate">{entries[1]?.full_name || 'Priya K.'}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono block">#2 · {entries[1]?.battle_rating || 1810} ELO</span>
+                    </div>
+                  </div>
+
+                  {/* 🥇 #1 Gold */}
+                  <div className="space-y-2 p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/40 shadow-md transform -translate-y-2">
+                    <div className="w-14 h-14 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-amber-500 font-black text-2xl mx-auto">
+                      🥇
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-foreground block truncate">{entries[0]?.full_name || 'Aarav S.'}</span>
+                      <span className="text-xs text-amber-600 font-mono font-bold block">#1 · {entries[0]?.battle_rating || 1842} ELO</span>
+                    </div>
+                  </div>
+
+                  {/* 🥉 #3 Bronze */}
+                  <div className="space-y-2 p-3 rounded-2xl bg-card border border-border/80 shadow-xs">
+                    <div className="w-12 h-12 rounded-full bg-amber-700/10 border-2 border-amber-700/40 flex items-center justify-center text-amber-700 font-black text-lg mx-auto">
+                      🥉
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-foreground block truncate">{entries[2]?.full_name || 'Riya M.'}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono block">#3 · {entries[2]?.battle_rating || 1774} ELO</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Full Rankings Table */}
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-border flex items-center justify-between">

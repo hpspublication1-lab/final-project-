@@ -8,6 +8,7 @@ import { TrialProvider } from '@/contexts/TrialContext';
 import AnimatePresenceProvider from '@/components/AnimatePresenceProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import TrialBannerAndModals from '@/components/TrialBannerAndModals';
+import { getOrganizationSchema, getWebSiteSchema } from '@/lib/seo/structuredData';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -36,23 +37,22 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://samyakcee.com'),
-  title: 'Samyak Guru — AI Education Platform (SEE, CEE, IELTS, Digital Marketing, AI)',
+  title: 'Samyak Tutor — Learn Smarter. Score Higher.',
   description:
-    'Samyak Guru is Nepal\'s flagship AI Education Platform. Prepare for CEE Medical Entrance, SEE Class 10 Board Exams, IELTS Band 8.5+ Mastery, Digital Marketing, and AI Neural Tutoring with 24/7 AI Teachers.',
+    'Samyak Tutor is a unified education platform. Courses, practice questions, mock tests, chapter notes, and 24/7 AI-powered learning — all in one place.',
   keywords: [
-    'Samyak Guru',
+    'Samyak Tutor',
+    'Samyak Education',
     'CEE Medical Entrance Preparation Nepal',
     'SEE Class 10 Online Classes',
-    'IELTS Speaking Engine Nepal',
-    'IELTS Preparation Class Nepal',
+    'IELTS Preparation Nepal',
     'Digital Marketing Course Nepal',
     'AI Education Platform Nepal',
-    'Samyak CEE',
     'MEC Entrance Exam',
   ],
-  authors: [{ name: 'Samyak Guru Team', url: 'https://samyakcee.com' }],
-  creator: 'Samyak Guru',
-  publisher: 'Samyak Guru',
+  authors: [{ name: 'Samyak Tutor Team', url: 'https://samyakcee.com' }],
+  creator: 'Samyak Tutor',
+  publisher: 'Samyak Tutor',
   manifest: '/manifest.json',
   icons: {
     icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
@@ -65,24 +65,24 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://samyakcee.com',
-    siteName: 'Samyak Guru — AI Education Platform',
-    title: 'Samyak Guru — AI Education Platform',
+    siteName: 'Samyak Tutor — Education Platform',
+    title: 'Samyak Tutor — Learn Smarter. Score Higher.',
     description:
-      'Prepare for CEE Medical Entrance, SEE Class 10 Board Exams, IELTS Band 8.5+ Mastery, and Digital Marketing with 24/7 AI Teachers.',
+      'Courses, practice, tests, notes, and AI-powered learning — all in one place.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Samyak Guru AI Education Platform — CEE, SEE, IELTS, Digital Marketing & AI',
+        alt: 'Samyak Tutor — One Unified Education Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Samyak Guru — AI Education Platform',
+    title: 'Samyak Tutor — Learn Smarter. Score Higher.',
     description:
-      'Prepare for CEE Medical Entrance, SEE Class 10 Board Exams, IELTS Band 8.5+ Mastery with 24/7 AI Teachers.',
+      'Courses, practice, tests, notes, and AI-powered learning — all in one place.',
     images: ['/og-image.png'],
   },
   robots: {
@@ -102,22 +102,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'Samyak Guru',
-              url: 'https://samyakcee.com',
-              logo: 'https://samyakcee.com/assets/images/app_logo.png',
-              description: 'Nepal\'s flagship AI Education Platform (SEE, CEE, IELTS, Digital Marketing, AI)',
-              sameAs: [
-                'https://samyakcee.com',
-              ],
-              contactPoint: {
-                '@type': 'ContactPoint',
-                contactType: 'Customer Support',
-                email: 'support@soumyace.com',
-              },
-            }),
+            __html: JSON.stringify([getOrganizationSchema(), getWebSiteSchema()]),
           }}
         />
       </head>

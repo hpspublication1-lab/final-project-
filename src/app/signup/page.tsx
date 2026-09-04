@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function SignUpPage() {
-  return <AuthPageClient />;
+  return <AuthPageClient initialMode="signup" />;
 }

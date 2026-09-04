@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useProgram, CanonicalCourseId } from '@/contexts/ProgramContext';
 import { useEntitlements } from '@/lib/hooks/useEntitlements';
-import { Stethoscope, GraduationCap, Languages, Cpu, TrendingUp, ArrowRight, Sparkles, CheckCircle2, Users, BookOpen, Lock, Play } from 'lucide-react';
+import { Stethoscope, GraduationCap, Languages, Cpu, TrendingUp, ArrowRight, Sparkles, CheckCircle2, Play } from 'lucide-react';
 
 interface SectorCard {
   id: CanonicalCourseId;
@@ -25,22 +25,6 @@ interface SectorCard {
 
 const SECTOR_CARDS: SectorCard[] = [
   {
-    id: 'see_class_10',
-    title: 'SEE — Class 10 Board Exam',
-    badge: 'Grade 10 NEB',
-    badgeColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-    icon: GraduationCap,
-    gradient: 'from-emerald-500/10 via-card to-background hover:border-emerald-500/50',
-    btnBg: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20',
-    students: '18,500+',
-    courses: '8 Batches',
-    price: 'Rs 2,990',
-    description: 'Compulsory Science, Math, Opt Math, Social & English solutions with 10-year question bank and AI subjective grading.',
-    features: ['NEB 10-Year Question Bank', 'AI Handwritten Answer Checker', 'Class 10 Video Classes'],
-    link: '/student-dashboard',
-    sku: 'see-class-10-board-topper-batch',
-  },
-  {
     id: 'cee_medical',
     title: 'CEE — Medical Entrance',
     badge: 'MBBS / BDS Target',
@@ -53,13 +37,29 @@ const SECTOR_CARDS: SectorCard[] = [
     price: 'Rs 2,299',
     description: '15,000+ MCQs, sub-chapter high-yield notes, 200-Q timed MEC mock tests, and real-time 2-player battle arena.',
     features: ['15,000+ Topicwise MCQs', 'Real-Time 2-Player Battle Arena', 'MEC 200-Q Full Mock Exams'],
-    link: '/student-dashboard',
-    sku: 'cee-mbbs-mastery-2026',
+    link: '/cee-medical-entrance',
+    sku: 'student-yearly',
+  },
+  {
+    id: 'see_class_10',
+    title: 'SEE — Class 10 Board Exam',
+    badge: 'Grade 10 NEB',
+    badgeColor: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    icon: GraduationCap,
+    gradient: 'from-emerald-500/10 via-card to-background hover:border-emerald-500/50',
+    btnBg: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-600/20',
+    students: '18,500+',
+    courses: '8 Batches',
+    price: 'Rs 2,490',
+    description: 'Compulsory Science, Math, Opt Math, Social & English solutions with 10-year question bank and AI subjective grading.',
+    features: ['NEB 10-Year Question Bank', 'AI Handwritten Answer Checker', 'Class 10 Video Classes'],
+    link: '/see-class-10',
+    sku: 'student-yearly',
   },
   {
     id: 'ielts',
     title: 'IELTS & English Language',
-    badge: 'Target Band 8.0+',
+    badge: 'Target Band 7.5+',
     badgeColor: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
     icon: Languages,
     gradient: 'from-amber-500/10 via-card to-background hover:border-amber-500/50',
@@ -67,10 +67,10 @@ const SECTOR_CARDS: SectorCard[] = [
     students: '12,200+',
     courses: '6 Batches',
     price: 'Rs 1,490',
-    description: 'IELTS Academic & GT Band 8.0+ mastery, interactive AI speaking simulator, writing essay correction, and listening drills.',
-    features: ['AI Speaking Cue Card Evaluator', 'IELTS Writing Task 1 & 2 Scoring', 'PTE & CEFR Fluency Drills'],
-    link: '/student-dashboard',
-    sku: 'english-ielts-target-8-mastery',
+    description: 'IELTS Academic & GT Band 7.5+ mastery, interactive AI speaking simulator, writing essay correction, and listening drills.',
+    features: ['AI Speaking Cue Card Evaluator', 'IELTS Writing Task 1 & 2 Scoring', 'Speed Reading & Audio Drills'],
+    link: '/ielts-preparation',
+    sku: 'crash-course',
   },
   {
     id: 'digital_marketing',
@@ -83,15 +83,15 @@ const SECTOR_CARDS: SectorCard[] = [
     students: '14,600+',
     courses: '7 Batches',
     price: 'Rs 1,990',
-    description: 'Master Facebook/Instagram Ads, TikTok viral short-form growth, SEO optimization, copy funnels, and freelancing.',
-    features: ['Meta Ads High-ROAS Playbook', 'TikTok Viral Short Hooks', '100+ Ad Swipe File Templates'],
-    link: '/student-dashboard',
-    sku: 'digital-marketing-canva-freelancing',
+    description: 'Master Facebook/Instagram Ads, Google Ads, SEO optimization, copy funnels, and portfolio project freelancing.',
+    features: ['Meta Ads High-ROAS Playbook', 'SEO Keyword & Audit Framework', '5 Live Hands-On Projects'],
+    link: '/digital-marketing',
+    sku: 'crash-course',
   },
   {
     id: 'artificial_intelligence',
     title: 'Artificial Intelligence (AI)',
-    badge: 'AI & Automation',
+    badge: 'AI & Python',
     badgeColor: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
     icon: Cpu,
     gradient: 'from-purple-500/10 via-card to-background hover:border-purple-500/50',
@@ -99,30 +99,30 @@ const SECTOR_CARDS: SectorCard[] = [
     students: '16,800+',
     courses: '9 Batches',
     price: 'Rs 1,490',
-    description: 'Master ChatGPT Prompt Engineering, Python coding from scratch, No-Code AI automations, and build real-world AI applications.',
-    features: ['Interactive Prompt Studio Sandbox', '5 Real-World Python Projects', 'No-Code AI Automation Agents'],
-    link: '/student-dashboard',
-    sku: 'digital-ai-prompt-engineering',
+    description: 'Master Python coding fundamentals, LLM API integrations (OpenAI & Gemini), automation scripts, and build real-world AI tools.',
+    features: ['Python Core Syntax Mastery', 'OpenAI & Gemini API Integrations', '6 Practical Hands-On AI Projects'],
+    link: '/ai-python-course',
+    sku: 'crash-course',
   },
 ];
 
 export default function SectorsShowcase() {
   const { setProgram } = useProgram();
-  const { isEnrolledIn, loading: enrollLoading } = useEntitlements();
+  const { isEnrolledIn } = useEntitlements();
 
   return (
-    <section className="py-20 bg-muted/20 border-y border-border/60">
+    <section id="courses" className="py-20 bg-muted/20 border-y border-border/60">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
-          <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider bg-primary/10 text-primary px-4 py-1.5 rounded-full border border-primary/20 shadow-xs">
-            <Sparkles size={14} /> SOUMYA GURU PLATFORM
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary font-mono bg-primary/10 px-3 py-1 rounded-full border border-primary/20">
+            PROGRAMS IN SAMYAK TUTOR
           </span>
           <h2 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
-            Choose Your Learning Path
+            Choose Your Learning Track
           </h2>
-          <p className="text-muted-foreground text-xs sm:text-base font-medium">
-            Select your dedicated portal. Each course provides an independent, specialized learning experience tailored to your target goal.
+          <p className="text-muted-foreground text-xs sm:text-base font-medium max-w-2xl mx-auto">
+            Everything you need — structured syllabus, practice drills, mock exams, and AI tutoring — seamlessly unified in one place.
           </p>
         </div>
 
@@ -160,13 +160,13 @@ export default function SectorsShowcase() {
 
                   {/* Access Status Banner */}
                   <div className="py-2 px-3 rounded-xl bg-card/70 border border-border/50 text-[11px] font-bold flex items-center justify-between">
-                    <span className="text-muted-foreground">Access Status:</span>
+                    <span className="text-muted-foreground">Status:</span>
                     {enrolled ? (
                       <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">
-                        <CheckCircle2 size={12} /> Active Access
+                        <CheckCircle2 size={12} /> Enrolled
                       </span>
                     ) : (
-                      <span className="text-muted-foreground font-semibold flex items-center gap-1">
+                      <span className="text-muted-foreground font-semibold">
                         Available
                       </span>
                     )}
@@ -202,7 +202,7 @@ export default function SectorsShowcase() {
                       </>
                     ) : (
                       <>
-                        <span>Enter {sec.title.split('—')?.[0]?.trim() || 'Portal'}</span>
+                        <span>Explore Course</span>
                         <ArrowRight size={13} />
                       </>
                     )}
@@ -216,4 +216,3 @@ export default function SectorsShowcase() {
     </section>
   );
 }
-

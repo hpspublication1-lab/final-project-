@@ -17,6 +17,8 @@ import {
   KeyRound,
   UserPlus,
   LogIn,
+  User,
+  Phone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AppLogo from '@/components/ui/AppLogo';
@@ -44,7 +46,16 @@ function friendlyError(err: unknown): string {
     msg.includes('not enabled') ||
     msg.includes('disabled')
   ) {
-    return 'Google OAuth is missing its Client Secret in your Supabase Dashboard. Enter your Google Client ID & Secret in Supabase > Authentication > Providers > Google.';
+    return 'Google OAuth is currently updating. Please sign in directly using Email & Password or Instant OTP code below.';
+  }
+  if (
+    msg.includes('authenticationfailed') ||
+    msg.includes('sessionexchangeerror') ||
+    msg.includes('oauth') ||
+    msg.includes('redirect_uri_mismatch') ||
+    msg.includes('access_denied')
+  ) {
+    return 'Google Sign-In session could not be verified. You can log in instantly using Email & Password or Instant OTP Code below.';
   }
   if (msg.includes('expired') || msg.includes('invalid') || msg.includes('token')) {
     return 'That code or password is invalid or expired. Please try again.';
@@ -64,14 +75,20 @@ function friendlyError(err: unknown): string {
   return err instanceof Error ? err.message : 'Something went wrong. Please try again.';
 }
 
-export default function AuthPageClient() {
+interface AuthPageClientProps {
+  initialMode?: 'signin' | 'signup';
+}
+
+export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClientProps = {}) {
   const { signInWithEmailOtp, verifyEmailOtp, signIn, signUp, signInWithOAuth, resetPasswordForEmail } = useAuth();
 
   const [authMode, setAuthMode] = useState<AuthMode>('password');
-  const [passwordAction, setPasswordAction] = useState<PasswordAction>('signin');
+  const [passwordAction, setPasswordAction] = useState<PasswordAction>(initialMode);
   const [step, setStep] = useState<Step>('email');
 
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -86,6 +103,19 @@ export default function AuthPageClient() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const emailValid = EMAIL_RE.test(email.trim());
+
+  // Auto-detect signup / register from URL path or query params
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname.toLowerCase();
+    const modeParam = new URLSearchParams(window.location.search).get('mode');
+
+    if (path.includes('/signup') || path.includes('/register') || modeParam === 'signup') {
+      setPasswordAction('signup');
+    } else if (path.includes('/signin') || path.includes('/login') || modeParam === 'signin') {
+      setPasswordAction('signin');
+    }
+  }, []);
 
   useEffect(() => {
     if (step === 'email') {
@@ -207,6 +237,10 @@ export default function AuthPageClient() {
   // Handle Password Submit (SignIn or SignUp)
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (passwordAction === 'signup' && !fullName.trim()) {
+      setError('Full Name is required');
+      return;
+    }
     if (!emailValid) {
       setError('Enter a valid email address');
       return;
@@ -230,7 +264,10 @@ export default function AuthPageClient() {
         toast.success('Signed in! Redirecting…');
         await routeAfterLogin();
       } else {
-        await signUp(email.trim(), password);
+        await signUp(email.trim(), password, {
+          fullName: fullName.trim(),
+          phone: phone.trim() || undefined,
+        });
         Analytics.signedUp('password');
         toast.success('Account created! Redirecting…');
         await routeAfterLogin();
@@ -598,41 +635,101 @@ export default function AuthPageClient() {
                   /* ── Password Mode Form ──────────────────────── */
                   <form onSubmit={handlePasswordSubmit}>
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <h1 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight">
-                          {passwordAction === 'signin' ? 'Welcome Back' : 'Create Account'}
-                        </h1>
+                      {/* Segmented Auth Mode Switcher */}
+                      <div className="grid grid-cols-2 p-1 bg-muted/50 border border-border rounded-xl mb-5">
                         <button
                           type="button"
                           onClick={() => {
-                            setPasswordAction(passwordAction === 'signin' ? 'signup' : 'signin');
+                            setPasswordAction('signin');
                             setError(null);
                           }}
-                          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                          className={`py-2 text-xs font-black rounded-lg transition-all ${
+                            passwordAction === 'signin'
+                              ? 'bg-card text-primary shadow-sm border border-border/40'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
                         >
-                          {passwordAction === 'signin' ? (
-                            <>
-                              <UserPlus size={13} />
-                              New user? Sign up
-                            </>
-                          ) : (
-                            <>
-                              <LogIn size={13} />
-                              Existing user? Sign in
-                            </>
-                          )}
+                          Sign In
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPasswordAction('signup');
+                            setError(null);
+                          }}
+                          className={`py-2 text-xs font-black rounded-lg transition-all ${
+                            passwordAction === 'signup'
+                              ? 'bg-primary text-white shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          Create Account
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between mb-1">
+                        <h1 className="text-xl sm:text-2xl font-extrabold text-foreground leading-tight">
+                          {passwordAction === 'signin' ? 'Welcome Back' : 'Create Student Account'}
+                        </h1>
                       </div>
                       <p className="text-xs text-muted-foreground mb-4">
                         {passwordAction === 'signin'
                           ? 'Enter your email and password to log into your account.'
-                          : 'Set up your email and password to create a new student account.'}
+                          : 'Set up your name, email, and password to create a new Samyak CEE student account.'}
                       </p>
 
                       <div className="space-y-4">
+                        {/* Registration Extra Fields: Full Name & Phone Number */}
+                        {passwordAction === 'signup' && (
+                          <>
+                            <div>
+                              <label htmlFor="auth-fullname" className="block text-xs font-bold text-foreground uppercase tracking-wider mb-1.5">
+                                Full Name <span className="text-error">*</span>
+                              </label>
+                              <div className="relative">
+                                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                  id="auth-fullname"
+                                  type="text"
+                                  autoComplete="name"
+                                  placeholder="e.g. Aazam Ali"
+                                  value={fullName}
+                                  onChange={(e) => {
+                                    setFullName(e.target.value);
+                                    setError(null);
+                                  }}
+                                  className={`input-field pl-9 ${error && !fullName.trim() ? 'border-error' : ''}`}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label htmlFor="auth-phone" className="block text-xs font-bold text-foreground uppercase tracking-wider mb-1.5">
+                                Phone / WhatsApp Number <span className="text-[10px] text-muted-foreground font-normal">(Optional for updates)</span>
+                              </label>
+                              <div className="relative">
+                                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <input
+                                  id="auth-phone"
+                                  type="tel"
+                                  inputMode="tel"
+                                  autoComplete="tel"
+                                  placeholder="+977 98XXXXXXXX"
+                                  value={phone}
+                                  onChange={(e) => {
+                                    setPhone(e.target.value);
+                                    setError(null);
+                                  }}
+                                  className="input-field pl-9"
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+
                         <div>
                           <label htmlFor="password-email" className="block text-xs font-bold text-foreground uppercase tracking-wider mb-1.5">
-                            Email address
+                            Email address <span className="text-error">*</span>
                           </label>
                           <div className="relative">
                             <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -656,7 +753,7 @@ export default function AuthPageClient() {
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
                             <label htmlFor="auth-password" className="block text-xs font-bold text-foreground uppercase tracking-wider">
-                              Password
+                              Password <span className="text-error">*</span>
                             </label>
                             {passwordAction === 'signin' && (
                               <button
@@ -711,7 +808,7 @@ export default function AuthPageClient() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="btn-primary w-full justify-center py-3 text-base font-bold shadow-md mt-6 disabled:opacity-60"
+                        className="btn-primary w-full justify-center py-3.5 text-base font-extrabold shadow-md mt-6 disabled:opacity-60"
                       >
                         {loading ? (
                           <>
@@ -720,7 +817,7 @@ export default function AuthPageClient() {
                           </>
                         ) : (
                           <>
-                            {passwordAction === 'signin' ? 'Sign In' : 'Create Account'}
+                            {passwordAction === 'signin' ? 'Sign In to Dashboard' : 'Create Free Account'}
                             <ArrowRight size={18} />
                           </>
                         )}

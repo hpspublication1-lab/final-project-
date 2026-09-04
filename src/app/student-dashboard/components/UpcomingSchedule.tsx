@@ -10,7 +10,7 @@ export default function UpcomingSchedule() {
       <div className="flex items-center justify-between mb-3">
         <div>
           <p className="text-sm font-extrabold text-foreground">Interactive Live Classes</p>
-          <p className="text-xs text-muted-foreground mt-0.5 font-medium">Samyak Guru Mobile App</p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-medium">Samyak Tutor Mobile App</p>
         </div>
         <Link href="/app-feature?feature=live-classes" className="text-xs text-primary font-bold hover:underline flex items-center gap-0.5">
           Open App <ArrowRight size={11} />
@@ -22,7 +22,7 @@ export default function UpcomingSchedule() {
           <Smartphone size={22} className="text-primary" />
         </div>
         <h4 className="text-sm font-extrabold text-foreground mb-1">
-          Stream Live on Samyak Guru App
+          Stream Live on Samyak Tutor App
         </h4>
         <p className="text-xs text-muted-foreground mb-4 max-w-xs leading-relaxed font-medium">
           Interactive HD live classes, real-time polling, Q&amp;A, and mentor chat on Android &amp; iOS.
@@ -32,7 +32,7 @@ export default function UpcomingSchedule() {
           href="/app-feature?feature=live-classes"
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-dark text-white text-xs font-extrabold rounded-xl shadow-md shadow-primary/25 transition-all active:scale-95"
         >
-          <Download size={13} /> Get Samyak Guru App
+          <Download size={13} /> Get Samyak Tutor App
         </Link>
       </div>
     </div>

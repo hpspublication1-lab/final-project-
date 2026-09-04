@@ -15,7 +15,7 @@ export async function GET() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+      return NextResponse.json({ authenticated: false, user: null }, { status: 200 });
     }
 
     const admin = createAdminClient();

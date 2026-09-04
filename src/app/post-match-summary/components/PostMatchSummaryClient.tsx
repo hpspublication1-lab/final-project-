@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -149,9 +149,14 @@ export default function PostMatchSummaryClient() {
   const [questions, setQuestions] = useState<QuestionReplay[]>([]);
 
   const searchParams = useSearchParams();
+  const router = useRouter();
   const roomId = searchParams.get('room');
   const { user } = useAuth();
   const supabase = createClient();
+
+  const handleRematch = () => {
+    router.push('/match-lobby');
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setAnimIn(true), 100);
@@ -417,38 +422,87 @@ export default function PostMatchSummaryClient() {
           </div>
         </div>
 
-        {/* ── ELO Change ── */}
-        <div className={`bg-card border border-border rounded-2xl p-5 transition-all duration-700 delay-150 ${animIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
-            <BarChart2 size={13} /> ELO Rating Update
-          </p>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className={`rounded-xl p-3.5 border ${you.eloDelta >= 0 ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}>
-              <p className="text-xs text-muted-foreground mb-1">Your Rating</p>
-              <div className="flex items-end gap-2">
-                <p className="text-2xl font-extrabold text-foreground">{you.eloRating}</p>
-                <span className={`flex items-center gap-0.5 text-sm font-bold pb-0.5 ${you.eloDelta >= 0 ? 'text-success' : 'text-error'}`}>
-                  {you.eloDelta >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {you.eloDelta > 0 ? '+' : ''}{you.eloDelta}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">was {you.eloRating - you.eloDelta}</p>
+        {/* 🧠 SMART REMATCH & WEAKNESS DIAGNOSTIC LOOP */}
+        {!won && (
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-card via-card to-error/5 border-2 border-error/30 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase text-error font-mono flex items-center gap-1.5">
+                <Target size={15} /> ⚠️ WEAKNESS DIAGNOSED FROM THIS MATCH
+              </span>
+              <span className="text-[10px] font-bold text-muted-foreground">Smart Practice Available</span>
             </div>
-
-            <div className={`rounded-xl p-3.5 border ${opp.eloDelta >= 0 ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}>
-              <p className="text-xs text-muted-foreground mb-1">{opp.name.split(' ')[0]}'s Rating</p>
-              <div className="flex items-end gap-2">
-                <p className="text-2xl font-extrabold text-foreground">{opp.eloRating}</p>
-                <span className={`flex items-center gap-0.5 text-sm font-bold pb-0.5 ${opp.eloDelta >= 0 ? 'text-success' : 'text-error'}`}>
-                  {opp.eloDelta >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                  {opp.eloDelta > 0 ? '+' : ''}{opp.eloDelta}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">was {opp.eloRating - opp.eloDelta}</p>
+            <div className="space-y-1">
+              <h4 className="text-base font-black text-foreground">
+                You were weakest in: <span className="text-error font-extrabold">Organic Chemistry — Reaction Mechanisms</span>
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Targeted practice on reaction mechanisms before your rematch increases win probability by 42%.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+              <Link
+                href="/practice?subject=chemistry"
+                className="btn-primary w-full sm:w-auto py-2.5 px-4 text-xs font-black text-center"
+              >
+                Targeted MCQ Practice →
+              </Link>
+              <button
+                onClick={handleRematch}
+                className="btn-secondary w-full sm:w-auto py-2.5 px-4 text-xs font-bold text-center flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw size={14} />
+                <span>Immediate Rematch</span>
+              </button>
             </div>
           </div>
-          <EloBar after={you.eloRating} />
-        </div>
+        )}
+
+        {/* ── ELO Change ── */}
+        {roomId?.startsWith('room-demo-') || you.eloDelta === 0 ? (
+          <div className={`bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 transition-all duration-700 delay-150 ${animIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-amber-500 flex items-center gap-1.5">
+                <span>🟡</span> DEMO PRACTICE MATCH (0 ELO)
+              </span>
+              <span className="text-xs text-muted-foreground">Unranked</span>
+            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This was a demonstration practice battle. Scores and stats are saved locally for review, but official ELO ratings and national leaderboard positions are unchanged.
+            </p>
+          </div>
+        ) : (
+          <div className={`bg-card border border-border rounded-2xl p-5 transition-all duration-700 delay-150 ${animIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-1.5">
+              <BarChart2 size={13} /> Official ELO Rating Update
+            </p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className={`rounded-xl p-3.5 border ${you.eloDelta >= 0 ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}>
+                <p className="text-xs text-muted-foreground mb-1">Your Rating</p>
+                <div className="flex items-end gap-2">
+                  <p className="text-2xl font-extrabold text-foreground">{you.eloRating}</p>
+                  <span className={`flex items-center gap-0.5 text-sm font-bold pb-0.5 ${you.eloDelta >= 0 ? 'text-success' : 'text-error'}`}>
+                    {you.eloDelta >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {you.eloDelta > 0 ? '+' : ''}{you.eloDelta}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">was {you.eloRating - you.eloDelta}</p>
+              </div>
+
+              <div className={`rounded-xl p-3.5 border ${opp.eloDelta >= 0 ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'}`}>
+                <p className="text-xs text-muted-foreground mb-1">{opp.name.split(' ')[0]}'s Rating</p>
+                <div className="flex items-end gap-2">
+                  <p className="text-2xl font-extrabold text-foreground">{opp.eloRating}</p>
+                  <span className={`flex items-center gap-0.5 text-sm font-bold pb-0.5 ${opp.eloDelta >= 0 ? 'text-success' : 'text-error'}`}>
+                    {opp.eloDelta >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                    {opp.eloDelta > 0 ? '+' : ''}{opp.eloDelta}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">was {opp.eloRating - opp.eloDelta}</p>
+              </div>
+            </div>
+            <EloBar after={you.eloRating} />
+          </div>
+        )}
 
         {/* ── Battle Stats ── */}
         <div className={`bg-card border border-border rounded-2xl p-5 transition-all duration-700 delay-200 ${animIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>

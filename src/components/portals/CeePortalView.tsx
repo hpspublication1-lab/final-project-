@@ -2,24 +2,18 @@
 
 import React from 'react';
 import Link from 'next/link';
-import CoursePortalHeader from './CoursePortalHeader';
 import { COURSE_PORTAL_CONFIGS } from '@/lib/config/courseFeatures';
 import KPIBentoGrid from '@/app/student-dashboard/components/KPIBentoGrid';
 import SubjectMasteryRings from '@/app/student-dashboard/components/SubjectMasteryRings';
 import AccuracyTrendChart from '@/app/student-dashboard/components/AccuracyTrendChart';
 import WeakTopicsPanel from '@/app/student-dashboard/components/WeakTopicsPanel';
-import UpcomingSchedule from '@/app/student-dashboard/components/UpcomingSchedule';
 import RecentExamsTable from '@/app/student-dashboard/components/RecentExamsTable';
 import StudyPlanTasks from '@/app/student-dashboard/components/StudyPlanTasks';
 import LiveClassesCard from '@/app/student-dashboard/components/LiveClassesCard';
+import UpcomingSchedule from '@/app/student-dashboard/components/UpcomingSchedule';
 import {
-  Zap,
-  BookOpen,
-  ArrowRight,
-  ClipboardList,
-  Sparkles,
-  Timer,
-  History,
+  Zap, BookOpen, ArrowRight, Target, Trophy, Flame,
+  ChevronRight, Play, Timer, BarChart2,
 } from 'lucide-react';
 
 interface PortalViewProps {
@@ -29,6 +23,14 @@ interface PortalViewProps {
   profile?: any;
   onOpenCourseSelector?: () => void;
 }
+
+// 4 primary CEE subjects for quick access
+const CEE_SUBJECTS = [
+  { id: 'biology',   label: 'Biology',   icon: '🧬', href: '/subjects?subject=biology',   color: 'bg-green-500/10 text-green-700 dark:text-green-400',  border: 'hover:border-green-400/50' },
+  { id: 'chemistry', label: 'Chemistry', icon: '⚗️', href: '/subjects?subject=chemistry', color: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',    border: 'hover:border-blue-400/50'  },
+  { id: 'physics',   label: 'Physics',   icon: '⚡', href: '/subjects?subject=physics',   color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400', border: 'hover:border-amber-400/50' },
+  { id: 'mat',       label: 'MAT',       icon: '🧠', href: '/subjects?subject=mat',       color: 'bg-purple-500/10 text-purple-700 dark:text-purple-400', border: 'hover:border-purple-400/50' },
+];
 
 export default function CeePortalView({
   displayName,
@@ -43,195 +45,175 @@ export default function CeePortalView({
   const now = new Date();
   const ceeDays = Math.max(0, Math.floor((targetDate.getTime() - now.getTime()) / 86400000));
 
-  const pastPapers = [
-    { id: 'cee-2025', title: 'CEE Medical 2025 Official Entrance Paper', type: 'MEC Past Paper', marks: '200 MCQs · 180 Mins', solved: true },
-    { id: 'cee-2024', title: 'CEE Medical 2024 Official Entrance Paper', type: 'MEC Past Paper', marks: '200 MCQs · 180 Mins', solved: false },
-    { id: 'iom-2023', title: 'IOM MBBS Entrance Model Set 2023', type: 'IOM Archive', marks: '200 MCQs · 180 Mins', solved: false },
-  ];
+  const firstName = displayName?.split(' ')?.[0] || 'Student';
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header Identity & Overview */}
-      <CoursePortalHeader
-        displayName={displayName}
-        isEnrolled={isEnrolled}
-        isPro={isPro}
-        onOpenCourseSelector={onOpenCourseSelector}
-      />
+    <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto">
 
-      {/* 2. Compact Medical Entrance Target & Countdown Ribbon */}
-      <div className="p-5 rounded-3xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 text-white border border-indigo-500/30 shadow-luxury flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="flex items-center gap-3.5 relative z-10">
-          <div className="w-11 h-11 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center shrink-0 shadow-xs">
-            <Timer size={22} className="text-indigo-400" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 font-mono">
-                MECEE 2026 Target
-              </span>
-              <span className="text-xs text-indigo-200 font-semibold">Medical Education Commission Nepal</span>
-            </div>
-            <h3 className="text-sm sm:text-base font-black mt-1">Target: Top 100 Government Scholarship Ranking</h3>
-          </div>
+      {/* ── 1. Greeting + countdown strip ──────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-foreground">
+            Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}, {firstName}! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Ready to crack CEE Medical 2026?</p>
         </div>
-
-        <div className="flex items-center gap-2 shrink-0 bg-white/10 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-xs font-bold relative z-10 shadow-xs">
-          <span className="text-white font-black text-base font-mono">{ceeDays}</span>
-          <span className="text-white/80 text-[10px] uppercase font-semibold">Days Left</span>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 self-start sm:self-auto">
+          <Timer size={16} className="text-primary" />
+          <span className="font-black text-lg text-primary font-mono">{ceeDays}</span>
+          <span className="text-xs text-muted-foreground font-semibold">days to CEE</span>
         </div>
       </div>
 
-      {/* 3. Main 2-Column Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* LEFT COLUMN: Main Curriculum, Practice & Exams (8 cols) */}
-        <div className="lg:col-span-8 space-y-6">
-          
-          {/* Quick Actions Launchpad */}
+      {/* ── 2. TODAY'S FOCUS hero action ────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-indigo-700 p-6 text-white shadow-luxury">
+        <div className="absolute right-0 top-0 w-48 h-48 bg-white/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                <Sparkles size={16} className="text-primary" /> CEE Entrance High-Yield Launchpad
-              </h3>
-              <Link href="/study-plan" className="flex items-center gap-1 text-xs text-primary font-bold hover:underline">
-                <ClipboardList size={13} />
-                Daily Plan
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {config.quickActions.map((qa) => (
-                <Link
-                  key={qa.key}
-                  href={qa.href}
-                  className="card-luxury p-4 flex flex-col justify-between space-y-2 group shadow-xs hover:border-primary/50"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 group-hover:scale-110 transition-transform">
-                      <Zap size={16} />
-                    </span>
-                    {qa.badge && (
-                      <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">
-                        {qa.badge}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-foreground group-hover:text-indigo-600 transition-colors">{qa.label}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{qa.desc}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-white/70">TODAY&apos;S FOCUS 🎯</span>
+            <h2 className="text-lg sm:text-xl font-black mt-1">Continue where you left off</h2>
+            <p className="text-sm text-white/75 mt-0.5">Biology · Chapter 12: Cell Division</p>
           </div>
+          <Link
+            href="/subjects"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-primary font-black text-sm rounded-2xl hover:bg-white/90 transition-all active:scale-95 shrink-0 shadow-sm"
+          >
+            <Play size={16} fill="currentColor" />
+            CONTINUE LEARNING
+          </Link>
+        </div>
+      </div>
 
-          {/* Performance Bento Grid */}
-          <KPIBentoGrid />
+      {/* ── 3. Quick Practice Buttons ──────────────────────────────────── */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: '10 MCQs', desc: '~5 min', href: '/practice?count=10' },
+          { label: '25 MCQs', desc: '~12 min', href: '/practice?count=25' },
+          { label: '50 MCQs', desc: '~25 min', href: '/practice?count=50' },
+        ].map((q) => (
+          <Link
+            key={q.label}
+            href={q.href}
+            className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+          >
+            <Zap size={18} className="text-primary mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-black text-foreground">{q.label}</span>
+            <span className="text-[10px] text-muted-foreground">{q.desc}</span>
+          </Link>
+        ))}
+      </div>
 
-          {/* Medical Subjects Grid */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+      {/* ── 4. 4 Subject Quick Access ──────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-extrabold text-foreground flex items-center gap-2">
+            <BookOpen size={16} className="text-primary" /> Subjects
+          </h2>
+          <Link href="/subjects" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+            All chapters <ChevronRight size={13} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {CEE_SUBJECTS.map((sub) => (
+            <Link
+              key={sub.id}
+              href={sub.href}
+              className={`flex items-center gap-3 p-4 rounded-2xl bg-card border border-border ${sub.border} transition-all hover:shadow-md group`}
+            >
+              <span className="text-2xl">{sub.icon}</span>
               <div>
-                <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                  <BookOpen size={16} className="text-indigo-500" /> CEE Medical Subjects ({config.defaultSubjects.length})
-                </h3>
-                <p className="text-[11px] text-muted-foreground">High-yield syllabus with official weightage distribution.</p>
+                <p className="text-sm font-extrabold text-foreground">{sub.label}</p>
+                <p className="text-[10px] text-muted-foreground">Practice MCQs</p>
               </div>
-              <Link href="/subjects" className="text-xs font-bold text-indigo-600 hover:underline">
-                All Chapters →
-              </Link>
-            </div>
+            </Link>
+          ))}
+        </div>
+      </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
-              {config.defaultSubjects.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="p-3.5 rounded-2xl bg-card border border-border hover:border-indigo-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl">{sub.icon}</span>
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                      {sub.weightage}
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-extrabold text-foreground">{sub.name}</h4>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{sub.chaptersCount} Chapters</p>
-                  </div>
-                  <Link
-                    href="/subjects"
-                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-between pt-2 border-t border-border/50"
-                  >
-                    <span>Practice MCQs</span>
-                    <ArrowRight size={11} />
-                  </Link>
-                </div>
-              ))}
+      {/* ── 5. Mock Test CTA ────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Link
+          href="/mock-tests"
+          className="flex-1 flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-sm group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Trophy size={18} className="text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-foreground">Full Mock Test</p>
+              <p className="text-xs text-muted-foreground">200 MCQs · 3 hours</p>
             </div>
           </div>
-
-          {/* Past Papers & Solved Sets */}
-          <div className="p-5 rounded-2xl bg-card border border-border space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                <History size={16} className="text-indigo-500" /> Previous Years&apos; CEE / IOM Solved Sets
-              </h3>
-              <Link href="/mock-tests" className="text-xs font-bold text-indigo-600 hover:underline">
-                All Past Papers →
-              </Link>
+          <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+        </Link>
+        <Link
+          href="/leaderboard"
+          className="flex-1 flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-sm group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Target size={18} className="text-amber-600" />
             </div>
-            <div className="grid sm:grid-cols-3 gap-3">
-              {pastPapers.map((pp) => (
-                <div
-                  key={pp.id}
-                  className="p-3.5 rounded-xl bg-muted/40 border border-border hover:border-indigo-500/30 flex flex-col justify-between space-y-2.5 transition-all"
-                >
-                  <div>
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600">
-                      {pp.type}
-                    </span>
-                    <h5 className="text-xs font-bold text-foreground mt-1.5 leading-snug">{pp.title}</h5>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{pp.marks}</p>
-                  </div>
-                  <Link
-                    href="/mock-tests"
-                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] flex items-center justify-center gap-1 transition-colors"
-                  >
-                    <span>{pp.solved ? 'Review Solution' : 'Start Timed Test'}</span>
-                    <ArrowRight size={11} />
-                  </Link>
-                </div>
-              ))}
+            <div>
+              <p className="text-sm font-extrabold text-foreground">My Rank</p>
+              <p className="text-xs text-muted-foreground">CEE leaderboard</p>
             </div>
           </div>
+          <ChevronRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+        </Link>
+      </div>
 
-          {/* Mastery & Trends */}
+      {/* ── 6. Progress Summary (collapsed by default, link to full) ────── */}
+      <div className="p-4 rounded-2xl bg-card border border-border">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-extrabold text-foreground flex items-center gap-2">
+            <BarChart2 size={16} className="text-primary" /> My Progress
+          </h2>
+          <Link href="/student-dashboard?tab=progress" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+            Full analytics <ChevronRight size={13} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { icon: <Flame size={16} className="text-error" />, label: 'Streak', value: `${profile?.study_streak ?? 0}d` },
+            { icon: <Zap size={16} className="text-primary" />, label: 'Questions', value: `${(profile?.questions_solved ?? 0).toLocaleString()}` },
+            { icon: <Trophy size={16} className="text-amber-500" />, label: 'Accuracy', value: `${profile?.overall_accuracy ?? 0}%` },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center p-3 rounded-xl bg-muted/40">
+              <div className="flex justify-center mb-1">{stat.icon}</div>
+              <p className="text-base font-black text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 7. Today's study plan (compact) ─────────────────────────────── */}
+      <StudyPlanTasks />
+
+      {/* ── 8. Advanced Analytics (for those who want depth) ────────────── */}
+      <details className="group">
+        <summary className="cursor-pointer list-none flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:border-primary/30 transition-all">
+          <span className="text-sm font-extrabold text-foreground flex items-center gap-2">
+            <BarChart2 size={16} className="text-primary" /> Detailed Analytics
+          </span>
+          <span className="text-xs text-muted-foreground group-open:hidden">Show ▼</span>
+          <span className="text-xs text-muted-foreground hidden group-open:inline">Hide ▲</span>
+        </summary>
+        <div className="mt-4 space-y-4">
+          <KPIBentoGrid />
           <div className="grid sm:grid-cols-2 gap-4">
             <SubjectMasteryRings />
             <AccuracyTrendChart />
           </div>
-
-          {/* Recent Exams Table */}
-          <RecentExamsTable />
-        </div>
-
-        {/* RIGHT COLUMN: AI Copilot, Daily Plan & Schedule (4 cols) */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Today's Actionable Study Plan */}
-          <StudyPlanTasks />
-
-          {/* AI Weakness & Mistake Diagnostic */}
           <WeakTopicsPanel />
-
-          {/* Live Classes Stream */}
+          <RecentExamsTable />
           <LiveClassesCard />
-
-          {/* Upcoming Schedule */}
           <UpcomingSchedule />
         </div>
+      </details>
 
-      </div>
     </div>
   );
 }

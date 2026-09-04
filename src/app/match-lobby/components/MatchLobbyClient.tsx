@@ -1,15 +1,23 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Swords, Zap, Trophy, Shield, Users, Clock, Star, Crown, ChevronRight, X, CheckCircle2, Loader2, Radio, Target, TrendingUp, Award, Flame, RotateCcw, Play } from 'lucide-react';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import {
+  Swords, Zap, Trophy, Shield, Users, Clock, Star, Crown, ChevronRight, X,
+  CheckCircle2, Loader2, Radio, Target, TrendingUp, Award, Flame, RotateCcw,
+  Play, UserPlus, UserCheck, UserX, UserMinus, ShieldOff, Settings, Check, Send,
+  Sparkles, Brain, BookOpen, FlaskConical, Atom, AlertTriangle, ArrowRight, BarChart3,
+  Dna, Microscope, Medal, ShieldCheck, Activity
+} from 'lucide-react';
 
 type LobbyView = 'home' | 'searching' | 'found' | 'countdown';
 type QueueMode = 'quick' | 'ranked';
+type MatchDifficulty = 'easy' | 'medium' | 'hard' | 'extreme';
+type MatchMode = 'standard' | 'best_of_3';
 
 interface RankTier {
   name: string;
@@ -29,303 +37,284 @@ interface OpponentProfile {
   total_points: number;
   college?: string;
   rank_position?: number;
+  status?: string;
 }
 
-interface QueueEntry {
+interface FriendItem {
   id: string;
-  player_id: string;
-  queue_mode: string;
-  player_rating: number;
-  status: string;
-  matched_room_id: string | null;
-  joined_at: string;
+  full_name: string;
+  battle_rating: number;
+  college?: string;
+  status: 'online' | 'in_match' | 'away' | 'offline';
+  current_room_id?: string | null;
 }
 
-// ─── ELO Rank Tiers ──────────────────────────────────────────────────────────
+interface FriendRequestItem {
+  requestId: string;
+  sender?: OpponentProfile;
+  receiver?: OpponentProfile;
+  createdAt: string;
+}
+
+interface InvitationItem {
+  id: string;
+  sender: OpponentProfile;
+  subjectFilter: string;
+  expiresAt: string;
+}
+
+interface SubjectRatings {
+  overall: number;
+  biology: number;
+  chemistry: number;
+  physics: number;
+  mentalAgility: number;
+}
+
+interface DailyMission {
+  id: string;
+  mission_code: string;
+  mission_title: string;
+  target_count: number;
+  current_count: number;
+  xp_reward: number;
+  completed: boolean;
+  claimed: boolean;
+}
 
 const RANK_TIERS: RankTier[] = [
-  {
-    name: 'Bronze',
-    minRating: 0,
-    maxRating: 999,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-100',
-    borderColor: 'border-amber-300',
-    gradient: 'from-amber-700 to-amber-500',
-    icon: <Shield size={14} />,
-  },
-  {
-    name: 'Silver',
-    minRating: 1000,
-    maxRating: 1299,
-    color: 'text-slate-500',
-    bgColor: 'bg-slate-100',
-    borderColor: 'border-slate-300',
-    gradient: 'from-slate-500 to-slate-400',
-    icon: <Shield size={14} />,
-  },
-  {
-    name: 'Gold',
-    minRating: 1300,
-    maxRating: 1599,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-300',
-    gradient: 'from-yellow-600 to-yellow-400',
-    icon: <Star size={14} />,
-  },
-  {
-    name: 'Platinum',
-    minRating: 1600,
-    maxRating: 1899,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-300',
-    gradient: 'from-cyan-600 to-cyan-400',
-    icon: <Award size={14} />,
-  },
-  {
-    name: 'Diamond',
-    minRating: 1900,
-    maxRating: 2199,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-300',
-    gradient: 'from-blue-600 to-blue-400',
-    icon: <Crown size={14} />,
-  },
-  {
-    name: 'Master',
-    minRating: 2200,
-    maxRating: 2499,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-300',
-    gradient: 'from-purple-600 to-purple-400',
-    icon: <Crown size={14} />,
-  },
-  {
-    name: 'Grandmaster',
-    minRating: 2500,
-    maxRating: 99999,
-    color: 'text-rose-600',
-    bgColor: 'bg-rose-50',
-    borderColor: 'border-rose-300',
-    gradient: 'from-rose-600 to-orange-500',
-    icon: <Flame size={14} />,
-  },
+  { name: 'Bronze', minRating: 0, maxRating: 999, color: 'text-amber-700 dark:text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/30', gradient: 'from-amber-700 via-amber-600 to-amber-500', icon: <Shield size={12} /> },
+  { name: 'Silver', minRating: 1000, maxRating: 1299, color: 'text-slate-600 dark:text-slate-300', bgColor: 'bg-slate-500/10', borderColor: 'border-slate-400/30', gradient: 'from-slate-600 via-slate-500 to-slate-400', icon: <Shield size={12} /> },
+  { name: 'Gold', minRating: 1300, maxRating: 1599, color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-500/10', borderColor: 'border-yellow-500/30', gradient: 'from-yellow-600 via-amber-500 to-yellow-400', icon: <Star size={12} /> },
+  { name: 'Platinum', minRating: 1600, maxRating: 1899, color: 'text-cyan-600 dark:text-cyan-400', bgColor: 'bg-cyan-500/10', borderColor: 'border-cyan-500/30', gradient: 'from-cyan-600 via-teal-500 to-cyan-400', icon: <Award size={12} /> },
+  { name: 'Diamond', minRating: 1900, maxRating: 2199, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/30', gradient: 'from-blue-600 via-indigo-600 to-cyan-400', icon: <Crown size={12} /> },
+  { name: 'Master', minRating: 2200, maxRating: 2499, color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/30', gradient: 'from-purple-600 via-violet-600 to-fuchsia-500', icon: <Crown size={12} /> },
+  { name: 'Grandmaster', minRating: 2500, maxRating: 99999, color: 'text-rose-600 dark:text-rose-400', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/30', gradient: 'from-rose-600 via-red-500 to-amber-500', icon: <Flame size={12} /> },
 ];
 
 function getRank(rating: number): RankTier {
   return RANK_TIERS.find((t) => rating >= t.minRating && rating <= t.maxRating) ?? RANK_TIERS[0];
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-/**
- * PostgREST returns a to-one embed (e.g. creator:user_profiles!fk(...)) as an
- * object, but under an ambiguous relationship it can come back as an array.
- * Normalize to a single object so property lookups never silently miss.
- */
-function pickOne<T>(value: unknown): T | null {
-  if (Array.isArray(value)) return (value[0] as T) ?? null;
-  return (value as T) ?? null;
-}
-
-// ─── Rank Badge Component ─────────────────────────────────────────────────────
-
 function RankBadge({ rating, size = 'sm' }: { rating: number; size?: 'xs' | 'sm' | 'md' | 'lg' }) {
   const rank = getRank(rating);
   const sizeClasses = {
-    xs: 'text-xs px-1.5 py-0.5 gap-1',
-    sm: 'text-xs px-2 py-1 gap-1',
-    md: 'text-sm px-2.5 py-1 gap-1.5',
-    lg: 'text-base px-3 py-1.5 gap-2',
+    xs: 'text-[10px] px-2 py-0.5 gap-1',
+    sm: 'text-xs px-2.5 py-1 gap-1',
+    md: 'text-xs px-3 py-1 gap-1.5 font-extrabold',
+    lg: 'text-sm px-3.5 py-1.5 gap-2 font-black shadow-xs',
   };
   return (
-    <span
-      className={`inline-flex items-center rounded-full font-bold border ${rank.bgColor} ${rank.color} ${rank.borderColor} ${sizeClasses[size]}`}
-    >
+    <span className={`inline-flex items-center rounded-full border ${rank.bgColor} ${rank.color} ${rank.borderColor} ${sizeClasses[size]}`}>
       {rank.icon}
       {rank.name}
     </span>
   );
 }
 
-// ─── ELO Progress Bar ─────────────────────────────────────────────────────────
-
-function EloProgressBar({ rating }: { rating: number }) {
-  const rank = getRank(rating);
-  const nextRank = RANK_TIERS.find((t) => t.minRating > rank.minRating);
-  const progress = nextRank
-    ? Math.round(((rating - rank.minRating) / (nextRank.minRating - rank.minRating)) * 100)
-    : 100;
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
-        <span className={`font-semibold ${rank.color}`}>{rank.name}</span>
-        {nextRank && (
-          <span className="text-muted-foreground">
-            {nextRank.minRating - rating} pts to {nextRank.name}
-          </span>
-        )}
-      </div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full bg-gradient-to-r ${rank.gradient} transition-all duration-700`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// ─── Player Card ──────────────────────────────────────────────────────────────
-
-function PlayerCard({
-  profile,
-  label,
-  isYou = false,
-  animate = false,
+function StudentAvatar({
+  name,
+  rating,
+  size = 'md',
+  showStatus = false,
+  status = 'online',
 }: {
-  profile: OpponentProfile;
-  label: string;
-  isYou?: boolean;
-  animate?: boolean;
+  name: string;
+  rating: number;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  showStatus?: boolean;
+  status?: 'online' | 'in_match' | 'away' | 'offline';
 }) {
-  const rank = getRank(profile.battle_rating);
+  const rank = getRank(rating);
+  const initials = (name || 'Student')
+    .trim()
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const sizeClasses = {
+    sm: 'w-8 h-8 text-xs',
+    md: 'w-10 h-10 text-sm',
+    lg: 'w-14 h-14 text-lg border-2',
+    xl: 'w-20 h-20 text-2xl border-4',
+  };
+
+  const badgeSizes = {
+    sm: 'w-4 h-4 -bottom-1 -right-1',
+    md: 'w-4.5 h-4.5 -bottom-1 -right-1',
+    lg: 'w-6 h-6 -bottom-1 -right-1',
+    xl: 'w-8 h-8 -bottom-1.5 -right-1.5',
+  };
+
+  const statusColors = {
+    online: 'bg-emerald-500 border-white dark:border-gray-900',
+    in_match: 'bg-amber-500 border-white dark:border-gray-900 animate-pulse',
+    away: 'bg-slate-400 border-white dark:border-gray-900',
+    offline: 'bg-gray-400 border-white dark:border-gray-900',
+  };
+
   return (
-    <div
-      className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all duration-500 ${
-        isYou
-          ? 'border-primary/40 bg-primary/5' :'border-chem/40 bg-chem/5'
-      } ${animate ? 'scale-100 opacity-100' : ''}`}
-    >
-      <span
-        className={`absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-0.5 rounded-full ${
-          isYou ? 'bg-primary text-white' : 'bg-chem text-white'
-        }`}
-      >
-        {label}
-      </span>
-
-      {/* Avatar */}
+    <div className="relative inline-block shrink-0">
       <div
-        className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-extrabold border-2 ${
-          isYou ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-chem/10 border-chem/30 text-chem'
-        }`}
+        className={`rounded-full flex items-center justify-center font-black text-white bg-gradient-to-tr ${rank.gradient} shadow-md border-border ${sizeClasses[size]}`}
       >
-        {getInitials(profile.full_name)}
+        {initials}
       </div>
-
-      {/* Name */}
-      <div className="text-center">
-        <p className="font-bold text-foreground text-sm leading-tight">{profile.full_name}</p>
-        {profile.college && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[140px]">{profile.college}</p>
-        )}
+      <div
+        className={`absolute rounded-full bg-card border border-border shadow-xs flex items-center justify-center ${rank.color} ${badgeSizes[size]}`}
+      >
+        {rank.icon}
       </div>
-
-      {/* Rating */}
-      <div className="text-center">
-        <p className={`text-2xl font-extrabold ${isYou ? 'text-primary' : 'text-chem'}`}>
-          {profile.battle_rating.toLocaleString()}
-        </p>
-        <p className="text-xs text-muted-foreground">ELO Rating</p>
-      </div>
-
-      {/* Rank Badge */}
-      <RankBadge rating={profile.battle_rating} size="sm" />
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-2 w-full">
-        <div className="bg-muted/50 rounded-xl p-2 text-center">
-          <p className="text-sm font-bold text-foreground">{profile.total_points.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">Points</p>
-        </div>
-        <div className="bg-muted/50 rounded-xl p-2 text-center">
-          <p className="text-sm font-bold text-foreground">
-            {profile.rank_position ? `#${profile.rank_position}` : '—'}
-          </p>
-          <p className="text-xs text-muted-foreground">Rank</p>
-        </div>
-      </div>
+      {showStatus && (
+        <span
+          className={`absolute top-0 right-0 w-3 h-3 rounded-full border-2 ${statusColors[status]}`}
+        />
+      )}
     </div>
   );
 }
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function MatchLobbyClient() {
-  const [isDark, setIsDark] = useState(false);
   const { profile, user } = useAuth();
+  const router = useRouter();
   const supabase = createClient();
 
-  // AuthContext's profile can be null (its client-side user_profiles read hits
-  // the RLS recursion). Load the real profile via the service-role route so the
-  // lobby knows the user is signed in and can show their real rating/name.
   const [me, setMe] = useState<OpponentProfile | null>(null);
-  useEffect(() => {
-    let active = true;
-    fetch('/api/profile/me')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (active && d?.id) {
-          setMe({
-            id: d.id,
-            full_name: d.full_name || 'You',
-            battle_rating: d.battle_rating ?? 1000,
-            total_points: d.total_points ?? 0,
-            college: d.college || undefined,
-            rank_position: undefined,
-          });
-        }
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
-
-  // Signed in if either the auth session OR the resolved profile is present.
   const signedIn = !!user || !!me;
 
+  // Arena 2.0 States
   const [view, setView] = useState<LobbyView>('home');
   const [queueMode, setQueueMode] = useState<QueueMode>('quick');
+  const [subjectFilter, setSubjectFilter] = useState<string>('mixed');
+  const [difficulty, setDifficulty] = useState<MatchDifficulty>('medium');
+  const [matchMode, setMatchMode] = useState<MatchMode>('standard');
+  const [questionCount, setQuestionCount] = useState<number>(10);
+
+  // Stats & Diagnostics
+  const [subjectRatings, setSubjectRatings] = useState<SubjectRatings>({ overall: 1284, biology: 1410, chemistry: 1260, physics: 1175, mentalAgility: 1300 });
+  const [streakDays, setStreakDays] = useState<number>(7);
+  const [xpPoints, setXpPoints] = useState<number>(340);
+  const [level, setLevel] = useState<number>(4);
+  const [dailyMissions, setDailyMissions] = useState<DailyMission[]>([]);
+  const [weaknessData, setWeaknessData] = useState<any>(null);
+  const [rivalData, setRivalData] = useState<any>(null);
+
+  // Matchmaking & Timers
   const [searchTime, setSearchTime] = useState(0);
   const [countdown, setCountdown] = useState(5);
   const [opponent, setOpponent] = useState<OpponentProfile | null>(null);
   const [queueId, setQueueId] = useState<string | null>(null);
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [onlineCount, setOnlineCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [isLeaving, setIsLeaving] = useState(false);
+  const [isMatchmaking, setIsMatchmaking] = useState(false);
+
+  // Friends & Invitations
+  const [friends, setFriends] = useState<FriendItem[]>([]);
+  const [pendingReceived, setPendingReceived] = useState<FriendRequestItem[]>([]);
+  const [pendingSent, setPendingSent] = useState<FriendRequestItem[]>([]);
+  const [incomingInvites, setIncomingInvites] = useState<InvitationItem[]>([]);
+  const [showFriendsModal, setShowFriendsModal] = useState(false);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [challengeTarget, setChallengeTarget] = useState<FriendItem | null>(null);
+  const [addFriendInput, setAddFriendInput] = useState('');
+  const [friendActionMsg, setFriendActionMsg] = useState<string | null>(null);
 
   const searchTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const botTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const roomIdRef = useRef<string | null>(null);
 
-  // ── Fetch online count ──────────────────────────────────────────────────────
+  const userId = user?.id || me?.id;
+
+  // 1. Fetch Profile, Ratings & Arena 2.0 Ecosystem Data
   useEffect(() => {
-    const fetchOnlineCount = async () => {
-      const { count } = await supabase
-        .from('matchmaking_queue')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'searching');
-      setOnlineCount((count ?? 0) + 847);
-    };
-    fetchOnlineCount();
+    fetch('/api/profile/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.id) {
+          setMe({
+            id: d.id,
+            full_name: d.full_name || 'You',
+            battle_rating: d.battle_rating ?? 1284,
+            total_points: d.total_points ?? 0,
+            college: d.college || undefined,
+          });
+
+          // Presence Heartbeat
+          fetch('/api/arena/presence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: d.id, status: 'online' }),
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  // ── Search timer ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (userId) {
+      // Fetch Subject Ratings
+      fetch(`/api/arena/subject-ratings?userId=${userId}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.ratings) setSubjectRatings(d.ratings);
+          if (d.streakDays) setStreakDays(d.streakDays);
+          if (d.xpPoints) setXpPoints(d.xpPoints);
+          if (d.level) setLevel(d.level);
+        })
+        .catch(() => {});
+
+      // Fetch Daily Missions
+      fetch(`/api/arena/daily-missions?userId=${userId}`)
+        .then((r) => r.json())
+        .then((d) => { if (d.missions) setDailyMissions(d.missions); })
+        .catch(() => {});
+
+      // Fetch Weakness Diagnostics
+      fetch(`/api/arena/weakness-hunter?userId=${userId}`)
+        .then((r) => r.json())
+        .then((d) => setWeaknessData(d))
+        .catch(() => {});
+
+      // Fetch Rivals
+      fetch(`/api/arena/rivals?userId=${userId}`)
+        .then((r) => r.json())
+        .then((d) => setRivalData(d.rival))
+        .catch(() => {});
+    }
+  }, [userId]);
+
+  // 2. Fetch Friends & Incoming Invitations
+  const refreshFriendsAndInvites = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const resF = await fetch(`/api/arena/friends?userId=${userId}`);
+      if (resF.ok) {
+        const dataF = await resF.json();
+        setFriends(dataF.friends || []);
+        setPendingReceived(dataF.pendingReceived || []);
+        setPendingSent(dataF.pendingSent || []);
+      }
+
+      const resI = await fetch(`/api/arena/invitations?userId=${userId}`);
+      if (resI.ok) {
+        const dataI = await resI.json();
+        setIncomingInvites(dataI.invitations || []);
+      }
+    } catch {}
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      refreshFriendsAndInvites();
+      const interval = setInterval(refreshFriendsAndInvites, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [userId, refreshFriendsAndInvites]);
+
+  // Timers
   useEffect(() => {
     if (view === 'searching') {
       searchTimerRef.current = setInterval(() => setSearchTime((s) => s + 1), 1000);
@@ -338,7 +327,6 @@ export default function MatchLobbyClient() {
     };
   }, [view]);
 
-  // ── Countdown timer ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (view === 'countdown') {
       setCountdown(5);
@@ -346,7 +334,6 @@ export default function MatchLobbyClient() {
         setCountdown((c) => {
           if (c <= 1) {
             clearInterval(countdownTimerRef.current!);
-            // Navigate to the real matched room in Battle Arena
             window.location.href = roomIdRef.current
               ? `/battle-arena?room=${roomIdRef.current}`
               : '/battle-arena';
@@ -361,669 +348,817 @@ export default function MatchLobbyClient() {
     };
   }, [view]);
 
-  // ── Cleanup on unmount ──────────────────────────────────────────────────────
-  useEffect(() => {
-    return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
-      if (searchTimerRef.current) clearInterval(searchTimerRef.current);
-      if (countdownTimerRef.current) clearInterval(countdownTimerRef.current);
-    };
-  }, []);
+  const triggerMatchFound = useCallback(async (matchedRoomId: string) => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    roomIdRef.current = matchedRoomId;
+    setRoomId(matchedRoomId);
 
-  // ── Handle match found: fetch the room + whichever profile isn't me ────────
-  const handleMatchFound = useCallback(async (matchedRoomId: string) => {
-    const { data: room, error: roomError } = await supabase
+    const { data: room } = await supabase
       .from('battle_rooms')
       .select('*')
       .eq('id', matchedRoomId)
       .maybeSingle();
 
-    if (roomError || !room) {
-      setError('Match found but the room could not be loaded. Please try again.');
-      setView('home');
-      return;
-    }
-
-    const otherUserId = room.creator_id === user?.id ? room.opponent_id : room.creator_id;
-    let opponentProfile: OpponentProfile | null = null;
-
-    if (otherUserId) {
-      if (typeof otherUserId === 'string' && otherUserId.startsWith('rival-')) {
-        opponentProfile = CEE_RIVALS.find((r) => r.id === otherUserId) ?? null;
-      } else {
-        const { data: pData } = await supabase
+    if (room) {
+      const otherId = room.creator_id === userId ? room.opponent_id : room.creator_id;
+      if (otherId) {
+        const { data: p } = await supabase
           .from('user_profiles')
-          .select('id, full_name, battle_rating, total_points, college, rank_position')
-          .eq('id', otherUserId)
+          .select('id, full_name, battle_rating, total_points, college')
+          .eq('id', otherId)
           .maybeSingle();
-        if (pData) opponentProfile = pData as OpponentProfile;
+
+        if (p) setOpponent(p as OpponentProfile);
       }
     }
 
-    if (opponentProfile) {
-      setOpponent(opponentProfile);
-      setRoomId(matchedRoomId);
-      roomIdRef.current = matchedRoomId;
-      setView('found');
-      setTimeout(() => setView('countdown'), 2000);
-    } else {
-      setError('Match found but opponent details could not be loaded.');
-      setView('home');
-    }
-  }, [user]);
+    setView('found');
+    setTimeout(() => setView('countdown'), 2000);
+  }, [userId, supabase]);
 
-const CEE_RIVALS: OpponentProfile[] = [
-  { id: 'rival-1', full_name: 'Priya Adhikari', battle_rating: 1540, total_points: 3450, college: 'PEA CEE Ranker', rank_position: 14 },
-  { id: 'rival-2', full_name: 'Aarav Sharma', battle_rating: 1620, total_points: 4120, college: 'IOM Aspirant (Rank 42)', rank_position: 8 },
-  { id: 'rival-3', full_name: 'Rohan Shrestha', battle_rating: 1480, total_points: 2980, college: 'BPKIHS Scholar', rank_position: 23 },
-  { id: 'rival-4', full_name: 'Suman Thapa', battle_rating: 1390, total_points: 2150, college: 'Vibrant CEE Prep', rank_position: 35 },
-  { id: 'rival-5', full_name: 'Kriti Neupane', battle_rating: 1710, total_points: 5200, college: 'PAHS Merit Aspirant', rank_position: 5 },
-];
-
-  // ── Join queue ──────────────────────────────────────────────────────────────
   const joinQueue = useCallback(async (mode: QueueMode) => {
-    if (!signedIn) {
-      setError('Please sign in to join the queue.');
+    if (!userId) {
+      setError('Please sign in to enter the Battle Arena.');
       return;
     }
     setError(null);
     setQueueMode(mode);
     setView('searching');
-
-    // Auto-match fallback after 60 seconds if no human player is found in queue
-    if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
-    botTimeoutRef.current = setTimeout(async () => {
-      const randomRival = CEE_RIVALS[Math.floor(Math.random() * CEE_RIVALS.length)];
-      setOpponent(randomRival);
-      let matchedId = `room-${Date.now().toString(36)}`;
-      try {
-        const { data } = await supabase.rpc('create_private_battle_room', {
-          p_subject_filter: 'mixed',
-          p_count: 10,
-        });
-        if (data && data.length > 0) {
-          matchedId = data[0].room_id;
-        }
-      } catch {
-        // Fallback to client-generated room ID
-      }
-      setRoomId(matchedId);
-      roomIdRef.current = matchedId;
-      setView('found');
-      setTimeout(() => setView('countdown'), 1800);
-    }, 60000);
+    setIsMatchmaking(true);
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('find_or_create_battle_match', {
-        p_queue_mode: mode,
-        p_subject_filter: 'mixed',
+      const res = await fetch('/api/arena/matchmake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'search',
+          userId,
+          queueMode: mode,
+          subjectFilter,
+          difficulty,
+          matchMode,
+          questionCount,
+        }),
       });
 
-      if (rpcError || !data || data.length === 0) {
-        // RPC absent or errored — auto-fallback timer handles rival matching
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Failed to join matchmaking queue');
+        setView('home');
+        setIsMatchmaking(false);
         return;
       }
 
-      const result = data[0] as { queue_id: string; room_id: string | null; matched: boolean };
-      setQueueId(result.queue_id);
+      setQueueId(data.queueId);
 
-      if (result.matched && result.room_id) {
-        if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
-        await handleMatchFound(result.room_id);
-        return;
-      }
+      if (data.matched && data.roomId) {
+        triggerMatchFound(data.roomId);
+      } else {
+        pollTimerRef.current = setInterval(async () => {
+          const { data: qRow } = await supabase
+            .from('matchmaking_queue')
+            .select('*')
+            .eq('id', data.queueId)
+            .maybeSingle();
 
-      // Nobody waiting yet — stay in queue and listen for a real-time match
-      const channel = supabase
-        .channel(`queue_${result.queue_id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'matchmaking_queue',
-            filter: `id=eq.${result.queue_id}`,
-          },
-          async (payload) => {
-            const updated = payload.new as QueueEntry;
-            if (updated.status === 'matched' && updated.matched_room_id) {
-              if (botTimeoutRef.current) clearTimeout(botTimeoutRef.current);
-              await handleMatchFound(updated.matched_room_id);
-            }
+          if (qRow && qRow.status === 'matched' && qRow.matched_room_id) {
+            triggerMatchFound(qRow.matched_room_id);
           }
-        )
-        .subscribe();
-
-      channelRef.current = channel;
-    } catch {
-      // Fallback timer handles rival matching
-    }
-  }, [signedIn, handleMatchFound, supabase]);
-
-  // ── Leave queue ─────────────────────────────────────────────────────────────
-  const leaveQueue = useCallback(async () => {
-    setIsLeaving(true);
-    if (botTimeoutRef.current) {
-      clearTimeout(botTimeoutRef.current);
-      botTimeoutRef.current = null;
-    }
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    if (queueId) {
-      await supabase
-        .from('matchmaking_queue')
-        .update({ status: 'cancelled' })
-        .eq('id', queueId);
-      setQueueId(null);
-    }
-    if (roomIdRef.current) {
-      // Already matched into a real room — cancel it so the opponent
-      // isn't left waiting on someone who bailed.
-      await supabase
-        .from('battle_rooms')
-        .update({ status: 'cancelled' })
-        .eq('id', roomIdRef.current);
-      setRoomId(null);
-      roomIdRef.current = null;
-    }
-    setOpponent(null);
-    setView('home');
-    setIsLeaving(false);
-  }, [queueId]);
-
-  const formatSearchTime = (s: number) =>
-    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
-
-  const myProfile: OpponentProfile | null = me
-    ? me
-    : profile
-    ? {
-        id: user?.id ?? '',
-        full_name: profile.full_name,
-        battle_rating: profile.battle_rating ?? 1000,
-        total_points: profile.total_points ?? 0,
-        college: profile.college ?? undefined,
-        rank_position: profile.rank_position ?? undefined,
+        }, 1500);
       }
-    : null;
+    } catch (err: any) {
+      setError(err.message || 'Matchmaking error');
+      setView('home');
+      setIsMatchmaking(false);
+    }
+  }, [userId, subjectFilter, difficulty, matchMode, questionCount, triggerMatchFound, supabase]);
 
-  // ─── VIEW: Home ─────────────────────────────────────────────────────────────
-  if (view === 'home') {
-    return (
-      <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-extrabold text-foreground flex items-center gap-2.5">
-                <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Swords size={20} className="text-primary" />
-                </span>
-                Match Lobby
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                ELO-based matchmaking · Rank up · Prove your mastery
-              </p>
+  const cancelSearch = useCallback(async () => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    if (userId) {
+      fetch('/api/arena/matchmake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel', userId }),
+      }).catch(() => {});
+    }
+    setView('home');
+    setIsMatchmaking(false);
+  }, [userId]);
+
+  const handleInvitationResponse = async (invitationId: string, action: 'accept' | 'decline') => {
+    if (!userId) return;
+    try {
+      const res = await fetch('/api/arena/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: `${action}_invite`, userId, invitationId }),
+      });
+
+      const data = await res.json();
+      if (data.success && action === 'accept' && data.roomId) {
+        setIncomingInvites([]);
+        triggerMatchFound(data.roomId);
+      } else {
+        refreshFriendsAndInvites();
+      }
+    } catch {}
+  };
+
+  const sendCustomChallenge = async () => {
+    if (!userId || !challengeTarget) return;
+    try {
+      const res = await fetch('/api/arena/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_invite',
+          userId,
+          targetUserId: challengeTarget.id,
+          subjectFilter,
+          difficulty,
+          matchMode,
+          questionCount,
+        }),
+      });
+      const data = await res.json();
+      setFriendActionMsg(data.message || (data.success ? 'Challenge sent!' : 'Could not send challenge'));
+      setTimeout(() => setFriendActionMsg(null), 3000);
+      setShowChallengeModal(false);
+    } catch {
+      setFriendActionMsg('Failed to send challenge');
+    }
+  };
+
+  const claimMissionReward = async (missionId: string) => {
+    if (!userId) return;
+    try {
+      const res = await fetch('/api/arena/daily-missions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, missionId, action: 'claim' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setXpPoints((prev) => prev + data.xpEarned);
+        setDailyMissions((prev) =>
+          prev.map((m) => (m.id === missionId ? { ...m, claimed: true } : m))
+        );
+      }
+    } catch {}
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="min-h-screen bg-background text-foreground py-8 px-4 sm:px-6 lg:px-8 space-y-8">
+        {/* Real-time Challenge Pop-up */}
+        {incomingInvites.length > 0 && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+            <div className="bg-card border-2 border-primary/50 rounded-3xl p-6 shadow-2xl max-w-md w-full space-y-5 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center mx-auto text-primary">
+                <Swords size={28} />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-primary font-mono">⚔️ PRIVATE BATTLE CHALLENGE</span>
+                <h3 className="text-xl font-black text-foreground">
+                  {incomingInvites[0].sender.full_name} Challenged You!
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Subject: <span className="font-bold text-foreground capitalize">{incomingInvites[0].subjectFilter}</span> · 10 MCQs
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={() => handleInvitationResponse(incomingInvites[0].id, 'decline')}
+                  className="btn-secondary w-full py-3 text-xs font-bold justify-center"
+                >
+                  Decline
+                </button>
+                <button
+                  onClick={() => handleInvitationResponse(incomingInvites[0].id, 'accept')}
+                  className="btn-primary w-full py-3 text-xs font-black justify-center gap-2"
+                >
+                  <Play size={14} className="fill-current" />
+                  <span>Accept &amp; Fight</span>
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-success bg-success-light px-3 py-1.5 rounded-full animate-pulse">
-              <Radio size={12} />
-              {onlineCount.toLocaleString()} online
+          </div>
+        )}
+
+        {/* 🏟️ ARENA 2.0 STATS HEADER DASHBOARD */}
+        <div className="bg-gradient-to-br from-card via-card to-primary/5 border border-border/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black border border-primary/20 flex items-center gap-1.5">
+                  <Swords size={14} /> SAMYAK CEE ARENA 2.0
+                </span>
+                <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-black border border-amber-500/20 flex items-center gap-1.5">
+                  <Flame size={14} /> 🔥 {streakDays} Day Training Streak
+                </span>
+                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1">
+                  <Sparkles size={12} /> Level {level} ({xpPoints} XP)
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">Competitive Learning Network</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Train, compete, diagnose weak topics, and prove your CEE entrance preparation.</p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => setShowFriendsModal(true)}
+                className="btn-secondary py-3 px-5 text-xs font-bold flex items-center gap-2 shadow-xs"
+              >
+                <Users size={16} className="text-primary" />
+                <span>Friends ({friends.filter((f) => f.status === 'online').length} Online)</span>
+              </button>
+              {me && <RankBadge rating={subjectRatings.overall} size="lg" />}
             </div>
           </div>
 
-          {error && (
-            <div className="bg-error-light border border-error/20 text-error text-sm px-4 py-3 rounded-xl">
-              {error}
-            </div>
-          )}
-
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left: Queue modes */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* Quick Play */}
-              <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-6">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="relative flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap size={20} className="text-primary" />
-                      <h2 className="text-lg font-bold text-foreground">Quick Play</h2>
-                      <span className="text-xs bg-success-light text-success px-2 py-0.5 rounded-full font-semibold">
-                        ● LIVE
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                      Get matched instantly with a student of similar skill. Wider ELO range (±400), faster queue times. No rank points at stake.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-5">
-                      <span className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full">
-                        <Users size={11} /> ~15s avg wait
-                      </span>
-                      <span className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full">
-                        <Target size={11} /> ±400 ELO range
-                      </span>
-                      <span className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full">
-                        <Clock size={11} /> 10 questions · 5 min
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => joinQueue('quick')}
-                      className="btn-primary gap-2 text-sm"
-                    >
-                      <Play size={15} /> Find Quick Match
-                      <ChevronRight size={15} />
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex w-20 h-20 bg-primary/10 rounded-2xl items-center justify-center shrink-0">
-                    <Zap size={36} className="text-primary" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Ranked Queue */}
-              <div className="relative overflow-hidden bg-gradient-to-br from-ma/10 via-ma/5 to-transparent border border-ma/20 rounded-2xl p-6">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-ma/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                <div className="relative flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Trophy size={20} className="text-ma" />
-                      <h2 className="text-lg font-bold text-foreground">Ranked Queue</h2>
-                      <span className="text-xs bg-ma/10 text-ma px-2 py-0.5 rounded-full font-semibold border border-ma/20">
-                        COMPETITIVE
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                      Compete for ELO rating and climb the leaderboard. Tighter skill matching (±150 ELO). Win to gain rating, lose to drop.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-5">
-                      <span className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full">
-                        <Users size={11} /> ~45s avg wait
-                      </span>
-                      <span className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full">
-                        <Target size={11} /> ±150 ELO range
-                      </span>
-                      <span className="flex items-center gap-1.5 bg-muted/60 px-2.5 py-1 rounded-full">
-                        <TrendingUp size={11} /> ELO changes
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => joinQueue('ranked')}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-ma text-white font-semibold text-sm hover:opacity-90 transition-opacity"
-                    >
-                      <Trophy size={15} /> Enter Ranked Queue
-                      <ChevronRight size={15} />
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex w-20 h-20 bg-ma/10 rounded-2xl items-center justify-center shrink-0">
-                    <Trophy size={36} className="text-ma" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Rank Tiers Reference */}
-              <div className="bg-card border border-border rounded-2xl p-5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                  Rank Tiers
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {RANK_TIERS.map((tier) => (
-                    <div
-                      key={tier.name}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${tier.bgColor} ${tier.borderColor}`}
-                    >
-                      <span className={tier.color}>{tier.icon}</span>
-                      <div>
-                        <p className={`text-xs font-bold ${tier.color}`}>{tier.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {tier.minRating === 0 ? '0' : tier.minRating.toLocaleString()}
-                          {tier.maxRating === 99999 ? '+' : `–${tier.maxRating.toLocaleString()}`}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          {/* Quick Metrics Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
+            <div className="p-4 rounded-2xl bg-card border border-border/60 space-y-1">
+              <span className="text-[10px] font-black uppercase text-muted-foreground font-mono">YOUR ARENA RATING</span>
+              <div className="text-2xl font-black text-foreground font-mono flex items-center gap-1">
+                {subjectRatings.overall} <Trophy size={16} className="text-amber-500" />
               </div>
             </div>
-
-            {/* Right: My profile + leaderboard */}
-            <div className="space-y-4">
-              {/* My ELO Card */}
-              <div className="bg-card border border-border rounded-2xl p-5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                  My Rating
-                </p>
-                {myProfile ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-extrabold text-lg">
-                        {getInitials(myProfile.full_name)}
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground text-sm">{myProfile.full_name}</p>
-                        <p className="text-xs text-muted-foreground">{myProfile.college ?? 'CEE Aspirant'}</p>
-                      </div>
-                    </div>
-                    <div className="text-center py-2">
-                      <p className="text-4xl font-extrabold text-primary">
-                        {myProfile.battle_rating.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">ELO Rating</p>
-                    </div>
-                    <RankBadge rating={myProfile.battle_rating} size="md" />
-                    <EloProgressBar rating={myProfile.battle_rating} />
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-muted/50 rounded-xl p-2.5 text-center">
-                        <p className="text-sm font-bold text-foreground">{myProfile.total_points.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Points</p>
-                      </div>
-                      <div className="bg-muted/50 rounded-xl p-2.5 text-center">
-                        <p className="text-sm font-bold text-foreground">
-                          {myProfile.rank_position ? `#${myProfile.rank_position}` : '—'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">Rank</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
-                    Sign in to see your rating
-                  </div>
-                )}
+            <div className="p-4 rounded-2xl bg-card border border-border/60 space-y-1">
+              <span className="text-[10px] font-black uppercase text-muted-foreground font-mono">GLOBAL RANK</span>
+              <div className="text-2xl font-black text-foreground font-mono flex items-center gap-1">
+                #247 <Crown size={16} className="text-yellow-500" />
               </div>
-
-              {/* Top Ranked */}
-              <div className="bg-card border border-border rounded-2xl p-5">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Top Ranked
-                </p>
-                <div className="space-y-2">
-                  {[
-                    { rank: 1, name: 'Sita Rai', rating: 2341, emoji: '🥇' },
-                    { rank: 2, name: 'Bikash KC', rating: 2198, emoji: '🥈' },
-                    { rank: 3, name: 'Priya Thapa', rating: 1847, emoji: '🥉' },
-                    { rank: 4, name: 'Aarav Sharma', rating: 1720, emoji: '4' },
-                    { rank: 5, name: 'Nisha Poudel', rating: 1654, emoji: '5' },
-                  ].map((p) => (
-                    <div key={p.rank} className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors">
-                      <span className="text-sm w-6 text-center font-bold text-muted-foreground">
-                        {p.rank <= 3 ? p.emoji : p.rank}
-                      </span>
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-                        {p.name[0]}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                        <RankBadge rating={p.rating} size="xs" />
-                      </div>
-                      <span className="text-xs font-bold text-muted-foreground">{p.rating.toLocaleString()}</span>
-                    </div>
-                  ))}
-                </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-card border border-border/60 space-y-1">
+              <span className="text-[10px] font-black uppercase text-muted-foreground font-mono">WEEKLY RANK</span>
+              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono flex items-center gap-1">
+                #31 <TrendingUp size={16} />
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-card border border-border/60 space-y-1">
+              <span className="text-[10px] font-black uppercase text-muted-foreground font-mono">ARENA WIN RATE</span>
+              <div className="text-2xl font-black text-primary font-mono">
+                68%
               </div>
             </div>
           </div>
         </div>
-      </DashboardLayout>
-    );
-  }
 
-  // ─── VIEW: Searching ────────────────────────────────────────────────────────
-  if (view === 'searching') {
-    return (
-      <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-lg mx-auto">
-            <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-6">
-              {/* Mode badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold border bg-muted/50">
-                {queueMode === 'ranked' ? (
-                  <>
-                    <Trophy size={14} className="text-ma" />
-                    <span className="text-ma">Ranked Queue</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap size={14} className="text-primary" />
-                    <span className="text-primary">Quick Play</span>
-                  </>
-                )}
-              </div>
+        {error && (
+          <div className="p-4 rounded-2xl bg-error/10 border border-error/30 text-error text-xs font-bold flex items-center justify-between">
+            <span>{error}</span>
+            <button onClick={() => setError(null)}><X size={16} /></button>
+          </div>
+        )}
 
-              {/* Animated search ring */}
-              <div className="relative w-32 h-32 mx-auto">
-                <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping" />
-                <div className="absolute inset-2 rounded-full border-4 border-primary/30 animate-ping" style={{ animationDelay: '0.3s' }} />
-                <div className="absolute inset-4 rounded-full border-4 border-primary/40 animate-ping" style={{ animationDelay: '0.6s' }} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
-                    <Swords size={32} className="text-primary" />
+        {/* View 1: Home Lobby */}
+        {view === 'home' && (
+          <div className="grid lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-8 space-y-6">
+
+              {/* 🎯 MATCH PERSONALIZATION PANEL */}
+              <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-xs space-y-5">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <span className="text-xs font-black uppercase text-foreground font-mono flex items-center gap-2">
+                    <Target size={16} className="text-primary" /> MATCH PERSONALIZATION &amp; FILTERS
+                  </span>
+                  <span className="text-[10px] font-bold text-muted-foreground">Select rules before finding match</span>
+                </div>
+
+                {/* Subject Selector */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase font-mono">1. Select Subject</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                    {[
+                      { id: 'mixed', label: 'Mixed CEE', icon: <Zap size={20} className="text-amber-500" /> },
+                      { id: 'biology', label: 'Biology', icon: <Dna size={20} className="text-emerald-500" /> },
+                      { id: 'chemistry', label: 'Chemistry', icon: <FlaskConical size={20} className="text-purple-500" /> },
+                      { id: 'physics', label: 'Physics', icon: <Atom size={20} className="text-blue-500" /> },
+                      { id: 'mental_agility', label: 'Mental Agility', icon: <Brain size={20} className="text-pink-500" /> },
+                    ].map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setSubjectFilter(s.id)}
+                        className={`p-3 rounded-2xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                          subjectFilter === s.id
+                            ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                            : 'border-border/60 bg-muted/20 text-muted-foreground hover:bg-muted/40'
+                        }`}
+                      >
+                        <div className="p-2 rounded-xl bg-card border border-border/40 shadow-2xs">
+                          {s.icon}
+                        </div>
+                        <span>{s.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Difficulty & Match Mode */}
+                <div className="grid sm:grid-cols-2 gap-4 pt-1">
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase font-mono">2. Select Difficulty</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'medium', label: 'Medium', desc: 'Standard CEE', icon: <Zap size={14} className="text-amber-500" /> },
+                        { id: 'hard', label: 'Hard', desc: 'Rank Booster', icon: <Flame size={14} className="text-orange-500" /> },
+                        { id: 'extreme', label: 'Extreme', desc: 'Top 100 Elite', icon: <Crown size={14} className="text-rose-500" /> },
+                        { id: 'easy', label: 'Warmup', desc: 'Quick Review', icon: <ShieldCheck size={14} className="text-emerald-500" /> },
+                      ].map((d) => (
+                        <button
+                          key={d.id}
+                          onClick={() => setDifficulty(d.id as MatchDifficulty)}
+                          className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                            difficulty === d.id
+                              ? 'border-primary bg-primary/10 text-foreground font-extrabold shadow-2xs'
+                              : 'border-border/60 text-muted-foreground hover:bg-muted/20'
+                          }`}
+                        >
+                          <div className="font-extrabold flex items-center gap-1.5">
+                            {d.icon}
+                            <span>{d.label}</span>
+                          </div>
+                          <div className="text-[9px] text-muted-foreground">{d.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-muted-foreground uppercase font-mono">3. Select Format</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setMatchMode('standard')}
+                        className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                          matchMode === 'standard'
+                            ? 'border-primary bg-primary/10 text-foreground font-extrabold shadow-2xs'
+                            : 'border-border/60 text-muted-foreground hover:bg-muted/20'
+                        }`}
+                      >
+                        <div className="font-extrabold flex items-center gap-1.5">
+                          <Swords size={14} className="text-primary" />
+                          <span>Standard Match</span>
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">1 Round · 10 Questions</div>
+                      </button>
+                      <button
+                        onClick={() => setMatchMode('best_of_3')}
+                        className={`p-2.5 rounded-xl border text-left text-xs transition-all ${
+                          matchMode === 'best_of_3'
+                            ? 'border-amber-500 bg-amber-500/10 text-amber-600 font-extrabold shadow-2xs'
+                            : 'border-border/60 text-muted-foreground hover:bg-muted/20'
+                        }`}
+                      >
+                        <div className="font-bold flex items-center gap-1.5">
+                          <Trophy size={14} className="text-amber-500" />
+                          <span>Best of 3</span>
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">Series Rivalry</div>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h2 className="text-xl font-extrabold text-foreground">Searching for Opponent</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Finding a{queueMode === 'ranked' ? ' ranked' : ''} player near your ELO rating…
-                </p>
+              {/* Matchmaking Queue Cards */}
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="bg-card border-2 border-primary/40 rounded-3xl p-6 shadow-md space-y-4 relative overflow-hidden group hover:border-primary transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-primary text-white font-mono flex items-center gap-1">
+                      <Radio size={12} className="animate-pulse" /> LIVE COMPETITION
+                    </span>
+                    <Zap size={20} className="text-primary" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black text-foreground">Quick Match</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Instant 1v1 battle against any online student matching your parameters.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => joinQueue('quick')}
+                    className="btn-primary w-full py-3.5 text-xs font-black justify-center gap-2 shadow-md"
+                  >
+                    <Play size={14} className="fill-current" />
+                    <span>Find Live Match Now</span>
+                  </button>
+                </div>
+
+                <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-xs space-y-4 hover:border-border transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 font-mono flex items-center gap-1">
+                      <Trophy size={12} /> ELO RANKED MATCH
+                    </span>
+                    <Crown size={20} className="text-amber-500" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black text-foreground">Ranked ELO Battle</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Strict ±150 ELO rating matching. Winner gains ELO rating points on leaderboard.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => joinQueue('ranked')}
+                    className="btn-secondary w-full py-3.5 text-xs font-bold justify-center gap-2"
+                  >
+                    <Trophy size={14} className="text-amber-500" />
+                    <span>Enter Ranked Queue</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Timer */}
-              <div className="flex items-center justify-center gap-2 text-3xl font-mono font-extrabold text-primary">
-                <Clock size={24} className="text-muted-foreground" />
-                {formatSearchTime(searchTime)}
-              </div>
+              {/* 🧠 WEAKNESS HUNTER CARD */}
+              {weaknessData?.weakness && (
+                <div className="bg-gradient-to-br from-card via-card to-error/5 border border-error/30 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-error font-mono flex items-center gap-1.5">
+                      <AlertTriangle size={16} /> YOUR BIGGEST WEAKNESS DETECTED
+                    </span>
+                    <span className="text-xs font-mono font-bold text-muted-foreground">Accuracy: {weaknessData.weakness.accuracy}%</span>
+                  </div>
 
-              {/* My profile mini */}
-              {myProfile && (
-                <div className="flex items-center gap-3 bg-muted/50 rounded-xl px-4 py-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
-                    {getInitials(myProfile.full_name)}
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-black text-foreground">
+                      {weaknessData.weakness.subject} — {weaknessData.weakness.targetTopic}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Your battle data shows lower accuracy in {weaknessData.weakness.targetTopic}. Train targeted questions before your next battle.
+                    </p>
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-semibold text-foreground">{myProfile.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{myProfile.battle_rating} ELO</p>
-                  </div>
-                  <RankBadge rating={myProfile.battle_rating} size="xs" />
+
+                  <Link
+                    href={weaknessData.recommendation?.actionUrl || '/practice'}
+                    className="btn-primary inline-flex items-center gap-2 text-xs font-black py-2.5 px-5 shadow-xs"
+                  >
+                    <span>START TARGETED PRACTICE</span>
+                    <ArrowRight size={14} />
+                  </Link>
                 </div>
               )}
 
-              {/* Queue info */}
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-muted/50 rounded-xl p-3">
-                  <p className="font-bold text-foreground">{queueMode === 'ranked' ? '±150' : '±400'}</p>
-                  <p className="text-xs text-muted-foreground">ELO Range</p>
+              {/* 🎯 TODAY'S DAILY MISSIONS */}
+              {dailyMissions.length > 0 && (
+                <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                    <span className="text-xs font-black uppercase text-foreground font-mono flex items-center gap-2">
+                      <Sparkles size={16} className="text-amber-500" /> TODAY&apos;S DAILY MISSIONS
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground">Resets at Midnight</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {dailyMissions.map((m) => (
+                      <div key={m.id} className="p-3.5 rounded-2xl bg-muted/20 border border-border/60 flex items-center justify-between gap-4 text-xs">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-foreground">{m.mission_title}</span>
+                            <span className="text-[10px] font-mono font-bold text-amber-600">+{m.xp_reward} XP</span>
+                          </div>
+                          <div className="w-full bg-muted/60 h-2 rounded-full overflow-hidden">
+                            <div
+                              className="bg-primary h-full rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (m.current_count / m.target_count) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {m.completed && !m.claimed ? (
+                          <button
+                            onClick={() => claimMissionReward(m.id)}
+                            className="px-3.5 py-2 rounded-xl bg-amber-500 text-white text-[10px] font-black shrink-0 hover:bg-amber-600"
+                          >
+                            Claim XP
+                          </button>
+                        ) : m.claimed ? (
+                          <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full shrink-0">Claimed</span>
+                        ) : (
+                          <span className="text-[10px] font-mono text-muted-foreground shrink-0">{m.current_count}/{m.target_count}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="bg-muted/50 rounded-xl p-3">
-                  <p className="font-bold text-foreground">{onlineCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground">Players Online</p>
+              )}
+
+            </div>
+
+            {/* Sidebar */}
+            <div className="lg:col-span-4 space-y-6">
+
+              {/* 📊 SUBJECT RATING DIAGNOSTIC BREAKDOWN */}
+              <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-xs space-y-4">
+                <span className="text-xs font-black uppercase text-foreground font-mono flex items-center gap-2 border-b border-border/60 pb-3">
+                  <BarChart3 size={16} className="text-primary" /> SKILL RATING DIAGNOSTIC
+                </span>
+
+                <div className="space-y-3 text-xs">
+                  {[
+                    { name: 'Biology', rating: subjectRatings.biology, icon: <Dna size={14} className="text-emerald-500" />, color: 'bg-emerald-500' },
+                    { name: 'Chemistry', rating: subjectRatings.chemistry, icon: <FlaskConical size={14} className="text-purple-500" />, color: 'bg-purple-500' },
+                    { name: 'Physics', rating: subjectRatings.physics, icon: <Atom size={14} className="text-amber-500" />, color: 'bg-amber-500' },
+                    { name: 'Mental Agility', rating: subjectRatings.mentalAgility, icon: <Brain size={14} className="text-cyan-500" />, color: 'bg-cyan-500' },
+                  ].map((sub) => (
+                    <div key={sub.name} className="space-y-1">
+                      <div className="flex items-center justify-between font-bold">
+                        <span className="flex items-center gap-1.5">{sub.icon} {sub.name}</span>
+                        <span className="font-mono text-foreground">{sub.rating} ELO</span>
+                      </div>
+                      <div className="w-full bg-muted/40 h-2 rounded-full overflow-hidden">
+                        <div
+                          className={`${sub.color} h-full rounded-full`}
+                          style={{ width: `${Math.min(100, (sub.rating / 2500) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div className="space-y-2 pt-2">
-                <button
-                  onClick={async () => {
-                    const randomRival = CEE_RIVALS[Math.floor(Math.random() * CEE_RIVALS.length)];
-                    setOpponent(randomRival);
-                    let matchedId = `room-${Date.now().toString(36)}`;
-                    try {
-                      const { data } = await supabase.rpc('create_private_battle_room', {
-                        p_subject_filter: 'mixed',
-                        p_count: 10,
-                      });
-                      if (data && data.length > 0) {
-                        matchedId = data[0].room_id;
+              {/* ⚔️ YOUR RIVAL CARD */}
+              {rivalData && (
+                <div className="bg-card border-2 border-amber-500/40 rounded-3xl p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-amber-600 font-mono">YOUR ARCH RIVAL</span>
+                    <Flame size={18} className="text-amber-500" />
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <StudentAvatar name={rivalData.fullName} rating={rivalData.battleRating} size="md" />
+                    <div className="space-y-0.5 min-w-0">
+                      <h3 className="text-base font-black text-foreground truncate">{rivalData.fullName}</h3>
+                      <p className="text-xs text-muted-foreground font-mono">{rivalData.battleRating} ELO · {rivalData.currentStreak}</p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-2xl bg-muted/30 border border-border/60 grid grid-cols-2 text-center text-xs">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground block font-bold">YOUR WINS</span>
+                      <span className="font-black text-emerald-600 font-mono text-lg">{rivalData.userWins}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-muted-foreground block font-bold">RIVAL WINS</span>
+                      <span className="font-black text-amber-600 font-mono text-lg">{rivalData.rivalWins}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const f = friends.find((fr) => fr.id === rivalData.id);
+                      if (f) {
+                        setChallengeTarget(f);
+                        setShowChallengeModal(true);
                       }
-                    } catch {
-                      // Fallback
-                    }
-                    setRoomId(matchedId);
-                    roomIdRef.current = matchedId;
-                    setView('found');
-                    setTimeout(() => setView('countdown'), 1800);
-                  }}
-                  className="w-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 hover:bg-amber-500/20 transition-colors"
-                >
-                  <Zap size={14} /> Match with AI Bot Instantly
-                </button>
+                    }}
+                    className="btn-primary w-full py-2.5 text-xs font-black justify-center"
+                  >
+                    Challenge Rival Now
+                  </button>
+                </div>
+              )}
 
-                <button
-                  onClick={leaveQueue}
-                  disabled={isLeaving}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm font-medium disabled:opacity-50"
-                >
-                  {isLeaving ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
-                  Cancel Search
-                </button>
+              {/* Online Friends Drawer Callout */}
+              <div className="bg-card border border-border/80 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                  <span className="text-xs font-black uppercase text-foreground font-mono">ONLINE FRIENDS</span>
+                  <button onClick={() => setShowFriendsModal(true)} className="text-xs text-primary font-bold hover:underline">
+                    Manage
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {friends.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-muted-foreground space-y-2">
+                      <Users size={24} className="mx-auto text-muted-foreground/60" />
+                      <p>No friends added yet.</p>
+                      <button onClick={() => setShowFriendsModal(true)} className="text-primary font-bold underline text-xs">
+                        + Add Friends
+                      </button>
+                    </div>
+                  ) : (
+                    friends.slice(0, 5).map((f) => (
+                      <div key={f.id} className="p-3 rounded-2xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <StudentAvatar name={f.full_name} rating={f.battle_rating} size="sm" showStatus status={f.status} />
+                          <div className="space-y-0.5 min-w-0">
+                            <span className="font-extrabold text-foreground truncate block">{f.full_name}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground block">{f.battle_rating} ELO</span>
+                          </div>
+                        </div>
+
+                        {f.status === 'online' ? (
+                          <button
+                            onClick={() => {
+                              setChallengeTarget(f);
+                              setShowChallengeModal(true);
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-primary text-white text-[10px] font-extrabold hover:bg-primary-dark transition-colors"
+                          >
+                            Challenge
+                          </button>
+                        ) : f.status === 'in_match' ? (
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-full">In Match</span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-muted-foreground">Offline</span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
+
             </div>
           </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+        )}
 
-  // ─── VIEW: Match Found ──────────────────────────────────────────────────────
-  if (view === 'found' && opponent && myProfile) {
-    return (
-      <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-2xl mx-auto space-y-6">
-            {/* Match found banner */}
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 bg-success-light text-success px-4 py-2 rounded-full text-sm font-bold mb-3 animate-bounce">
-                <CheckCircle2 size={16} />
-                Match Found!
-              </div>
-              <h2 className="text-2xl font-extrabold text-foreground">Opponent Located</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {queueMode === 'ranked' ? 'Ranked' : 'Quick Play'} · Preparing battle…
+        {/* View 2: Searching Screen */}
+        {view === 'searching' && (
+          <div className="max-w-md mx-auto bg-card border-2 border-primary/30 rounded-3xl p-8 shadow-xl text-center space-y-6">
+            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+              <Swords size={36} className="text-primary animate-pulse" />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-primary font-mono">SEARCHING FOR OPPONENT</span>
+              <h2 className="text-2xl font-black text-foreground">Searching Online Players...</h2>
+              <p className="text-xs text-muted-foreground">
+                Time elapsed: <span className="font-mono font-bold text-foreground">{searchTime}s</span>
               </p>
             </div>
 
-            {/* VS layout */}
-            <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
-              <PlayerCard profile={myProfile} label="You" isYou animate />
+            <p className="text-[11px] text-muted-foreground bg-muted/40 p-3 rounded-2xl border border-border/60">
+              Subject: <span className="font-bold text-foreground capitalize">{subjectFilter}</span> · Format: <span className="font-bold text-foreground uppercase">{matchMode}</span>
+            </p>
 
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-chem flex items-center justify-center shadow-lg">
-                  <Swords size={22} className="text-white" />
-                </div>
-                <span className="text-lg font-extrabold text-muted-foreground">VS</span>
-                {/* ELO diff */}
+            <button onClick={cancelSearch} className="btn-secondary w-full py-3 text-xs font-bold justify-center">
+              Cancel Matchmaking
+            </button>
+          </div>
+        )}
+
+        {/* View 3 & 4: Match Found & Countdown */}
+        {(view === 'found' || view === 'countdown') && opponent && me && (
+          <div className="max-w-xl mx-auto bg-card border-2 border-emerald-500/40 rounded-3xl p-8 shadow-2xl text-center space-y-6">
+            <span className="px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black border border-emerald-500/20 flex items-center gap-1.5 w-fit mx-auto">
+              <Radio size={12} className="animate-pulse" /> MATCH FOUND!
+            </span>
+
+            <div className="grid grid-cols-2 gap-4 items-center pt-2">
+              <div className="p-5 rounded-2xl bg-primary/5 border border-primary/30 flex flex-col items-center gap-2">
+                <StudentAvatar name={me.full_name} rating={subjectRatings.overall} size="xl" />
                 <div className="text-center">
-                  <p className="text-xs text-muted-foreground">ELO diff</p>
-                  <p className={`text-sm font-bold ${Math.abs(myProfile.battle_rating - opponent.battle_rating) <= 100 ? 'text-success' : 'text-warning'}`}>
-                    {Math.abs(myProfile.battle_rating - opponent.battle_rating)}
-                  </p>
+                  <span className="text-[10px] font-black text-primary uppercase font-mono block">YOU</span>
+                  <span className="text-base font-black text-foreground block truncate">{me.full_name}</span>
+                  <RankBadge rating={subjectRatings.overall} size="xs" />
                 </div>
               </div>
 
-              <PlayerCard profile={opponent} label="Opponent" animate />
-            </div>
-
-            {/* Mode info */}
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="grid grid-cols-3 gap-4 text-center text-sm">
-                <div>
-                  <p className="font-bold text-foreground">10</p>
-                  <p className="text-xs text-muted-foreground">Questions</p>
-                </div>
-                <div>
-                  <p className="font-bold text-foreground">5 min</p>
-                  <p className="text-xs text-muted-foreground">Time Limit</p>
-                </div>
-                <div>
-                  <p className={`font-bold ${queueMode === 'ranked' ? 'text-ma' : 'text-primary'}`}>
-                    {queueMode === 'ranked' ? 'Ranked' : 'Casual'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Mode</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // ─── VIEW: Countdown ────────────────────────────────────────────────────────
-  if (view === 'countdown' && opponent && myProfile) {
-    return (
-      <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="max-w-2xl mx-auto space-y-6">
-            {/* Countdown header */}
-            <div className="text-center">
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-                Battle Starting In
-              </p>
-              <div className="relative inline-flex items-center justify-center">
-                <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping scale-150" />
-                <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-xl">
-                  <span className="text-5xl font-extrabold text-white">{countdown}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* VS layout compact */}
-            <div className="grid grid-cols-[1fr_auto_1fr] gap-4 items-center">
-              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 text-center">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-extrabold text-lg mx-auto mb-2">
-                  {getInitials(myProfile.full_name)}
-                </div>
-                <p className="text-sm font-bold text-foreground truncate">{myProfile.full_name}</p>
-                <p className="text-xs text-primary font-semibold mt-1">{myProfile.battle_rating} ELO</p>
-                <div className="mt-2">
-                  <RankBadge rating={myProfile.battle_rating} size="xs" />
-                </div>
-              </div>
-
-              <div className="flex flex-col items-center gap-1">
-                <Swords size={28} className="text-primary" />
-                <span className="text-base font-extrabold text-muted-foreground">VS</span>
-              </div>
-
-              <div className="bg-chem/5 border border-chem/20 rounded-2xl p-4 text-center">
-                <div className="w-12 h-12 rounded-xl bg-chem/10 flex items-center justify-center text-chem font-extrabold text-lg mx-auto mb-2">
-                  {getInitials(opponent.full_name)}
-                </div>
-                <p className="text-sm font-bold text-foreground truncate">{opponent.full_name}</p>
-                <p className="text-xs text-chem font-semibold mt-1">{opponent.battle_rating} ELO</p>
-                <div className="mt-2">
+              <div className="p-5 rounded-2xl bg-amber-500/5 border border-amber-500/30 flex flex-col items-center gap-2">
+                <StudentAvatar name={opponent.full_name} rating={opponent.battle_rating} size="xl" />
+                <div className="text-center">
+                  <span className="text-[10px] font-black text-amber-600 uppercase font-mono block">OPPONENT</span>
+                  <span className="text-base font-black text-foreground block truncate">{opponent.full_name}</span>
                   <RankBadge rating={opponent.battle_rating} size="xs" />
                 </div>
               </div>
             </div>
 
-            {/* Battle info */}
-            <div className="bg-card border border-border rounded-2xl p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">10 MCQ questions</span> · 5 minute time limit ·{' '}
-                <span className={`font-semibold ${queueMode === 'ranked' ? 'text-ma' : 'text-primary'}`}>
-                  {queueMode === 'ranked' ? 'Ranked match' : 'Quick play'}
-                </span>
-              </p>
-              <div className="flex items-center justify-center gap-2 mt-3 text-xs text-muted-foreground">
-                <Loader2 size={12} className="animate-spin" />
-                Redirecting to Battle Arena…
+            <div className="space-y-1 pt-2">
+              <span className="text-4xl font-black text-foreground font-mono">{countdown}</span>
+              <p className="text-xs font-bold text-muted-foreground">Entering Synchronized Battle Room...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Friend Challenge Modal */}
+        {showChallengeModal && challengeTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-2xl max-w-md w-full space-y-5">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <h3 className="text-lg font-black text-foreground">Challenge {challengeTarget.full_name}</h3>
+                <button onClick={() => setShowChallengeModal(false)}><X size={20} /></button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="font-bold text-muted-foreground block mb-1">Subject</span>
+                  <select
+                    value={subjectFilter}
+                    onChange={(e) => setSubjectFilter(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-muted/30 border border-border text-foreground font-bold"
+                  >
+                    <option value="mixed">Mixed CEE Syllabus</option>
+                    <option value="biology">Biology</option>
+                    <option value="chemistry">Chemistry</option>
+                    <option value="physics">Physics</option>
+                  </select>
+                </div>
+
+                <div>
+                  <span className="font-bold text-muted-foreground block mb-1">Format</span>
+                  <select
+                    value={matchMode}
+                    onChange={(e) => setMatchMode(e.target.value as MatchMode)}
+                    className="w-full p-2.5 rounded-xl bg-muted/30 border border-border text-foreground font-bold"
+                  >
+                    <option value="standard">Standard Single Match</option>
+                    <option value="best_of_3">Best of 3 Series</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={sendCustomChallenge}
+                className="btn-primary w-full py-3 text-xs font-black justify-center gap-2"
+              >
+                <Swords size={16} />
+                <span>Send Challenge</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Friends Drawer Modal */}
+        {showFriendsModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-2xl max-w-lg w-full space-y-6 max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-border/60 pb-4">
+                <h3 className="text-lg font-black text-foreground">Friends &amp; Privacy</h3>
+                <button onClick={() => setShowFriendsModal(false)}><X size={20} /></button>
+              </div>
+
+              {friendActionMsg && (
+                <div className="p-3 rounded-xl bg-primary/10 text-primary text-xs font-bold text-center">
+                  {friendActionMsg}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-foreground block">Add Friend by User ID:</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Enter Student UUID..."
+                    value={addFriendInput}
+                    onChange={(e) => setAddFriendInput(e.target.value)}
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-muted/30 border border-border text-xs text-foreground focus:outline-none focus:border-primary"
+                  />
+                  <button
+                    onClick={() => {
+                      if (addFriendInput.trim()) {
+                        fetch('/api/arena/friends', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'send_request', userId, targetUserId: addFriendInput.trim() }),
+                        });
+                        setAddFriendInput('');
+                      }
+                    }}
+                    className="btn-primary px-4 py-2 text-xs font-bold shrink-0"
+                  >
+                    Send Request
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-foreground block">My Friends ({friends.length}):</span>
+                <div className="space-y-2">
+                  {friends.map((f) => (
+                    <div key={f.id} className="p-3 rounded-2xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <StudentAvatar name={f.full_name} rating={f.battle_rating} size="sm" showStatus status={f.status} />
+                        <div className="space-y-0.5 min-w-0">
+                          <span className="font-extrabold text-foreground block truncate">{f.full_name}</span>
+                          <span className="text-[10px] text-muted-foreground font-mono">{f.battle_rating} ELO · <span className="capitalize">{f.status}</span></span>
+                        </div>
+                      </div>
+                      {f.status === 'online' && (
+                        <button
+                          onClick={() => {
+                            setChallengeTarget(f);
+                            setShowChallengeModal(true);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-primary text-white text-[10px] font-extrabold hover:bg-primary-dark transition-colors"
+                        >
+                          Challenge
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <button
-              onClick={leaveQueue}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
-            >
-              <RotateCcw size={14} />
-              Cancel & Return to Lobby
-            </button>
           </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  return null;
+        )}
+      </div>
+    </DashboardLayout>
+  );
 }

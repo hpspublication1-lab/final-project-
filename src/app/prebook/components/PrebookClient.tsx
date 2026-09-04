@@ -287,7 +287,7 @@ export default function PrebookClient() {
     const supabase = createClient();
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) {
-      router.push(`/sign-up-login-screen?redirect=${encodeURIComponent('/prebook?pay=1')}`);
+      router.push(`/login?redirect=${encodeURIComponent('/prebook?pay=1')}`);
       return;
     }
 

@@ -71,33 +71,29 @@ export async function middleware(request: NextRequest) {
 
   if (!isAuthenticated && isProtected) {
     const url = request.nextUrl.clone();
-    url.pathname = '/sign-up-login-screen';
+    url.pathname = '/login';
     // Preserve the intended destination so login returns the user here.
     url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
     return NextResponse.redirect(url);
   }
 
-  // ── Hidden admin control panel ────────────────────────────────────────────
-  // The panel is NOT linked anywhere and is unreachable at /admin directly.
-  // It is unlocked ONLY by visiting the secret entrance  /admin-<ADMIN_ACCESS_KEY>
-  // (the key lives in .env). That sets a short-lived httpOnly cookie, after which
-  // /admin works IN THAT BROWSER — and still only for a super-admin account.
+  // ── Admin Area Access Control ─────────────────────────────────────────────
   const adminKey = process.env.ADMIN_ACCESS_KEY;
   const secretEntrance = adminKey ? `/admin-${adminKey}` : null;
   const isAdminArea = pathname === '/admin' || pathname.startsWith('/admin/');
 
-  // 1) Secret entrance. You must be signed in as a SUPER ADMIN to unlock.
-  //    - not signed in       → send to login, then back to this secret URL
-  //    - signed in, not super → home (wrong account)
-  //    - super admin          → set the unlock cookie and open /admin
+  // 1) Secret entrance handling: sets unlock cookie for super admin
   if (secretEntrance && pathname === secretEntrance) {
     if (!user) {
       return NextResponse.redirect(
-        new URL(`/sign-up-login-screen?redirect=${encodeURIComponent(secretEntrance)}`, request.url)
+        new URL(`/login?redirect=${encodeURIComponent(secretEntrance)}`, request.url)
       );
     }
     if (!isSuperAdmin(user.email)) {
-      return NextResponse.redirect(new URL('/', request.url));
+      const url = request.nextUrl.clone();
+      url.pathname = '/student-dashboard';
+      url.search = '?error=unauthorized_admin';
+      return NextResponse.redirect(url);
     }
     const res = NextResponse.redirect(new URL('/admin', request.url));
     res.cookies.set('sc_admin_unlock', adminKey!, {
@@ -110,18 +106,38 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  // 2) The real /admin area: require the unlock cookie AND a super-admin session.
-  //    Anything missing → bounce to the homepage so the panel stays invisible.
+  // 2) Protected /admin area access control:
+  //    - If not logged in -> redirect to login with redirect back to /admin
+  //    - If logged in but not super admin -> redirect to student dashboard with error
+  //    - If super admin -> allow access with noindex headers
   if (isAdminArea) {
-    const unlocked = !adminKey || request.cookies.get('sc_admin_unlock')?.value === adminKey;
-    const allowed = !!user && isSuperAdmin(user.email) && unlocked;
-    if (!allowed) {
-      return NextResponse.redirect(new URL('/', request.url));
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+      return NextResponse.redirect(url);
     }
+
+    if (!isSuperAdmin(user.email)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/student-dashboard';
+      url.search = '?error=unauthorized_admin';
+      return NextResponse.redirect(url);
+    }
+
+    // Add security and noindex headers for admin area
+    supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
 
-  // /staff remains open to regular admins (user_profiles.is_admin).
-  if (isAuthenticated && user && pathname.startsWith('/staff')) {
+  // 3) Staff area (/staff and /staff/*) access control
+  if (pathname === '/staff' || pathname.startsWith('/staff/')) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+      return NextResponse.redirect(url);
+    }
+
     const { data: profile } = await supabase
       .from('user_profiles')
       .select('is_admin')
@@ -131,8 +147,11 @@ export async function middleware(request: NextRequest) {
     if (!profile?.is_admin && !isSuperAdmin(user.email)) {
       const url = request.nextUrl.clone();
       url.pathname = '/student-dashboard';
+      url.search = '?error=staff_access_required';
       return NextResponse.redirect(url);
     }
+
+    supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
 
   return supabaseResponse;

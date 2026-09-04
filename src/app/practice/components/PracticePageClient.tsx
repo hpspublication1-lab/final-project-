@@ -75,6 +75,7 @@ export default function PracticePageClient() {
   const [selectedSubject, setSelectedSubject] = useState('Biology');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [questionCount, setQuestionCount] = useState(10);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [liveMode, setLiveMode] = useState(false); // ⚡ generate fresh via OpenAI
   const [questions, setQuestions] = useState<MCQ[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -198,11 +199,109 @@ export default function PracticePageClient() {
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [chapterFilterTitle, setChapterFilterTitle] = useState<string | null>(null);
 
+  const handleStartSession = useCallback((overrideCount?: number, overrideDiff?: string, overrideSubj?: string) => {
+    const count = overrideCount ?? questionCount;
+    const diff = overrideDiff ?? selectedDifficulty;
+    const subj = overrideSubj ?? selectedSubject;
+
+    setFetchError(null);
+    setMode('loading');
+    startTransition(async () => {
+      // ⚡ Live AI mode: generate a fresh set via OpenAI (Pro feature), no bank.
+      if (liveMode) {
+        try {
+          const res = await fetch('/api/practice/live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              subject: subj,
+              difficulty: diff === 'All' ? undefined : diff.toLowerCase(),
+              count,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.questions?.length) {
+            setFetchError(data.error ?? 'Could not generate live questions. Please try again.');
+            setMode('setup');
+            return;
+          }
+          const mapped: MCQ[] = data.questions.map((q: any) => ({
+            id: q.id,
+            question: q.question,
+            options: q.options,
+            correctId: q.correctId,
+            explanation: q.explanation ?? '',
+            subject: subj,
+            chapter: 'Live AI',
+            difficulty: (q.difficulty ? q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1) : 'Medium') as 'Easy' | 'Medium' | 'Hard',
+            marks: 1,
+            negativeMarks: 0.25,
+            subjectId: null,
+          }));
+          setQuestions(mapped);
+          setCurrentIdx(0);
+          setSelectedAnswers({});
+          setShowExplanation(false);
+          setMode('active');
+        } catch {
+          setFetchError('Live practice generation failed. Please try again.');
+          setMode('setup');
+        }
+        return;
+      }
+
+      // Free plan: 200 practice MCQs / month. Paid & prebook users are unlimited.
+      try {
+        const quotaRes = await fetch('/api/practice/quota');
+        if (quotaRes.ok) {
+          const q = await quotaRes.json();
+          if (q.limited) {
+            setFetchError(
+              `You've used all ${q.limit} free practice MCQs this month. Upgrade to Pro or prebook the crash course for unlimited practice and every premium feature.`
+            );
+            setMode('setup');
+            return;
+          }
+        }
+      } catch {
+        // fail open — never block practice on a quota hiccup
+      }
+
+      const result = await fetchPracticeQuestions(subj, diff, count, selectedChapterId);
+      if (result.error || result.questions.length === 0) {
+        const scope = chapterFilterTitle ? `${chapterFilterTitle} (${subj})` : `${subj} (${diff})`;
+        setFetchError(result.error ?? `No questions found for ${scope}. Please try a different filter.`);
+        setMode('setup');
+        return;
+      }
+      setQuestions(result.questions.map(mapRowToMCQ));
+      setCurrentIdx(0);
+      setSelectedAnswers({});
+      setShowExplanation(false);
+      setMode('active');
+    });
+  }, [liveMode, questionCount, selectedDifficulty, selectedSubject, selectedChapterId, chapterFilterTitle]);
+
   useEffect(() => {
+    const countParam = searchParams.get('count');
     const subjParam = searchParams.get('subject');
     const chapterParam = searchParams.get('chapter');
+    const autostart = searchParams.get('autostart') === 'true' || searchParams.get('start') === 'true';
+
+    let initialCount = 10;
+    if (countParam) {
+      const parsed = parseInt(countParam, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        initialCount = parsed;
+        setQuestionCount(parsed);
+      }
+    }
     if (subjParam) setSelectedSubject(subjParam);
     if (chapterParam) setSelectedChapterId(chapterParam);
+
+    if (autostart) {
+      handleStartSession(initialCount, 'All', subjParam || undefined);
+    }
     // Only read the URL once, on initial load of the setup screen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -306,81 +405,6 @@ export default function PracticePageClient() {
     return { score, correct, incorrect, unattempted: questions.length - correct - incorrect };
   };
 
-  const handleStartSession = () => {
-    setFetchError(null);
-    setMode('loading');
-    startTransition(async () => {
-      // ⚡ Live AI mode: generate a fresh set via OpenAI (Pro feature), no bank.
-      if (liveMode) {
-        try {
-          const res = await fetch('/api/practice/live', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subject: selectedSubject, difficulty: selectedDifficulty === 'All' ? undefined : selectedDifficulty.toLowerCase(), count: questionCount }),
-          });
-          const data = await res.json();
-          if (!res.ok || !data.questions?.length) {
-            setFetchError(data.error ?? 'Could not generate live questions. Please try again.');
-            setMode('setup');
-            return;
-          }
-          const mapped: MCQ[] = data.questions.map((q: any) => ({
-            id: q.id,
-            question: q.question,
-            options: q.options,
-            correctId: q.correctId,
-            explanation: q.explanation ?? '',
-            subject: selectedSubject,
-            chapter: 'Live AI',
-            difficulty: (q.difficulty ? q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1) : 'Medium') as 'Easy' | 'Medium' | 'Hard',
-            marks: 1,
-            negativeMarks: 0.25,
-            subjectId: null,
-          }));
-          setQuestions(mapped);
-          setCurrentIdx(0);
-          setSelectedAnswers({});
-          setShowExplanation(false);
-          setMode('active');
-        } catch {
-          setFetchError('Live practice generation failed. Please try again.');
-          setMode('setup');
-        }
-        return;
-      }
-
-      // Free plan: 200 practice MCQs / month. Paid & prebook users are unlimited.
-      try {
-        const quotaRes = await fetch('/api/practice/quota');
-        if (quotaRes.ok) {
-          const q = await quotaRes.json();
-          if (q.limited) {
-            setFetchError(
-              `You've used all ${q.limit} free practice MCQs this month. Upgrade to Pro or prebook the crash course for unlimited practice and every premium feature.`
-            );
-            setMode('setup');
-            return;
-          }
-        }
-      } catch {
-        // fail open — never block practice on a quota hiccup
-      }
-
-      const result = await fetchPracticeQuestions(selectedSubject, selectedDifficulty, questionCount, selectedChapterId);
-      if (result.error || result.questions.length === 0) {
-        const scope = chapterFilterTitle ? `${chapterFilterTitle} (${selectedSubject})` : `${selectedSubject} (${selectedDifficulty})`;
-        setFetchError(result.error ?? `No questions found for ${scope}. Please try a different filter.`);
-        setMode('setup');
-        return;
-      }
-      setQuestions(result.questions.map(mapRowToMCQ));
-      setCurrentIdx(0);
-      setSelectedAnswers({});
-      setShowExplanation(false);
-      setMode('active');
-    });
-  };
-
   const handleFinishSession = () => {
     setMode('review');
     const { score, correct, incorrect, unattempted } = getScore();
@@ -461,6 +485,42 @@ export default function PracticePageClient() {
             </div>
           )}
 
+          {/* ── Quick Start: 1-click practice buttons ──────────────────── */}
+          <div className="mb-5">
+            <p className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground mb-2">⚡ Quick Start</p>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: '10 MCQs', desc: '~5 min warm-up', count: 10, diff: 'All' },
+                { label: '25 MCQs', desc: '~12 min session', count: 25, diff: 'All' },
+                { label: '50 MCQs', desc: '~25 min deep dive', count: 50, diff: 'All' },
+              ].map((q) => (
+                <button
+                  key={q.label}
+                  disabled={mode === 'loading'}
+                  onClick={() => {
+                    setQuestionCount(q.count);
+                    setSelectedDifficulty(q.diff);
+                    handleStartSession(q.count, q.diff);
+                  }}
+                  className="flex flex-col items-center p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group disabled:opacity-60 cursor-pointer"
+                >
+                  <Zap size={20} className="text-primary mb-1 group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-black text-foreground">{q.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{q.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mb-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-background px-3 text-xs text-muted-foreground font-medium">or customise your session</span>
+            </div>
+          </div>
+
           {chapterFilterTitle && (
             <div className="mb-4 flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 text-sm">
               <Target size={14} className="text-primary shrink-0" />
@@ -486,7 +546,7 @@ export default function PracticePageClient() {
                   <button
                     key={s.name}
                     onClick={() => { setSelectedSubject(s.name); setSelectedChapterId(null); }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border font-medium text-sm transition-all ${
+                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border font-medium text-sm transition-all cursor-pointer ${
                       selectedSubject === s.name
                         ? `${s.bg} ${s.color} ${s.border} shadow-xs font-bold`
                         : 'bg-muted/30 border-border text-muted-foreground hover:border-border hover:text-foreground'
@@ -494,26 +554,6 @@ export default function PracticePageClient() {
                   >
                     <span className="text-xl">{s.icon}</span>
                     <span className="text-xs leading-tight text-center">{s.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-
-            {/* Difficulty */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">Difficulty</label>
-              <div className="flex gap-2 flex-wrap">
-                {['All', 'Easy', 'Medium', 'Hard'].map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setSelectedDifficulty(d)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                      selectedDifficulty === d
-                        ? 'bg-primary text-white border-primary' :'bg-card border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {d}
                   </button>
                 ))}
               </div>
@@ -527,9 +567,9 @@ export default function PracticePageClient() {
                   <button
                     key={n}
                     onClick={() => setQuestionCount(n)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
+                    className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer ${
                       questionCount === n
-                        ? 'bg-primary text-white border-primary' :'bg-card border-border text-muted-foreground hover:text-foreground'
+                        ? 'bg-primary text-white border-primary font-bold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {n} Qs
@@ -538,70 +578,109 @@ export default function PracticePageClient() {
               </div>
             </div>
 
-            {/* Practice modes */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">Practice Mode</label>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {[
-                  { icon: Target, title: 'Topic Practice', desc: 'Focus on specific chapters', color: 'text-primary', active: true },
-                  { icon: Brain, title: 'Adaptive', desc: 'AI selects based on weak areas', color: 'text-chem', badge: 'Pro', comingSoon: true },
-                  { icon: Clock, title: 'Timed Sprint', desc: 'Race against the clock', color: 'text-physics', comingSoon: true },
-                ].map((m) => (
-                  <div key={m.title} className={`relative rounded-xl p-3 transition-colors ${m.active ? 'bg-primary/5 border-2 border-primary cursor-default' : 'bg-muted/30 border border-border cursor-not-allowed opacity-60'}`}>
-                    <div className="absolute top-2 right-2 flex gap-1 items-center">
-                      {m.comingSoon && (
-                        <span className="text-[10px] bg-muted border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">Coming Soon</span>
-                      )}
-                      {m.badge && (
-                        <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">{m.badge}</span>
-                      )}
-                    </div>
-                    <m.icon size={18} className={`${m.color} mb-1.5`} />
-                    <p className="text-sm font-semibold text-foreground">{m.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{m.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ⚡ Live AI practice toggle — generates fresh questions via OpenAI */}
+            {/* Primary Start Action */}
             <button
-              type="button"
-              onClick={() => setLiveMode((v) => !v)}
-              className={`w-full mb-3 flex items-center justify-between gap-3 rounded-xl border p-3.5 text-left transition-colors ${
-                liveMode ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-              }`}
-            >
-              <span className="flex items-center gap-2.5">
-                <span className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${liveMode ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
-                  <Sparkles size={17} />
-                </span>
-                <span>
-                  <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    Live AI Practice
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-ma-light text-ma">PRO</span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">Fresh questions generated by SamyakGURU for you — never repeated.</span>
-                </span>
-              </span>
-              <span className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${liveMode ? 'bg-primary' : 'bg-muted'}`}>
-                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${liveMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
-              </span>
-            </button>
-
-            <button
-              onClick={handleStartSession}
+              onClick={() => handleStartSession()}
               disabled={mode === 'loading'}
-              className="btn-primary w-full py-3 text-base gap-2 disabled:opacity-60"
+              className="btn-primary w-full py-3.5 text-base font-black gap-2 disabled:opacity-60 cursor-pointer shadow-md"
             >
               {mode === 'loading' ? (
                 <><Loader2 size={18} className="animate-spin" /> {liveMode ? 'Generating with AI…' : 'Loading Questions...'}</>
               ) : liveMode ? (
                 <><Sparkles size={18} /> Start Live AI Practice</>
               ) : (
-                <><Play size={18} /> Start Practice Session</>
+                <><Play size={18} fill="currentColor" /> Start Practice Session</>
               )}
             </button>
+
+            {/* Collapsible Advanced Filters */}
+            <div className="pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+                className="flex items-center justify-between w-full text-xs font-bold text-muted-foreground hover:text-foreground py-2 transition-colors cursor-pointer"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Target size={14} className="text-primary" />
+                  <span>Advanced Filters &amp; Practice Modes</span>
+                </span>
+                <ChevronRight size={14} className={`transform transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} />
+              </button>
+
+              {showAdvancedOptions && (
+                <div className="pt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  {/* Difficulty */}
+                  <div>
+                    <label className="block text-xs font-bold text-foreground mb-2 uppercase tracking-wider">Difficulty Level</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {['All', 'Easy', 'Medium', 'Hard'].map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => setSelectedDifficulty(d)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                            selectedDifficulty === d
+                              ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Practice modes */}
+                  <div>
+                    <label className="block text-xs font-bold text-foreground mb-2 uppercase tracking-wider">Mode</label>
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      {[
+                        { icon: Target, title: 'Topic Practice', desc: 'Standard question bank', color: 'text-primary', active: true },
+                        { icon: Brain, title: 'Adaptive AI', desc: 'Targets your weak areas', color: 'text-chem', badge: 'Pro', comingSoon: true },
+                        { icon: Clock, title: 'Timed Sprint', desc: 'Race against time', color: 'text-physics', comingSoon: true },
+                      ].map((m) => (
+                        <div key={m.title} className={`relative rounded-xl p-3 transition-colors ${m.active ? 'bg-primary/5 border-2 border-primary cursor-default' : 'bg-muted/30 border border-border cursor-not-allowed opacity-60'}`}>
+                          <div className="absolute top-2 right-2 flex gap-1 items-center">
+                            {m.comingSoon && (
+                              <span className="text-[9px] bg-muted border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">Soon</span>
+                            )}
+                            {m.badge && (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">{m.badge}</span>
+                            )}
+                          </div>
+                          <m.icon size={16} className={`${m.color} mb-1`} />
+                          <p className="text-xs font-bold text-foreground">{m.title}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{m.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ⚡ Live AI practice toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setLiveMode((v) => !v)}
+                    className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors cursor-pointer ${
+                      liveMode ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${liveMode ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
+                        <Sparkles size={16} />
+                      </span>
+                      <span>
+                        <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                          Live AI Question Generator
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-ma-light text-ma">PRO</span>
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block">Generate fresh AI questions tailored for Nepal entrance exams.</span>
+                      </span>
+                    </span>
+                    <span className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${liveMode ? 'bg-primary' : 'bg-muted'}`}>
+                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${liveMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </DashboardLayout>

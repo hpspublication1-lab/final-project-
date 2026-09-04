@@ -30,7 +30,7 @@ const analyticsConnect = 'https://api.mixpanel.com https://api-js.mixpanel.com h
 // Bunny.net Stream (live classes + recordings): hls.js fetches .m3u8/.ts over
 // XHR, which connect-src governs. Allow Bunny's CDN + delivery hosts.
 const bunnyConnect = 'https://*.b-cdn.net https://*.mediadelivery.net https://iframe.mediadelivery.net';
-const analyticsScript = 'https://www.googletagmanager.com';
+const analyticsScript = 'https://www.googletagmanager.com https://static.cloudflareinsights.com';
 
 const csp = [
   "default-src 'self'",
@@ -39,7 +39,7 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' ${sb.https} ${sb.wss} ${analyticsConnect} ${bunnyConnect}`,
+  `connect-src 'self' ${sb.https} ${sb.wss} ${analyticsConnect} ${bunnyConnect} https://cloudflareinsights.com`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -55,6 +55,7 @@ const securityHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
 ];
 
@@ -92,9 +93,16 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  compress: true,
+
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts'],
+  },
+
   images: {
     remotePatterns: imageHosts,
-    minimumCacheTTL: 60,
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
     qualities: [75, 85, 100],
   },
 
@@ -109,17 +117,24 @@ const nextConfig = {
 
   async redirects() {
     return [
-      { source: '/login', destination: '/sign-up-login-screen', permanent: false },
-      { source: '/signin', destination: '/sign-up-login-screen', permanent: false },
-      { source: '/signup', destination: '/sign-up-login-screen', permanent: false },
-    ];
-  },
-
-  async rewrites() {
-    return [
-      { source: '/login', destination: '/sign-up-login-screen' },
-      { source: '/signin', destination: '/sign-up-login-screen' },
-      { source: '/signup', destination: '/sign-up-login-screen' },
+      { source: '/sign-up-login-screen', destination: '/login', permanent: true },
+      { source: '/battle', destination: '/battle-arena', permanent: true },
+      { source: '/arena', destination: '/battle-arena', permanent: true },
+      { source: '/mcq', destination: '/practice', permanent: true },
+      { source: '/mcqs', destination: '/practice', permanent: true },
+      { source: '/mcq-bank', destination: '/practice', permanent: true },
+      { source: '/quiz', destination: '/practice', permanent: true },
+      { source: '/quizzes', destination: '/practice', permanent: true },
+      { source: '/question-bank', destination: '/practice', permanent: true },
+      { source: '/tests', destination: '/mock-tests', permanent: true },
+      { source: '/mock-test', destination: '/mock-tests', permanent: true },
+      { source: '/lesson', destination: '/subjects', permanent: true },
+      { source: '/lessons', destination: '/subjects', permanent: true },
+      { source: '/ai', destination: '/ai-tutor', permanent: true },
+      { source: '/rankings', destination: '/leaderboard', permanent: true },
+      { source: '/privacy-policy', destination: '/privacy', permanent: true },
+      { source: '/refund-policy', destination: '/refund', permanent: true },
+      { source: '/contact-us', destination: '/contact', permanent: true },
     ];
   },
 
@@ -130,6 +145,24 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: securityHeaders,
+      },
+      {
+        source: '/assets/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
     ];
   },

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
 const faqs = [
@@ -73,6 +74,16 @@ export default function FAQSection() {
               )}
             </div>
           ))}
+        </div>
+
+        <div className="text-center mt-10">
+          <Link
+            href="/faq"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-card border border-border text-xs font-black text-foreground hover:border-primary/40 hover:text-primary transition-all shadow-sm group"
+          >
+            <span>View All 20+ Frequently Asked Questions</span>
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
+          </Link>
         </div>
       </div>
     </section>

@@ -8,26 +8,11 @@ export default function robots(): MetadataRoute.Robots {
   const baseUrl = siteUrl.replace(/\/+$/, '');
 
   return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-        disallow: [
-          '/api/',
-          '/_next/',
-          '/admin/',
-          '/student-dashboard/',
-          '/account/',
-          '/post-match-summary/',
-          '/match-lobby/',
-          '/activate-plan/',
-          '/workspace/',
-          '/settings/',
-          '/billing/',
-          '/profile/',
-        ],
-      },
-    ],
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/api/'],
+    },
     sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

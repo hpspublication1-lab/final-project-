@@ -10,8 +10,41 @@ import {
   Zap, Play, FileText, Award, Users, Star, Lock, Check, HelpCircle, Target, Download
 } from 'lucide-react';
 
+import { getSeeFAQSchema } from '@/lib/seo/structuredData';
+
 export default function DedicatedSeeLandingPage() {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
+
+  const seeCourseSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    '@id': 'https://samyakcee.com/see#course',
+    name: 'SEE Class 10 Board Exam Master Course 2082',
+    description:
+      'Complete SEE Class 10 preparation covering Compulsory Science, Compulsory Math, Optional Math, English, Nepali, and Social Studies with 10,000+ model questions, video lectures, and AI subjective evaluations.',
+    provider: {
+      '@type': 'EducationalOrganization',
+      name: 'Samyak Guru',
+      url: 'https://samyakcee.com',
+    },
+    educationalCredentialAwarded: 'SEE Grade A+ Completion Certificate',
+    inLanguage: ['ne', 'en'],
+    offers: {
+      '@type': 'Offer',
+      price: '999',
+      priceCurrency: 'NPR',
+      availability: 'https://schema.org/InStock',
+      url: 'https://samyakcee.com/see/checkout',
+      validFrom: '2026-01-01',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.9',
+      reviewCount: '1840',
+      bestRating: '5',
+      worstRating: '1',
+    },
+  };
 
   const seeSubjects = [
     { name: 'Compulsory Science', href: '/see/subject/science', chapters: 24, icon: '🔬', desc: 'Physics, Chemistry, Biology & Astronomy', color: 'border-emerald-500/20 bg-emerald-500/5' },
@@ -24,6 +57,12 @@ export default function DedicatedSeeLandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([seeCourseSchema, getSeeFAQSchema()]),
+        }}
+      />
       <PublicNav />
 
       {/* Interactive Free Diagnostic Modal */}

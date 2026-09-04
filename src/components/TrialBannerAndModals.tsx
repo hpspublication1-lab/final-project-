@@ -69,7 +69,8 @@ export default function TrialBannerAndModals() {
 
             <button
               onClick={dismissWelcomeModal}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg"
+              aria-label="Close welcome gift modal"
             >
               <X size={20} />
             </button>
@@ -133,7 +134,8 @@ export default function TrialBannerAndModals() {
           <div className="relative w-full max-w-md bg-card border-2 border-primary/50 rounded-3xl shadow-2xl p-6 sm:p-7 text-center overflow-hidden">
             <button
               onClick={dismissExpiredModal}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg"
+              aria-label="Close trial expired modal"
             >
               <X size={20} />
             </button>

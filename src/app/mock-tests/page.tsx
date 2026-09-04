@@ -4,14 +4,14 @@ import MockTestsPageClient from './components/MockTestsPageClient';
 import PremiumGate from '@/components/PremiumGate';
 
 export const metadata: Metadata = {
-  title: 'Mock Tests — Samyak CEE Mastery',
-  description: 'Take full-length mock tests simulating real CEE 2026 exam. Get detailed analysis and improve your score with our comprehensive test series.',
+  title: 'Tests & Assessments — Samyak Tutor',
+  description: 'Take full-length mock tests, chapter assessments, and timed exam simulations on Samyak Tutor. Instant scoring, percentile ranks, and step-by-step solutions.',
   alternates: {
     canonical: '/mock-tests',
   },
   openGraph: {
-    title: 'Mock Tests',
-    description: 'Full-length CEE mock tests with detailed performance analysis',
+    title: 'Tests & Assessments — Samyak Tutor',
+    description: 'Full-length mock tests and chapter assessments with detailed performance analysis on Samyak Tutor.',
     url: '/mock-tests',
     type: 'website',
     images: [
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
         url: '/assets/images/app_logo.png',
         width: 1200,
         height: 630,
-        alt: 'Mock Tests — Samyak CEE Mastery',
+        alt: 'Tests & Assessments — Samyak Tutor',
       },
     ],
   },

@@ -97,7 +97,7 @@ export default function PremiumGate({ feature = 'This feature', children }: { fe
             <div className="mt-7 flex flex-col gap-2.5">
               {isGuest ? (
                 <Link
-                  href={`/sign-up-login-screen?redirect=${encodeURIComponent(currentPath)}`}
+                  href={`/login?redirect=${encodeURIComponent(currentPath)}`}
                   className="btn-primary w-full justify-center py-3 text-base font-bold shadow-md"
                 >
                   <LogIn size={18} /> Sign In to Continue

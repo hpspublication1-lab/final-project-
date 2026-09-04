@@ -103,8 +103,8 @@ const SECTOR_MCQ_POOLS: Record<string, HeroMCQ[]> = {
   cee: [
     {
       subject: 'Botany · Photosynthesis',
-      badgeColor: 'text-bio',
-      badgeBg: 'bg-bio-light',
+      badgeColor: 'text-emerald-800 dark:text-emerald-300 font-bold',
+      badgeBg: 'bg-emerald-100 dark:bg-emerald-950/60',
       question: 'Which enzyme is responsible for primary CO₂ fixation in C₄ plants during photosynthesis?',
       options: [
         { id: 'a', text: 'RuBisCO' },
@@ -117,8 +117,8 @@ const SECTOR_MCQ_POOLS: Record<string, HeroMCQ[]> = {
     },
     {
       subject: 'Physics · Mechanics',
-      badgeColor: 'text-physics',
-      badgeBg: 'bg-physics-light',
+      badgeColor: 'text-blue-800 dark:text-blue-300 font-bold',
+      badgeBg: 'bg-blue-100 dark:bg-blue-950/60',
       question: 'If the velocity of a moving body is doubled, its kinetic energy becomes:',
       options: [
         { id: 'a', text: 'Doubled (2x)' },
@@ -131,8 +131,8 @@ const SECTOR_MCQ_POOLS: Record<string, HeroMCQ[]> = {
     },
     {
       subject: 'Chemistry · Organic',
-      badgeColor: 'text-chem',
-      badgeBg: 'bg-chem-light',
+      badgeColor: 'text-purple-800 dark:text-purple-300 font-bold',
+      badgeBg: 'bg-purple-100 dark:bg-purple-950/60',
       question: 'Which of the following compounds gives a positive Tollens\' reagent test (silver mirror)?',
       options: [
         { id: 'a', text: 'Acetone (Propanone)' },
@@ -271,172 +271,57 @@ export default function HeroSection() {
           {/* Left Column (7 cols) */}
           <div className="lg:col-span-7 space-y-6 animate-fade-in">
             
-            {/* Top Motto Badge */}
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/25 text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-xs backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span>Next-Gen Multi-Track Education Platform</span>
-              </span>
+            {/* Small Label */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-black uppercase tracking-wider shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span>SAMYAK TUTOR</span>
             </div>
 
-            <h1 className="text-hero-xl text-foreground font-black tracking-tight leading-[1.05]">
-              Master SEE, CEE &amp; IELTS with{' '}
+            {/* Headline */}
+            <h1 className="text-4xl sm:text-6xl font-black text-foreground tracking-tight leading-[1.08]">
+              Learn Smarter.<br />
               <span className="text-gradient-primary">
-                AI Copilot Power
+                Score Higher.
               </span>
             </h1>
 
+            {/* Supporting Line */}
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl font-medium">
-              Nepal&apos;s most advanced 5-in-1 academic &amp; skill acceleration platform. Realtime AI doubt solver, 15,000+ MCQs, 2-player battle arena, and live examiners.
+              Courses, practice, tests, notes and AI-powered learning — all in one place.
             </p>
 
-            {/* Choose Your Goal Label */}
-            <div className="pt-2">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <span>Select Active Program Track</span>
-                </p>
-                <span className="text-[11px] font-bold text-primary">5 Comprehensive Portals</span>
-              </div>
-
-              {/* 5-Path Interactive Card Selector Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
-                <button
-                  onClick={() => setProgram('see_class_10')}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
-                    canonicalId === 'see_class_10'
-                      ? 'bg-emerald-500/10 border-emerald-500 text-foreground ring-2 ring-emerald-500/30 shadow-md scale-[1.02]'
-                      : 'bg-card/70 border-border/80 hover:border-emerald-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">🎓</div>
-                  <div className="font-extrabold text-xs text-foreground truncate">Samyak SEE</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">Class 10 Board</div>
-                </button>
-
-                <button
-                  onClick={() => setProgram('cee_medical')}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
-                    canonicalId === 'cee_medical'
-                      ? 'bg-indigo-500/10 border-indigo-500 text-foreground ring-2 ring-indigo-500/30 shadow-md scale-[1.02]'
-                      : 'bg-card/70 border-border/80 hover:border-indigo-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">🩺</div>
-                  <div className="font-extrabold text-xs text-foreground truncate">Samyak CEE</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">Medical Entrance</div>
-                </button>
-
-                <button
-                  onClick={() => setProgram('ielts')}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
-                    canonicalId === 'ielts'
-                      ? 'bg-amber-500/10 border-amber-500 text-foreground ring-2 ring-amber-500/30 shadow-md scale-[1.02]'
-                      : 'bg-card/70 border-border/80 hover:border-amber-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">🌍</div>
-                  <div className="font-extrabold text-xs text-foreground truncate">Samyak IELTS</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">Band 8.5+ Prep</div>
-                </button>
-
-                <button
-                  onClick={() => setProgram('digital_marketing')}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
-                    canonicalId === 'digital_marketing'
-                      ? 'bg-rose-500/10 border-rose-500 text-foreground ring-2 ring-rose-500/30 shadow-md scale-[1.02]'
-                      : 'bg-card/70 border-border/80 hover:border-rose-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">📈</div>
-                  <div className="font-extrabold text-xs text-foreground truncate">Digital Pro</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">Growth &amp; Ads</div>
-                </button>
-
-                <button
-                  onClick={() => setProgram('artificial_intelligence')}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 shadow-xs ${
-                    canonicalId === 'artificial_intelligence'
-                      ? 'bg-purple-500/10 border-purple-500 text-foreground ring-2 ring-purple-500/30 shadow-md scale-[1.02]'
-                      : 'bg-card/70 border-border/80 hover:border-purple-500/40 text-muted-foreground hover:text-foreground hover:bg-card'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">🤖</div>
-                  <div className="font-extrabold text-xs text-foreground truncate">AI Academy</div>
-                  <div className="text-[10px] text-muted-foreground font-semibold">Agents &amp; Code</div>
-                </button>
-              </div>
-            </div>
-
-            <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-3 pt-2">
-              {highlights.map((h) => (
-                <li key={h.key} className="flex items-center gap-3 text-xs sm:text-sm font-bold text-foreground bg-card/70 backdrop-blur-md border border-border/80 rounded-2xl px-4 py-3 shadow-xs hover:border-primary/40 hover:shadow-luxury transition-all">
-                  <CheckCircle2 size={17} className="text-success shrink-0" />
-                  <span>{h.text}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex flex-wrap gap-3 pt-2 items-center">
-              <Link href="/sign-up-login-screen" className="btn-primary gap-2.5 text-base py-4 px-8 shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:scale-[1.02] transition-all font-black rounded-2xl">
-                Start Free Path
-                <ArrowRight size={19} />
+            {/* 2 Clear CTAs */}
+            <div className="flex flex-wrap gap-4 pt-2 items-center">
+              <Link
+                href="/login?mode=signup"
+                className="btn-primary gap-2.5 text-sm sm:text-base py-3.5 px-8 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all font-black rounded-2xl"
+              >
+                Start Learning
+                <ArrowRight size={18} />
               </Link>
-              <Link href={normalizeCourseId(program) === 'ielts' ? '/english' : normalizeCourseId(program) === 'see_class_10' ? '/see' : '/courses'} className="btn-secondary gap-2.5 text-base py-4 px-7 font-bold border-primary/30 hover:border-primary hover:bg-primary/5 rounded-2xl">
-                <Sparkles size={17} className="text-primary" />
-                Launch Path Workspace
+              <Link
+                href="/courses"
+                className="btn-secondary gap-2 text-sm sm:text-base py-3.5 px-7 font-bold border-border hover:border-primary/40 hover:bg-card rounded-2xl"
+              >
+                Explore Programs
               </Link>
             </div>
 
-            {/* 5 Course Portals Quick Bar */}
-            <div className="pt-4 border-t border-border/60">
-              <p className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground mb-2.5">
-                Choose Your Learning Portal:
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setProgram('see_class_10')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-emerald-500/50 text-xs font-bold text-foreground hover:text-emerald-600 transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>🎓</span>
-                  <span className="truncate">SEE Class 10</span>
-                </Link>
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setProgram('cee_medical')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-indigo-500/50 text-xs font-bold text-foreground hover:text-indigo-600 transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>🩺</span>
-                  <span className="truncate">CEE Medical</span>
-                </Link>
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setProgram('ielts')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-amber-500/50 text-xs font-bold text-foreground hover:text-amber-600 transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>🗣️</span>
-                  <span className="truncate">IELTS English</span>
-                </Link>
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setProgram('digital_marketing')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-rose-500/50 text-xs font-bold text-foreground hover:text-rose-600 transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>📈</span>
-                  <span className="truncate">Marketing</span>
-                </Link>
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setProgram('artificial_intelligence')}
-                  className="p-2.5 rounded-xl bg-card/80 border border-border hover:border-purple-500/50 text-xs font-bold text-foreground hover:text-purple-600 transition-all flex items-center gap-1.5 shadow-xs"
-                >
-                  <span>🤖</span>
-                  <span className="truncate">AI Academy</span>
-                </Link>
+            {/* Core Value Pillars */}
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border/60 max-w-lg">
+              <div className="space-y-0.5">
+                <p className="text-sm font-extrabold text-foreground">Verified</p>
+                <p className="text-xs text-muted-foreground">Master Courses</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-extrabold text-foreground">Immediate</p>
+                <p className="text-xs text-muted-foreground">MCQ Practice &amp; Tests</p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-sm font-extrabold text-foreground">24/7 AI</p>
+                <p className="text-xs text-muted-foreground">Samyak Tutor Agent</p>
               </div>
             </div>
-
 
             {/* Aspirants Social Proof & Live Ticker */}
             <div className="flex flex-wrap items-center gap-6 pt-2">
@@ -599,18 +484,18 @@ export default function HeroSection() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 pt-2">
-                    <div className="bg-bio-light rounded-xl p-3 text-center border border-bio/15">
-                      <p className="font-extrabold text-lg text-bio tabular-nums">92%</p>
-                      <p className="text-[11px] text-muted-foreground font-medium">Avg. Accuracy Gain</p>
+                    <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/20">
+                      <p className="font-black text-lg text-emerald-800 dark:text-emerald-300 tabular-nums">92%</p>
+                      <p className="text-[11px] text-muted-foreground font-semibold">Avg. Accuracy Gain</p>
                     </div>
-                    <div className="bg-secondary rounded-xl p-3 text-center border border-primary/15">
-                      <p className="font-extrabold text-lg text-primary tabular-nums">4.9★</p>
-                      <p className="text-[11px] text-muted-foreground font-medium">Student Rating</p>
+                    <div className="bg-secondary rounded-xl p-3 text-center border border-primary/20">
+                      <p className="font-black text-lg text-primary tabular-nums">4.9★</p>
+                      <p className="text-[11px] text-muted-foreground font-semibold">Student Rating</p>
                     </div>
                   </div>
 
-                  <Link href="/sign-up-login-screen" className="btn-primary w-full justify-center text-xs sm:text-sm font-bold py-2.5">
-                    Start Free Today
+                  <Link href="/login?mode=signup" className="btn-primary w-full justify-center text-xs sm:text-sm font-bold py-2.5">
+                    Start Learning
                   </Link>
                 </div>
               )}

@@ -315,7 +315,7 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
 
   const handleEnroll = async () => {
     if (!user) {
-      router.push('/sign-up-login-screen');
+      router.push('/login');
       return;
     }
     if (!batch) return;

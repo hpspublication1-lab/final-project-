@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { FileText, Clock, ChevronRight, ChevronLeft, Flag, AlertTriangle, Wifi, WifiOff, BookmarkPlus, Play, Shield, RotateCcw, Trophy, Loader2, CheckCircle, XCircle, MinusCircle, BookOpen, Grid } from 'lucide-react';
+import { FileText, Clock, ChevronRight, ChevronLeft, Flag, AlertTriangle, Wifi, WifiOff, BookmarkPlus, Play, Shield, RotateCcw, Trophy, Loader2, CheckCircle, XCircle, MinusCircle, BookOpen, Grid, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
@@ -86,6 +86,8 @@ export default function MockTestsPageClient() {
   const [subjectBreakdown, setSubjectBreakdown] = useState<SubjectBreakdown[]>([]);
   const [showExplanations, setShowExplanations] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
+  const [activeCategoryTab, setActiveCategoryTab] = useState<'all' | 'full' | 'subject'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const current = questions[currentIdx];
 
@@ -569,6 +571,29 @@ export default function MockTestsPageClient() {
   }, [submitting, getResults, revealAnswerKey, user?.id, selectedExam, timeLeft, questions, answers, markedForReview, attemptId]);
 
   if (examMode === 'list') {
+    const displayedExams = exams.filter((e) => {
+      const matchesSearch =
+        !searchQuery ||
+        e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (e.description && e.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      if (!matchesSearch) return false;
+      if (activeCategoryTab === 'full') {
+        return (
+          e.type.toLowerCase().includes('full') ||
+          e.type.toLowerCase().includes('board') ||
+          e.type.toLowerCase().includes('model')
+        );
+      }
+      if (activeCategoryTab === 'subject') {
+        return (
+          e.type.toLowerCase().includes('subject') ||
+          e.type.toLowerCase().includes('special') ||
+          e.type.toLowerCase().includes('mat')
+        );
+      }
+      return true;
+    });
+
     return (
       <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -594,20 +619,66 @@ export default function MockTestsPageClient() {
             </div>
           </div>
 
+          {/* Filter Tabs & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-card border border-border self-start">
+              <button
+                onClick={() => setActiveCategoryTab('all')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'all'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                All Tests ({exams.length})
+              </button>
+              <button
+                onClick={() => setActiveCategoryTab('full')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'full'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Full Mock Exams
+              </button>
+              <button
+                onClick={() => setActiveCategoryTab('subject')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'subject'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Subject &amp; Speed Tests
+              </button>
+            </div>
+
+            <div className="relative max-w-xs w-full">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search mock tests..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-border bg-card text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:border-primary"
+              />
+            </div>
+          </div>
 
           {examsLoading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 size={28} className="animate-spin text-primary" />
             </div>
-          ) : exams.length === 0 ? (
-            <div className="text-center py-20">
+          ) : displayedExams.length === 0 ? (
+            <div className="text-center py-20 bg-card border border-border rounded-2xl p-8">
               <FileText size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-base font-semibold text-foreground">No exams available yet</p>
-              <p className="text-sm text-muted-foreground mt-1">Check back soon — new mock tests are added regularly.</p>
+              <p className="text-base font-semibold text-foreground">No tests match your filter</p>
+              <p className="text-sm text-muted-foreground mt-1">Try selecting &quot;All Tests&quot; or clearing your search query.</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {exams.map((exam) => (
+              {displayedExams.map((exam) => (
                 <div key={exam.id} className="bg-card border border-border rounded-2xl p-5 hover:shadow-card-hover hover:border-primary/20 transition-all duration-200 flex flex-col">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>

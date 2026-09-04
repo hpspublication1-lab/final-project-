@@ -54,7 +54,7 @@ export default function StaffDashboardClient() {
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.replace('/sign-up-login-screen');
+    router.replace('/login');
   };
 
   if (loading || !profile) {
@@ -105,6 +105,17 @@ export default function StaffDashboardClient() {
       icon: FileText,
       color: 'text-bio',
       bg: 'bg-bio-light',
+      badge: null,
+    },
+    {
+      key: 'leads',
+      show: isAdmin || role === 'support_agent',
+      title: 'Leads & Behavioral CRM',
+      desc: 'Track prospects, nurture emails & funnel',
+      href: '/admin/leads',
+      icon: Users,
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
       badge: null,
     },
     {

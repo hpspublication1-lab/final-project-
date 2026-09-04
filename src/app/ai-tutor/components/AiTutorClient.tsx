@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useTransition } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useProgram, ProgramType, normalizeCourseId } from '@/contexts/ProgramContext';
 
 import ProgramSwitcher from '@/components/ProgramSwitcher';
-import { Bot, Send, User, Sparkles, RefreshCw, Copy, Check, Lightbulb, Zap, Trash2, ArrowUpRight, GraduationCap, Stethoscope } from 'lucide-react';
+import { Bot, Send, User, Sparkles, RefreshCw, Copy, Check, Lightbulb, Zap, Trash2, ArrowUpRight, GraduationCap, Stethoscope, Scan, BarChart2 } from 'lucide-react';
 import { MathText } from '@/components/MathText';
 import toast from 'react-hot-toast';
 
@@ -257,7 +258,7 @@ export default function AiTutorClient() {
             digital: 'digital_marketing',
           };
 
-          setActiveAgents([{ id: 'orchestrator', name: 'SamyakGURU Brain', emoji: '🧠' }]);
+          setActiveAgents([{ id: 'orchestrator', name: 'Samyak AI Brain', emoji: '🧠' }]);
 
           const res = await fetch('/api/ai/neural/chat', {
             method: 'POST',
@@ -369,11 +370,11 @@ export default function AiTutorClient() {
               <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${programDetails.badgeBg} ${programDetails.badgeText}`}>
                 {programDetails.badge}
               </span>
-              <span className="text-xs text-muted-foreground font-semibold">24/7 AI Academic Tutor</span>
+              <span className="text-xs text-muted-foreground font-semibold">24/7 Intelligent Learning Suite</span>
             </div>
             <h1 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
               <Bot size={26} className="text-primary" />
-              SamyakGURU AI — {programDetails.shortName} Tutor
+              Samyak AI Tutor — {programDetails.shortName} Assistant
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Ask doubts, past paper questions, formula derivations, or chapter breakdowns tailored for {programDetails.name}.
@@ -389,13 +390,65 @@ export default function AiTutorClient() {
                   ? 'bg-gradient-to-r from-violet-500/10 to-cyan-500/10 border-violet-500/30 text-violet-600 dark:text-violet-400'
                   : 'bg-card border-border text-muted-foreground hover:border-primary/40'
               }`}
-              title={neuralMode ? 'Neural Schema Active — 8 AI Agents coordinating' : 'Legacy Mode — Direct single-model calls'}
+              title={neuralMode ? 'Neural Schema Active — Multi-agent reasoning coordinating' : 'Legacy Mode — Direct single-model calls'}
             >
               <span className={`w-2 h-2 rounded-full ${neuralMode ? 'bg-violet-500 animate-pulse' : 'bg-muted-foreground'}`} />
-              {neuralMode ? '🧠 Neural' : '⚡ Legacy'}
+              {neuralMode ? '🧠 Neural AI' : '⚡ Direct Mode'}
             </button>
             <ProgramSwitcher size="md" />
           </div>
+        </div>
+
+        {/* ── UNIFIED SAMYAK AI HUB NAVIGATION ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="p-3.5 rounded-2xl bg-primary/10 border-2 border-primary text-primary flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Bot size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-foreground">Ask AI</p>
+              <p className="text-[10px] text-muted-foreground">Instant Doubt Solver</p>
+            </div>
+          </div>
+
+          <Link
+            href="/practice?live=true"
+            className="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center gap-3 group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <Zap size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-foreground group-hover:text-primary transition-colors">Practice with AI</p>
+              <p className="text-[10px] text-muted-foreground">Live MCQ Generation</p>
+            </div>
+          </Link>
+
+          <Link
+            href="/mistake-analyser"
+            className="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center gap-3 group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <BarChart2 size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-foreground group-hover:text-primary transition-colors">Analyze Mistakes</p>
+              <p className="text-[10px] text-muted-foreground">Weak Area Diagnostics</p>
+            </div>
+          </Link>
+
+          <Link
+            href="/doubts"
+            className="p-3.5 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center gap-3 group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              <Scan size={20} />
+            </div>
+            <div>
+              <p className="text-xs font-black text-foreground group-hover:text-primary transition-colors">Scan Question</p>
+              <p className="text-[10px] text-muted-foreground">Photo &amp; OCR Solution</p>
+            </div>
+          </Link>
         </div>
 
         {/* Subject Pills */}

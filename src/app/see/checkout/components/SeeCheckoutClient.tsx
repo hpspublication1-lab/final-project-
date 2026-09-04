@@ -369,9 +369,24 @@ export default function SeeCheckoutClient() {
                 )}
               </button>
 
-              <div className="text-[10px] text-center text-muted-foreground font-semibold flex items-center justify-center gap-1">
-                <Lock size={12} className="text-emerald-500" />
-                256-Bit Encrypted Instant Gateway Payment · Automatic Activation
+              <div className="space-y-1.5 text-center">
+                <div className="text-[10px] text-muted-foreground font-semibold flex items-center justify-center gap-1">
+                  <Lock size={12} className="text-emerald-500" />
+                  <span>256-Bit TLS Encrypted Gateway Payment · Instant Server Activation</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground font-medium">
+                  🛡️ Review our{' '}
+                  <Link href="/terms" target="_blank" className="text-emerald-600 dark:text-emerald-400 font-bold underline underline-offset-2 hover:opacity-80">
+                    Terms &amp; Conditions
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/refund-policy" target="_blank" className="text-emerald-600 dark:text-emerald-400 font-bold underline underline-offset-2 hover:opacity-80">
+                    Refund Policy
+                  </Link>.
+                </p>
+                <p className="text-[10px] text-muted-foreground pt-1">
+                  Need help? WhatsApp Support: <a href="https://wa.me/9779801234567" target="_blank" rel="noopener noreferrer" className="font-bold text-foreground underline">+977 9801234567</a>
+                </p>
               </div>
 
             </div>

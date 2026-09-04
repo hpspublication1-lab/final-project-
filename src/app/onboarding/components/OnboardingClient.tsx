@@ -109,7 +109,7 @@ export default function OnboardingClient() {
     (async () => {
       const res = await fetch('/api/profile/me');
       if (res.status === 401) {
-        window.location.href = '/sign-up-login-screen';
+        window.location.href = '/login';
         return;
       }
       const me = res.ok ? await res.json() : null;
@@ -152,7 +152,7 @@ export default function OnboardingClient() {
 
       const payload = await res.json().catch(() => ({}));
       if (res.status === 401) {
-        window.location.href = '/sign-up-login-screen';
+        window.location.href = '/login';
         return;
       }
       if (!res.ok) {

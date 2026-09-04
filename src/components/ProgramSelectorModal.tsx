@@ -95,6 +95,7 @@ export function ProgramSelectorModal({ isOpen: externalIsOpen, onClose, forceOpe
               onClose();
             }}
             className="absolute top-4 right-4 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Close program selector"
           >
             <X size={18} />
           </button>

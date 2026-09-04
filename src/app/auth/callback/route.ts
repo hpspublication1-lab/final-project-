@@ -19,17 +19,20 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams, origin } = new URL(request.url);
     const code = searchParams.get('code');
+    const tokenHash = searchParams.get('token_hash');
+    const type = searchParams.get('type') as any;
     const next = safeNextPath(searchParams.get('next'));
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
 
-    // Handle OAuth errors
+    // Handle OAuth/Auth errors redirected from Supabase or Google
     if (error) {
-      const redirectUrl = new URL('/sign-up-login-screen', origin);
+      const redirectUrl = new URL('/login', origin);
       redirectUrl.searchParams.set('error', errorDescription || error);
       return NextResponse.redirect(redirectUrl.toString());
     }
 
+    // 1. Handle OAuth PKCE Code Exchange (Google OAuth, etc.)
     if (code) {
       const supabase = await createClient();
       const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -39,9 +42,22 @@ export async function GET(request: NextRequest) {
       console.warn('OAuth code exchange failed:', exchangeError.message);
     }
 
-    return NextResponse.redirect(`${origin}/sign-up-login-screen?error=AuthenticationFailed`);
+    // 2. Handle Token Hash Verification (Magic Link / Email OTP / Password Reset)
+    if (tokenHash && type) {
+      const supabase = await createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type,
+      });
+      if (!verifyError) {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+      console.warn('Token hash verification failed:', verifyError.message);
+    }
+
+    return NextResponse.redirect(`${origin}/login?error=AuthenticationFailed`);
   } catch (err: any) {
     console.error('Auth callback exception:', err);
-    return NextResponse.redirect(new URL('/sign-up-login-screen?error=SessionExchangeError', request.url).toString());
+    return NextResponse.redirect(new URL('/login?error=SessionExchangeError', request.url).toString());
   }
 }

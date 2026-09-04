@@ -74,6 +74,7 @@ const navItems = [
     key: 'admin-marketing', 
     icon: CreditCard, 
     children: [
+      { label: 'Leads & Behavioral CRM', href: '/admin/leads', icon: Users, key: 'admin-leads-crm' },
       { label: 'Payments & Fonepay Logs', href: '/admin/analytics?tab=payments', icon: CreditCard, key: 'admin-payments' },
       { label: 'Coupons & Activation Codes', href: '/admin/activation-codes', icon: Tag, key: 'admin-coupons' },
       { label: 'Presale & Prebookings', href: '/admin/prebookings', icon: Rocket, key: 'admin-prebookings' },
@@ -209,7 +210,7 @@ export default function AdminDashboardClient() {
     try {
       await supabase.auth.signOut();
     } catch {}
-    window.location.href = '/sign-up-login-screen';
+    window.location.href = '/login';
   };
 
   const Sidebar = () => (

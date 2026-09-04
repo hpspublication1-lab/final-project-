@@ -494,10 +494,45 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
     }
   }, [user, profile, loadQuestions, loadExistingResults, startBattle, supabase]);
 
-  // ── Kick off loading whenever the ?room= param is present ──────────────────
+  // ── Explicit Demo Match Initializer ──────────────────────────────────────────
+  const startDemoMatch = useCallback(() => {
+    const demoRoom: RoomData = {
+      id: `room-demo-${Date.now().toString(36)}`,
+      room_code: 'DEMO01',
+      creator_id: user?.id || 'demo-user',
+      opponent_id: 'rival-demo',
+      status: 'active',
+      question_count: 10,
+      time_limit_seconds: 300,
+      question_ids: [],
+      started_at: new Date().toISOString(),
+      completed_at: null,
+      creator: {
+        id: user?.id || 'demo-user',
+        full_name: profile?.full_name || 'You (Practice)',
+        battle_rating: profile?.battle_rating || 1000,
+        college: profile?.college || null,
+      },
+      opponent: {
+        id: 'rival-demo',
+        full_name: 'AI Practice Rival (Demo)',
+        battle_rating: 1200,
+        college: 'Simulated Engine',
+      },
+    };
+    setRoom(demoRoom);
+    setQuestions(FALLBACK_BATTLE_QUESTIONS);
+    startBattle(demoRoom);
+  }, [user, profile, startBattle]);
+
+  // ── Kick off loading whenever the ?room= or ?mode= param is present ────────
+  const isDemoParam = searchParams.get('mode') === 'demo';
+
   useEffect(() => {
     if (roomIdParam) {
       loadRoom(roomIdParam);
+    } else if (isDemoParam) {
+      startDemoMatch();
     } else {
       setMode('lobby');
       setRoom(null);
@@ -510,7 +545,7 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
       botPlanRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomIdParam]);
+  }, [roomIdParam, isDemoParam]);
 
   // ── While waiting in a private room, watch for someone to join (realtime + polling) ──
   useEffect(() => {
@@ -673,8 +708,9 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
     }
     const oppIncorrect = Math.max(0, questions.length - oppCorrect);
     const oppAccuracy = questions.length > 0 ? Math.round((oppCorrect / questions.length) * 100) : 0;
+    const isDemoMode = isBotMatch || (room?.id?.startsWith('room-demo-') ?? false) || isDemoParam;
     const isWinner = score >= oppScore;
-    const ratingChange = isWinner ? 15 : -10;
+    const ratingChange = isDemoMode ? 0 : (isWinner ? 15 : -10);
 
     if (isWinner) {
       sounds.playVictory();
@@ -694,11 +730,11 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
       correctAnswers: oppCorrect,
       incorrectAnswers: oppIncorrect,
       accuracy: oppAccuracy,
-      ratingChange: isWinner ? -10 : 15,
+      ratingChange: isDemoMode ? 0 : (isWinner ? -10 : 15),
       isWinner: !isWinner,
     });
     setMode('result');
-  }, [room, user, questions, answers, sendProgress, loadExistingResults, opponentLive.score, isBotMatch]);
+  }, [room, user, questions, answers, sendProgress, loadExistingResults, opponentLive.score, isBotMatch, isDemoParam]);
 
   // ── While waiting on the opponent's result, watch my own results row ───────
   // (submit_battle_result updates it once the opponent submits and the ELO
@@ -1297,6 +1333,7 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
   // VIEW: Result
   // ─────────────────────────────────────────────────────────────────────────
   if (mode === 'result') {
+    const isDemoMode = isBotMatch || (room?.id?.startsWith('room-demo-') ?? false) || isDemoParam;
     const mine = myResult ?? { score: myScore, correctAnswers: 0, incorrectAnswers: 0, accuracy: 0, ratingChange: 0, isWinner: false };
     const theirs = opponentResult ?? { score: 0, correctAnswers: 0, incorrectAnswers: 0, accuracy: 0, ratingChange: 0, isWinner: false };
     const won = mine.score >= theirs.score;
@@ -1304,12 +1341,29 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
     return (
       <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
         <div className="max-w-lg mx-auto px-4 sm:px-6 py-8">
+          {/* Mode tag */}
+          <div className="mb-4 text-center">
+            {isDemoMode ? (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                🟡 DEMO PRACTICE MATCH RESULT (0 ELO)
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-red-500/15 text-red-400 border border-red-500/30">
+                🔴 OFFICIAL LIVE MATCH RESULT
+              </span>
+            )}
+          </div>
+
           <div className={`bg-card border rounded-2xl p-6 text-center mb-5 ${won ? 'border-success/30' : 'border-error/30'}`}>
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 ${won ? 'bg-success-light' : 'bg-error-light'}`}>
               {won ? <Trophy size={28} className="text-success" /> : <XCircle size={28} className="text-error" />}
             </div>
             <h2 className={`text-2xl font-bold mb-1 ${won ? 'text-success' : 'text-error'}`}>{won ? '🎉 Victory!' : 'Defeated'}</h2>
-            <p className="text-sm text-muted-foreground mb-5">{won ? 'Great battle! You outperformed your opponent.' : "Keep practicing. You'll win next time!"}</p>
+            <p className="text-sm text-muted-foreground mb-5">
+              {isDemoMode
+                ? "You completed a simulated demo battle. Ready to challenge a real student in the live queue?"
+                : (won ? 'Great battle! You outperformed your opponent.' : "Keep practicing. You'll win next time!")}
+            </p>
 
             <div className="grid grid-cols-3 gap-3 mb-4">
               <div className="text-right">
@@ -1335,7 +1389,11 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
               {[
                 { label: 'Correct', you: mine.correctAnswers, opp: theirs.correctAnswers },
                 { label: 'Accuracy', you: `${mine.accuracy}%`, opp: `${theirs.accuracy}%` },
-                { label: 'Rating Δ', you: mine.ratingChange > 0 ? `+${mine.ratingChange}` : `${mine.ratingChange}`, opp: theirs.ratingChange > 0 ? `+${theirs.ratingChange}` : `${theirs.ratingChange}` },
+                {
+                  label: 'Rating Δ',
+                  you: isDemoMode ? '0 (Demo)' : (mine.ratingChange > 0 ? `+${mine.ratingChange}` : `${mine.ratingChange}`),
+                  opp: isDemoMode ? '0 (Demo)' : (theirs.ratingChange > 0 ? `+${theirs.ratingChange}` : `${theirs.ratingChange}`)
+                },
               ].map((s) => (
                 <div key={s.label} className="bg-muted/50 rounded-lg p-2">
                   <p className="text-muted-foreground mb-1">{s.label}</p>
@@ -1343,6 +1401,15 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
                 </div>
               ))}
             </div>
+
+            {isDemoMode && (
+              <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-left text-xs text-amber-300 space-y-1">
+                <div className="font-bold">💡 Practice Simulation Notice</div>
+                <p className="text-muted-foreground text-[11px]">
+                  This match was conducted in Demo Practice Mode. Scores and statistics are for practice and do not alter official ELO ratings or national leaderboard rankings.
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3">
@@ -1350,10 +1417,10 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
               <RotateCcw size={15} /> Back to Lobby
             </Link>
             <Link href="/match-lobby" className="flex-1 btn-primary py-2.5 gap-2 flex items-center justify-center">
-              <Swords size={15} /> Rematch
+              <Swords size={15} /> Enter Live Arena
             </Link>
           </div>
-          {room && (
+          {room && !isDemoMode && (
             <Link href={`/post-match-summary?room=${room.id}`} className="block text-center text-xs text-primary hover:underline mt-3 font-semibold">
               View Full Match Summary →
             </Link>
@@ -1366,12 +1433,30 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
   // ─────────────────────────────────────────────────────────────────────────
   // VIEW: Active battle
   // ─────────────────────────────────────────────────────────────────────────
+  const isDemoMode = isBotMatch || (room?.id?.startsWith('room-demo-') ?? false) || isDemoParam;
   const timerPct = (questionTimer / 54) * 100;
   const timerColor = timerPct > 50 ? 'text-success' : timerPct > 20 ? 'text-warning' : 'text-error';
 
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+        {/* Transparent Two-Mode Status Bar */}
+        {isDemoMode ? (
+          <div className="mb-3 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs text-amber-300">
+            <span className="font-bold flex items-center gap-1.5">
+              <span>🟡</span> DEMO PRACTICE DUEL (SIMULATED)
+            </span>
+            <span className="text-[11px] text-muted-foreground font-medium">Unranked · 0 ELO impact</span>
+          </div>
+        ) : (
+          <div className="mb-3 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-between text-xs text-red-300">
+            <span className="font-bold flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> 🔴 LIVE ARENA MATCH (2 PLAYERS)
+            </span>
+            <span className="text-[11px] text-muted-foreground font-medium">Official ELO Ranked Match</span>
+          </div>
+        )}
+
         {/* Battle header */}
         <div className="bg-card border border-border rounded-2xl p-4 mb-4">
           <div className="grid grid-cols-3 gap-3 items-center">

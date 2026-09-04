@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import {
-  LayoutDashboard, BookOpen, Video, Radio, Zap, FileText, Bell, CreditCard,
+  BookOpen, Video, Zap, FileText, Bell, CreditCard,
   User, ChevronLeft, ChevronRight, Sun, Moon, Swords, AlertTriangle, LogOut,
   ClipboardList, Bot, Sparkles, Users, CheckCheck, X, Menu, Home, Trophy,
-  Layers, MessageCircleQuestion, Bookmark, Lock, Languages, Cpu, TrendingUp,
-  GraduationCap, Stethoscope, Mic, Headphones, FileEdit, Search, Share2, Code, Terminal, Target, HelpCircle
+  Layers, MessageCircleQuestion, Bookmark, Lock, TrendingUp,
+  Mic, Headphones, FileEdit, MoreHorizontal, ChevronDown
 } from 'lucide-react';
 
 // Nav items that require a paid/prebook plan (see PremiumGate). Free users get
@@ -34,269 +34,103 @@ interface NavItem {
   badge?: string;
 }
 
-interface NavGroup {
-  label: string;
-  key: string;
-  items: NavItem[];
+
+
+// ─── Primary 5-item nav per program ──────────────────────────────────────────
+function getPrimaryNav(canonicalId: CanonicalCourseId): NavItem[] {
+  return [
+    { label: 'Home',        href: '/student-dashboard', icon: Home,     key: 'pnav-home' },
+    { label: 'My Learning', href: '/subjects',          icon: BookOpen, key: 'pnav-learn' },
+    { label: 'Practice',    href: '/practice',          icon: Zap,      key: 'pnav-practice' },
+    { label: 'Tests',       href: '/mock-tests',        icon: FileText, key: 'pnav-tests' },
+    { label: 'AI Tutor',    href: '/ai-tutor',          icon: Bot,      key: 'pnav-ai' },
+  ];
 }
 
-function getCourseNavGroups(canonicalId: CanonicalCourseId): NavGroup[] {
+// ─── Secondary "More" items per program ──────────────────────────────────────
+function getSecondaryNav(canonicalId: CanonicalCourseId): { section: string; items: NavItem[] }[] {
   switch (canonicalId) {
     case 'see_class_10':
       return [
-        {
-          label: 'Core Learning System',
-          key: 'group-see-core',
-          items: [
-            { label: '🏠 Home', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Overview & Daily Plan' },
-            { label: '📚 Learn (Subjects)', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Science, Math, Opt Math...' },
-            { label: '🧠 Practice (1-10M)', href: '/see/question-bank', icon: HelpCircle, key: 'nav-see-qbank', badge: '1-10M', desc: 'Questions & Solutions' },
-            { label: '📝 Tests (Mock Exams)', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Timed NEB Model Papers' },
-          ],
-        },
-        {
-          label: 'Student Workspace',
-          key: 'group-see-workspace',
-          items: [
-            { label: '🏫 My Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'English & Nepali Medium' },
-            { label: '🔥 Fix Mistakes', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Review missed questions' },
-            { label: '🔖 Bookmarks', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions & formulas' },
-            { label: '🤖 AI Answer Marker', href: '/practice/subjective', icon: Sparkles, key: 'nav-subjective', badge: 'AI', desc: 'Handwritten check' },
-          ],
-        },
-      ];
-
-    case 'ielts':
-      return [
-        {
-          label: 'IELTS Mastery Overview',
-          key: 'group-ielts-home',
-          items: [
-            { label: 'IELTS Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Target Band 8.0+ Tracker' },
-            { label: 'Study Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily speaking & essay schedule' },
-            { label: 'Examiner Q&A', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask certified mentors' },
-          ],
-        },
-        {
-          label: '4 Core Skills Hub',
-          key: 'group-ielts-skills',
-          items: [
-            { label: 'Speaking Simulator', href: '/english/speaking', icon: Mic, key: 'nav-speaking', badge: 'AI LIVE', desc: 'Part 1, 2, 3 AI scoring' },
-            { label: 'Writing Evaluator', href: '/english/writing/rubric', icon: FileEdit, key: 'nav-writing', badge: 'RUBRIC', desc: 'Task 1 & 2 essay checks' },
-            { label: 'Listening Audio Sets', href: '/english/listening', icon: Headphones, key: 'nav-listening', badge: 'AUDIO', desc: 'Audio sections 1-4' },
-            { label: 'Reading Speed Drills', href: '/english/reading/speed-drills', icon: BookOpen, key: 'nav-reading', badge: 'SPEED', desc: 'Academic & GT passages' },
-            { label: 'Vocabulary & AWL', href: '/english/vocabulary', icon: Zap, key: 'nav-vocab', badge: 'AWL', desc: '500 High-frequency words' },
-          ],
-        },
-        {
-          label: 'Mock Tests & Grammar',
-          key: 'group-ielts-mock',
-          items: [
-            { label: 'Band Predictor', href: '/english/band-predictor', icon: Sparkles, key: 'nav-predictor', badge: 'AI', desc: 'Estimate your overall band' },
-            { label: 'Full Mock Exams', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: 'Timed mock tests' },
-            { label: 'Grammar Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Collocations & idioms' },
-          ],
-        },
-        {
-          label: 'AI Fluency Tools',
-          key: 'group-ielts-ai',
-          items: [
-            { label: 'English AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Grammar correction & tips' },
-            { label: 'Drill Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Custom practice tests' },
-          ],
-        },
-        {
-          label: 'My Progress',
-          key: 'group-ielts-progress',
-          items: [
-            { label: 'Band Rankings', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Global learner rankings' },
-            { label: 'Saved Drills', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions' },
-            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
-          ],
-        },
-      ];
-
-    case 'digital_marketing':
-      return [
-        {
-          label: 'Marketing Overview',
-          key: 'group-dm-home',
-          items: [
-            { label: 'Marketing Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Campaigns & Milestones' },
-            { label: 'Daily Action Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Growth strategies' },
-            { label: 'Mentor Support', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask marketing experts' },
-          ],
-        },
-        {
-          label: 'Practical Marketing Hub',
-          key: 'group-dm-tracks',
-          items: [
-            { label: 'Video Playbooks', href: '/courses', icon: TrendingUp, key: 'nav-meta', badge: 'HD', desc: 'Meta Ads, SEO & Funnels' },
-            { label: 'Swipe Files & Prompts', href: '/digital', icon: Layers, key: 'nav-swipe', badge: 'PRO', desc: 'Proven ad copy & scripts' },
-            { label: 'Marketing Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Live cohorts' },
-            { label: 'Practice Drills', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Marketing MCQs & quizzes' },
-          ],
-        },
-        {
-          label: 'AI Marketing Tools',
-          key: 'group-dm-ai',
-          items: [
-            { label: 'Marketing AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Ad angle brainstorming' },
-            { label: 'Prompt Studio', href: '/digital', icon: Sparkles, key: 'nav-prompt', desc: 'Marketing prompt tests' },
-            { label: 'Quiz Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate marketing quizzes' },
-          ],
-        },
-        {
-          label: 'My Progress',
-          key: 'group-dm-progress',
-          items: [
-            { label: 'Certification Hub', href: '/account', icon: Trophy, key: 'nav-cert', desc: 'Course certificates' },
-            { label: 'Saved Resources', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved templates' },
-            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
-          ],
-        },
-      ];
-
-    case 'artificial_intelligence':
-      return [
-        {
-          label: 'AI Academy Overview',
-          key: 'group-ai-home',
-          items: [
-            { label: 'AI Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'AI skill progress' },
-            { label: 'Learning Roadmap', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily AI tasks' },
-            { label: 'Dev Doubts', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Ask AI instructors' },
-          ],
-        },
-        {
-          label: 'Specialization Tracks',
-          key: 'group-ai-tracks',
-          items: [
-            { label: 'Prompt Studio Sandbox', href: '/digital', icon: Bot, key: 'nav-prompt-studio', badge: 'LIVE AI', desc: 'Test & score prompts' },
-            { label: 'Python & AI Practice', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Syntax & logic tests' },
-            { label: 'AI Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', desc: 'Core terms & concepts' },
-            { label: 'AI Live Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Structured AI cohorts' },
-          ],
-        },
-        {
-          label: 'AI Study Assistants',
-          key: 'group-ai-tutors',
-          items: [
-            { label: 'Master AI Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Ask coding & AI questions' },
-            { label: 'Prompt Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate test cases' },
-            { label: 'Mistake Analyser', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Analyze incorrect answers' },
-          ],
-        },
-        {
-          label: 'My Progress',
-          key: 'group-ai-progress',
-          items: [
-            { label: 'Skill Rankings', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'Leaderboard' },
-            { label: 'Saved Prompts', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Bookmark library' },
-            { label: 'Course Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Explore all courses' },
-          ],
-        },
-      ];
-
-    case 'cee_medical':
-    default:
-      return [
-        {
-          label: 'CEE Medical Overview',
-          key: 'group-cee-home',
-          items: [
-            { label: 'Medical Dashboard', href: '/student-dashboard', icon: LayoutDashboard, key: 'nav-dashboard', desc: 'Rank, accuracy & stats' },
-            { label: 'CEE Study Plan', href: '/study-plan', icon: ClipboardList, key: 'nav-study-plan', desc: 'Daily tasks & schedule' },
-            { label: 'Ask Doctor / Teacher', href: '/doubts', icon: MessageCircleQuestion, key: 'nav-doubts', desc: 'Medical entrance doubts' },
-          ],
-        },
-        {
-          label: 'Medical Syllabus & Materials',
-          key: 'group-cee-study',
-          items: [
-            { label: 'Medical Subjects', href: '/subjects', icon: BookOpen, key: 'nav-subjects', desc: 'Bio, Chem, Physics & MAT' },
-            { label: 'Video Lectures', href: '/lecture-videos', icon: Video, key: 'nav-video-lectures', badge: 'HD', desc: 'Live & recorded classes' },
-            { label: 'SM-2 Flashcards', href: '/flashcards', icon: Layers, key: 'nav-flashcards', badge: 'NEW', desc: 'Spaced-repetition high-yield' },
-            { label: 'Target Batches', href: '/batches', icon: Layers, key: 'nav-batches', desc: 'Structured medical batches' },
-          ],
-        },
-        {
-          label: 'Medical Entrance Practice',
-          key: 'group-cee-exam',
-          items: [
-            { label: 'Practice 15,000+ MCQs', href: '/practice', icon: Zap, key: 'nav-practice', desc: 'Subjectwise question bank' },
-            { label: 'MEC Mock Exams', href: '/mock-tests', icon: FileText, key: 'nav-mock', desc: '200-Question full simulation' },
-            { label: '2-Player Battle Arena', href: '/battle-arena', icon: Swords, key: 'nav-battle', badge: 'LIVE', desc: 'Realtime 1v1 battle' },
-            { label: 'Match Lobby', href: '/match-lobby', icon: Users, key: 'nav-match-lobby', badge: 'NEW', desc: 'Find opponents' },
-          ],
-        },
-        {
-          label: 'Medical AI Tools',
-          key: 'group-cee-ai',
-          items: [
-            { label: 'AI Medical Tutor', href: '/ai-tutor', icon: Bot, key: 'nav-ai-tutor', badge: 'AI', desc: 'Instant explanations' },
-            { label: 'MCQ Generator', href: '/mcq-generator', icon: Sparkles, key: 'nav-mcq-gen', desc: 'Generate practice questions' },
-            { label: 'Mistake Analyser', href: '/mistake-analyser', icon: AlertTriangle, key: 'nav-mistake', desc: 'Fix your weak spots' },
-          ],
-        },
-        {
-          label: 'My Progress',
-          key: 'group-cee-progress',
-          items: [
-            { label: 'CEE Leaderboard', href: '/leaderboard', icon: Trophy, key: 'nav-leaderboard', desc: 'See rankings' },
-            { label: 'Saved MCQs', href: '/bookmarks', icon: Bookmark, key: 'nav-bookmarks', desc: 'Saved questions' },
-            { label: 'All Courses Store', href: '/courses', icon: Sparkles, key: 'nav-courses', badge: 'STORE', desc: 'Browse all courses' },
-          ],
-        },
-      ];
-  }
-}
-
-function getCourseMobileNavItems(canonicalId: CanonicalCourseId) {
-  switch (canonicalId) {
-    case 'see_class_10':
-      return [
-        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Subjects', href: '/subjects', icon: BookOpen, key: 'mob-subjects' },
-        { label: 'Subjective', href: '/practice/subjective', icon: Sparkles, key: 'mob-subjective' },
-        { label: 'Papers', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
-        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+        { section: 'Study', items: [
+          { label: 'Mock Tests',     href: '/mock-tests',         icon: FileText,              key: 'snav-mock',    desc: 'Timed NEB Model Papers' },
+          { label: 'Video Lectures', href: '/lecture-videos',     icon: Video,                 key: 'snav-videos' },
+          { label: 'Flashcards',     href: '/flashcards',         icon: Layers,                key: 'snav-flash',   badge: 'NEW' },
+          { label: 'Study Plan',     href: '/study-plan',         icon: ClipboardList,         key: 'snav-plan' },
+        ]},
+        { section: 'Tools', items: [
+          { label: 'AI Tutor',       href: '/ai-tutor',           icon: Bot,                   key: 'snav-ai',      badge: 'AI' },
+          { label: 'Bookmarks',      href: '/bookmarks',          icon: Bookmark,              key: 'snav-bm' },
+          { label: 'Doubts',         href: '/doubts',             icon: MessageCircleQuestion, key: 'snav-doubts' },
+          { label: 'Batches',        href: '/batches',            icon: Layers,                key: 'snav-batches' },
+        ]},
       ];
     case 'ielts':
       return [
-        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Speaking', href: '/english/speaking', icon: Mic, key: 'mob-speaking' },
-        { label: 'Listening', href: '/english/listening', icon: Headphones, key: 'mob-listening' },
-        { label: 'Mocks', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
-        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+        { section: 'Skills', items: [
+          { label: 'Speaking',       href: '/english/speaking',              icon: Mic,      key: 'snav-speak',  badge: 'AI' },
+          { label: 'Writing',        href: '/english/writing/rubric',        icon: FileEdit, key: 'snav-write' },
+          { label: 'Listening',      href: '/english/listening',             icon: Headphones, key: 'snav-listen' },
+          { label: 'Reading',        href: '/english/reading/speed-drills',  icon: BookOpen, key: 'snav-read' },
+        ]},
+        { section: 'Tools', items: [
+          { label: 'Mock Tests',     href: '/mock-tests',             icon: FileText,  key: 'snav-mock' },
+          { label: 'Band Predictor', href: '/english/band-predictor', icon: Sparkles,  key: 'snav-band',  badge: 'AI' },
+          { label: 'AI Tutor',       href: '/ai-tutor',               icon: Bot,       key: 'snav-ai',    badge: 'AI' },
+          { label: 'Bookmarks',      href: '/bookmarks',              icon: Bookmark,  key: 'snav-bm' },
+        ]},
       ];
     case 'digital_marketing':
       return [
-        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Playbooks', href: '/courses', icon: TrendingUp, key: 'mob-modules' },
-        { label: 'Swipe Files', href: '/digital', icon: Layers, key: 'mob-swipe' },
-        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
-        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+        { section: 'Content', items: [
+          { label: 'Swipe Files',    href: '/digital',     icon: Layers,       key: 'snav-swipe',   badge: 'PRO' },
+          { label: 'Batches',        href: '/batches',     icon: Layers,       key: 'snav-batches' },
+          { label: 'Study Plan',     href: '/study-plan',  icon: ClipboardList, key: 'snav-plan' },
+        ]},
+        { section: 'Tools', items: [
+          { label: 'AI Tutor',       href: '/ai-tutor',    icon: Bot,                   key: 'snav-ai',      badge: 'AI' },
+          { label: 'Bookmarks',      href: '/bookmarks',   icon: Bookmark,              key: 'snav-bm' },
+          { label: 'Doubts',         href: '/doubts',      icon: MessageCircleQuestion, key: 'snav-doubts' },
+        ]},
       ];
     case 'artificial_intelligence':
       return [
-        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Studio', href: '/digital', icon: Bot, key: 'mob-studio' },
-        { label: 'Practice', href: '/practice', icon: Zap, key: 'mob-code' },
-        { label: 'AI Tutor', href: '/ai-tutor', icon: Bot, key: 'mob-ai' },
-        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+        { section: 'Content', items: [
+          { label: 'Prompt Studio',  href: '/digital',     icon: Bot,          key: 'snav-studio',  badge: 'LIVE' },
+          { label: 'Flashcards',     href: '/flashcards',  icon: Layers,       key: 'snav-flash' },
+          { label: 'Batches',        href: '/batches',     icon: Layers,       key: 'snav-batches' },
+          { label: 'Study Plan',     href: '/study-plan',  icon: ClipboardList, key: 'snav-plan' },
+        ]},
+        { section: 'Tools', items: [
+          { label: 'AI Tutor',       href: '/ai-tutor',    icon: Bot,                   key: 'snav-ai',      badge: 'AI' },
+          { label: 'Bookmarks',      href: '/bookmarks',   icon: Bookmark,              key: 'snav-bm' },
+          { label: 'Doubts',         href: '/doubts',      icon: MessageCircleQuestion, key: 'snav-doubts' },
+        ]},
       ];
     case 'cee_medical':
     default:
       return [
-        { label: 'Home', href: '/student-dashboard', icon: Home, key: 'mob-dashboard' },
-        { label: 'Practice', href: '/practice', icon: Zap, key: 'mob-practice' },
-        { label: 'Mock Tests', href: '/mock-tests', icon: FileText, key: 'mob-mock' },
-        { label: 'Battle', href: '/battle-arena', icon: Swords, key: 'mob-battle' },
-        { label: 'Menu', href: '#', icon: Menu, key: 'mob-more' },
+        { section: 'Study', items: [
+          { label: 'Mock Tests',      href: '/mock-tests',      icon: FileText,  key: 'snav-mock',    desc: '200-Q full simulation' },
+          { label: 'Video Lectures',  href: '/lecture-videos',  icon: Video,     key: 'snav-videos',  badge: 'HD' },
+          { label: 'Flashcards',      href: '/flashcards',      icon: Layers,    key: 'snav-flash',   badge: 'NEW' },
+          { label: 'Battle Arena',    href: '/battle-arena',    icon: Swords,    key: 'snav-battle',  badge: 'LIVE' },
+          { label: 'Match Lobby',     href: '/match-lobby',     icon: Users,     key: 'snav-lobby',   badge: 'NEW' },
+        ]},
+        { section: 'Tools', items: [
+          { label: 'AI Tutor',        href: '/ai-tutor',         icon: Bot,                   key: 'snav-ai',      badge: 'AI' },
+          { label: 'MCQ Generator',   href: '/mcq-generator',    icon: Sparkles,              key: 'snav-gen' },
+          { label: 'Study Plan',      href: '/study-plan',       icon: ClipboardList,         key: 'snav-plan' },
+          { label: 'Bookmarks',       href: '/bookmarks',        icon: Bookmark,              key: 'snav-bm' },
+          { label: 'Doubts',          href: '/doubts',           icon: MessageCircleQuestion, key: 'snav-doubts' },
+          { label: 'Mistake Analyser',href: '/mistake-analyser', icon: AlertTriangle,         key: 'snav-mistake' },
+          { label: 'Batches',         href: '/batches',          icon: Layers,                key: 'snav-batches' },
+        ]},
       ];
   }
 }
+
+
 
 interface Notification {
   id: string;
@@ -318,7 +152,6 @@ function timeAgo(dateStr: string): string {
 
 function notifIcon(type: string) {
   switch (type) {
-    case 'live_class': return Radio;
     case 'exam': return FileText;
     case 'battle': return Swords;
     case 'achievement': return Trophy;
@@ -328,12 +161,101 @@ function notifIcon(type: string) {
 
 function notifColor(type: string) {
   switch (type) {
-    case 'live_class': return 'text-error';
     case 'exam': return 'text-primary';
-    case 'battle': return 'text-chem';
-    case 'achievement': return 'text-ma';
+    case 'battle': return 'text-violet-500';
+    case 'achievement': return 'text-amber-500';
     default: return 'text-muted-foreground';
   }
+}
+
+
+
+// ─── More Popover (desktop sidebar) ──────────────────────────────────────────
+function MorePopover({
+  sections,
+  isPremium,
+  onClose,
+}: {
+  sections: { section: string; items: NavItem[] }[];
+  isPremium: boolean;
+  onClose: () => void;
+}) {
+  const pathname = usePathname();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-full top-0 ml-2 w-64 bg-card border border-border rounded-xl shadow-card-hover animate-scale-in z-50 overflow-hidden"
+    >
+      {sections.map((sec) => (
+        <div key={sec.section} className="p-2">
+          <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/60 px-2 mb-1">
+            {sec.section}
+          </p>
+          {sec.items.map((item) => {
+            const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all duration-150 ${
+                  active
+                    ? 'bg-primary text-white font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <item.icon size={16} className="shrink-0" />
+                <span className="text-xs font-medium flex-1">{item.label}</span>
+                {PRO_FEATURES.has(item.href) && !isPremium ? (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                    <Lock size={8} /> PRO
+                  </span>
+                ) : item.badge ? (
+                  <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
+                    item.badge === 'LIVE' || item.badge === 'AI LIVE'
+                      ? 'bg-error text-white animate-pulse'
+                      : active
+                      ? 'bg-white/20 text-white'
+                      : 'bg-primary/10 text-primary'
+                  }`}>
+                    {item.badge}
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+      <div className="border-t border-border p-2">
+        <Link
+          href="/account"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <CreditCard size={16} />
+          <span className="text-xs font-medium">Subscription & Orders</span>
+        </Link>
+        <Link
+          href="/courses"
+          onClick={onClose}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <Sparkles size={16} />
+          <span className="text-xs font-medium">Course Store</span>
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 interface DashboardLayoutProps {
@@ -345,11 +267,12 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, isDark = false, onToggleDark }: DashboardLayoutProps) {
   const { program, programDetails } = useProgram();
   const canonicalId = normalizeCourseId(program);
-  const activeNavGroups = getCourseNavGroups(canonicalId);
-  const activeMobileNavItems = getCourseMobileNavItems(canonicalId);
+  const primaryNav = getPrimaryNav(canonicalId);
+  const secondaryNav = getSecondaryNav(canonicalId);
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [showCourseModal, setShowCourseModal] = useState(false);
 
@@ -360,6 +283,7 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
   const { user, profile, signOut } = useAuth();
   const notifRef = useRef<HTMLDivElement>(null);
   const [signingOut, setSigningOut] = useState(false);
+
 
   // Entitlement — default true so paid users never see a flash of locks; flips
   // to false for free users once /api/profile/me resolves.
@@ -385,7 +309,7 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
     try {
       await signOut();
     } finally {
-      router.push('/sign-up-login-screen');
+      router.push('/login');
     }
   };
 
@@ -458,10 +382,10 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      {/* Desktop Sidebar */}
+      {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
       <aside
         className={`hidden lg:flex flex-col shrink-0 bg-card/90 backdrop-blur-2xl border-r border-border/80 shadow-luxury transition-all duration-300 ease-in-out ${
-          collapsed ? 'w-16' : 'w-64'
+          collapsed ? 'w-16' : 'w-56'
         }`}
       >
         {/* Logo */}
@@ -479,72 +403,72 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
           </Link>
         </div>
 
-        {/* Nav */}
-        <div className="flex-1 overflow-y-auto py-3.5 px-2.5 scrollbar-hide">
-          {activeNavGroups.map((group) => (
-            <div key={group.key} className="mb-5">
+        {/* Primary 5 nav items + More */}
+        <div className="flex-1 flex flex-col overflow-y-auto py-4 px-2.5 scrollbar-hide gap-1">
+          {primaryNav.map((item) => {
+            const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
+                  active
+                    ? 'bg-gradient-to-r from-primary to-primary-dark text-white font-bold shadow-sm shadow-primary/30'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
+                }`}
+              >
+                <item.icon size={18} className="shrink-0" />
+                {!collapsed && <span className="text-sm font-semibold">{item.label}</span>}
+              </Link>
+            );
+          })}
+
+          {/* ··· More button */}
+          <div className="relative">
+            <button
+              onClick={() => setMoreOpen((v) => !v)}
+              title={collapsed ? 'More' : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-muted/70 ${
+                moreOpen ? 'bg-muted/70 text-foreground' : ''
+              }`}
+            >
+              <MoreHorizontal size={18} className="shrink-0" />
               {!collapsed && (
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70 px-2 mb-1.5">{group.label}</p>
+                <>
+                  <span className="text-sm font-semibold flex-1 text-left">More</span>
+                  <ChevronDown size={14} className={`transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
+                </>
               )}
-              {group.items.map((item) => {
-                const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-1 transition-all duration-200 group relative ${
-                      active
-                        ? 'bg-gradient-to-r from-primary to-primary-dark text-white font-bold shadow-sm shadow-primary/30'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
-                    }`}
-                    title={collapsed ? item.label : undefined}
-                  >
-                    <item.icon size={17} className={`shrink-0 transition-transform duration-200 ${active ? 'scale-105' : 'group-hover:scale-110'}`} />
-                    {!collapsed && (
-                      <>
-                        <span className="text-xs font-semibold truncate flex-1">{item.label}</span>
-                        {PRO_FEATURES.has(item.href) && !isPremium ? (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 flex items-center gap-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                            <Lock size={8} /> PRO
-                          </span>
-                        ) : item.badge ? (
-                          <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
-                            item.badge === 'LIVE' ? 'bg-error text-white animate-pulse' : active ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
-                          }`}>
-                            {item.badge}
-                          </span>
-                        ) : null}
-                      </>
-                    )}
-                    {collapsed && (item.badge || (PRO_FEATURES.has(item.href) && !isPremium)) && (
-                      <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${PRO_FEATURES.has(item.href) && !isPremium ? 'bg-amber-500' : 'bg-error'}`} />
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+            </button>
+            {moreOpen && (
+              <MorePopover
+                sections={secondaryNav}
+                isPremium={isPremium}
+                onClose={() => setMoreOpen(false)}
+              />
+            )}
+          </div>
         </div>
 
-        {/* Bottom */}
+        {/* Bottom: user + sign out */}
         <div className="border-t border-border p-2 space-y-1 shrink-0">
           <Link
-            href="/account"
+            href="/profile"
             className={`flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl transition-colors ${
-              pathname === '/account' ? 'bg-primary text-white font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              pathname === '/profile' ? 'bg-primary text-white font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
-            title={collapsed ? 'Account' : undefined}
+            title={collapsed ? 'Profile' : undefined}
           >
-            <User size={18} className="shrink-0" />
-            {!collapsed && <span className="text-sm">My Account</span>}
-          </Link>
-          <Link
-            href="/account?tab=subscription"
-            className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            title={collapsed ? 'Subscription' : undefined}
-          >
-            <CreditCard size={18} className="shrink-0" />
-            {!collapsed && <span className="text-sm">Subscription</span>}
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs shrink-0">
+              {displayName.charAt(0).toUpperCase()}
+            </div>
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-foreground truncate">{displayName}</p>
+                <p className="text-[10px] text-muted-foreground">{isPro ? '✓ Pro' : 'Free'}</p>
+              </div>
+            )}
           </Link>
           <button
             onClick={handleSignOut}
@@ -552,28 +476,26 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
             className="w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-error hover:bg-error-light transition-colors disabled:opacity-60"
             title={collapsed ? 'Sign Out' : undefined}
           >
-            <LogOut size={18} className="shrink-0" />
-            {!collapsed && <span className="text-sm font-medium">{signingOut ? 'Signing out...' : 'Sign Out'}</span>}
+            <LogOut size={16} className="shrink-0" />
+            {!collapsed && <span className="text-xs font-medium">{signingOut ? 'Signing out...' : 'Sign Out'}</span>}
           </button>
         </div>
 
         {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center justify-center h-10 border-t border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          className="flex items-center justify-center h-9 border-t border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
       </aside>
+
 
       {/* Mobile Sidebar Overlay */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
           <aside className="relative w-72 bg-card border-r border-border flex flex-col h-full overflow-y-auto">
             {/* Mobile sidebar header */}
             <div className="flex items-center justify-between h-16 px-4 border-b border-border shrink-0">
@@ -581,13 +503,10 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
                 <AppLogo size={32} />
                 <div className="flex flex-col leading-none">
                   <span className="font-extrabold text-sm text-foreground tracking-tight">Samyak</span>
-                  <span className="text-xs font-medium text-primary">CEE Mastery</span>
+                  <span className="text-xs font-medium text-primary">{programDetails.shortName}</span>
                 </div>
               </Link>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
+              <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                 <X size={20} />
               </button>
             </div>
@@ -607,32 +526,46 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
               </div>
             </div>
 
-            {/* Mobile nav groups */}
+            {/* Mobile nav — primary items */}
             <div className="flex-1 py-3 px-3">
-              {activeNavGroups.map((group) => (
-                <div key={group.key} className="mb-5">
-                  <p className="section-label px-2 mb-1.5">{group.label}</p>
-                  {group.items.map((item) => {
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/60 px-2 mb-1">Main</p>
+              {primaryNav.map((item) => {
+                const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl mb-0.5 transition-all duration-150 ${
+                      active ? 'bg-primary text-white font-semibold shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <item.icon size={18} className="shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+
+              {/* Secondary nav sections */}
+              {secondaryNav.map((sec) => (
+                <div key={sec.section} className="mt-4">
+                  <p className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/60 px-2 mb-1">{sec.section}</p>
+                  {sec.items.map((item) => {
                     const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
                     return (
                       <Link
                         key={item.key}
                         href={item.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-3 rounded-xl mb-0.5 transition-all duration-150 ${
-                          active
-                            ? 'bg-primary text-white font-semibold shadow-sm'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl mb-0.5 transition-all duration-150 ${
+                          active ? 'bg-primary text-white font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
                       >
-                        <item.icon size={18} className="shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium leading-none">{item.label}</p>
-                          {!active && <p className="text-xs opacity-60 mt-0.5">{item.desc}</p>}
-                        </div>
+                        <item.icon size={16} className="shrink-0" />
+                        <span className="text-sm font-medium flex-1">{item.label}</span>
                         {PRO_FEATURES.has(item.href) && !isPremium ? (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 flex items-center gap-0.5 bg-ma-light text-ma">
-                            <Lock size={9} /> PRO
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5 bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                            <Lock size={8} /> PRO
                           </span>
                         ) : item.badge ? (
                           <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full leading-none shrink-0 ${
@@ -651,12 +584,8 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
             {/* Mobile sidebar bottom */}
             <div className="border-t border-border p-3 space-y-1">
               <Link href="/account" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                <User size={18} />
-                <span className="text-sm">My Account</span>
-              </Link>
-              <Link href="/account?tab=subscription" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                 <CreditCard size={18} />
-                <span className="text-sm">Subscription</span>
+                <span className="text-sm">Subscription & Orders</span>
               </Link>
               <button
                 onClick={handleSignOut}
@@ -670,6 +599,7 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
           </aside>
         </div>
       )}
+
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -802,40 +732,36 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
           </PageTransitionWrapper>
         </main>
 
-        {/* Mobile Bottom Navigation Bar */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40">
+        {/* Mobile Bottom Navigation Bar — 6 items: Home | Learn | Practice | Tests | AI | Profile */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-40">
           <div className="flex items-stretch justify-around px-1 py-1">
-            {activeMobileNavItems.map((item) => {
-              if (item.key === 'mob-more') {
-                return (
-                  <button
-                    key={item.key}
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 px-1 rounded-xl text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <item.icon size={22} />
-                    <span className="text-[10px] font-semibold">{item.label}</span>
-                  </button>
-                );
-              }
+            {[
+              { label: 'Home',     href: '/student-dashboard', icon: Home,     key: 'mnav-home' },
+              { label: 'Learn',    href: '/subjects',          icon: BookOpen, key: 'mnav-learn' },
+              { label: 'Practice', href: '/practice',          icon: Zap,      key: 'mnav-practice' },
+              { label: 'Tests',    href: '/mock-tests',        icon: FileText, key: 'mnav-tests' },
+              { label: 'AI',       href: '/ai-tutor',          icon: Bot,      key: 'mnav-ai' },
+              { label: 'Profile',  href: '/profile',           icon: User,     key: 'mnav-profile' },
+            ].map((item) => {
               const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
               return (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 px-1 rounded-xl transition-colors ${
+                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 px-0.5 rounded-xl transition-colors ${
                     active ? 'text-primary' : 'text-muted-foreground hover:text-primary'
                   }`}
                 >
                   <div className={`p-1 rounded-lg transition-colors ${active ? 'bg-primary/10' : ''}`}>
-                    <item.icon size={21} />
+                    <item.icon size={19} />
                   </div>
-                  <span className={`text-[10px] ${active ? 'font-bold' : 'font-semibold'}`}>{item.label}</span>
+                  <span className={`text-[9.5px] ${active ? 'font-bold text-primary' : 'font-semibold'}`}>{item.label}</span>
                 </Link>
               );
             })}
           </div>
         </nav>
+
       </div>
     </div>
   );

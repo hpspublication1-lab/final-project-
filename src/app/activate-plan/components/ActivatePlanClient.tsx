@@ -90,7 +90,7 @@ export default function ActivatePlanClient() {
             <p className="text-muted-foreground text-sm mb-6">
               You need to be signed in to activate a plan with your code.
             </p>
-            <Link href="/sign-up-login-screen" className="btn-primary w-full justify-center">
+            <Link href="/login" className="btn-primary w-full justify-center">
               Sign In / Register
             </Link>
           </div>

@@ -181,7 +181,7 @@ export default function AccountManagementClient() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router?.replace('/sign-up-login-screen');
+      router?.replace('/login');
     }
   }, [user, loading, router]);
 
@@ -327,7 +327,7 @@ export default function AccountManagementClient() {
 
   const handleSignOut = async () => {
     await signOut();
-    router?.replace('/sign-up-login-screen');
+    router?.replace('/login');
   };
 
   if (loading) {
