@@ -290,8 +290,49 @@ export default function HeroSection() {
               Courses, practice questions, mock tests, chapter notes, and 24/7 AI-powered learning — all unified in one seamless platform.
             </p>
 
+            {/* 2 Flagship Commercial Products: SEE & CEE (Prompt 1) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 max-w-xl">
+              <Link
+                href="/see"
+                className="p-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border-2 border-emerald-500/30 hover:border-emerald-500 transition-all group flex items-center justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🎓</span>
+                    <span className="text-sm font-black text-foreground">SAMYAK SEE</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase font-mono">
+                      Class 10
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">
+                    GPA 4.0 Suite · Live Classes · Past Papers
+                  </p>
+                </div>
+                <ArrowRight size={16} className="text-emerald-600 group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+              </Link>
+
+              <Link
+                href="/cee-medical-entrance"
+                className="p-4 rounded-2xl bg-blue-500/10 hover:bg-blue-500/15 border-2 border-blue-500/30 hover:border-blue-500 transition-all group flex items-center justify-between"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🩺</span>
+                    <span className="text-sm font-black text-foreground">SAMYAK CEE</span>
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black uppercase font-mono">
+                      MEC Entrance
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 font-medium">
+                    MBBS / BDS · 15,000+ MCQs · 200-Q Mocks
+                  </p>
+                </div>
+                <ArrowRight size={16} className="text-blue-600 group-hover:translate-x-1 transition-transform shrink-0 ml-2" />
+              </Link>
+            </div>
+
             {/* 2 Clear CTAs */}
-            <div className="flex flex-wrap gap-4 pt-2 items-center">
+            <div className="flex flex-wrap gap-4 pt-1 items-center">
               <Link
                 href="/login?mode=signup"
                 className="btn-primary group gap-2.5 text-sm sm:text-base py-3.5 px-8 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all font-bold rounded-2xl"
@@ -303,7 +344,7 @@ export default function HeroSection() {
                 href="/courses"
                 className="btn-secondary gap-2 text-sm sm:text-base py-3.5 px-7 font-bold border-border/80 hover:border-primary/40 hover:bg-card rounded-2xl transition-all"
               >
-                Explore Programs
+                More Programs
               </Link>
             </div>
 

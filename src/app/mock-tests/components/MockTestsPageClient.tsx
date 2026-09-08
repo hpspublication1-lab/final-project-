@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import { FileText, Clock, ChevronRight, ChevronLeft, Flag, AlertTriangle, Wifi, WifiOff, BookmarkPlus, Play, Shield, RotateCcw, Trophy, Loader2, CheckCircle, XCircle, MinusCircle, BookOpen, Grid, Search } from 'lucide-react';
+import { FileText, Clock, ChevronRight, ChevronLeft, Flag, AlertTriangle, Wifi, WifiOff, BookmarkPlus, Play, Shield, RotateCcw, Trophy, Loader2, CheckCircle, XCircle, MinusCircle, BookOpen, Grid, Search, ArrowRight, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
@@ -69,6 +70,7 @@ function toOptionId(correct: unknown, options: string[]): string {
 export default function MockTestsPageClient() {
   const { user } = useAuth();
   const { program, programDetails } = useProgram();
+  const canonicalId = normalizeCourseId(program);
   const [isDark, setIsDark] = useState(false);
   const [examMode, setExamMode] = useState<ExamMode>('list');
   const [exams, setExams] = useState<MockExam[]>([]);
@@ -86,7 +88,7 @@ export default function MockTestsPageClient() {
   const [subjectBreakdown, setSubjectBreakdown] = useState<SubjectBreakdown[]>([]);
   const [showExplanations, setShowExplanations] = useState(false);
   const [showMobilePalette, setShowMobilePalette] = useState(false);
-  const [activeCategoryTab, setActiveCategoryTab] = useState<'all' | 'full' | 'subject'>('all');
+  const [activeCategoryTab, setActiveCategoryTab] = useState<'all' | 'chapter' | 'subject' | 'model' | 'past' | 'full'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const current = questions[currentIdx];
@@ -580,15 +582,39 @@ export default function MockTestsPageClient() {
       if (activeCategoryTab === 'full') {
         return (
           e.type.toLowerCase().includes('full') ||
-          e.type.toLowerCase().includes('board') ||
-          e.type.toLowerCase().includes('model')
+          e.totalQuestions >= 50
+        );
+      }
+      if (activeCategoryTab === 'chapter') {
+        return (
+          e.type.toLowerCase().includes('chapter') ||
+          e.title.toLowerCase().includes('chapter') ||
+          e.title.toLowerCase().includes('unit') ||
+          e.totalQuestions <= 25
         );
       }
       if (activeCategoryTab === 'subject') {
         return (
           e.type.toLowerCase().includes('subject') ||
+          e.type.toLowerCase().includes('speed') ||
           e.type.toLowerCase().includes('special') ||
           e.type.toLowerCase().includes('mat')
+        );
+      }
+      if (activeCategoryTab === 'model') {
+        return (
+          e.type.toLowerCase().includes('model') ||
+          e.title.toLowerCase().includes('model') ||
+          e.title.toLowerCase().includes('set')
+        );
+      }
+      if (activeCategoryTab === 'past') {
+        return (
+          e.type.toLowerCase().includes('past') ||
+          e.title.toLowerCase().includes('past') ||
+          e.title.toLowerCase().includes('board') ||
+          e.title.toLowerCase().includes('208') ||
+          e.title.toLowerCase().includes('207')
         );
       }
       return true;
@@ -621,10 +647,10 @@ export default function MockTestsPageClient() {
 
           {/* Filter Tabs & Search Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-card border border-border self-start">
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-card border border-border self-start flex-wrap">
               <button
                 onClick={() => setActiveCategoryTab('all')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeCategoryTab === 'all'
                     ? 'bg-primary text-white shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
@@ -633,24 +659,54 @@ export default function MockTestsPageClient() {
                 All Tests ({exams.length})
               </button>
               <button
+                onClick={() => setActiveCategoryTab('chapter')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'chapter'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Chapter Tests
+              </button>
+              <button
+                onClick={() => setActiveCategoryTab('subject')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'subject'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Subject Tests
+              </button>
+              <button
+                onClick={() => setActiveCategoryTab('model')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'model'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Model Sets
+              </button>
+              <button
+                onClick={() => setActiveCategoryTab('past')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeCategoryTab === 'past'
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {canonicalId === 'see_class_10' ? 'Past SEE Tests' : 'Past Papers'}
+              </button>
+              <button
                 onClick={() => setActiveCategoryTab('full')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeCategoryTab === 'full'
                     ? 'bg-primary text-white shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Full Mock Exams
-              </button>
-              <button
-                onClick={() => setActiveCategoryTab('subject')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  activeCategoryTab === 'subject'
-                    ? 'bg-primary text-white shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Subject &amp; Speed Tests
               </button>
             </div>
 
@@ -852,6 +908,59 @@ export default function MockTestsPageClient() {
               </div>
             </div>
           )}
+
+          {/* RECOMMENDED NEXT ACTION (Prompt 8) */}
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-primary/10 via-indigo-500/10 to-transparent border-2 border-primary/30 shadow-md space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-primary text-white text-[10px] font-black uppercase tracking-wider font-mono">
+                RECOMMENDED NEXT ACTION
+              </span>
+              <span className="text-xs text-muted-foreground font-semibold">
+                AI Performance Diagnostic
+              </span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1 max-w-xl">
+                <h3 className="text-base font-black text-foreground">
+                  {r.accuracy >= 80
+                    ? '🎯 Outstanding Mastery! Ready for Advanced Model Exams'
+                    : r.accuracy >= 60
+                    ? '⚡ Good Progress! Reinforce 1-2 Weak Areas to Reach A+'
+                    : '📖 Revision Required: Review Key Video Lessons & Derivations'}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {r.accuracy >= 80
+                    ? 'Your speed and accuracy are in the top tier. Test yourself on full-length timed board sets.'
+                    : r.accuracy >= 60
+                    ? 'You missed questions in numerical steps and specific definitions. Practice a quick 10-question focused drill.'
+                    : 'Review the step-by-step concept videos and practice 1-2 mark definitions before re-attempting.'}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2.5 shrink-0">
+                {canonicalId === 'see_class_10' ? (
+                  <Link
+                    href="/see/question-bank"
+                    className="px-5 py-3 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
+                  >
+                    <Zap size={14} className="fill-current" />
+                    <span>Practice Weak Topics Now</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                ) : (
+                  <Link
+                    href="/practice?count=15"
+                    className="px-5 py-3 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
+                  >
+                    <Zap size={14} className="fill-current" />
+                    <span>Practice Remedial MCQs</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Question review */}
           <div className="bg-card border border-border rounded-2xl overflow-hidden">

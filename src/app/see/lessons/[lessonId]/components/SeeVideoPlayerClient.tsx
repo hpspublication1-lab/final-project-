@@ -10,7 +10,7 @@ import {
   ChevronLeft, ChevronRight, CheckCircle2, FileText, Download,
   ArrowRight, Clock, Sparkles, BookOpen, Loader2, Bookmark,
   MessageSquare, HelpCircle, Target, Award, Subtitles, Layers, Check,
-  RotateCcw, RotateCw, ListVideo, Send, Trash2, Video, RefreshCw
+  RotateCcw, RotateCw, ListVideo, Send, Trash2, Video, RefreshCw, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -676,17 +676,54 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                   <p className="text-xs text-muted-foreground">{lesson?.description}</p>
                 </div>
 
-                <button
-                  onClick={handleMarkCompleted}
-                  className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all shrink-0 ${
-                    isCompleted
-                      ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
-                  }`}
-                >
-                  <CheckCircle2 size={16} />
-                  <span>{isCompleted ? 'Completed ✓' : 'Mark Completed'}</span>
-                </button>
+                <div className="flex items-center gap-2 flex-wrap shrink-0">
+                  {/* Previous Lesson */}
+                  {navigation.prevLesson && (
+                    <Link
+                      href={`/see/lessons/${navigation.prevLesson.id}`}
+                      className="px-3.5 py-2.5 rounded-2xl border border-border hover:bg-muted font-bold text-xs flex items-center gap-1.5 transition-colors text-foreground"
+                      title={navigation.prevLesson.title}
+                    >
+                      <ChevronLeft size={16} />
+                      <span className="hidden sm:inline">Prev</span>
+                    </Link>
+                  )}
+
+                  {/* Next Lesson */}
+                  {navigation.nextLesson && (
+                    <Link
+                      href={`/see/lessons/${navigation.nextLesson.id}`}
+                      className="px-3.5 py-2.5 rounded-2xl border border-border hover:bg-muted font-bold text-xs flex items-center gap-1.5 transition-colors text-foreground"
+                      title={navigation.nextLesson.title}
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight size={16} />
+                    </Link>
+                  )}
+
+                  {/* Mark Completed Button */}
+                  <button
+                    onClick={handleMarkCompleted}
+                    className={`px-4 py-2.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                      isCompleted
+                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md'
+                    }`}
+                  >
+                    <CheckCircle2 size={16} />
+                    <span>{isCompleted ? 'Completed ✓' : 'Mark Completed'}</span>
+                  </button>
+
+                  {/* Practice This Chapter CTA */}
+                  <Link
+                    href={`/see/question-bank?subject=${lesson?.subject_slug || 'science'}&chapter=${encodeURIComponent(lesson?.chapter_name || '')}`}
+                    className="px-4 py-2.5 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-xs flex items-center gap-2 shadow-md transition-all active:scale-95"
+                  >
+                    <Zap size={14} className="fill-current" />
+                    <span>Practice This Chapter</span>
+                    <ArrowRight size={14} />
+                  </Link>
+                </div>
               </div>
 
               {/* Resource & Tools Action Bar */}

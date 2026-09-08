@@ -31,6 +31,7 @@ import WeakTopicsPanel from '@/app/student-dashboard/components/WeakTopicsPanel'
 import RecentExamsTable from '@/app/student-dashboard/components/RecentExamsTable';
 import LiveClassesCard from '@/app/student-dashboard/components/LiveClassesCard';
 import UpcomingSchedule from '@/app/student-dashboard/components/UpcomingSchedule';
+import SeeDashboardView from '@/app/student-dashboard/components/SeeDashboardView';
 
 interface StudentMetrics {
   studyMinutes: number;
@@ -187,6 +188,56 @@ export default function DashboardPageClient() {
   const daysToCee = Math.max(0, Math.floor((ceeTarget.getTime() - now.getTime()) / 86400000));
 
   const activeLesson = lastLesson || PROGRAM_DEFAULT_LESSONS[canonicalId] || PROGRAM_DEFAULT_LESSONS.cee_medical;
+
+  // Dedicated SEE Class 10 Dashboard (Prompt 2: 7 Focused Sections)
+  if (canonicalId === 'see_class_10') {
+    return (
+      <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+          {/* Track Switcher Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card/60 p-4 sm:p-5 rounded-3xl border border-border/80 shadow-xs backdrop-blur-xs">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+                  Samyak SEE · Grade 10 Board
+                </h1>
+                {isPro && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-primary text-white shadow-xs">
+                    PRO
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
+                Target 4.00 GPA with live classes, chapter question bank, and CDC model tests.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-secondary/80 border border-border text-xs font-semibold">
+                <span className="text-muted-foreground">Track:</span>
+                <span className="font-bold text-foreground">SEE (Class 10)</span>
+              </div>
+
+              <button
+                onClick={() => setShowSelectorModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              >
+                <Compass size={13} />
+                <span>Switch Track</span>
+              </button>
+            </div>
+          </div>
+
+          <SeeDashboardView displayName={displayName} />
+        </div>
+
+        <ProgramSelectorModal
+          isOpen={showSelectorModal}
+          onClose={() => setShowSelectorModal(false)}
+        />
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
