@@ -15,11 +15,13 @@ import { SUPPORT_CONFIG } from '@/lib/config/support';
 type NavChild = { label: string; href: string; icon: React.ElementType; key: string; desc: string; badge?: string };
 type NavLink = { label: string; href: string; key: string; badge?: string; children?: NavChild[] };
 
-const primaryNavItems = [
+const primaryNavItems: NavLink[] = [
   { label: 'Home', href: '/', key: 'nav-home' },
-  { label: 'My Learning', href: '/student-dashboard', key: 'nav-learning' },
+  { label: 'SEE Class 10', href: '/see', key: 'nav-see', badge: 'GPA 4.0' },
+  { label: 'CEE Medical', href: '/cee-medical-entrance', key: 'nav-cee', badge: 'ENTRANCE' },
+  { label: 'Live Classes', href: '/live-classes', key: 'nav-live', badge: 'LIVE' },
   { label: 'Practice', href: '/practice', key: 'nav-practice' },
-  { label: 'Tests', href: '/mock-tests', key: 'nav-tests' },
+  { label: 'Mock Tests', href: '/mock-tests', key: 'nav-tests' },
   { label: 'AI Tutor', href: '/ai-tutor', key: 'nav-ai', badge: 'AI' },
 ];
 

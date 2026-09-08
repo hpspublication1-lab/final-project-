@@ -48,7 +48,7 @@ export default function SamyakIntelligenceSection() {
               className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-purple-500/40 transition-all flex flex-col justify-between space-y-4 group"
             >
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl ${mod.bg} ${mod.color} flex items-center justify-center font-bold group-hover:scale-110 transition-transform">
+                <div className={`w-12 h-12 rounded-2xl ${mod.bg} ${mod.color} flex items-center justify-center font-bold group-hover:scale-110 transition-transform`}>
                   <mod.icon size={22} />
                 </div>
 

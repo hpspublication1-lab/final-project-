@@ -66,7 +66,7 @@ export default function CanonicalSubjectWorkspace({ subjectId }: CanonicalSubjec
         
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Link href="/student-dashboard" className="hover:text-foreground transition-colors">
+          <Link href="/see" className="hover:text-foreground transition-colors font-bold text-primary">
             SEE Home
           </Link>
           <ChevronRight size={13} />

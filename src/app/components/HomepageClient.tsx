@@ -15,7 +15,10 @@ const SectionSkeleton = () => (
   </div>
 );
 
-// Code-split below-the-fold components
+const PlatformFeaturesSection = dynamic(() => import('./PlatformFeaturesSection'), {
+  loading: SectionSkeleton,
+  ssr: true,
+});
 const SamyakIntelligenceSection = dynamic(() => import('@/components/SamyakIntelligenceSection'), {
   loading: SectionSkeleton,
   ssr: true,
@@ -79,13 +82,14 @@ export default function HomepageClient() {
         <AnnouncementBar onDismiss={() => setAnnounceOpen(false)} />
         <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} announcementHeight={announceOpen ? 40 : 0} />
         <HeroSection />
+        <PlatformFeaturesSection />
         <SectorsShowcase />
         <SamyakIntelligenceSection />
+        <BattleArenaSection />
+        <MCQPreviewSection />
         <StatsSection />
         <SubjectsSection />
         <FeaturedInstructors />
-        <MCQPreviewSection />
-        <BattleArenaSection />
         <LeadMagnetSection />
         <PricingSection />
         <TestimonialsSection />

@@ -7,13 +7,37 @@ import HomepageFooter from '@/app/components/HomepageFooter';
 import SeeFreeDiagnosticModal from '@/components/see/SeeFreeDiagnosticModal';
 import {
   GraduationCap, BookOpen, Sparkles, CheckCircle2, ArrowRight, ShieldCheck,
-  Zap, Play, FileText, Award, Users, Star, Lock, Check, HelpCircle, Target, Download
+  Zap, Play, FileText, Award, Users, Star, Lock, Check, HelpCircle, Target, Download,
+  Radio, Flame, Printer, TrendingUp
 } from 'lucide-react';
+
+import SeeLiveClassesTab from '@/components/see/SeeLiveClassesTab';
+import SeeRecordedClassesTab from '@/components/see/SeeRecordedClassesTab';
+import SeeQuestionFeedTab from '@/components/see/SeeQuestionFeedTab';
+import SeeTopicMcqTab from '@/components/see/SeeTopicMcqTab';
+import SeePastPapersTab from '@/components/see/SeePastPapersTab';
+import SeeMarksPracticeTab from '@/components/see/SeeMarksPracticeTab';
+import SeeManualsAndPrintablesTab from '@/components/see/SeeManualsAndPrintablesTab';
+import SeeProgressTrackerTab from '@/components/see/SeeProgressTrackerTab';
 
 import { getSeeFAQSchema } from '@/lib/seo/structuredData';
 
+type HubTabId = 'live' | 'recorded' | 'feed' | 'mcqs' | 'past_papers' | 'marks_practice' | 'printables' | 'tracker';
+
+const HUB_TABS = [
+  { id: 'live', label: '1. Live Classes', icon: Radio, badge: 'LIVE' },
+  { id: 'recorded', label: '2. Recorded Classes', icon: Play, badge: '200+ HD' },
+  { id: 'feed', label: '3. Daily Question Feed', icon: Flame, badge: 'DAILY' },
+  { id: 'mcqs', label: '4. Topicwise MCQs', icon: Zap, badge: '10K+' },
+  { id: 'past_papers', label: '5. Past Year Papers', icon: FileText, badge: '10 YRS' },
+  { id: 'marks_practice', label: '6. 1-4 Marks Practice', icon: Award, badge: 'RUBRICS' },
+  { id: 'printables', label: '7. Manuals & Printables', icon: Printer, badge: 'A4 PRINT' },
+  { id: 'tracker', label: '8. Progress Tracker', icon: TrendingUp, badge: 'GPA 4.0' },
+] as const;
+
 export default function DedicatedSeeLandingPage() {
   const [isDiagnosticOpen, setIsDiagnosticOpen] = useState(false);
+  const [activeHubTab, setActiveHubTab] = useState<HubTabId>('feed');
 
   const seeCourseSchema = {
     '@context': 'https://schema.org',
@@ -79,40 +103,32 @@ export default function DedicatedSeeLandingPage() {
             
             <div className="lg:col-span-7 space-y-6">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black border border-emerald-500/30">
-                <GraduationCap size={16} /> FOR CLASS 10 NEB STUDENTS
+                <GraduationCap size={16} /> FOR CLASS 10 NEB STUDENTS (MISSION GPA 4.0)
               </div>
 
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-                MASTER SEE WITH <span className="text-emerald-400">SAMYAK AI</span>
+                SEE CLASS 10 BOARD <span className="text-emerald-400">MASTER SUITE</span>
               </h1>
 
               <p className="text-base sm:text-lg text-emerald-100 leading-relaxed max-w-xl font-medium">
-                AI-powered SEE preparation with live classes, mock tests, personalized performance tracking and doubt solving.
+                Everything required to achieve a 4.0 GPA: Live interactive batches, 200+ HD recorded lectures, daily question feeds, chapter-wise 1-4 marks practice, 10-year solved board papers, and printable practice sets.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
-                <Link
-                  href="/lecture-videos"
+                <a
+                  href="#learning-suite"
                   className="px-7 py-4 rounded-2xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all"
                 >
-                  <Play size={16} className="fill-slate-950" />
-                  <span>START WATCHING LECTURES</span>
-                </Link>
-
-                <Link
-                  href="/student-dashboard"
-                  className="px-7 py-4 rounded-2xl bg-white/15 hover:bg-white/25 text-white font-black text-xs sm:text-sm flex items-center gap-2 border border-white/20 shadow-xl transition-all"
-                >
-                  <GraduationCap size={16} />
-                  <span>STUDENT DASHBOARD</span>
-                </Link>
+                  <Sparkles size={16} className="fill-slate-950" />
+                  <span>EXPLORE 8-PILLAR LEARNING SUITE</span>
+                </a>
 
                 <button
                   onClick={() => setIsDiagnosticOpen(true)}
                   className="px-6 py-4 rounded-2xl bg-white text-emerald-950 hover:bg-emerald-50 font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl transition-all"
                 >
                   <Target size={16} className="text-emerald-600 animate-pulse" />
-                  <span>🎯 FREE DIAGNOSTIC</span>
+                  <span>🎯 FREE DIAGNOSTIC TEST</span>
                 </button>
               </div>
             </div>
@@ -165,139 +181,62 @@ export default function DedicatedSeeLandingPage() {
           </div>
         </section>
 
+        {/* STAGE 2: THE 8-PILLAR SEE MASTER LEARNING SUITE (THE CORE SUITE) */}
+        <section id="learning-suite" className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24 space-y-6">
+          <div className="space-y-3 text-center sm:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black">
+              <ShieldCheck size={14} /> THE COMPLETE CLASS 10 BOARD EXAM PREPARATION ENGINE
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black text-foreground">
+              Samyak SEE 8-Pillar Learning Suite
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl">
+              Modeled after the world&apos;s leading learning systems (PhysicsWallah, Khan Academy &amp; Allen), every tool required to secure an A+ is fully accessible right here.
+            </p>
+          </div>
 
-        {/* STAGE 2: FREE SAMPLE DIAGNOSTIC TEST */}
-        <section id="free-test" className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-28">
-          <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-card via-card to-emerald-500/5 border border-emerald-500/30 shadow-xl space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-xl">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-black">
-                  <Zap size={14} /> FREE DIAGNOSTIC DEMO
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-foreground">
-                  Try Free SEE Sample Model Paper &amp; AI Marker
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Test your current SEE preparation. Solve sample Science &amp; Math model questions and upload your handwritten solution to evaluate step-by-step AI marking against NEB marking schemes.
-                </p>
-              </div>
+          {/* Institutional Grade Tab Selector Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 p-2 rounded-3xl bg-muted/50 border border-border">
+            {HUB_TABS.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeHubTab === tab.id;
 
-              <div className="flex flex-col sm:flex-row gap-3 shrink-0">
+              return (
                 <button
-                  onClick={() => setIsDiagnosticOpen(true)}
-                  className="px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg"
+                  key={tab.id}
+                  onClick={() => setActiveHubTab(tab.id as HubTabId)}
+                  className={`p-3 rounded-2xl flex flex-col items-center justify-center text-center transition-all gap-1.5 ${
+                    isActive
+                      ? 'bg-card text-foreground shadow-md ring-2 ring-primary scale-[1.02]'
+                      : 'hover:bg-card/60 text-muted-foreground hover:text-foreground'
+                  }`}
                 >
-                  <Target size={16} />
-                  <span>🎯 TAKE FREE SEE DIAGNOSTIC</span>
+                  <div className="relative">
+                    <Icon size={18} className={isActive ? 'text-primary' : 'text-muted-foreground'} />
+                    {tab.badge && (
+                      <span className="absolute -top-2 -right-3 px-1.5 py-0.2 rounded-full text-[8px] font-black uppercase bg-primary text-primary-foreground font-mono">
+                        {tab.badge}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-black leading-tight line-clamp-1">{tab.label}</span>
                 </button>
+              );
+            })}
+          </div>
 
-                <Link
-                  href="/practice/subjective"
-                  className="px-6 py-3.5 rounded-2xl bg-card border border-emerald-500/40 text-foreground hover:bg-emerald-500/10 font-black text-xs sm:text-sm flex items-center justify-center gap-2"
-                >
-                  <Sparkles size={16} className="text-emerald-500" />
-                  <span>Try AI Answer Sheet Marker</span>
-                </Link>
-              </div>
-            </div>
+          {/* Interactive Tab Viewport */}
+          <div className="pt-4">
+            {activeHubTab === 'live' && <SeeLiveClassesTab />}
+            {activeHubTab === 'recorded' && <SeeRecordedClassesTab />}
+            {activeHubTab === 'feed' && <SeeQuestionFeedTab />}
+            {activeHubTab === 'mcqs' && <SeeTopicMcqTab />}
+            {activeHubTab === 'past_papers' && <SeePastPapersTab />}
+            {activeHubTab === 'marks_practice' && <SeeMarksPracticeTab />}
+            {activeHubTab === 'printables' && <SeeManualsAndPrintablesTab />}
+            {activeHubTab === 'tracker' && <SeeProgressTrackerTab />}
           </div>
         </section>
-
-        {/* 🌟 STAGE 2.5: 4-WAY MARK QUESTION BANK & DIGESTION HUB */}
-        <section className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="p-8 sm:p-10 rounded-3xl bg-card border border-border shadow-lg space-y-6">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-xs font-black">
-                  <HelpCircle size={14} /> NEW: NEB 4-WAY QUESTION BANK &amp; DIGEST
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-foreground">
-                  Complete SEE Question Bank with Step-by-Step Solutions
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
-                  Every board question categorized by exact mark weightage with official marking rubrics and downloadable formula capsules.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  href="/see/question-bank"
-                  className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-2"
-                >
-                  <BookOpen size={15} />
-                  <span>Open Question Bank (1-4 Marks) →</span>
-                </Link>
-                <Link
-                  href="/see/question-bank"
-                  className="px-5 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/30 font-black text-xs flex items-center gap-2"
-                >
-                  <Download size={15} />
-                  <span>Download Formula Digests</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* 4 Mark Section Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-              <Link
-                href="/see/question-bank"
-                className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 transition-all space-y-2 group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-black text-blue-600">Section 1</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-700">1 MARK</span>
-                </div>
-                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
-                  Group A: Very Short Definitions &amp; Laws
-                </h4>
-                <p className="text-[11px] text-muted-foreground">Standard definitions, SI units, and 1-line conceptual answers.</p>
-              </Link>
-
-              <Link
-                href="/see/question-bank"
-                className="p-4 rounded-2xl border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 transition-all space-y-2 group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-black text-indigo-600">Section 2</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-700">2 MARKS</span>
-                </div>
-                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
-                  Group B: Short Answers &amp; Give Reasons
-                </h4>
-                <p className="text-[11px] text-muted-foreground">Scientific causes, differences between terms, and short equations.</p>
-              </Link>
-
-              <Link
-                href="/see/question-bank"
-                className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-all space-y-2 group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-black text-amber-600">Section 3</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-700">3 MARKS</span>
-                </div>
-                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
-                  Group C: Problem Solving &amp; Numericals
-                </h4>
-                <p className="text-[11px] text-muted-foreground">Mathematical word problems, chemical balancing, and diagrams.</p>
-              </Link>
-
-              <Link
-                href="/see/question-bank"
-                className="p-4 rounded-2xl border border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/10 transition-all space-y-2 group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-black text-purple-600">Section 4</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-700">4 MARKS</span>
-                </div>
-                <h4 className="text-xs sm:text-sm font-black text-foreground group-hover:underline">
-                  Group D: Long Proofs &amp; Theorems
-                </h4>
-                <p className="text-[11px] text-muted-foreground">Geometry theorem proofs, Cramer rule, essays, and multi-step questions.</p>
-              </Link>
-            </div>
-          </div>
-        </section>
-
 
         {/* STAGE 3: COURSE CURRICULUM & SUBJECT BREAKDOWN */}
         <section id="curriculum" className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 scroll-mt-28">
@@ -343,7 +282,6 @@ export default function DedicatedSeeLandingPage() {
           </div>
         </section>
 
-
         {/* STAGE 4: PROOF & PLATFORM VERIFICATION */}
         <section className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-card border border-border space-y-8">
@@ -379,7 +317,6 @@ export default function DedicatedSeeLandingPage() {
             </div>
           </div>
         </section>
-
 
         {/* STAGE 5: PAYMENT & ENROLLMENT CTA */}
         <section id="payment" className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-28 space-y-8">
