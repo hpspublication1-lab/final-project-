@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -54,6 +55,7 @@ const STORAGE_KEY_BOOKMARKS = 'samyak_see_bookmarked_ids_v2';
 const STORAGE_KEY_MISTAKES = 'samyak_see_student_mistakes_v1';
 
 export default function SeeQuestionBankClient() {
+  const searchParams = useSearchParams();
   const [isDark, setIsDark] = useState(false);
 
   // Active View Tab: 'practice' | 'questions' | 'digest' | 'mistakes' | 'bookmarks'
@@ -123,6 +125,33 @@ export default function SeeQuestionBankClient() {
   const [qSolution, setQSolution] = useState('');
   const [qTip, setQTip] = useState('');
   const [questionSuccess, setQuestionSuccess] = useState(false);
+
+  // Sync with incoming URL query parameters (?subject=science&chapter=Force%20%26%20Gravitation&marks=4&view=questions)
+  useEffect(() => {
+    if (!searchParams) return;
+    const qSubj = searchParams.get('subject');
+    const qChap = searchParams.get('chapter');
+    const qMarks = searchParams.get('marks');
+    const qView = searchParams.get('view');
+
+    if (qSubj) {
+      setSimpleSubject(qSubj);
+      setFilters((f) => ({ ...f, subject: qSubj }));
+    }
+    if (qChap) {
+      setSimpleChapter(qChap);
+      setFilters((f) => ({ ...f, chapter: qChap }));
+    }
+    if (qMarks) {
+      const parsedMarks = parseInt(qMarks, 10);
+      if (!isNaN(parsedMarks)) {
+        setFilters((f) => ({ ...f, marks: parsedMarks as any }));
+      }
+    }
+    if (qView && ['practice', 'questions', 'digest', 'mistakes', 'bookmarks'].includes(qView)) {
+      setActiveView(qView as any);
+    }
+  }, [searchParams]);
 
   // Load from local storage
   useEffect(() => {

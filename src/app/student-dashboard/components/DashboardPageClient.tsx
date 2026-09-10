@@ -32,6 +32,7 @@ import RecentExamsTable from '@/app/student-dashboard/components/RecentExamsTabl
 import LiveClassesCard from '@/app/student-dashboard/components/LiveClassesCard';
 import UpcomingSchedule from '@/app/student-dashboard/components/UpcomingSchedule';
 import SeeDashboardView from '@/app/student-dashboard/components/SeeDashboardView';
+import CeeDashboardView from '@/app/student-dashboard/components/CeeDashboardView';
 
 interface StudentMetrics {
   studyMinutes: number;
@@ -239,6 +240,56 @@ export default function DashboardPageClient() {
     );
   }
 
+  // Dedicated CEE Medical Entrance Dashboard
+  if (canonicalId === 'cee_medical') {
+    return (
+      <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+          {/* Track Switcher Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-card/60 p-4 sm:p-5 rounded-3xl border border-border/80 shadow-xs backdrop-blur-xs">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+                  Samyak CEE · Medical Entrance
+                </h1>
+                {isPro && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase bg-primary text-white shadow-xs">
+                    PRO
+                  </span>
+                )}
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
+                Target 180+ marks with high-yield MCQs, 200-Q Grand Mocks, and smart revision.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5 flex-wrap self-start sm:self-auto">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-secondary/80 border border-border text-xs font-semibold">
+                <span className="text-muted-foreground">Track:</span>
+                <span className="font-bold text-foreground">CEE (Medical)</span>
+              </div>
+
+              <button
+                onClick={() => setShowSelectorModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              >
+                <Compass size={13} />
+                <span>Switch Track</span>
+              </button>
+            </div>
+          </div>
+
+          <CeeDashboardView displayName={displayName} daysToCee={daysToCee} isPro={isPro} />
+        </div>
+
+        <ProgramSelectorModal
+          isOpen={showSelectorModal}
+          onClose={() => setShowSelectorModal(false)}
+        />
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
@@ -276,14 +327,6 @@ export default function DashboardPageClient() {
               <Compass size={13} />
               <span>Switch Track</span>
             </button>
-
-            {/* CEE Countdown badge if on CEE track */}
-            {canonicalId === 'cee_medical' && (
-              <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-xs font-bold text-amber-700 dark:text-amber-400">
-                <Timer size={13} />
-                <span>{daysToCee} days to CEE</span>
-              </div>
-            )}
           </div>
         </div>
 

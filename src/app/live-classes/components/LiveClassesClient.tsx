@@ -4,12 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Radio, Clock, MessageSquare, Send, ThumbsUp, PlayCircle, Calendar, Lock, Search, ArrowLeft, ExternalLink, Download, FileText, Loader2, Video } from 'lucide-react';
+import { Radio, Clock, MessageSquare, Send, ThumbsUp, PlayCircle, Calendar, Lock, Search, ArrowLeft, ExternalLink, Download, FileText, Loader2, Video, Bell, User, CheckCircle2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useRealtimeChat } from '@/lib/hooks/useRealtimeChat';
 import { useTypingIndicator } from '@/lib/hooks/useTypingIndicator';
 import { useLiveAttendance, useLiveReactions } from '@/lib/hooks/useLivePresence';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrial } from '@/contexts/TrialContext';
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 import { createClient } from '@/lib/supabase/client';
 import LiveStreamPlayer from '@/components/LiveStreamPlayer';
 
@@ -44,6 +46,10 @@ interface LiveClass {
   isPremium: boolean;
   streamProvider: 'youtube' | 'hls' | 'zoom' | '100ms' | null;
   playbackUrl: string | null;
+  program?: 'see' | 'cee' | 'all';
+  teacher?: string;
+  chapter?: string;
+  topic?: string;
 }
 
 /** Infer the in-app player from a stream URL. Bunny Stream Live and any HLS
@@ -68,11 +74,17 @@ function deriveStream(url?: string | null): { streamProvider: LiveClass['streamP
 
 // ─── Style map (matches Subjects / Lecture Videos pages) ──────────────────────
 
-const SUBJECT_STYLES: Record<string, { bgLight: string; textColor: string }> = {
-  biology: { bgLight: 'bg-bio-light', textColor: 'text-bio' },
-  chemistry: { bgLight: 'bg-chem-light', textColor: 'text-chem' },
-  physics: { bgLight: 'bg-physics-light', textColor: 'text-physics' },
-  mental_agility: { bgLight: 'bg-ma-light', textColor: 'text-ma' },
+const SUBJECT_STYLES: Record<string, { bgLight: string; textColor: string; icon?: string }> = {
+  biology: { bgLight: 'bg-bio-light', textColor: 'text-bio', icon: '🧬' },
+  chemistry: { bgLight: 'bg-chem-light', textColor: 'text-chem', icon: '🧪' },
+  physics: { bgLight: 'bg-physics-light', textColor: 'text-physics', icon: '⚡' },
+  mental_agility: { bgLight: 'bg-ma-light', textColor: 'text-ma', icon: '🧠' },
+  science: { bgLight: 'bg-emerald-500/10', textColor: 'text-emerald-600 dark:text-emerald-400', icon: '🔬' },
+  mathematics: { bgLight: 'bg-blue-500/10', textColor: 'text-blue-600 dark:text-blue-400', icon: '📐' },
+  opt_math: { bgLight: 'bg-purple-500/10', textColor: 'text-purple-600 dark:text-purple-400', icon: '📊' },
+  english: { bgLight: 'bg-amber-500/10', textColor: 'text-amber-600 dark:text-amber-400', icon: '📚' },
+  social: { bgLight: 'bg-orange-500/10', textColor: 'text-orange-600 dark:text-orange-400', icon: '🌍' },
+  nepali: { bgLight: 'bg-red-500/10', textColor: 'text-red-600 dark:text-red-400', icon: '🇳🇵' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -117,112 +129,156 @@ function statusConfig(status: LiveClass['status']) {
 interface ClassCardProps {
   cls: LiveClass;
   isLocked: boolean;
+  isReminded: boolean;
   onJoin: (cls: LiveClass) => void;
   onUpgrade: () => void;
+  onSetReminder: (cls: LiveClass) => void;
 }
 
-function ClassCard({ cls, isLocked, onJoin, onUpgrade }: ClassCardProps) {
+function ClassCard({ cls, isLocked, isReminded, onJoin, onUpgrade, onSetReminder }: ClassCardProps) {
   const status = statusConfig(cls.status);
 
   return (
     <div
-      className={`card-base group cursor-pointer hover:shadow-card-hover transition-all duration-200 border ${
-      cls.status === 'live' ? 'border-error/30 bg-error/5' : 'border-border'}`
-      }
-      onClick={() => isLocked ? onUpgrade() : onJoin(cls)}>
-
-      {/* Thumbnail */}
-      <div className="relative rounded-xl overflow-hidden mb-3 aspect-video bg-muted flex items-center justify-center">
-        <div className={`w-full h-full flex items-center justify-center ${cls.subjectBg}`}>
-          <Radio size={28} className={`${cls.subjectText} opacity-50`} />
-        </div>
-
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          {isLocked ?
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Lock size={20} className="text-white" />
-            </div> :
-          cls.status === 'completed' ?
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <PlayCircle size={28} className="text-white" />
-            </div> :
-          cls.status === 'live' ?
-          <div className="w-12 h-12 rounded-full bg-error/80 backdrop-blur-sm flex items-center justify-center">
-              <Radio size={22} className="text-white" />
-            </div> :
-
-          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Calendar size={20} className="text-white" />
-            </div>
-          }
-        </div>
-        {/* Status badge */}
-        <div className="absolute top-2 left-2">
-          <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${status.className}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-            {status.label}
-          </span>
-        </div>
-        {isLocked &&
-        <div className="absolute top-2 right-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
-            <Lock size={10} />
-            Pro
+      className={`card-base group cursor-pointer hover:shadow-card-hover transition-all duration-200 border flex flex-col justify-between ${
+        cls.status === 'live' ? 'border-error/30 bg-error/5' : 'border-border'
+      }`}
+      onClick={() => isLocked ? onUpgrade() : onJoin(cls)}
+    >
+      <div>
+        {/* Thumbnail */}
+        <div className="relative rounded-xl overflow-hidden mb-3 aspect-video bg-muted flex items-center justify-center">
+          <div className={`w-full h-full flex items-center justify-center ${cls.subjectBg}`}>
+            <Radio size={28} className={`${cls.subjectText} opacity-50`} />
           </div>
-        }
+
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {isLocked ? (
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Lock size={20} className="text-white" />
+              </div>
+            ) : cls.status === 'completed' ? (
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <PlayCircle size={28} className="text-white" />
+              </div>
+            ) : cls.status === 'live' ? (
+              <div className="w-12 h-12 rounded-full bg-error/80 backdrop-blur-sm flex items-center justify-center">
+                <Radio size={22} className="text-white" />
+              </div>
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Calendar size={20} className="text-white" />
+              </div>
+            )}
+          </div>
+          {/* Status badge */}
+          <div className="absolute top-2 left-2">
+            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${status.className}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+              {status.label}
+            </span>
+          </div>
+          {isLocked && (
+            <div className="absolute top-2 right-2 bg-black/60 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+              <Lock size={10} />
+              Pro
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex items-start gap-2 mb-2">
+          <div className={`w-7 h-7 rounded-lg ${cls.subjectBg} flex items-center justify-center shrink-0 mt-0.5`}>
+            <span className="text-sm">{cls.subjectIcon}</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{cls.title}</p>
+            {cls.subjectDisplayName && (
+              <p className={`text-xs font-medium mt-0.5 ${cls.subjectText}`}>{cls.subjectDisplayName}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Chapter / Topic and Teacher */}
+        {(cls.chapter || cls.topic) && (
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1.5 font-medium flex-wrap">
+            {cls.chapter && <span className="bg-muted px-2 py-0.5 rounded-md text-foreground font-semibold">{cls.chapter}</span>}
+            {cls.topic && <span>· {cls.topic}</span>}
+          </div>
+        )}
+
+        {cls.teacher && (
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mb-2 font-medium">
+            <User size={12} className="text-primary shrink-0" />
+            <span>Instructor: <strong className="text-foreground font-semibold">{cls.teacher}</strong></span>
+          </p>
+        )}
+
+        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{cls.description || 'No description available.'}</p>
+
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Clock size={11} />
+            <span>{cls.scheduledLabel}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Clock size={11} />
+            <span>{formatDuration(cls.durationMin)}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Info */}
-      <div className="flex items-start gap-2 mb-2">
-        <div className={`w-7 h-7 rounded-lg ${cls.subjectBg} flex items-center justify-center shrink-0 mt-0.5`}>
-          <span className="text-sm">{cls.subjectIcon}</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{cls.title}</p>
-          {cls.subjectDisplayName && <p className={`text-xs font-medium mt-0.5 ${cls.subjectText}`}>{cls.subjectDisplayName}</p>}
+      <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-2">
+        <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+          {cls.program === 'see' ? 'SEE Grade 10' : cls.program === 'cee' ? 'CEE Medical' : 'Masterclass'}
+        </span>
+
+        <div className="flex items-center gap-2">
+          {cls.status === 'scheduled' && !isLocked && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetReminder(cls);
+              }}
+              className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 border transition-all ${
+                isReminded
+                  ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                  : 'bg-card border-border hover:bg-muted text-foreground'
+              }`}
+            >
+              {isReminded ? <CheckCircle2 size={12} /> : <Bell size={12} />}
+              <span>{isReminded ? 'Reminded' : 'Set Reminder'}</span>
+            </button>
+          )}
+
+          {isLocked ? (
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 bg-muted text-muted-foreground">
+              <Lock size={11} /> Upgrade
+            </span>
+          ) : (
+            <button
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                cls.status === 'live'
+                  ? 'bg-error text-white hover:bg-error/90 shadow-xs'
+                  : cls.status === 'completed'
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-secondary text-primary hover:bg-secondary/80'
+              }`}
+            >
+              {cls.status === 'live' ? (
+                <><Radio size={11} /> Join Live</>
+              ) : cls.status === 'completed' ? (
+                <><PlayCircle size={11} /> View Recording</>
+              ) : (
+                <><Calendar size={11} /> Join Details</>
+              )}
+            </button>
+          )}
         </div>
       </div>
-
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{cls.description || 'No description available.'}</p>
-
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-1">
-          <Clock size={11} />
-          <span>{cls.scheduledLabel}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Clock size={11} />
-          <span>{formatDuration(cls.durationMin)}</span>
-        </div>
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-border flex items-center justify-end">
-        {isLocked ?
-        <span className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 bg-muted text-muted-foreground">
-            <Lock size={11} /> Upgrade to Unlock
-          </span> :
-
-        <button
-          className={`text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
-          cls.status === 'live' ? 'bg-error text-white hover:bg-error/90' :
-          cls.status === 'completed' ? 'bg-secondary text-primary hover:bg-secondary/80' :
-          cls.status === 'cancelled' ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-muted text-muted-foreground cursor-not-allowed'}`
-          }
-          disabled={cls.status === 'scheduled' || cls.status === 'cancelled'}>
-
-            {cls.status === 'live' ?
-          <><Radio size={11} /> Join Live</> :
-          cls.status === 'completed' ?
-          <><PlayCircle size={11} /> Watch Recording</> :
-          cls.status === 'cancelled' ?
-          <>Cancelled</> :
-
-          <><Calendar size={11} /> Scheduled</>
-          }
-          </button>
-        }
-      </div>
-    </div>);
-
+    </div>
+  );
 }
 
 // ─── LiveClassRoom ────────────────────────────────────────────────────────────
@@ -638,8 +694,6 @@ function LiveClassRoom({ cls, onBack }: LiveClassRoomProps) {
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function LiveClassesClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -652,6 +706,35 @@ export default function LiveClassesClient() {
   const deepLinkAppliedRef = useRef(false);
 
   const { isTrialActive } = useTrial();
+  const { program } = useProgram();
+  const canonicalId = normalizeCourseId(program);
+  const [filterProgram, setFilterProgram] = useState<'all' | 'see' | 'cee'>(canonicalId === 'see_class_10' ? 'see' : 'cee');
+  const [remindedClassIds, setRemindedClassIds] = useState<Set<string>>(new Set());
+
+  // Load saved reminders
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('samyak_class_reminders');
+      if (saved) setRemindedClassIds(new Set(JSON.parse(saved)));
+    } catch {}
+  }, []);
+
+  const handleSetReminder = (cls: LiveClass) => {
+    setRemindedClassIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(cls.id)) {
+        next.delete(cls.id);
+        toast('Reminder removed', { icon: '🔕' });
+      } else {
+        next.add(cls.id);
+        toast.success(`Reminder set for "${cls.title}"! We'll notify you before it starts.`);
+      }
+      try {
+        localStorage.setItem('samyak_class_reminders', JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  };
 
   // Real premium status via the service-role route (AuthContext.profile is null
   // under the user_profiles RLS recursion, which used to lock out real Pro users
@@ -710,6 +793,7 @@ export default function LiveClassesClient() {
       const built: LiveClass[] = (classesRes.data ?? []).map((c: any) => {
         const subj = c.subject_id ? subjectsMap.get(c.subject_id) : null;
         const style = subj ? SUBJECT_STYLES[subj.name] ?? SUBJECT_STYLES.biology : { bgLight: 'bg-muted', textColor: 'text-muted-foreground' };
+        const isSee = subj?.name && ['science', 'mathematics', 'opt_math', 'english', 'nepali', 'social'].includes(subj.name);
         return {
           id: c.id,
           title: c.title,
@@ -717,7 +801,7 @@ export default function LiveClassesClient() {
           subjectDisplayName: subj?.display_name ?? null,
           subjectBg: style.bgLight,
           subjectText: style.textColor,
-          subjectIcon: subj?.icon ?? '📚',
+          subjectIcon: subj?.icon ?? style.icon ?? '📚',
           scheduledAt: c.scheduled_at,
           scheduledLabel: formatScheduledAt(c.scheduled_at),
           durationMin: c.duration_min ?? 60,
@@ -726,6 +810,7 @@ export default function LiveClassesClient() {
           recordingUrl: c.recording_url,
           resourceUrls: c.resources_urls ?? [],
           isPremium: c.is_premium,
+          program: isSee ? 'see' : 'cee',
           // Derive the player from the stream URL (no dedicated columns on this
           // DB): a Bunny/HLS .m3u8 → hls player; a YouTube link → youtube embed;
           // anything else (Meet/Zoom) → external "Join" link.
@@ -734,13 +819,108 @@ export default function LiveClassesClient() {
       });
 
       if (built.length === 0) {
-        // Fallback default classes so live streaming features are immediately playable
+        // Fallback default classes so live streaming features are immediately playable for both SEE and CEE
         const DEFAULT_FALLBACK_CLASSES: LiveClass[] = [
+          // ─── SEE Live Classes ───
           {
-            id: 'live-demo-1',
+            id: 'see-live-1',
+            title: 'Force & Gravitation: Numericals & 2082 Board Prediction Special',
+            description: 'Interactive live session covering Newton\'s Law calculations, acceleration due to gravity, and free fall board questions.',
+            subjectDisplayName: 'Compulsory Science',
+            subjectBg: 'bg-emerald-500/10',
+            subjectText: 'text-emerald-600 dark:text-emerald-400',
+            subjectIcon: '🔬',
+            scheduledAt: new Date().toISOString(),
+            scheduledLabel: 'Today, Live Now',
+            durationMin: 90,
+            status: 'live',
+            meetingUrl: null,
+            recordingUrl: null,
+            resourceUrls: ['https://example.com/see-gravitation-formula-sheet.pdf'],
+            isPremium: false,
+            streamProvider: 'youtube',
+            playbackUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            program: 'see',
+            teacher: 'Prof. Ram K. Adhikari (18+ Yrs Board Examiner)',
+            chapter: 'Force & Gravitation',
+            topic: 'Numericals & 4-Mark Board Problems',
+          },
+          {
+            id: 'see-live-2',
+            title: 'Circle Theorems & Riders: 4-Mark Geometric Proofs Workshop',
+            description: 'Step-by-step CDC standard proofs for cyclic quadrilaterals and tangent-chord theorems with marking scheme breakdowns.',
+            subjectDisplayName: 'Compulsory Mathematics',
+            subjectBg: 'bg-blue-500/10',
+            subjectText: 'text-blue-600 dark:text-blue-400',
+            subjectIcon: '📐',
+            scheduledAt: new Date(Date.now() + 7200000).toISOString(),
+            scheduledLabel: 'Today, 6:00 PM',
+            durationMin: 90,
+            status: 'scheduled',
+            meetingUrl: null,
+            recordingUrl: null,
+            resourceUrls: [],
+            isPremium: true,
+            streamProvider: 'youtube',
+            playbackUrl: null,
+            program: 'see',
+            teacher: 'Er. Pradeep Sharma (Author & Lead Math Specialist)',
+            chapter: 'Circles & Geometry',
+            topic: 'CDC 4-Mark Theoretical Proofs',
+          },
+          {
+            id: 'see-live-3',
+            title: 'Conditional Trigonometric Identities: Formula Drill & Derivations',
+            description: 'Master compound angle formulas, multiple angle transformations, and previous 10-year SEE Board questions.',
+            subjectDisplayName: 'Optional Mathematics',
+            subjectBg: 'bg-purple-500/10',
+            subjectText: 'text-purple-600 dark:text-purple-400',
+            subjectIcon: '📊',
+            scheduledAt: new Date(Date.now() + 86400000).toISOString(),
+            scheduledLabel: 'Tomorrow, 5:30 PM',
+            durationMin: 75,
+            status: 'scheduled',
+            meetingUrl: null,
+            recordingUrl: null,
+            resourceUrls: [],
+            isPremium: false,
+            streamProvider: 'youtube',
+            playbackUrl: null,
+            program: 'see',
+            teacher: 'Prof. K.B. Thapa',
+            chapter: 'Trigonometry',
+            topic: 'Conditional Identities & Transformations',
+          },
+          {
+            id: 'see-live-4',
+            title: 'Pressure, Pascal\'s Law & Archimedes Principle Recording',
+            description: 'Comprehensive recording explaining hydraulic press problems, upward thrust, and law of flotation with verified model answers.',
+            subjectDisplayName: 'Compulsory Science',
+            subjectBg: 'bg-emerald-500/10',
+            subjectText: 'text-emerald-600 dark:text-emerald-400',
+            subjectIcon: '🔬',
+            scheduledAt: new Date(Date.now() - 86400000).toISOString(),
+            scheduledLabel: 'Yesterday',
+            durationMin: 80,
+            status: 'completed',
+            meetingUrl: null,
+            recordingUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+            resourceUrls: [],
+            isPremium: false,
+            streamProvider: null,
+            playbackUrl: null,
+            program: 'see',
+            teacher: 'Prof. Ram K. Adhikari',
+            chapter: 'Pressure',
+            topic: 'Hydraulic Machines & Flotation',
+          },
+
+          // ─── CEE Live Classes ───
+          {
+            id: 'cee-live-1',
             title: 'Cell Division & Mitosis — High-Yield CEE Discussion',
             description: 'Interactive live session covering chromosome behavior, spindle formation, and past CEE MCQs with 1-on-1 Q&A.',
-            subjectDisplayName: 'Biology',
+            subjectDisplayName: 'Biology (Botany)',
             subjectBg: 'bg-bio-light',
             subjectText: 'text-bio',
             subjectIcon: '🧬',
@@ -754,9 +934,13 @@ export default function LiveClassesClient() {
             isPremium: false,
             streamProvider: 'youtube',
             playbackUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            program: 'cee',
+            teacher: 'Dr. A. Sharma (MBBS, CEE Specialist)',
+            chapter: 'Cell Biology',
+            topic: 'Mitosis & Meiosis Stages',
           },
           {
-            id: 'live-demo-2',
+            id: 'cee-live-2',
             title: 'Organic Chemistry Reaction Mechanisms & Tricks',
             description: 'Master electrophilic substitution, nucleophilic addition, and reaction pathways for CEE 2026.',
             subjectDisplayName: 'Chemistry',
@@ -773,9 +957,13 @@ export default function LiveClassesClient() {
             isPremium: true,
             streamProvider: 'youtube',
             playbackUrl: null,
+            program: 'cee',
+            teacher: 'Prof. K. Pokharel',
+            chapter: 'Organic Chemistry',
+            topic: 'Reaction Pathways & Conversions',
           },
           {
-            id: 'live-demo-3',
+            id: 'cee-live-3',
             title: "Newton's Laws & Rotational Dynamics Masterclass",
             description: 'Solving complex mechanics numericals with shortcuts and formula cheat-sheets.',
             subjectDisplayName: 'Physics',
@@ -792,12 +980,16 @@ export default function LiveClassesClient() {
             isPremium: false,
             streamProvider: 'youtube',
             playbackUrl: null,
+            program: 'cee',
+            teacher: 'Er. S. Thapa',
+            chapter: 'Mechanics',
+            topic: 'Rotational Motion & Moment of Inertia',
           },
           {
-            id: 'live-demo-4',
+            id: 'cee-live-4',
             title: 'Human Circulation & Blood Physiology Recording',
             description: 'Full lecture recording covering ECG analysis, blood pressure regulation, and cardiac cycle.',
-            subjectDisplayName: 'Biology',
+            subjectDisplayName: 'Biology (Zoology)',
             subjectBg: 'bg-bio-light',
             subjectText: 'text-bio',
             subjectIcon: '🫀',
@@ -811,6 +1003,10 @@ export default function LiveClassesClient() {
             isPremium: false,
             streamProvider: null,
             playbackUrl: null,
+            program: 'cee',
+            teacher: 'Dr. A. Sharma (MBBS)',
+            chapter: 'Human Physiology',
+            topic: 'Circulatory System & Cardiac Cycle',
           },
         ];
         setClasses(DEFAULT_FALLBACK_CLASSES);
@@ -837,21 +1033,28 @@ export default function LiveClassesClient() {
   }, [loadState, classes]);
 
   const filtered = classes.filter((cls) => {
+    const matchesProgram =
+      filterProgram === 'all' ||
+      !cls.program ||
+      cls.program === 'all' ||
+      cls.program === filterProgram;
     const matchesStatus =
       filterStatus === 'all' ||
-      filterStatus === 'live' && cls.status === 'live' ||
-      filterStatus === 'upcoming' && cls.status === 'scheduled' ||
-      filterStatus === 'ended' && cls.status === 'completed';
+      (filterStatus === 'live' && cls.status === 'live') ||
+      (filterStatus === 'upcoming' && cls.status === 'scheduled') ||
+      (filterStatus === 'ended' && cls.status === 'completed');
     const matchesSearch =
       !searchQuery ||
       cls.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (cls.subjectDisplayName ?? '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+      (cls.subjectDisplayName ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (cls.teacher ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (cls.chapter ?? '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesProgram && matchesStatus && matchesSearch;
   });
 
-  const liveCount = classes.filter((c) => c.status === 'live').length;
-  const upcomingCount = classes.filter((c) => c.status === 'scheduled').length;
-  const endedCount = classes.filter((c) => c.status === 'completed').length;
+  const liveCount = filtered.filter((c) => c.status === 'live').length;
+  const upcomingCount = filtered.filter((c) => c.status === 'scheduled').length;
+  const endedCount = filtered.filter((c) => c.status === 'completed').length;
 
   if (loadState === 'loading') {
     return (
@@ -877,88 +1080,138 @@ export default function LiveClassesClient() {
 
   return (
     <DashboardLayout isDark={isDark} onToggleDark={handleToggleDark}>
-      {activeClass ?
-      <LiveClassRoom cls={activeClass} onBack={() => setActiveClass(null)} /> :
-
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <Radio size={20} className="text-error" />
-              <h1 className="text-xl font-bold text-foreground">Live Classes</h1>
-              {liveCount > 0 &&
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-error text-white animate-pulse">
-                  {liveCount} LIVE
-                </span>
-            }
+      {activeClass ? (
+        <LiveClassRoom cls={activeClass} onBack={() => setActiveClass(null)} />
+      ) : (
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+          {/* Header & Program Priority Switcher */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Radio size={20} className="text-error animate-pulse" />
+                <h1 className="text-2xl font-black text-foreground tracking-tight">Live Class Center</h1>
+                {liveCount > 0 && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-error text-white animate-pulse">
+                    {liveCount} LIVE
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Join live streaming masterclasses, interact in real-time Q&amp;A, and access recorded archives.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">Join live sessions, ask questions, and watch recordings</p>
+
+            {/* Program Tabs: All vs SEE vs CEE */}
+            <div className="flex items-center gap-1.5 p-1 bg-muted rounded-2xl border border-border shrink-0 self-start md:self-auto">
+              {[
+                { id: 'all', label: 'All Programs' },
+                { id: 'see', label: '🇳🇵 Samyak SEE (Class 10)' },
+                { id: 'cee', label: '🩺 Samyak CEE (Medical)' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setFilterProgram(p.id as any)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    filterProgram === p.id
+                      ? 'bg-card text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="card-base text-center py-3">
+          {/* Stats row: Live Now | Upcoming | Recordings */}
+          <div className="grid grid-cols-3 gap-3">
+            <div
+              onClick={() => setFilterStatus('live')}
+              className={`card-base text-center py-3.5 cursor-pointer transition-all ${
+                filterStatus === 'live' ? 'ring-2 ring-error bg-error/5' : 'hover:border-error/40'
+              }`}
+            >
               <p className="text-2xl font-extrabold text-error">{liveCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Live Now</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">🔴 Live Now</p>
             </div>
-            <div className="card-base text-center py-3">
+            <div
+              onClick={() => setFilterStatus('upcoming')}
+              className={`card-base text-center py-3.5 cursor-pointer transition-all ${
+                filterStatus === 'upcoming' ? 'ring-2 ring-primary bg-primary/5' : 'hover:border-primary/40'
+              }`}
+            >
               <p className="text-2xl font-extrabold text-primary">{upcomingCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Upcoming</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">📅 Upcoming</p>
             </div>
-            <div className="card-base text-center py-3">
+            <div
+              onClick={() => setFilterStatus('ended')}
+              className={`card-base text-center py-3.5 cursor-pointer transition-all ${
+                filterStatus === 'ended' ? 'ring-2 ring-foreground/40 bg-muted/60' : 'hover:border-border'
+              }`}
+            >
               <p className="text-2xl font-extrabold text-foreground">{endedCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Recordings</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">📼 Recordings</p>
             </div>
           </div>
 
           {/* Search + Filter */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search classes or subjects..."
-              className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all" />
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search classes, subjects, topics, or instructors..."
+                className="w-full pl-9 pr-4 py-2.5 bg-muted rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+              />
             </div>
             <div className="flex gap-2 flex-wrap">
-              {(['all', 'live', 'upcoming', 'ended'] as const).map((s) =>
-            <button
-              key={s}
-              onClick={() => setFilterStatus(s)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-colors capitalize ${
-              filterStatus === s ?
-              s === 'live' ? 'bg-error text-white' : 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:text-foreground'}`
-              }>
-                  {s === 'all' ? 'All' : s === 'ended' ? 'Recordings' : s.charAt(0).toUpperCase() + s.slice(1)}
+              {(['all', 'live', 'upcoming', 'ended'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setFilterStatus(s)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-colors capitalize ${
+                    filterStatus === s
+                      ? s === 'live'
+                        ? 'bg-error text-white shadow-xs'
+                        : 'bg-primary text-white shadow-xs'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {s === 'all' ? 'All Status' : s === 'ended' ? 'Recordings' : s === 'live' ? 'Live Now' : 'Upcoming'}
                 </button>
-            )}
+              ))}
             </div>
           </div>
 
           {/* Classes grid */}
-          {filtered.length === 0 ?
-        <div className="text-center py-16">
-              <Radio size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-foreground font-semibold">{classes.length === 0 ? 'No classes scheduled yet' : 'No classes found'}</p>
-              <p className="text-sm text-muted-foreground mt-1">{classes.length === 0 ? 'Check back soon for new sessions' : 'Try adjusting your search or filter'}</p>
-            </div> :
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filtered.map((cls) =>
-          <ClassCard
-            key={cls.id}
-            cls={cls}
-            isLocked={cls.isPremium && isFree}
-            onJoin={setActiveClass}
-            onUpgrade={() => router.push('/checkout?plan=pro-monthly')} />
-
-          )}
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 card-base">
+              <Radio size={40} className="text-muted-foreground mx-auto mb-3 opacity-40" />
+              <p className="text-foreground font-bold">No classes match your filter</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Try switching between SEE and CEE tabs or clearing your search query.
+              </p>
             </div>
-        }
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filtered.map((cls) => (
+                <ClassCard
+                  key={cls.id}
+                  cls={cls}
+                  isLocked={cls.isPremium && isFree}
+                  isReminded={remindedClassIds.has(cls.id)}
+                  onJoin={setActiveClass}
+                  onUpgrade={() => router.push('/checkout?plan=pro-monthly')}
+                  onSetReminder={handleSetReminder}
+                />
+              ))}
+            </div>
+          )}
         </div>
-      }
-    </DashboardLayout>);
-
+      )}
+    </DashboardLayout>
+  );
 }
+

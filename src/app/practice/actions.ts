@@ -23,6 +23,42 @@ export interface FetchQuestionsResult {
   error: string | null;
 }
 
+export interface ChapterOption {
+  id: string;
+  title: string;
+}
+
+export async function fetchSubjectChapters(subjectName: string): Promise<ChapterOption[]> {
+  try {
+    const supabase = await createClient();
+    const subjectMap: Record<string, string> = {
+      Biology: 'biology',
+      Chemistry: 'chemistry',
+      Physics: 'physics',
+      'Mental Agility': 'mental_agility',
+    };
+    const subjectEnum = subjectMap[subjectName] ?? subjectName.toLowerCase();
+    const { data: subjectData } = await supabase
+      .from('subjects')
+      .select('id')
+      .eq('name', subjectEnum)
+      .maybeSingle();
+
+    if (!subjectData) return [];
+
+    const { data: chapters } = await supabase
+      .from('chapters')
+      .select('id, title')
+      .eq('subject_id', subjectData.id)
+      .order('order_index', { ascending: true });
+
+    return (chapters as ChapterOption[]) ?? [];
+  } catch (err) {
+    console.error('fetchSubjectChapters error:', err);
+    return [];
+  }
+}
+
 /** Normalise a DB correct answer (letter "B", index "1", or option text) to an
  *  option id: 'a' | 'b' | 'c' | 'd'. */
 function toOptionId(correct: unknown, options: string[]): string {

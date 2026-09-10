@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useTransition } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Zap, ChevronRight, ChevronLeft, BookmarkPlus, Flag, CheckCircle2, XCircle, Clock, BarChart2, Play, RotateCcw, Target, Brain, Loader2, AlertCircle, Lightbulb, X, Sparkles } from 'lucide-react';
-import { fetchPracticeQuestions, savePracticeAttempt, type QuestionRow } from '../actions';
+import { fetchPracticeQuestions, fetchSubjectChapters, savePracticeAttempt, type QuestionRow, type ChapterOption } from '../actions';
 import { createClient } from '@/lib/supabase/client';
 import { useChat } from '@/lib/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
@@ -198,6 +198,23 @@ export default function PracticePageClient() {
   const searchParams = useSearchParams();
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [chapterFilterTitle, setChapterFilterTitle] = useState<string | null>(null);
+  const [availableChapters, setAvailableChapters] = useState<ChapterOption[]>([]);
+  const [loadingChapters, setLoadingChapters] = useState(false);
+
+  // Load chapters for selected subject
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingChapters(true);
+    fetchSubjectChapters(selectedSubject).then((chaps) => {
+      if (!cancelled) {
+        setAvailableChapters(chaps);
+        setLoadingChapters(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSubject]);
 
   const handleStartSession = useCallback((overrideCount?: number, overrideDiff?: string, overrideSubj?: string) => {
     const count = overrideCount ?? questionCount;
@@ -456,27 +473,50 @@ export default function PracticePageClient() {
             </div>
           </div>
 
-          {/* SEE Subjective Written Practice Banner */}
-          <div className="mb-6 bg-gradient-to-r from-primary/10 via-card to-bio-light border border-primary/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-card px-2.5 py-0.5 rounded-full border border-primary/20">
-                <Sparkles size={13} /> SEE Board Exam Written Evaluator
+          {/* Program-Aware Banner */}
+          {canonicalId === 'see_class_10' ? (
+            <div className="mb-6 bg-gradient-to-r from-primary/10 via-card to-bio-light border border-primary/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-card px-2.5 py-0.5 rounded-full border border-primary/20">
+                  <Sparkles size={13} /> SEE Board Exam Written Evaluator
+                </div>
+                <h3 className="text-base font-extrabold text-foreground">
+                  Practice SEE Subjective Written Questions
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Upload photos of your handwritten answers for instant AI examiner grading &amp; step marks breakdown.
+                </p>
               </div>
-              <h3 className="text-base font-extrabold text-foreground">
-                Practice SEE Subjective Written Questions
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Upload photos of your handwritten answers for instant AI examiner grading &amp; step marks breakdown.
-              </p>
+              <a
+                href="/practice/subjective"
+                className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-sm hover:bg-primary/90 transition-all"
+              >
+                <span>Subjective Written Practice</span>
+                <ChevronRight size={15} />
+              </a>
             </div>
-            <a
-              href="/practice/subjective"
-              className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-sm hover:bg-primary/90 transition-all"
-            >
-              <span>Subjective Written Practice</span>
-              <ChevronRight size={15} />
-            </a>
-          </div>
+          ) : canonicalId === 'cee_medical' ? (
+            <div className="mb-6 bg-gradient-to-r from-emerald-500/10 via-card to-sky-500/10 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-card px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+                  <Zap size={13} /> CEE High-Yield Medical Bank
+                </div>
+                <h3 className="text-base font-extrabold text-foreground">
+                  Negative Marking Simulation Active (-0.25)
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Practice with authentic MEC exam pattern. All questions include verified explanations and topic tags.
+                </p>
+              </div>
+              <a
+                href="/mock-tests"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition-all"
+              >
+                <span>Take 200-Q Grand Mock</span>
+                <ChevronRight size={15} />
+              </a>
+            </div>
+          ) : null}
 
           {fetchError && (
             <div className="mb-4 flex items-start gap-3 bg-error-light border border-error/30 rounded-xl p-4">
@@ -556,6 +596,52 @@ export default function PracticePageClient() {
                     <span className="text-xs leading-tight text-center">{s.name}</span>
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Chapter Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-foreground">Select Chapter (Optional)</label>
+                {selectedChapterId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedChapterId(null);
+                      setChapterFilterTitle(null);
+                    }}
+                    className="text-xs text-primary font-semibold hover:underline"
+                  >
+                    Clear Filter
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedChapterId ?? ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) {
+                      setSelectedChapterId(null);
+                      setChapterFilterTitle(null);
+                    } else {
+                      setSelectedChapterId(val);
+                      const chap = availableChapters.find((c) => c.id === val);
+                      setChapterFilterTitle(chap?.title ?? null);
+                    }
+                  }}
+                  disabled={loadingChapters}
+                  className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                >
+                  <option value="">
+                    {loadingChapters ? 'Loading chapters...' : `All Chapters in ${selectedSubject}`}
+                  </option>
+                  {availableChapters.map((chap) => (
+                    <option key={chap.id} value={chap.id}>
+                      {chap.title}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

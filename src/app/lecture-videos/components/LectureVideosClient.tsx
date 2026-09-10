@@ -24,9 +24,11 @@ import {
   Maximize2,
   Volume2,
   RotateCcw,
+  Globe,
 } from 'lucide-react';
 import MathRenderer from '@/components/common/MathRenderer';
 import BunnyHlsPlayer from '@/components/video/BunnyHlsPlayer';
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 
 interface VideoItem {
   id: string;
@@ -39,6 +41,9 @@ interface VideoItem {
   collectionName: string;
   subject: string;
   subjectDisplayName: string;
+  nepaliSubjectName?: string;
+  medium?: 'english' | 'nepali' | 'both';
+  mediumDisplayName?: string;
   duration: number;
   durationSec: number;
   thumbnailUrl: string;
@@ -54,30 +59,35 @@ interface CollectionItem {
 }
 
 export default function LectureVideosClient() {
+  const { program } = useProgram();
+  const canonicalId = normalizeCourseId(program);
+
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [collections, setCollections] = useState<CollectionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedMedium, setSelectedMedium] = useState<'all' | 'english' | 'nepali'>('all');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
   const [selectedCollection, setSelectedCollection] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
+
   // Active playing video
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
   const [activeVideoIndex, setActiveVideoIndex] = useState<number>(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Fetch all videos from Bunny Stream API
+  // Fetch all videos from Bunny Stream API with medium parameter
   useEffect(() => {
     async function loadVideos() {
       try {
         setLoading(true);
-        const res = await fetch('/api/bunny/videos');
+        const res = await fetch(`/api/bunny/videos?medium=${selectedMedium}`);
         if (res.ok) {
           const data = await res.json();
-          setVideos(data.videos || []);
+          const vids: VideoItem[] = data.videos || [];
+          setVideos(vids);
           setCollections(data.collections || []);
-          if (data.videos && data.videos.length > 0) {
-            setActiveVideo(data.videos[0]);
+          if (vids.length > 0) {
+            setActiveVideo(vids[0]);
             setActiveVideoIndex(0);
           }
         }
@@ -88,7 +98,41 @@ export default function LectureVideosClient() {
       }
     }
     loadVideos();
-  }, []);
+  }, [selectedMedium]);
+
+  // Dynamic Subject Tabs computed from current videos
+  const scienceCount = videos.filter((v) => v.subject === 'science').length;
+  const mathCount = videos.filter((v) => v.subject === 'math').length;
+  const optMathCount = videos.filter((v) => v.subject === 'opt_math').length;
+  const englishCount = videos.filter((v) => v.subject === 'english').length;
+  const socialCount = videos.filter((v) => v.subject === 'social_studies').length;
+
+  const subjectTabs =
+    canonicalId === 'cee_medical'
+      ? [
+          { id: 'all', label: `All CEE Subjects (${videos.length})` },
+          { id: 'biology', label: `🧬 Biology (${videos.filter((v) => v.subject === 'biology').length})` },
+          { id: 'chemistry', label: `⚗️ Chemistry (${videos.filter((v) => v.subject === 'chemistry').length})` },
+          { id: 'physics', label: `⚡ Physics (${videos.filter((v) => v.subject === 'physics').length})` },
+          { id: 'mat', label: `🧠 MAT (${videos.filter((v) => v.subject === 'mat').length})` },
+        ]
+      : selectedMedium === 'nepali'
+      ? [
+          { id: 'all', label: `सबै विषयहरू (${videos.length})` },
+          { id: 'science', label: `🔬 विज्ञान तथा प्रविधि (${scienceCount})` },
+          { id: 'math', label: `📐 अनिवार्य गणित (${mathCount})` },
+          { id: 'opt_math', label: `📊 ऐच्छिक गणित (${optMathCount})` },
+          { id: 'english', label: `📚 अंग्रेजी भाषा (${englishCount})` },
+          { id: 'social_studies', label: `🏛️ सामाजिक अध्ययन (${socialCount})` },
+        ]
+      : [
+          { id: 'all', label: `All SEE Subjects (${videos.length})` },
+          { id: 'science', label: `🔬 Science & Tech (${scienceCount})` },
+          { id: 'math', label: `📐 Compulsory Math (${mathCount})` },
+          { id: 'opt_math', label: `📊 Optional Math (${optMathCount})` },
+          { id: 'english', label: `📚 English (${englishCount})` },
+          { id: 'social_studies', label: `🏛️ Social Studies (${socialCount})` },
+        ];
 
   // Filtered video list
   const filteredVideos = videos.filter((v) => {
@@ -100,7 +144,8 @@ export default function LectureVideosClient() {
       !searchQuery ||
       v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       v.rawTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.collectionName.toLowerCase().includes(searchQuery.toLowerCase());
+      v.collectionName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.subjectDisplayName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSubject && matchesCollection && matchesSearch;
   });
 
@@ -147,10 +192,10 @@ export default function LectureVideosClient() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Link href="/student-dashboard" className="hover:text-foreground transition-colors">
-              SEE Home
+              {canonicalId === 'cee_medical' ? 'CEE Home' : 'SEE Home'}
             </Link>
             <ChevronRight size={13} />
-            <span className="font-bold text-foreground">Video Lectures (Bunny HD)</span>
+            <span className="font-bold text-foreground">Video Lectures (HD)</span>
           </div>
           <span className="text-xs font-mono font-bold px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
             {videos.length} Total Master Lectures Available
@@ -213,22 +258,22 @@ export default function LectureVideosClient() {
                     </button>
                   </div>
 
-                  {/* 1-Click Practice & Formula Links */}
+                  {/* 1-Click Practice & Resource Links */}
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <Link
-                      href="/see/question-bank"
+                      href={canonicalId === 'cee_medical' ? '/practice' : '/see/question-bank'}
                       className="py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 text-center text-xs font-black flex items-center justify-center gap-1.5 transition-colors border border-emerald-500/20"
                     >
                       <HelpCircle size={13} />
-                      <span>Practice Qs →</span>
+                      <span>{canonicalId === 'cee_medical' ? 'Practice MCQs →' : 'Practice Qs →'}</span>
                     </Link>
 
                     <Link
-                      href="/see/question-bank"
+                      href={canonicalId === 'cee_medical' ? '/mock-tests' : '/see/question-bank'}
                       className="py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 text-center text-xs font-black flex items-center justify-center gap-1.5 transition-colors border border-amber-500/20"
                     >
                       <FileText size={13} />
-                      <span>Formulas →</span>
+                      <span>{canonicalId === 'cee_medical' ? 'Mock Tests →' : 'Formulas →'}</span>
                     </Link>
                   </div>
                 </div>
@@ -239,16 +284,66 @@ export default function LectureVideosClient() {
           </div>
         )}
 
+        {/* MEDIUM SELECTOR BAR (For SEE & Multi-medium Courses) */}
+        {canonicalId !== 'cee_medical' && (
+          <div className="p-3.5 rounded-3xl bg-card border border-border shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-muted-foreground ml-1 flex items-center gap-1.5 mr-1">
+                <Globe size={14} className="text-emerald-500" /> Medium / माध्यम:
+              </span>
+              <button
+                onClick={() => {
+                  setSelectedMedium('all');
+                  setSelectedSubject('all');
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
+                  selectedMedium === 'all'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                🌐 Both Mediums ({videos.length})
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedMedium('english');
+                  setSelectedSubject('all');
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  selectedMedium === 'english'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <span>🇬🇧 English Medium</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20">379737</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedMedium('nepali');
+                  setSelectedSubject('all');
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  selectedMedium === 'nepali'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                <span>🇳🇵 नेपाली माध्यम (Nepali Medium)</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20">367785</span>
+              </button>
+            </div>
+
+            <span className="text-[11px] text-muted-foreground font-mono px-2 py-1 rounded-lg bg-muted/40">
+              {selectedMedium === 'nepali' ? 'नेपाली पाठ्यक्रम अनुसारका कक्षाहरू' : 'Adaptive 1080p HLS Stream'}
+            </span>
+          </div>
+        )}
+
         {/* SUBJECT FILTER BAR */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-3xl bg-card border border-border shadow-xs">
           <div className="flex flex-wrap items-center gap-2">
-            {[
-              { id: 'all', label: `All Subjects (${videos.length})` },
-              { id: 'science', label: '🔬 Science & Tech (58)' },
-              { id: 'math', label: '📐 Compulsory Math (63)' },
-              { id: 'opt_math', label: '📊 Optional Math (93)' },
-              { id: 'english', label: '📚 English (76)' },
-            ].map((tab) => (
+            {subjectTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
@@ -284,7 +379,7 @@ export default function LectureVideosClient() {
           <div className="py-24 text-center space-y-3">
             <Loader2 size={32} className="animate-spin text-emerald-500 mx-auto" />
             <p className="text-xs text-muted-foreground font-mono">
-              Loading 292 HD video lectures from Bunny Stream library...
+              Loading HD video lectures from Bunny Stream library...
             </p>
           </div>
         ) : filteredVideos.length === 0 ? (
@@ -297,6 +392,7 @@ export default function LectureVideosClient() {
             <button
               onClick={() => {
                 setSelectedSubject('all');
+                setSelectedMedium('all');
                 setSearchQuery('');
               }}
               className="text-xs font-bold text-emerald-600 hover:underline pt-2 block mx-auto"
@@ -330,9 +426,20 @@ export default function LectureVideosClient() {
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 font-mono">
-                          {v.subjectDisplayName}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 font-mono">
+                            {v.subjectDisplayName}
+                          </span>
+                          {v.mediumDisplayName && (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                              v.medium === 'nepali'
+                                ? 'bg-red-500/10 text-red-600 border border-red-500/20'
+                                : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                            }`}>
+                              {v.mediumDisplayName}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs font-mono text-muted-foreground">
                           {formatDuration(v.duration)}
                         </span>

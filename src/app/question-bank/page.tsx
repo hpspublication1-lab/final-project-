@@ -1,10 +1,10 @@
 import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
-import SeeQuestionBankClient from '../see/question-bank/components/SeeQuestionBankClient';
+import QuestionBankRouterClient from './components/QuestionBankRouterClient';
 
 export const metadata: Metadata = {
-  title: 'SEE Question Bank (1, 2, 3, 4 Marks) & Formula Digest — Samyak Learning',
-  description: 'Complete Class 10 SEE Question Bank categorized into 1 Mark, 2 Marks, 3 Marks, and 4 Marks questions with step-by-step model solutions and downloadable formula digests.',
+  title: 'Question Bank (SEE Class 10 & CEE Medical) — Samyak Learning',
+  description: 'Comprehensive question repositories for SEE Board Exam (1, 2, 3, 4 Marks with model solutions) and CEE Medical Entrance Exam (15,000+ topic-wise MCQs).',
   alternates: {
     canonical: '/question-bank',
   },
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 export default function QuestionBankGlobalPage() {
   return (
-    <Suspense fallback={null}>
-      <SeeQuestionBankClient />
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+      <QuestionBankRouterClient />
     </Suspense>
   );
 }

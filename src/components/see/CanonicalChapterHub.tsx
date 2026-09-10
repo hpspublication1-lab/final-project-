@@ -91,8 +91,18 @@ export default function CanonicalChapterHub({ subjectId, chapterId }: CanonicalC
 
   // Filter Bunny videos for this specific subject and chapter
   const matchedChapterVideos = bunnyVideos.filter((v) => {
-    const isMatchingSubject = v.subject === subject.id || (subject.id === 'science' && v.subject === 'science') || (subject.id === 'math' && v.subject === 'math') || (subject.id === 'opt_math' && v.subject === 'opt_math') || (subject.id === 'english' && v.subject === 'english');
-    const isMatchingChapter = v.title.toLowerCase().includes(currentChapter.name.toLowerCase()) || v.rawTitle.toLowerCase().includes(currentChapter.name.toLowerCase()) || (currentChapter.subtopics && currentChapter.subtopics.some(st => v.title.toLowerCase().includes(st.toLowerCase())));
+    const isMatchingSubject =
+      v.subject === subject.id ||
+      (subject.id === 'science' && v.subject === 'science') ||
+      (subject.id === 'math' && v.subject === 'math') ||
+      (subject.id === 'opt_math' && v.subject === 'opt_math') ||
+      (subject.id === 'english' && v.subject === 'english') ||
+      (subject.id === 'social' && v.subject === 'social_studies') ||
+      (subject.id === 'social_studies' && v.subject === 'social_studies');
+    const isMatchingChapter =
+      v.title.toLowerCase().includes(currentChapter.name.toLowerCase()) ||
+      v.rawTitle.toLowerCase().includes(currentChapter.name.toLowerCase()) ||
+      (currentChapter.subtopics && currentChapter.subtopics.some(st => v.title.toLowerCase().includes(st.toLowerCase())));
     return isMatchingSubject && (isMatchingChapter || v.collectionName.toLowerCase().includes(subject.id));
   });
 

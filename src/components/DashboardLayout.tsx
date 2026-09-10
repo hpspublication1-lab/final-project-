@@ -8,7 +8,7 @@ import {
   BookOpen, Video, Zap, FileText, Bell, CreditCard,
   User, ChevronLeft, ChevronRight, Sun, Moon, Swords, AlertTriangle, LogOut,
   ClipboardList, Bot, Sparkles, Users, CheckCheck, X, Menu, Home, Trophy,
-  Layers, MessageCircleQuestion, Bookmark, Lock, TrendingUp,
+  Layers, MessageCircleQuestion, Bookmark, Lock, TrendingUp, Radio,
   Mic, Headphones, FileEdit, MoreHorizontal, ChevronDown
 } from 'lucide-react';
 
@@ -36,14 +36,64 @@ interface NavItem {
 
 
 
-// ─── Primary 5-item nav per program ──────────────────────────────────────────
+// ─── Primary nav per program ──────────────────────────────────────────────────
 function getPrimaryNav(canonicalId: CanonicalCourseId): NavItem[] {
+  if (canonicalId === 'see_class_10') {
+    return [
+      { label: 'Home',      href: '/student-dashboard',        icon: Home,        key: 'pnav-home' },
+      { label: 'Learn',     href: '/see',                      icon: BookOpen,    key: 'pnav-learn' },
+      { label: 'Practice',  href: '/see/question-bank',        icon: Zap,         key: 'pnav-practice' },
+      { label: 'Tests',     href: '/mock-tests?program=see',   icon: FileText,    key: 'pnav-tests' },
+      { label: 'Resources', href: '/see#learning-suite',       icon: Layers,      key: 'pnav-resources' },
+      { label: 'Progress',  href: '/see?tab=tracker',          icon: TrendingUp,  key: 'pnav-progress' },
+    ];
+  }
+  if (canonicalId === 'ielts') {
+    return [
+      { label: 'Home',      href: '/student-dashboard',             icon: Home,     key: 'pnav-home' },
+      { label: 'Learn',     href: '/english',                       icon: BookOpen, key: 'pnav-learn' },
+      { label: 'Practice',  href: '/english/reading/speed-drills',  icon: Zap,      key: 'pnav-practice' },
+      { label: 'Tests',     href: '/mock-tests',                    icon: FileText, key: 'pnav-tests' },
+      { label: 'Predictor', href: '/english/band-predictor',        icon: Sparkles, key: 'pnav-band' },
+    ];
+  }
+  if (canonicalId === 'digital_marketing' || canonicalId === 'artificial_intelligence') {
+    return [
+      { label: 'Home',      href: '/student-dashboard', icon: Home,     key: 'pnav-home' },
+      { label: 'Learn',     href: '/digital',           icon: BookOpen, key: 'pnav-learn' },
+      { label: 'AI Studio', href: '/ai-tutor',          icon: Bot,      key: 'pnav-ai' },
+      { label: 'Batches',   href: '/batches',           icon: Layers,   key: 'pnav-batches' },
+    ];
+  }
+  // Default: CEE Medical
   return [
-    { label: 'Home',        href: '/student-dashboard', icon: Home,     key: 'pnav-home' },
-    { label: 'My Learning', href: '/subjects',          icon: BookOpen, key: 'pnav-learn' },
-    { label: 'Practice',    href: '/practice',          icon: Zap,      key: 'pnav-practice' },
-    { label: 'Tests',       href: '/mock-tests',        icon: FileText, key: 'pnav-tests' },
-    { label: 'AI Tutor',    href: '/ai-tutor',          icon: Bot,      key: 'pnav-ai' },
+    { label: 'Home',     href: '/student-dashboard',        icon: Home,           key: 'pnav-home' },
+    { label: 'Learn',    href: '/subjects',                 icon: BookOpen,       key: 'pnav-learn' },
+    { label: 'Practice', href: '/practice',                 icon: Zap,            key: 'pnav-practice' },
+    { label: 'Mocks',    href: '/mock-tests',               icon: FileText,       key: 'pnav-mocks' },
+    { label: 'Mistakes', href: '/ai-tutor?tab=mistakes',    icon: AlertTriangle,  key: 'pnav-mistakes' },
+    { label: 'Rank',     href: '/leaderboard',              icon: Trophy,         key: 'pnav-rank' },
+  ];
+}
+
+// ─── Mobile bottom nav per program ────────────────────────────────────────────
+function getMobileNav(canonicalId: CanonicalCourseId): NavItem[] {
+  if (canonicalId === 'see_class_10') {
+    return [
+      { label: 'Home',     href: '/student-dashboard',        icon: Home,       key: 'mnav-home' },
+      { label: 'Learn',    href: '/see',                      icon: BookOpen,   key: 'mnav-learn' },
+      { label: 'Practice', href: '/see/question-bank',        icon: Zap,        key: 'mnav-practice' },
+      { label: 'Tests',    href: '/mock-tests?program=see',   icon: FileText,   key: 'mnav-tests' },
+      { label: 'Progress', href: '/see?tab=tracker',          icon: TrendingUp, key: 'mnav-progress' },
+    ];
+  }
+  // Default: CEE Medical
+  return [
+    { label: 'Home',     href: '/student-dashboard',        icon: Home,           key: 'mnav-home' },
+    { label: 'Practice', href: '/practice',                 icon: Zap,            key: 'mnav-practice' },
+    { label: 'Mocks',    href: '/mock-tests',               icon: FileText,       key: 'mnav-mocks' },
+    { label: 'Mistakes', href: '/ai-tutor?tab=mistakes',    icon: AlertTriangle,  key: 'mnav-mistakes' },
+    { label: 'Rank',     href: '/leaderboard',              icon: Trophy,         key: 'mnav-rank' },
   ];
 }
 
@@ -53,16 +103,17 @@ function getSecondaryNav(canonicalId: CanonicalCourseId): { section: string; ite
     case 'see_class_10':
       return [
         { section: 'Study', items: [
-          { label: 'Mock Tests',     href: '/mock-tests',         icon: FileText,              key: 'snav-mock',    desc: 'Timed NEB Model Papers' },
+          { label: 'Live Classes',   href: '/live-classes',       icon: Radio,                 key: 'snav-live',    badge: 'LIVE' },
+          { label: 'Question Bank',  href: '/see/question-bank',  icon: FileText,              key: 'snav-qb',      desc: '1-4 Marks + Solutions' },
           { label: 'Video Lectures', href: '/lecture-videos',     icon: Video,                 key: 'snav-videos' },
-          { label: 'Flashcards',     href: '/flashcards',         icon: Layers,                key: 'snav-flash',   badge: 'NEW' },
+          { label: 'Mock Tests',     href: '/mock-tests?program=see', icon: FileText,          key: 'snav-mock',    desc: 'Timed NEB Model Papers' },
           { label: 'Study Plan',     href: '/study-plan',         icon: ClipboardList,         key: 'snav-plan' },
         ]},
         { section: 'Tools', items: [
           { label: 'AI Tutor',       href: '/ai-tutor',           icon: Bot,                   key: 'snav-ai',      badge: 'AI' },
+          { label: 'Mistakes Log',   href: '/ai-tutor?tab=mistakes', icon: AlertTriangle,      key: 'snav-mistakes' },
           { label: 'Bookmarks',      href: '/bookmarks',          icon: Bookmark,              key: 'snav-bm' },
           { label: 'Doubts',         href: '/doubts',             icon: MessageCircleQuestion, key: 'snav-doubts' },
-          { label: 'Batches',        href: '/batches',            icon: Layers,                key: 'snav-batches' },
         ]},
       ];
     case 'ielts':
@@ -732,18 +783,11 @@ export default function DashboardLayout({ children, isDark = false, onToggleDark
           </PageTransitionWrapper>
         </main>
 
-        {/* Mobile Bottom Navigation Bar — 6 items: Home | Learn | Practice | Tests | AI | Profile */}
+        {/* Mobile Bottom Navigation Bar — Program-specific 5 clean icons */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-40">
           <div className="flex items-stretch justify-around px-1 py-1">
-            {[
-              { label: 'Home',     href: '/student-dashboard', icon: Home,     key: 'mnav-home' },
-              { label: 'Learn',    href: '/subjects',          icon: BookOpen, key: 'mnav-learn' },
-              { label: 'Practice', href: '/practice',          icon: Zap,      key: 'mnav-practice' },
-              { label: 'Tests',    href: '/mock-tests',        icon: FileText, key: 'mnav-tests' },
-              { label: 'AI',       href: '/ai-tutor',          icon: Bot,      key: 'mnav-ai' },
-              { label: 'Profile',  href: '/profile',           icon: User,     key: 'mnav-profile' },
-            ].map((item) => {
-              const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href));
+            {getMobileNav(canonicalId).map((item) => {
+              const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href.split('?')[0].split('#')[0]));
               return (
                 <Link
                   key={item.key}

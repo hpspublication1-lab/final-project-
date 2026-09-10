@@ -57,6 +57,13 @@ export async function POST(request: NextRequest) {
     const bunnyData = await bunnyRes.json();
     const bunnyVideos = bunnyData?.items || [];
 
+    // Query subjects for auto-mapping
+    const { data: dbSubjects } = await supabase.from('subjects').select('id, name');
+    const subjectMap: Record<string, string> = {};
+    (dbSubjects || []).forEach((s: any) => {
+      subjectMap[s.name] = s.id;
+    });
+
     let syncedCount = 0;
     let errors: string[] = [];
 
@@ -69,8 +76,23 @@ export async function POST(request: NextRequest) {
       const thumbnailUrl = v.thumbnailUrl || `https://${cdnHost}/${guid}/thumbnail.jpg`;
       // Clean up title (remove .mp4 extension if present)
       const title = (v.title || 'Untitled Video').replace(/\.mp4$/i, '').trim();
+      const lower = title.toLowerCase();
 
-      const payload = {
+      // Determine subject_id
+      let subjectId = null;
+      if (lower.includes('opt math') || lower.includes('see-om') || lower.includes('linear programming') || lower.includes('continuity')) {
+        subjectId = subjectMap['optional_math'] || null;
+      } else if (lower.includes('c. math') || lower.includes('compound interest') || lower.includes('money exchange') || lower.includes('pyramid') || lower.includes('arithmetic')) {
+        subjectId = subjectMap['compulsory_math'] || null;
+      } else if (lower.includes('science') || lower.includes('hydrocarbon') || lower.includes('chemical') || lower.includes('metal') || lower.includes('periodic')) {
+        subjectId = subjectMap['compulsory_science'] || null;
+      } else if (lower.includes('english') || lower.includes('grammar') || lower.includes('q. no') || lower.includes('q.no') || lower.includes('poem') || lower.includes('unseen') || lower.includes('guided')) {
+        subjectId = subjectMap['english'] || null;
+      } else if (lower.includes('social') || lower.includes('samajik') || lower.includes('सामाजिक')) {
+        subjectId = subjectMap['social_studies'] || null;
+      }
+
+      const payload: any = {
         title: title,
         description: v.description || `Bunny Stream video (${v.resolution || 'HD'})`,
         video_url: videoUrl,
@@ -80,6 +102,10 @@ export async function POST(request: NextRequest) {
         is_active: true,
         updated_at: new Date().toISOString(),
       };
+
+      if (subjectId) {
+        payload.subject_id = subjectId;
+      }
 
       // Check if video already exists by title or video_url
       const { data: existing } = await supabase

@@ -273,8 +273,10 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
     // If batch has no videos in database, automatically fetch all Bunny Stream playlist lectures
     if (bVideos.length === 0) {
       try {
-        const libId = slug.includes('nepali') ? '367785' : '379737';
-        const bunnyRes = await fetch(`/api/bunny/videos?libraryId=${libId}`);
+        const isNepali = slug.includes('nepali');
+        const libId = isNepali ? '367785' : '379737';
+        const mediumParam = isNepali ? 'nepali' : 'english';
+        const bunnyRes = await fetch(`/api/bunny/videos?libraryId=${libId}&medium=${mediumParam}`);
         if (bunnyRes.ok) {
           const bunnyData = await bunnyRes.json();
           if (bunnyData.videos && bunnyData.videos.length > 0) {

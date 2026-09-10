@@ -176,48 +176,62 @@ export default function SeeQuestionFeedTab() {
                 )}
               </div>
 
-              {/* Action Bar (Upvote, Bookmark, Reveal Solution) */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <div className="flex items-center gap-3">
+              {/* Action Bar: SOLVE, VIEW SOLUTION, SAVE, PRACTICE SIMILAR */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/60">
+                <div className="flex items-center gap-2">
+                  {/* SAVE Button */}
+                  <button
+                    onClick={() => toggleBookmark(item.id)}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                      isBookmarked
+                        ? 'bg-primary/10 border-primary text-primary font-black'
+                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
+                    }`}
+                    title={isBookmarked ? 'Saved to revision folder' : 'Save question'}
+                  >
+                    <Bookmark size={14} className={isBookmarked ? 'fill-current' : ''} />
+                    <span>{isBookmarked ? 'Saved ✓' : 'Save'}</span>
+                  </button>
+
+                  {/* Helpful Button */}
                   <button
                     onClick={() => toggleUpvote(item.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+                    className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
                       isUpvoted
                         ? 'bg-amber-500/10 border-amber-500 text-amber-600'
                         : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     <ThumbsUp size={13} className={isUpvoted ? 'fill-current' : ''} />
-                    <span>{item.upvotesCount + (isUpvoted ? 1 : 0)} Helpful</span>
-                  </button>
-
-                  <button
-                    onClick={() => toggleBookmark(item.id)}
-                    className={`p-2 rounded-xl border transition-all ${
-                      isBookmarked
-                        ? 'bg-primary/10 border-primary text-primary'
-                        : 'bg-muted/40 border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                    title="Save to revision folder"
-                  >
-                    <Bookmark size={14} className={isBookmarked ? 'fill-current' : ''} />
+                    <span>{item.upvotesCount + (isUpvoted ? 1 : 0)}</span>
                   </button>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* PRACTICE SIMILAR: Opens question bank with matching subject, chapter, and marks */}
                   <Link
-                    href="/practice/subjective"
-                    className="px-3.5 py-2 rounded-xl bg-card border border-primary/30 hover:bg-primary/5 text-primary text-xs font-bold flex items-center gap-1.5 transition-all"
+                    href={`/see/question-bank?subject=${item.subject}&chapter=${encodeURIComponent(item.chapter)}&marks=${item.marks}`}
+                    className="px-3 py-2 rounded-xl bg-secondary/80 hover:bg-secondary text-secondary-foreground text-xs font-bold flex items-center gap-1.5 border border-border transition-all active:scale-95"
                   >
-                    <Zap size={13} />
-                    <span>Test on AI Marker</span>
+                    <Target size={13} className="text-primary" />
+                    <span>Practice Similar</span>
                   </Link>
 
+                  {/* SOLVE: Test with AI Answer Sheet Evaluator */}
+                  <Link
+                    href="/practice/subjective"
+                    className="px-3.5 py-2 rounded-xl bg-card border border-primary/40 hover:bg-primary/5 text-primary text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    <Zap size={13} />
+                    <span>Solve on AI Marker</span>
+                  </Link>
+
+                  {/* VIEW SOLUTION: Reveal Verified Marking Scheme */}
                   <button
                     onClick={() => toggleExpand(item.id)}
-                    className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black flex items-center gap-1.5 shadow-sm transition-all"
+                    className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-black flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer"
                   >
-                    <span>{isExpanded ? 'Hide Solution' : 'Reveal Verified Solution'}</span>
+                    <span>{isExpanded ? 'Hide Solution' : 'View Solution'}</span>
                     {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   </button>
                 </div>
