@@ -1,44 +1,38 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
-const faqs = [
+const FAQS = [
   {
     key: 'faq-1',
-    q: 'Is Samyak CEE Mastery aligned with the Nepal CEE syllabus?',
-    a: 'Yes, every note, MCQ, and study resource is mapped to the current Health Sciences Entrance Examination (CEE) syllabus prescribed by Medical Education Commission. Our content team updates materials within 48 hours of any syllabus revision.',
+    q: 'Is Samyak SEE aligned with the official Nepal CDC Curriculum?',
+    a: 'Yes, 100%. Every chapter, model question, and marking rubric is strictly mapped to the current Curriculum Development Centre (CDC) syllabus for Grade 10, covering both English and Nepali medium schools.',
   },
   {
     key: 'faq-2',
-    q: 'How is the Battle Arena exam fair? Can students cheat?',
-    a: 'Battle Arena uses server-authoritative timers and question assignment — no scores are calculated in the browser. Both players receive identical questions at the same timestamp. Tab-switching and full-screen exits are logged. Suspicious activity is flagged for admin review, not auto-penalized.',
+    q: 'Is Samyak CEE aligned with the Medical Education Commission (MEC) exam?',
+    a: 'Yes. Our 15,000+ MCQs, sub-chapter notes, and 200-question timed mock exams follow the exact MECEE blueprint for MBBS, BDS, B.Sc Nursing and allied health sciences, including negative marking (-0.25) and subject-wise weighting.',
   },
   {
     key: 'faq-3',
-    q: 'Can I download notes and study offline?',
-    a: 'Pro plan students can download allowed PDFs for offline reading. Video lectures and live classes are available in the Samyak Guru App. Premium PDFs use signed URLs that expire — they cannot be shared permanently.',
+    q: 'How do the daily live classes work?',
+    a: 'Live classes take place in interactive virtual classrooms powered by 100ms. Students can ask questions via live chat or microphone. All classes are automatically recorded in high-definition and available within minutes for anytime revision.',
   },
   {
     key: 'faq-4',
-    q: 'What payment methods do you accept?',
-    a: 'We accept Fonepay — pay instantly by scanning a dynamic QR with any mobile-banking or wallet app that supports Fonepay. All transactions are verified server-side. We never store payment credentials. Subscriptions can be cancelled anytime from your dashboard.',
+    q: 'How does Fonepay payment work?',
+    a: 'During checkout, a dynamic Fonepay QR code is generated instantly. You can scan and pay using any Nepali mobile banking app (NIC Asia, Nabil, Global IME, etc.) or digital wallet (eSewa, Khalti). Your access is activated immediately upon successful payment.',
   },
   {
     key: 'faq-5',
-    q: 'How does the personalized study plan work?',
-    a: 'Enter your CEE exam date, daily study hours, and target score. Our engine analyzes your current accuracy, completed chapters, and weak topics to generate a day-by-day plan. The plan adapts weekly based on your practice results.',
+    q: 'Can I study on my mobile phone or tablet?',
+    a: 'Yes! Samyak Tutor is fully responsive on mobile browsers, and you can also use our official Samyak Guru mobile app to attend live classes, take timed mock tests, and read notes offline.',
   },
   {
     key: 'faq-6',
-    q: 'Is there a mobile app available?',
-    a: 'Yes, the official Samyak Guru mobile app is available with all features including live classes, video lectures, offline notes, push notifications, and battle arena. It syncs with your website account seamlessly.',
-  },
-  {
-    key: 'faq-7',
-    q: 'What is the refund policy?',
-    a: 'We offer a 7-day full refund if you are not satisfied. Contact support within 7 days of purchase with your transaction ID. Refunds are processed within 3–5 business days to your original payment method.',
+    q: 'What is your refund policy?',
+    a: 'We offer a 7-day money-back guarantee. If you feel the platform does not meet your learning expectations, simply contact our support team within 7 days of enrollment for a full refund.',
   },
 ];
 
@@ -46,44 +40,49 @@ export default function FAQSection() {
   const [open, setOpen] = useState<string | null>('faq-1');
 
   return (
-    <section id="faq" className="py-16 bg-muted/30">
+    <section id="faq" className="py-20 bg-muted/20 border-t border-border/60">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
-        <div className="text-center mb-10">
-          <p className="section-label mb-2">FAQ</p>
-          <h2 className="text-hero-md text-foreground">Frequently Asked Questions</h2>
+        <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">
+            <span>Frequently Asked Questions</span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+            Have Questions? We Have Answers.
+          </h2>
+          <p className="text-base text-muted-foreground leading-relaxed">
+            Everything you need to know about our batches, curriculum alignment, and enrollment process.
+          </p>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-2">
-          {faqs?.map((faq) => (
-            <div key={faq?.key} className="card-base overflow-hidden">
-              <button
-                className="w-full flex items-center justify-between gap-4 text-left py-1"
-                onClick={() => setOpen(open === faq?.key ? null : faq?.key)}
-                aria-expanded={open === faq?.key}
+        <div className="max-w-3xl mx-auto space-y-3">
+          {FAQS.map((faq) => {
+            const isOpen = open === faq.key;
+            return (
+              <div
+                key={faq.key}
+                className="bg-card border border-border/80 rounded-2xl overflow-hidden transition-all shadow-xs"
               >
-                <span className="font-semibold text-sm text-foreground">{faq?.q}</span>
-                <ChevronDown
-                  size={16}
-                  className={`text-muted-foreground shrink-0 transition-transform duration-200 ${open === faq?.key ? 'rotate-180' : ''}`}
-                />
-              </button>
-              {open === faq?.key && (
-                <div className="mt-3 pt-3 border-t border-border animate-fade-in">
-                  <p className="text-sm text-muted-foreground leading-relaxed">{faq?.a}</p>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                <button
+                  onClick={() => setOpen(isOpen ? null : faq.key)}
+                  className="w-full flex items-center justify-between gap-4 text-left p-5 font-bold text-sm sm:text-base text-foreground hover:text-primary transition-colors"
+                >
+                  <span>{faq.q}</span>
+                  <ChevronDown
+                    size={18}
+                    className={`shrink-0 text-muted-foreground transition-transform duration-200 ${
+                      isOpen ? 'rotate-180 text-primary' : ''
+                    }`}
+                  />
+                </button>
 
-        <div className="text-center mt-10">
-          <Link
-            href="/faq"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-card border border-border text-xs font-black text-foreground hover:border-primary/40 hover:text-primary transition-all shadow-sm group"
-          >
-            <span>View All 20+ Frequently Asked Questions</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </Link>
+                {isOpen && (
+                  <div className="px-5 pb-5 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-border/40 pt-3">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

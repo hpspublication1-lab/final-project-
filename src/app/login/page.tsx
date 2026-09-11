@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import AuthPageClient from '../sign-up-login-screen/components/AuthPageClient';
+import AuthPageClient from './components/AuthPageClient';
 
 export const metadata: Metadata = {
   title: 'Log In — Samyak CEE Mastery',

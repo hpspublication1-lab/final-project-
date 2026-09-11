@@ -18,11 +18,26 @@ interface QrResponse {
 }
 
 const PLAN_DETAILS: Record<string, { title: string; price: number; validity: string; desc: string }> = {
-  'student-monthly': { title: 'Student Monthly Plan', price: 799, validity: '30 Days', desc: 'Monthly CEE Question Bank, Flashcards & Mock Exams' },
-  'student-yearly': { title: 'Samyak CEE All-Access Pass', price: 3490, validity: '365 Days (1 Year)', desc: 'Full access to CEE, SEE, IELTS, AI Teacher & Vision Marker' },
-  'pro-monthly': { title: 'Pro Monthly Plan', price: 999, validity: '30 Days', desc: 'Full Access + 24/7 AI Agent Doubt Solver' },
-  'pro-yearly': { title: 'Pro Yearly Intensive', price: 2490, validity: '365 Days (1 Year)', desc: 'Full Access + 24/7 AI Agent Doubt Solver + Weak-Topic Reports' },
-  'crash-course': { title: 'Samyak CEE Crash Course', price: 1490, validity: '365 Days (1 Year)', desc: 'Complete 30-Day Revision Bootcamp & 100 High-Yield Derivations' },
+  // CEE Medical Entrance
+  'pro-monthly': { title: 'CEE Pro · Monthly Plan', price: 1299, validity: '30 Days', desc: 'Full Access to 15K MCQs, Mocks & 24/7 AI Tutor' },
+  'pro-yearly': { title: 'CEE Pro · Yearly Intensive', price: 11690, validity: '365 Days (1 Year)', desc: '1-Year Full Access to 15K MCQs, Grand Mocks, 1v1 Arena & Weak-Topic Reports' },
+  'student-monthly': { title: 'CEE Student · Monthly Plan', price: 799, validity: '30 Days', desc: 'Monthly CEE Question Bank, Flashcards & Chapter Mocks' },
+  'student-yearly': { title: 'CEE Student · Yearly Plan', price: 7190, validity: '365 Days (1 Year)', desc: 'Full-Year Access to CEE Question Bank & Chapter Tests' },
+  'crash-course': { title: 'CEE 45-Day Crash Course', price: 2299, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
+  'cee-45-day-crash-course': { title: 'CEE 45-Day Crash Course', price: 2299, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
+  'cee-mbbs-mastery-2026': { title: 'CEE MBBS Super Target Batch 2026', price: 7990, validity: '180 Days', desc: 'Intensive MECEE MBBS/BDS Entrance Batch with daily live drills' },
+  'cee-physics-chemistry-booster': { title: 'CEE Physics & Chemistry Booster', price: 3990, validity: '90 Days', desc: 'High-Yield Formula Batch and Calculation Shortcuts' },
+
+  // SEE Class 10 Board
+  'see-class-10-board-topper-batch': { title: 'SEE Class 10 Board Topper Batch 2082/2083', price: 4990, validity: '365 Days (1 Year)', desc: 'Full Class 10 video curriculum, 10-year model paper bank, AI Vision Marker & Live Classes' },
+  'see-opt-math-science-mastery': { title: 'SEE Optional Math & Science Score Booster', price: 2990, validity: '120 Days', desc: 'Targeted score booster for Class 10 Science & Optional Math' },
+
+  // Secondary Tracks
+  'english-ielts-target-8-mastery': { title: 'IELTS Target Band 8.0+ Mastery', price: 3490, validity: '60 Days', desc: 'AI Speaking simulator, Writing Task 1 & 2 evaluation, full Cambridge tests' },
+  'english-spoken-fluency-pro': { title: 'Spoken English & Fluency Masterclass', price: 1990, validity: '60 Days', desc: 'Daily speaking practice and professional pronunciation drills' },
+  'digital-ai-prompt-engineering': { title: 'AI Tools & Prompt Engineering', price: 1490, validity: '30 Days', desc: 'ChatGPT, Midjourney, Claude & Automation for Beginners' },
+  'digital-python-programming-zero-to-hero': { title: 'Python Programming Zero to Hero', price: 2490, validity: '60 Days', desc: 'Hands-on Python coding, automation scripts and AI API integrations' },
+  'digital-marketing-canva-freelancing': { title: 'Digital Marketing & Freelancing 101', price: 1990, validity: '45 Days', desc: 'Meta Ads, SEO, content creation, and Upwork/Fiverr setup' },
 };
 
 // Poll Fonepay for up to ~5 minutes; a dynamic QR expires around then.
@@ -124,7 +139,7 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
 
   const buildWhatsAppSupportUrl = () => {
     const prnStr = qr?.prn ? ` (PRN: ${qr.prn})` : '';
-    const msg = `Hi! I need help with my payment on Samyak CEE for *${selectedPlanInfo.title}*${prnStr}. Please guide me.`;
+    const msg = `Hi! I need help with my payment on Samyak Tutor for *${selectedPlanInfo.title}*${prnStr}. Please guide me.`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   };
 

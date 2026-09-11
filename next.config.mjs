@@ -118,6 +118,9 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/sign-up-login-screen', destination: '/login', permanent: true },
+      { source: '/signin', destination: '/login', permanent: true },
+      { source: '/signup', destination: '/login', permanent: true },
+      { source: '/register', destination: '/login', permanent: true },
       { source: '/battle', destination: '/battle-arena', permanent: true },
       { source: '/arena', destination: '/battle-arena', permanent: true },
       { source: '/mcq', destination: '/practice', permanent: true },

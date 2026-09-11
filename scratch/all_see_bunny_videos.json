@@ -1,0 +1,1766 @@
+{
+  "Compulsory Mathematics": [
+    {
+      "id": "d24579c7-887b-4f94-acd3-fc32444524ee",
+      "title": "compound interest part 1 and part 2",
+      "min": 42,
+      "sec": 2534
+    },
+    {
+      "id": "f61569cf-9815-47d7-a4b3-613919833936",
+      "title": "chain of learning",
+      "min": 14,
+      "sec": 834
+    },
+    {
+      "id": "7f261457-e3ef-4af4-878a-f2d4dd6b08a3",
+      "title": "U2 Arithmetic P2",
+      "min": 30,
+      "sec": 1825
+    },
+    {
+      "id": "9b620dc1-fd68-401f-ba14-6ac25174feb0",
+      "title": "SO U7 P2 7 to 10",
+      "min": 18,
+      "sec": 1090
+    },
+    {
+      "id": "721d0d44-8339-4b90-821a-54c30062a63f",
+      "title": "SO U7 P2 4 to 6",
+      "min": 16,
+      "sec": 970
+    },
+    {
+      "id": "db0d14b4-4634-4c78-937b-22b939f4b817",
+      "title": "SO U7 P2 1 to 3",
+      "min": 25,
+      "sec": 1487
+    },
+    {
+      "id": "6399833d-6a8e-4d36-8cef-5c0a61dea207",
+      "title": "SO U7 P1 Introduction",
+      "min": 14,
+      "sec": 858
+    },
+    {
+      "id": "de1a7545-ef11-40da-8a71-c6379bced622",
+      "title": "SO U6 L2 Probability 5",
+      "min": 15,
+      "sec": 918
+    },
+    {
+      "id": "e6c7bb6f-4fc5-4232-90e9-45d2a65695b9",
+      "title": "SO U6 L2 Probability 3",
+      "min": 27,
+      "sec": 1592
+    },
+    {
+      "id": "1481066d-c3f5-4831-a6eb-39e7a5d94931",
+      "title": "SO U6 L2 Probability 4",
+      "min": 16,
+      "sec": 967
+    },
+    {
+      "id": "e19237f2-9de8-4398-bb32-39f5a0b424c4",
+      "title": "SO U6 L2 Probability 2",
+      "min": 29,
+      "sec": 1734
+    },
+    {
+      "id": "b8481185-7143-4233-af08-f942c32879b8",
+      "title": "SO U6 L2 Probability 1",
+      "min": 28,
+      "sec": 1651
+    },
+    {
+      "id": "b532abb8-e943-441f-8704-ac2d47ce3e8a",
+      "title": "SO U6 L1 Statistics 4",
+      "min": 17,
+      "sec": 1034
+    },
+    {
+      "id": "4e124a18-99ae-4b46-8f2f-1982db837934",
+      "title": "SO U6 L1 Statistics 3",
+      "min": 21,
+      "sec": 1266
+    },
+    {
+      "id": "cc5c1104-0c0a-4469-9722-1fceb111113a",
+      "title": "SO U6 L1 Statistics 2",
+      "min": 26,
+      "sec": 1532
+    },
+    {
+      "id": "5e7c5de5-eb18-4853-b310-f0773ffa6f35",
+      "title": "SO U6 L1  Statistics 1",
+      "min": 21,
+      "sec": 1270
+    },
+    {
+      "id": "86b4d49b-44b1-4dbc-8534-c91f2d140000",
+      "title": "SO U5 L3 V7",
+      "min": 16,
+      "sec": 978
+    },
+    {
+      "id": "d769f84b-7140-4ca6-a6cd-48a29efa9de1",
+      "title": "SO U5 L3 V6",
+      "min": 18,
+      "sec": 1090
+    },
+    {
+      "id": "afb8aef7-7da5-4372-b3a0-1984c45be2bb",
+      "title": "SO U5 L3 V5",
+      "min": 12,
+      "sec": 697
+    },
+    {
+      "id": "a52ff24d-403a-4466-8729-2ebe11836caa",
+      "title": "SO U5 L3 V4",
+      "min": 14,
+      "sec": 811
+    },
+    {
+      "id": "ec874edb-fd26-476b-ae99-813dd338c20d",
+      "title": "SO U5 L3 V3",
+      "min": 14,
+      "sec": 868
+    },
+    {
+      "id": "6b2aa6be-42a3-448e-ae95-42abb5654011",
+      "title": "SO U5 L3 V1",
+      "min": 16,
+      "sec": 954
+    },
+    {
+      "id": "034b91da-9d43-4526-b539-67ad7dabf71c",
+      "title": "SO U5 L3 V2",
+      "min": 15,
+      "sec": 877
+    },
+    {
+      "id": "2e86a8bb-120e-45d8-b7fb-9f40253f273a",
+      "title": "SO U5 L1 V3",
+      "min": 17,
+      "sec": 1006
+    },
+    {
+      "id": "1d831344-2891-44a8-bd9e-229edcfa1a04",
+      "title": "SO U5 L1 V2",
+      "min": 35,
+      "sec": 2072
+    },
+    {
+      "id": "ac82354b-74d5-48b0-9d1f-1bcc93ef21c0",
+      "title": "SO U5 L1 V1",
+      "min": 31,
+      "sec": 1883
+    },
+    {
+      "id": "46a269d2-535a-4407-b602-8b0e9aa54e5d",
+      "title": "SO L4 V1",
+      "min": 20,
+      "sec": 1223
+    },
+    {
+      "id": "e78c92cc-0a71-41ca-8ed6-37c36408f2b9",
+      "title": "SO L4 V5",
+      "min": 24,
+      "sec": 1432
+    },
+    {
+      "id": "d875441f-e54e-4323-a167-44c15a72457b",
+      "title": "SO L4 V4",
+      "min": 15,
+      "sec": 875
+    },
+    {
+      "id": "03bf4b62-49f8-4094-9c13-fc420b26757c",
+      "title": "SO L4 V2",
+      "min": 27,
+      "sec": 1615
+    },
+    {
+      "id": "6995a48b-7141-4234-9fa0-1d91b7efce62",
+      "title": "SO L4 V3",
+      "min": 22,
+      "sec": 1290
+    },
+    {
+      "id": "1094d86d-3918-4e09-a97d-a689ce6d1796",
+      "title": "SO L3 V6",
+      "min": 16,
+      "sec": 972
+    },
+    {
+      "id": "4db3ec41-eee2-49bc-9920-807211230e84",
+      "title": "SO L3 V5",
+      "min": 20,
+      "sec": 1201
+    },
+    {
+      "id": "34db1d05-aafd-4df0-9553-42f60e40f31c",
+      "title": "SO L3 V4",
+      "min": 24,
+      "sec": 1465
+    },
+    {
+      "id": "f6bd7ac4-70da-45de-8a36-4ae68f89b1af",
+      "title": "SO L3 V3",
+      "min": 22,
+      "sec": 1293
+    },
+    {
+      "id": "a383d51f-35ce-4d59-bb5c-5c7ad7ab04de",
+      "title": "SO L3 V2",
+      "min": 21,
+      "sec": 1255
+    },
+    {
+      "id": "f3e518aa-834e-4772-8ab6-f1da9e07cd63",
+      "title": "SO L3 V1",
+      "min": 20,
+      "sec": 1201
+    },
+    {
+      "id": "8b7ada60-444c-4840-bb7e-35c49c3bd038",
+      "title": "Quadratic Equation 4",
+      "min": 12,
+      "sec": 701
+    },
+    {
+      "id": "e34719d1-7924-4692-a2cd-a29bb4ce1cb2",
+      "title": "Quadratic Equation 1",
+      "min": 48,
+      "sec": 2865
+    },
+    {
+      "id": "a7bd1577-ae47-452c-94fe-6de9951dc0d7",
+      "title": "Quadratic Equation 3",
+      "min": 20,
+      "sec": 1187
+    },
+    {
+      "id": "6d47f521-174f-4b99-a85e-12692e009b01",
+      "title": "Quadratic Equation 2",
+      "min": 23,
+      "sec": 1366
+    },
+    {
+      "id": "3e8b7c0a-5bce-458b-ac65-2cd3ac59107b",
+      "title": "SO L1 V4",
+      "min": 21,
+      "sec": 1276
+    },
+    {
+      "id": "c0f221ac-b294-4865-834c-f8461a852c58",
+      "title": "SO L1 V3",
+      "min": 15,
+      "sec": 899
+    },
+    {
+      "id": "2f63eb0a-f869-4726-bdcc-83f91db6af69",
+      "title": "SO L1 V1",
+      "min": 40,
+      "sec": 2420
+    },
+    {
+      "id": "9620c802-59ea-4436-91e6-2bc1b4d4c814",
+      "title": "SO L1 V2",
+      "min": 26,
+      "sec": 1573
+    },
+    {
+      "id": "4cf4c7ef-9587-43f6-a92f-f12b4b60b8f4",
+      "title": "SEE-CM-KDS-U3-L2-V2-Combined Solid",
+      "min": 28,
+      "sec": 1667
+    },
+    {
+      "id": "05cbf668-ca23-4225-b38d-ec0271da1637",
+      "title": "SEE-CM-KDS-U3-L1-V1(Pyramid)",
+      "min": 34,
+      "sec": 2042
+    },
+    {
+      "id": "c81cfb88-3d68-49ba-bf46-9246db493926",
+      "title": "SEE-CM-KDS-U3-L2-V1-Combined Solid",
+      "min": 30,
+      "sec": 1782
+    },
+    {
+      "id": "21e55a19-0108-4373-b6c9-2ed6cf560e9a",
+      "title": "SEE-CM-KDS-U3-L1-V1&V2 (CONE)_part2",
+      "min": 27,
+      "sec": 1610
+    },
+    {
+      "id": "72e03a22-308c-4b40-b3bc-062847da645f",
+      "title": "SEE-CM-KDS-U3-L1-V1&V2 (CONE)_part1",
+      "min": 28,
+      "sec": 1678
+    },
+    {
+      "id": "0e516f46-02d3-4ee7-b497-59c55d3e0e6c",
+      "title": "SEE-CM-KDS-U3-L3-V2-Cost Estimation",
+      "min": 24,
+      "sec": 1428
+    },
+    {
+      "id": "e75e8734-c6d5-4ff6-8c3c-8e24988a3d28",
+      "title": "SEE-CM-KDS-U3-L3-V1-Cost Estimation",
+      "min": 30,
+      "sec": 1824
+    },
+    {
+      "id": "5d336609-b543-42d2-b5f0-17ce1b405672",
+      "title": "SEE-CM-KDS-U3-L2-V2-P1 (Pyramid)",
+      "min": 33,
+      "sec": 1962
+    },
+    {
+      "id": "04acf53d-a2f5-42df-b6b8-af336fc018c7",
+      "title": "SEE-CM-KDS-U3-L2-V3-Combined Solid",
+      "min": 9,
+      "sec": 567
+    },
+    {
+      "id": "7570339b-5561-4622-98a4-2ae4ccd9a6a3",
+      "title": "SEE-CM-SO-U2-L3-V4-Money Exchange Rate",
+      "min": 22,
+      "sec": 1316
+    },
+    {
+      "id": "9cb309bf-d3f7-4f17-8dd9-54e4a8d65587",
+      "title": "SEE-CM-SO-U2-L3-V3-Money Exchange Rate",
+      "min": 28,
+      "sec": 1680
+    },
+    {
+      "id": "96c8759f-9bce-4ce5-9776-b607eea7f20b",
+      "title": "SEE-CM-SO-U2-L3-V2-Money Exchange Rate",
+      "min": 24,
+      "sec": 1438
+    },
+    {
+      "id": "dbbdaffe-8df3-4218-b88b-d8c38bdeab1a",
+      "title": "SEE-CM-SO-U2-L3-V1-Money Exchange Rate",
+      "min": 18,
+      "sec": 1073
+    },
+    {
+      "id": "9465facf-887c-474d-aa1a-4ee4456267d5",
+      "title": "U2 L2 Compound Interest",
+      "min": 36,
+      "sec": 2179
+    },
+    {
+      "id": "87c0f024-f597-404d-8c00-748052983230",
+      "title": "U2 Arithmetic P1",
+      "min": 34,
+      "sec": 2057
+    },
+    {
+      "id": "3360a544-1e52-4f78-b439-6510639887cd",
+      "title": "U1 Set 1 P3",
+      "min": 33,
+      "sec": 1964
+    },
+    {
+      "id": "935cebf5-0e5d-4d14-aaab-a2dfeea87ac5",
+      "title": "U1 Set 1 P1",
+      "min": 49,
+      "sec": 2968
+    },
+    {
+      "id": "f8983a99-8540-416e-b92e-ceb996928267",
+      "title": "U1 P2",
+      "min": 13,
+      "sec": 766
+    }
+  ],
+  "Optional Mathematics": [
+    {
+      "id": "915e80ab-62df-4cef-bb57-0d07c109f816",
+      "title": "SEE-OM-EM-HRT-U2-V3-CONTINUITY-PART-III",
+      "min": 21,
+      "sec": 1287
+    },
+    {
+      "id": "f0de0312-a6f9-4951-90c5-4bea96e82d03",
+      "title": "SEE-OM-EM-HRT-U2-V2-CONTINUITY-PART-II",
+      "min": 23,
+      "sec": 1369
+    },
+    {
+      "id": "509cd5df-beb6-4e50-bc72-34933b2670d2",
+      "title": "SEE-OM-EM-HRT-U2-V1-CONTINUITY-PART-I",
+      "min": 21,
+      "sec": 1230
+    },
+    {
+      "id": "d80d33d6-e093-491b-811b-b0b415cd5e83",
+      "title": "SEE-OM-EM-HRT-U1-L4-V21-LINEAR PROGRAMMING-(GRAPHS OF QUADRATIC FUNCTION )-PART V",
+      "min": 30,
+      "sec": 1783
+    },
+    {
+      "id": "a4ac22ef-1bf7-45b8-919b-43b3a094ffe9",
+      "title": "SEE-OM-EM-HRT-U1-L4-V20-LINEAR PROGRAMMING-(GRAPHS OF QUADRATIC FUNCTION )-PART IV",
+      "min": 30,
+      "sec": 1825
+    },
+    {
+      "id": "570f2854-fbbb-4199-8486-45f7345c3aac",
+      "title": "SEE-OM-EM-HRT-U1-L4-V19-LINEAR PROGRAMMING-(GRAPHS OF LINEAR FUNCTION )-PART III",
+      "min": 29,
+      "sec": 1738
+    },
+    {
+      "id": "4c70f0b9-87ad-4e87-8608-5bcfd216ad12",
+      "title": "SEE-OM-EM-HRT-U1-L4-V18-(LINEAR PROGRAMMING(GRAPHS OF LINEAR INEQUALITIES IN TWO VARIABLES)-PART II",
+      "min": 27,
+      "sec": 1631
+    },
+    {
+      "id": "f0031fa0-96b5-473f-afc7-e4c7fa9e1376",
+      "title": "SEE-OM-EM-HRT-U1-L4-V17-(LINEAR PROGRAMMING(GRAPHS OF LINEAR INEQUALITIES IN TWO VARIABLES)-PART I",
+      "min": 26,
+      "sec": 1561
+    },
+    {
+      "id": "f126b301-978b-489b-929e-6758a47579b1",
+      "title": "SEE-OM-EM-HRT-U1-L3-V16-SEQUENCES AND SERIES -(GEOMETRIC SEQUENCES)-PARTVII",
+      "min": 23,
+      "sec": 1391
+    },
+    {
+      "id": "e0dbc9d6-4778-4426-b4d2-ca01d0771d3a",
+      "title": "SEE-OM-EM-HRT-U1-L3-V15-SEQUENCES AND SERIES-(GEOMETRIC SEQUENCES)- PART VI",
+      "min": 26,
+      "sec": 1572
+    },
+    {
+      "id": "c7e3d50e-e4c6-4631-a785-06b402d1fae0",
+      "title": "SEE-OM-EM-HRT-U1-L3-V14-SEQUENCES AND SERIES-(GEOMETRIC SEQUENCES)- PART V",
+      "min": 25,
+      "sec": 1503
+    },
+    {
+      "id": "25c313a8-30b0-4128-9c16-a3174ebabde0",
+      "title": "SEE-OM-EM-HRT-U1-L3-V13-SEQUENCES AND SERIES-(GEOMETRIC SEQUENCES)- PART IV",
+      "min": 32,
+      "sec": 1929
+    },
+    {
+      "id": "3ccd9adb-f0dd-4864-9c25-4d908643032c",
+      "title": "SEE-OM-EM-HRT-U1-L3-V12-SEQUENCES AND SERIES -PART III",
+      "min": 24,
+      "sec": 1460
+    },
+    {
+      "id": "9ca606af-d531-47ff-8478-64c3a2e35847",
+      "title": "SEE-OM-EM-HRT-U1-L3-V11-SEQUENCES AND SERIES -PART II",
+      "min": 27,
+      "sec": 1619
+    },
+    {
+      "id": "90ade849-e805-47f2-9115-8f0feae64048",
+      "title": "SEE-OM-EM-HRT-U1-L3-V10-SEQUENCES AND SERIES -PART I",
+      "min": 35,
+      "sec": 2102
+    },
+    {
+      "id": "3371ee67-dfa1-4ee6-9323-368e12158f7d",
+      "title": "SEE-OM-EM-HRT-U1-L2-V9-POLYNOMINAL-PART VI",
+      "min": 19,
+      "sec": 1160
+    },
+    {
+      "id": "9bd759f7-3c12-46b4-86cc-3122fd753acd",
+      "title": "SEE-OM-EM-HRT-U1-L2-V8-POLYNOMINAL-PART V",
+      "min": 25,
+      "sec": 1498
+    },
+    {
+      "id": "671e3d5a-9453-462b-b28e-570ee2da1a51",
+      "title": "SEE-OM-EM-HRT-U1-L2-V7-POLYNOMINAL-PART IV",
+      "min": 21,
+      "sec": 1245
+    },
+    {
+      "id": "e50982cb-5356-4172-bba8-2ccf5d578d66",
+      "title": "SEE-OM-EM-HRT-U1-L2-V6-POLYNOMINAL-PART III",
+      "min": 21,
+      "sec": 1276
+    },
+    {
+      "id": "0c650816-0c45-4e49-b47c-8257c3cefe23",
+      "title": "SEE-OM-EM-HRT-U1-L2-V5-POLYNOMINAL-PART II",
+      "min": 18,
+      "sec": 1057
+    },
+    {
+      "id": "255a733a-b9e4-4676-834d-6a58237f36d0",
+      "title": "SEE-OM-EM-HRT-U1-L2-V4-POLYNOMINAL-PART I",
+      "min": 28,
+      "sec": 1660
+    },
+    {
+      "id": "be1a55d8-f699-44d4-841a-fc718ce23a93",
+      "title": "SEE-OM-EM-HRT-U1-L1-V3-FUNCTION-PART-IV",
+      "min": 29,
+      "sec": 1748
+    },
+    {
+      "id": "0d99c60c-bdd0-457b-a813-a1f94a8012b3",
+      "title": "SEE-OM-EM-HRT-U1-L1-V3-FUNCTION-PART-III",
+      "min": 20,
+      "sec": 1191
+    },
+    {
+      "id": "e5a063e4-2096-45ea-8400-c79849a8cff4",
+      "title": "SEE-OM-EM-HRT-U1-L1-V2-FUNCTION-PART-II",
+      "min": 24,
+      "sec": 1455
+    },
+    {
+      "id": "64e4f8cb-2e62-4b95-94f9-b1cdc61dca11",
+      "title": "SEE-OM-EM-HRT-U1-L1-V1-FUNCTION-PART-I",
+      "min": 39,
+      "sec": 2310
+    },
+    {
+      "id": "d8cd6152-d44a-4220-b60e-fe5f87b686f8",
+      "title": "SEE-OM-EM-HRT-U8-P7-STATISTICS-QUARTILE DEVIATION-PART 2",
+      "min": 24,
+      "sec": 1425
+    },
+    {
+      "id": "edc91de3-28d8-4680-9a72-699ceeeb2f7f",
+      "title": "SEE-OM-EM-HRT-U8-P6-STATISTICS-QUARTILE DEVIATION-PART 1",
+      "min": 16,
+      "sec": 955
+    },
+    {
+      "id": "73937904-f0dc-4889-ac98-7579a3f4b760",
+      "title": "SEE-OM-EM-HRT-U8-P5-STATISTICS -STANDARD DEVIATION -PART 2",
+      "min": 31,
+      "sec": 1853
+    },
+    {
+      "id": "e7f70d41-2efb-4918-90d3-0c24c36a73b3",
+      "title": "SEE-OM-EM-HRT-U8-P4-STATISTICS -STANDARD DEVIATION -PART 1",
+      "min": 29,
+      "sec": 1729
+    },
+    {
+      "id": "f688545e-164f-4df4-84f1-bd964bfbe6a9",
+      "title": "SEE-OM-EM-HRT-U8-P3-STATISTICS -MEAN DEVIATION -PART 2",
+      "min": 27,
+      "sec": 1633
+    },
+    {
+      "id": "2dc66bb7-acd0-419e-b3a9-4cebe45660ca",
+      "title": "SEE-OM-EM-HRT-U8-P2-STATISTICS -MEASURE OF DISPERSION -PART 1",
+      "min": 29,
+      "sec": 1765
+    },
+    {
+      "id": "1dc5c001-860b-46d6-8ff3-268eceb399a1",
+      "title": "SEE-OM-EM-HRT-U8-P1-STATISTICS -FLASH BACK",
+      "min": 29,
+      "sec": 1753
+    },
+    {
+      "id": "ccaaa78a-0e1d-4487-ad33-0ae468965646",
+      "title": "SEE-OM-EM-HRT-U7-P10- VERSION TRANSFORMATION AND INVERSION CIRCLE PART 2",
+      "min": 33,
+      "sec": 1977
+    },
+    {
+      "id": "29924853-60e5-4099-965c-ae689a6d2f80",
+      "title": "SEE-OM-EM-HRT-U7-P9 - VERSION TRANSFORMATION AND INVERSION CIRCLE PART 1",
+      "min": 34,
+      "sec": 2021
+    },
+    {
+      "id": "43890275-f5e6-4dc5-b10d-fbe65ac8961c",
+      "title": "SEE-OM-EM-HRT-U7-P8-MATRICES  AND GEOMETRICAL TRANSFORMATION -PART 3",
+      "min": 26,
+      "sec": 1587
+    },
+    {
+      "id": "6bfb03b1-25ec-40ae-a9cd-4281d8d6ced3",
+      "title": "SEE-OM-EM-HRT-U7-P6-MATRICES  AND GEOMETRICAL TRANSFORMATION -PART 1",
+      "min": 34,
+      "sec": 2035
+    },
+    {
+      "id": "b3d5dee8-2cff-4f19-a01f-d205117ce6ce",
+      "title": "SEE-OM-EM-HRT-U7-P7-MATRICES  AND GEOMETRICAL TRANSFORMATION -PART 2",
+      "min": 30,
+      "sec": 1780
+    },
+    {
+      "id": "709affd1-94f8-415e-9dca-debe6bebe481",
+      "title": "SEE-OM-EM-HRT-U7-P5-COMBINATION OF TRANSFORMATION PART 4",
+      "min": 32,
+      "sec": 1896
+    },
+    {
+      "id": "2685963f-c7da-49c8-8b9a-526414d38476",
+      "title": "SEE-OM-EM-HRT-U7-P4-COMBINATION OF TRANSFORMATION PART 3",
+      "min": 23,
+      "sec": 1367
+    },
+    {
+      "id": "13154421-18c4-4820-a4b7-a19f588cc406",
+      "title": "SEE-OM-EM-HRT-U7-P3-COMBINATION OF TRANSFORMATION PART 2",
+      "min": 22,
+      "sec": 1323
+    },
+    {
+      "id": "ce53516b-fc35-4763-baf2-693e75d2ced7",
+      "title": "SEE-OM-EM-HRT-U7-P2-COMBINATION OF TRANSFORMATION PART 1",
+      "min": 39,
+      "sec": 2314
+    },
+    {
+      "id": "2bb7bfae-25df-471d-a171-61f6f9bffb28",
+      "title": "SEE-OM-EM-HRT-U7-P1- TRANSFORMATION -FLASH BACK",
+      "min": 42,
+      "sec": 2525
+    },
+    {
+      "id": "5913c8f4-43db-4483-83fb-7fc7d368bf4c",
+      "title": "HRT U4 P1 v1",
+      "min": 29,
+      "sec": 1716
+    },
+    {
+      "id": "d94ab1a5-ebab-4d8f-8f57-47b578169e7c",
+      "title": "HRT U4 P1 v2",
+      "min": 28,
+      "sec": 1654
+    },
+    {
+      "id": "7975f42f-5efb-4df3-9957-ac94663d12f7",
+      "title": "SEE-OM-EM-HRT-U3-P1-V2-FLASH BACK MATRIX AND DETERMINANT_002_new",
+      "min": 38,
+      "sec": 2291
+    },
+    {
+      "id": "ef180494-5983-4895-89ac-5a5f8dab0c36",
+      "title": "SEE-OM-EM-HRT-U3-P1-V2-FLASH BACK MATRIX AND DETERMINANT_001_new",
+      "min": 41,
+      "sec": 2435
+    },
+    {
+      "id": "c96a5070-36f2-403d-8c54-6b86f7b964d4",
+      "title": "Chain of Learning Video",
+      "min": 12,
+      "sec": 729
+    },
+    {
+      "id": "12783d79-e103-41aa-a8bc-a386aa8bd271",
+      "title": "SEE-OM-EM- HRT-U6-P8-VECTOR GEOMETRY-PART 4",
+      "min": 29,
+      "sec": 1748
+    },
+    {
+      "id": "4f3ae0e7-c826-4086-bd33-0bc12f97c8d0",
+      "title": "SEE-OM-EM- HRT-U6-P7-VECTOR GEOMETRY-PART 3",
+      "min": 28,
+      "sec": 1685
+    },
+    {
+      "id": "36555d41-3d35-4d37-b3bc-856cf7315024",
+      "title": "SEE-OM-EM- HRT-U6-P6-VECTOR GEOMETRY-PART 2",
+      "min": 35,
+      "sec": 2110
+    },
+    {
+      "id": "14762126-254b-465f-a8bd-0f28ab22fcad",
+      "title": "SEE-OM-EM- HRT-U6-P5-VECTOR GEOMETRY-PART 1",
+      "min": 36,
+      "sec": 2131
+    },
+    {
+      "id": "3be78c3d-625c-40ab-b391-ae95bc7aeba5",
+      "title": "SEE-OM-EM- HRT-U6-P4-VECTOR -SCALAR  PRODUCT OR DOT PRODUCT OF TWO VECTOR -PART 3",
+      "min": 25,
+      "sec": 1517
+    },
+    {
+      "id": "3fb53eb6-1bdb-462f-9e12-db1438e4a1e1",
+      "title": "SEE-OM-EM- HRT-U6-P3-VECTOR -SCALAR  PRODUCT OR DOT PRODUCT OF TWO VECTOR -PART 2",
+      "min": 29,
+      "sec": 1713
+    },
+    {
+      "id": "5d35b346-1495-416e-af29-d20aa5c06299",
+      "title": "SEE-OM-EM- HRT-U6-P1-VECTOR -FLASH BACK",
+      "min": 39,
+      "sec": 2363
+    },
+    {
+      "id": "cc575c04-3b2d-4318-9400-f42ad3fd3748",
+      "title": "SEE-OM-EM- HRT-U6-P2-VECTOR -SCALAR  PRODUCT OR DOT PRODUCT OF TWO VECTOR -PART 1",
+      "min": 21,
+      "sec": 1268
+    },
+    {
+      "id": "11da9348-785b-4efd-9ea5-8bb52ff4f0fc",
+      "title": "SEE-OM-EM-HRT-U5-P17- TRIGONOMETRY- (PART 2) HEIGHT AND DISTANCE   17",
+      "min": 30,
+      "sec": 1792
+    },
+    {
+      "id": "a32c86ed-f824-4428-8719-f60590afd7be",
+      "title": "SEE-OM-EM-HRT-U5-P16- TRIGONOMETRY- (PART 1) HEIGHT AND DISTANCE   16",
+      "min": 34,
+      "sec": 2027
+    },
+    {
+      "id": "81bf5a4a-6fd3-4989-aa44-a15197bf5f2a",
+      "title": "SEE-OM-EM-HRT-U5-P15- TRIGONOMETRY- (PART 2) TRIGONOMETRIC  EQUATIONS  IDENITIES     15",
+      "min": 29,
+      "sec": 1747
+    },
+    {
+      "id": "d27cf9f1-7618-4978-bb50-373c6f1cbb86",
+      "title": "SEE-OM-EM-HRT-U5-P13- TRIGONOMETRY- (PART 2) CONDITIONAL TRIGONOMETRIC IDENITIES       13",
+      "min": 42,
+      "sec": 2508
+    },
+    {
+      "id": "e342ba2c-733a-4fc2-aa01-409a534f544e",
+      "title": "SEE-OM-EM-HRT-U5-P14- TRIGONOMETRY- (PART 1) TRIGONOMETRIC  EQUATIONS  IDENITIES     14",
+      "min": 28,
+      "sec": 1700
+    },
+    {
+      "id": "a9f3fc9c-4167-4ec1-b437-396ed6961e87",
+      "title": "SEE-OM-EM-HRT-U5-P12- TRIGONOMETRY- (PART 1) CONDITIONAL TRIGONOMETRIC IDENITIES    12",
+      "min": 26,
+      "sec": 1550
+    },
+    {
+      "id": "5af3dc53-d4a5-4401-ace9-b2dccaa244f3",
+      "title": "SEE-OM-EM-HRT-U5-P11- TRIGONOMETRY- (PART  3)  TRANSFORMATION OF TRIGONOMETRIC RATIO   11",
+      "min": 28,
+      "sec": 1701
+    },
+    {
+      "id": "f2ed6cea-5b1b-43ff-b292-0efc45662e47",
+      "title": "SEE-OM-EM-HRT-U5-P10 - TRIGONOMETRY -(PART 2)  TRANSFORMATION OF TRIGONOMETRIC RATIO  10",
+      "min": 30,
+      "sec": 1789
+    },
+    {
+      "id": "7a2e17a7-4516-4611-9c70-a186fc1300cc",
+      "title": "SEE-OM-EM-HRT-U5-P9- TRIGONOMETRY -(PART 1)TRANSFORMATION OF TRIGONOMETRIC RATIO  9",
+      "min": 30,
+      "sec": 1819
+    },
+    {
+      "id": "1f3d9672-648e-41bb-8fda-6aedac1b6b56",
+      "title": "SEE-OM-EM-HRT-U5-P8- TRIGONOMETRY- (PART  3)  TRIGONOMETRY RATIO OF SAB MULTIPLE ANGLES  8",
+      "min": 42,
+      "sec": 2498
+    },
+    {
+      "id": "2e9d6ad5-ed8b-4144-8aab-563147f46eea",
+      "title": "SEE-OM-EM-HRT-U5-P7- TRIGONOMETRY- (PART  2)  TRIGONOMETRY RATIO OF SAB MULTIPLE ANGLES  7",
+      "min": 39,
+      "sec": 2317
+    },
+    {
+      "id": "b659b667-6ec2-46ce-82ce-7b9b7f4b35f6",
+      "title": "HRT U5 P6",
+      "min": 30,
+      "sec": 1824
+    },
+    {
+      "id": "3524de83-c136-4482-ab13-449ef7d92026",
+      "title": "HRT U5 P5",
+      "min": 35,
+      "sec": 2114
+    },
+    {
+      "id": "cee27616-065a-4fa4-9e43-935842873462",
+      "title": "HRT U5 P3",
+      "min": 36,
+      "sec": 2156
+    },
+    {
+      "id": "3534c173-9c82-4ea2-aea1-32bf2e569637",
+      "title": "HRT U5 P4",
+      "min": 28,
+      "sec": 1703
+    },
+    {
+      "id": "d6852747-02b2-4601-8fdd-3765c3fb4ee0",
+      "title": "HRT U5 P2",
+      "min": 40,
+      "sec": 2410
+    },
+    {
+      "id": "5e6f47cc-1939-48b4-9b45-efc6beffe01c",
+      "title": "HRT U5 P1",
+      "min": 37,
+      "sec": 2192
+    },
+    {
+      "id": "5d4f2259-8438-4362-a984-76c621eec27f",
+      "title": "HRT U4 P12",
+      "min": 33,
+      "sec": 1983
+    },
+    {
+      "id": "aaa4b24d-8d1f-490a-93c1-54477d530e59",
+      "title": "HRT U4 P11",
+      "min": 34,
+      "sec": 2017
+    },
+    {
+      "id": "cc4359c2-fbac-456e-b316-dedda3867fb3",
+      "title": "HRT U4 P10",
+      "min": 35,
+      "sec": 2105
+    },
+    {
+      "id": "7f008b44-5587-4d95-a964-f610fad15b91",
+      "title": "HRT U4 P9",
+      "min": 32,
+      "sec": 1907
+    },
+    {
+      "id": "545c2b68-f9b1-466c-8b3a-87520a74ac50",
+      "title": "HRT U4 P8",
+      "min": 29,
+      "sec": 1750
+    },
+    {
+      "id": "0428b9ba-a66f-4cec-a8d6-9d2a86c0f675",
+      "title": "HRT U4 P7",
+      "min": 24,
+      "sec": 1433
+    },
+    {
+      "id": "f60fcea4-e964-4f82-a047-5a0979e21ccb",
+      "title": "HRT U4 P6",
+      "min": 28,
+      "sec": 1677
+    },
+    {
+      "id": "cc593f7b-864c-410d-a06c-c1e651a77a71",
+      "title": "HRT U4 P6 V2",
+      "min": 19,
+      "sec": 1141
+    },
+    {
+      "id": "6e13cc7f-294f-46f9-9aba-2cdff32bc206",
+      "title": "HRT U4 P5",
+      "min": 34,
+      "sec": 2057
+    },
+    {
+      "id": "66ce114e-68e4-4621-8f21-7f11f73afbb1",
+      "title": "HRT U4 P4 V2",
+      "min": 39,
+      "sec": 2330
+    },
+    {
+      "id": "8aa98651-b2de-4d86-a0e8-d11151b7cf74",
+      "title": "HRT U4 P4 V1",
+      "min": 31,
+      "sec": 1850
+    },
+    {
+      "id": "d6db7500-09dc-4377-8d07-469ff696567b",
+      "title": "HRT U4 P3",
+      "min": 27,
+      "sec": 1631
+    },
+    {
+      "id": "be4f8a81-550d-4f70-a280-7e429e21ff6a",
+      "title": "HRT U4 P2",
+      "min": 29,
+      "sec": 1722
+    },
+    {
+      "id": "46fc09a1-1b58-4e59-ab69-c8b0fddbc9d8",
+      "title": "HRT U4 P1 V2",
+      "min": 27,
+      "sec": 1619
+    },
+    {
+      "id": "65a1bd59-b91a-46c7-bb8a-4439b33c5a8e",
+      "title": "HRT U4 P1",
+      "min": 29,
+      "sec": 1758
+    },
+    {
+      "id": "889da888-a352-4171-affa-7a09102f1bce",
+      "title": "SEE-OM-EM-HRT-U3-P8-DETERMINANT(CRAMER'S RULE)",
+      "min": 20,
+      "sec": 1216
+    },
+    {
+      "id": "6dad95d9-448a-49ad-b59e-e4a7b3fe02e5",
+      "title": "SEE-OM-EM-HRT-U3-P7-DETERMINANT(MATRIX METHOD)",
+      "min": 35,
+      "sec": 2116
+    },
+    {
+      "id": "b885a85b-d5c4-4426-9a2b-1b051f8448ed",
+      "title": "SEE-OM-EM-HRT-U3-P6-DETERMINANT (WORKING RULE )",
+      "min": 21,
+      "sec": 1257
+    },
+    {
+      "id": "5dc90f78-a501-4747-a0a1-7b1390cd9591",
+      "title": "SEE-OM-EM-HRT-U3-P5-DETERMINANT (WORKING RULE )",
+      "min": 28,
+      "sec": 1694
+    },
+    {
+      "id": "d48e2820-3cfb-4fc8-b7ca-3ef980ae057b",
+      "title": "SEE-OM-EM-HRT-U3-P4-DETERMINANT -PART 2",
+      "min": 33,
+      "sec": 1995
+    },
+    {
+      "id": "3ca6e5e6-e522-4f41-85e4-f6fb2f8a876f",
+      "title": "SEE-OM-EM-HRT-U3-P3-DETERMINANT -PART 1",
+      "min": 34,
+      "sec": 2028
+    }
+  ],
+  "Promotional Video": [
+    {
+      "id": "92a87b1b-a2fb-4436-918c-10cc3d766e09",
+      "title": "Website Video",
+      "min": 7,
+      "sec": 431
+    }
+  ],
+  "English": [
+    {
+      "id": "2a99c9fd-87e6-45fc-9209-0878d3877505",
+      "title": "Q. NO 10 GRAMMAR MODALS_1",
+      "min": 16,
+      "sec": 960
+    },
+    {
+      "id": "302b3c61-a77c-49f3-a31e-742c8816383f",
+      "title": "Q. NO 1O GRAMMAR RELATIVE PRONOUNS",
+      "min": 6,
+      "sec": 373
+    },
+    {
+      "id": "4c420448-39bb-47e1-b8d4-bcb932a2d2fe",
+      "title": "Q.NO 10 SUNJECT VERB- AGREEMENT_1",
+      "min": 12,
+      "sec": 717
+    },
+    {
+      "id": "d8170c9b-eef1-44ac-a742-1c80abe74e40",
+      "title": "Q.NO 10 ADJECTIVE AND ADVERB -P1 and P2_1",
+      "min": 15,
+      "sec": 919
+    },
+    {
+      "id": "e22d3661-4f40-427c-96ff-6b6743db4018",
+      "title": "Q.NO 10 A CAUSATIVE VERB ( GRAMMAR)_1",
+      "min": 12,
+      "sec": 747
+    },
+    {
+      "id": "46b3260a-b2c8-4ad2-9a10-787f85668d75",
+      "title": "Q. NO 10 GRAMMAR NEGATION_1",
+      "min": 10,
+      "sec": 604
+    },
+    {
+      "id": "9a6eaa1a-2226-4648-94d7-052c736a1b2f",
+      "title": "Q. NO 10 INTERROGATION GRAMMAR_1",
+      "min": 10,
+      "sec": 596
+    },
+    {
+      "id": "414f9c18-d674-4337-9230-3504be275d9b",
+      "title": "Q.NO 10 - conditional",
+      "min": 14,
+      "sec": 862
+    },
+    {
+      "id": "b8367e6d-09e8-457c-bd8a-020a4e034049",
+      "title": "Q .NO 10  GRAMMAR CONNECTIVES_1",
+      "min": 18,
+      "sec": 1055
+    },
+    {
+      "id": "5397168f-eefd-4012-8bbf-6035830e0104",
+      "title": "Q.NO 10  GRAMMAR REPORTED SPEECH_1",
+      "min": 21,
+      "sec": 1286
+    },
+    {
+      "id": "d0455204-d961-4112-bba4-886d98fb54b1",
+      "title": "Q. NO 10 GRAMMAR VOICE_1",
+      "min": 18,
+      "sec": 1093
+    },
+    {
+      "id": "bf461b6a-87f9-41d4-b6b4-36959f570444",
+      "title": "Q.NO 10 GRAMMAR OUESTION TAG_1",
+      "min": 17,
+      "sec": 1016
+    },
+    {
+      "id": "9bedc206-38cf-43d2-b977-65a92e9be189",
+      "title": "Q.NO 10 GRAMMAR TENSE- P1 and P2_1",
+      "min": 31,
+      "sec": 1883
+    },
+    {
+      "id": "f3016aa7-5895-43d4-8390-12934a4f570a",
+      "title": "Q.NO 10 GRAMMAR PREPOSITION_1",
+      "min": 20,
+      "sec": 1182
+    },
+    {
+      "id": "aba2b393-2ded-4284-a329-051e9943d724",
+      "title": "Q.NO 10 GRAMMAR ARTICLE_1",
+      "min": 14,
+      "sec": 830
+    },
+    {
+      "id": "50f48c18-6951-4954-8217-d701a4d431ee",
+      "title": "Q. NO 9 GRAMMAR REPRODUCTION -P1 and P2",
+      "min": 13,
+      "sec": 776
+    },
+    {
+      "id": "da3db02f-817e-487d-b7bf-3cedd10d1d1a",
+      "title": "Q. NO 8 FREE WRITING ( WRITING BOOK AND FILM REVIEW)_1",
+      "min": 21,
+      "sec": 1235
+    },
+    {
+      "id": "706bd318-517d-465a-bd75-9af82862fc6f",
+      "title": "Q.NO 8 FREE WRITING (NESWSPAPER ARTICLE)_1",
+      "min": 12,
+      "sec": 694
+    },
+    {
+      "id": "210f9fd7-ea20-4d09-9e03-a35765d0d80a",
+      "title": "Q.no 8 FREE WRITING ( writing diary entry)_1",
+      "min": 8,
+      "sec": 509
+    },
+    {
+      "id": "b50037d4-6e31-4aa0-a83a-2a70d79debea",
+      "title": "Q.NO 8 FREE WRITING SHORT ESSAY(NARRATIVE, ARGUMENTATIVE, DESCRIPTIVE",
+      "min": 21,
+      "sec": 1285
+    },
+    {
+      "id": "46ca239a-16ec-4f0c-a248-283fe3a1c4b9",
+      "title": "Q. NO 8 WRITING EMAIL",
+      "min": 8,
+      "sec": 464
+    },
+    {
+      "id": "e842dcba-6be4-4179-8838-3dde683a23e2",
+      "title": "Q.NO 8 FREE WRITING (Writing letter to the editior)_1",
+      "min": 9,
+      "sec": 541
+    },
+    {
+      "id": "08a344a8-f04b-4bb5-9b1d-ccad7ba98413",
+      "title": "Q. NO 8 FREE WRITING TYPE II WRITING PERSONAL& OFFICIAL LETTER_1",
+      "min": 14,
+      "sec": 869
+    },
+    {
+      "id": "d2005650-0885-43ac-b68e-00140a2b88e1",
+      "title": "Q.NO 7  FREE WRITING TYPE DIALOGUE",
+      "min": 6,
+      "sec": 358
+    },
+    {
+      "id": "a3605751-1d79-42e1-a72c-ce4c444bec37",
+      "title": "Q. NO 7 FREE WRITING TYPE WRITING JOB APPLICATION",
+      "min": 10,
+      "sec": 590
+    },
+    {
+      "id": "fb4996ee-917e-40db-b977-01e5eeac0a5f",
+      "title": "Q.7 FREE WRITING LEAVE APPLICATION",
+      "min": 7,
+      "sec": 413
+    },
+    {
+      "id": "4da529a7-6df3-4f23-80a4-15d4976c84ab",
+      "title": "Q.NO 7  FREE WRITING TYPE paragraph",
+      "min": 19,
+      "sec": 1124
+    },
+    {
+      "id": "6845403f-cfcd-4325-af36-dc22c2c409fa",
+      "title": "Q.NO 6 GUIDED WRITING(writing news story)_1",
+      "min": 8,
+      "sec": 460
+    },
+    {
+      "id": "74986dce-90a7-44ae-8818-4a28c6853268",
+      "title": "Q.NO 6 GUIDED WRITING (WRITING SKELETON STORY)_1",
+      "min": 14,
+      "sec": 813
+    },
+    {
+      "id": "b3343e57-b4d6-4d04-bb62-93ea48301906",
+      "title": "Q.NO 6 GUIDED WRITING (WRITING MESSAGE OF CONDOLENCE)_1",
+      "min": 9,
+      "sec": 530
+    },
+    {
+      "id": "6e460684-77a2-4d00-91e6-08016b7e7e7c",
+      "title": "Q.NO 6 GUIDED WRITING (WRITING INVITATION LETTER) - p1 and p2_1",
+      "min": 8,
+      "sec": 451
+    },
+    {
+      "id": "a5b83486-ce59-48e7-b204-dc3f6192251f",
+      "title": "Q.NO 6 GUIDED WRITING (WRITING BIOGRAPHY)_1",
+      "min": 8,
+      "sec": 502
+    },
+    {
+      "id": "0ad3cfb5-d333-4d8c-b463-032c6a057225",
+      "title": "Q.NO 5 & 6 GW- WRITING MESSAGE OF CONGRAULATION_1",
+      "min": 9,
+      "sec": 558
+    },
+    {
+      "id": "95652b92-1a0e-430e-98f7-c17db1a00f5c",
+      "title": "Q. NO 6 -  WRITING THANK YOU LETTER",
+      "min": 7,
+      "sec": 427
+    },
+    {
+      "id": "1824dddd-edaa-4b28-a837-c1519e9c2218",
+      "title": "Q..NO 5 GUIDED WRITING (WRITING DESCRIPTION OF TABLES &CHARTS 7 DIAGRAMS",
+      "min": 14,
+      "sec": 819
+    },
+    {
+      "id": "9a85797b-2409-4025-bedf-714093ad8b39",
+      "title": "Q. NO 5 GUIDED WRITING( WRITING  PARAGRAPH",
+      "min": 11,
+      "sec": 652
+    },
+    {
+      "id": "08bb1c2a-eec7-436f-a4d2-52a259d05c87",
+      "title": "Q.NO 5 GUIDED WRITING (RULES AND REGULATIONS)",
+      "min": 14,
+      "sec": 855
+    },
+    {
+      "id": "bf76b79d-b118-4981-a6af-97a263ee84c9",
+      "title": "Q.NO 5 GUIDED WRITING NOTICE WRITING",
+      "min": 10,
+      "sec": 607
+    },
+    {
+      "id": "6c93a397-96cd-4bea-afe2-8114827bb3f4",
+      "title": "Q.NO 5 GUDIED WRITING(WRITING A SET OF INSTRUCTIONS AND RECIPE",
+      "min": 12,
+      "sec": 722
+    },
+    {
+      "id": "5ba7e1e6-4b2b-4515-a3e4-4d82dd6f1fe6",
+      "title": "Q.NO 5 GUIDED WRITING ( guided writing advertisement)",
+      "min": 11,
+      "sec": 686
+    },
+    {
+      "id": "01502c81-511c-4a45-be69-589acd68f7bb",
+      "title": "Q. NO 4 UNSEEN PASSAGE AUTO BIOGRAPHY",
+      "min": 7,
+      "sec": 424
+    },
+    {
+      "id": "11faf3a3-a5fd-4605-8df3-33f9edd2b574",
+      "title": "Q. NO 4 UNSEEN PASSAGE  BIOGRAPHY",
+      "min": 11,
+      "sec": 640
+    },
+    {
+      "id": "4afa37b4-f408-462b-adfd-012814ca6f0d",
+      "title": "Q.NO 4 UNSEENTEXT(editoral,REPORT, BLOGSPOT - P1 and P2",
+      "min": 12,
+      "sec": 699
+    },
+    {
+      "id": "a8ea60fb-8604-40aa-b36c-73e00e253902",
+      "title": "Q.NO 4 UNSEEN TEXT (travelogue) passage",
+      "min": 16,
+      "sec": 937
+    },
+    {
+      "id": "4b66a3fa-87ba-42b5-90b6-89fed55b16cd",
+      "title": "Q.NO 4 UNSEEN PASSAGE BOOK REVIEW",
+      "min": 11,
+      "sec": 669
+    },
+    {
+      "id": "e14378c5-bf3a-4d91-9d41-94abe77173b8",
+      "title": "Q. NO 4 UNSEEN PASSAGE NEWS ARTICLE",
+      "min": 11,
+      "sec": 648
+    },
+    {
+      "id": "5c931efe-734c-4107-b6eb-2d07df427d19",
+      "title": "Q. NO 4 UNSEEN PASSAGE ESSAY",
+      "min": 10,
+      "sec": 584
+    },
+    {
+      "id": "2a5ca8d3-0c29-4ce1-9d1b-85637d0aa906",
+      "title": "Q.NO 3 UNSEEN PASSAGE  RECEIPE",
+      "min": 7,
+      "sec": 412
+    },
+    {
+      "id": "6ec3af5b-829a-4f43-bb42-429772293878",
+      "title": "Q.NO 3 UNSEEN TEXT -DIARY ENTRY",
+      "min": 9,
+      "sec": 531
+    },
+    {
+      "id": "c4a27282-7830-4970-979e-ccac20f60bd4",
+      "title": "Q.NO 3 UNSEEN TEXT -INTERVIEW",
+      "min": 7,
+      "sec": 449
+    },
+    {
+      "id": "46b81103-ea45-4cd5-bb3d-c371b221aed0",
+      "title": "Q.NO 3 UNSEEN TEXT- INSTRUCTION&MANUAL",
+      "min": 7,
+      "sec": 433
+    },
+    {
+      "id": "863b6368-3053-4b89-b4c2-b2cf3b206031",
+      "title": "Q.NO 3 UNSEEN TEXT BROCHURE",
+      "min": 19,
+      "sec": 1142
+    },
+    {
+      "id": "7887493c-a524-4802-b86d-e3d337c01598",
+      "title": "Q.NO 3 UNSEEN TEXT - Letters",
+      "min": 9,
+      "sec": 537
+    },
+    {
+      "id": "6d03593a-170a-4c8f-a625-34cfb26159de",
+      "title": "Q.NO 3 UNSEEN PASSAGE ADVERTISMENT (unfpa)",
+      "min": 14,
+      "sec": 811
+    },
+    {
+      "id": "10d8ae94-e34b-4b09-9951-32bb5e45b981",
+      "title": "Q. NO 3 UNSEEN PASSAGE NOTICE",
+      "min": 7,
+      "sec": 404
+    },
+    {
+      "id": "4525ba19-394c-45fc-a8d9-be04e027e74c",
+      "title": "Q. NO 3 UNSEEN PASSAGE NEWS STORY",
+      "min": 8,
+      "sec": 470
+    },
+    {
+      "id": "8ba0b765-b2fb-4908-be82-6f4f792141f9",
+      "title": "Q no 3 Stories A Farmer and sons",
+      "min": 13,
+      "sec": 763
+    },
+    {
+      "id": "2501de2d-252e-47e5-9925-085c5341a2e4",
+      "title": "SEEN PASSAGE DRAMAS - your inspire by other",
+      "min": 15,
+      "sec": 905
+    },
+    {
+      "id": "02002f4b-13e6-414d-92ee-7b181888e316",
+      "title": "Q.NO 2 SEEN PASSAGE ESSAY - strange food around the world",
+      "min": 14,
+      "sec": 842
+    },
+    {
+      "id": "36cfa5d8-8777-44f8-81b3-115caecae3d7",
+      "title": "How Driverless cars will change the world",
+      "min": 12,
+      "sec": 703
+    },
+    {
+      "id": "15de387b-8f59-42d9-bcf4-862ab8a6495e",
+      "title": "Q. NO 2 SEEN TEXT COMMON HOBBIES",
+      "min": 9,
+      "sec": 543
+    },
+    {
+      "id": "eccbcbdd-e169-49ff-a8f6-09443160aa97",
+      "title": "Q.NO 2 SEEN PASSAGE ESSAY - strange food around the world",
+      "min": 14,
+      "sec": 842
+    },
+    {
+      "id": "04e9003d-bf9b-4c64-bf11-3b1798b1a2df",
+      "title": "Q.NO 2 Seen passage Thanks giving around the world",
+      "min": 12,
+      "sec": 736
+    },
+    {
+      "id": "2d919f5b-c223-4d54-89b4-4ef92c44f5f4",
+      "title": "The First Olmypic Games",
+      "min": 17,
+      "sec": 996
+    },
+    {
+      "id": "810310ed-3da6-4d5f-a5bb-349b12c0fede",
+      "title": "Q2 - STORIES - EM - KK - P5 - HACHI - A STORY OF A DOG",
+      "min": 13,
+      "sec": 799
+    },
+    {
+      "id": "8142a8af-777c-4fed-a6d9-df476b2d807f",
+      "title": "Q2 - POEM - V4 - Leave this Chanting and Singing",
+      "min": 13,
+      "sec": 752
+    },
+    {
+      "id": "cf34471f-e4a6-410a-8acc-36ca38860bd3",
+      "title": "Q2 - POEMS - EM - KK - P2 - THE VOICE OF THE RAIN",
+      "min": 9,
+      "sec": 524
+    },
+    {
+      "id": "870b16db-0215-4ec2-a582-ede3a821c2f9",
+      "title": "''If' poem",
+      "min": 15,
+      "sec": 877
+    },
+    {
+      "id": "f6fc0ddf-7d56-4e90-9f5c-23c2197d88ce",
+      "title": "Q1 - Essay - V4 -  Water Research",
+      "min": 5,
+      "sec": 270
+    },
+    {
+      "id": "e15173cb-0cb5-41f1-9957-d60129778764",
+      "title": "Q1 - EM - KK- DRAMA-V6-Wisdom of Little Girls",
+      "min": 4,
+      "sec": 222
+    },
+    {
+      "id": "eab1c178-d916-486f-b92b-f5189b74c3a3",
+      "title": "Q1 - STORY- V5 -  CABBAGE WHITE",
+      "min": 7,
+      "sec": 397
+    },
+    {
+      "id": "d939f5c0-07ec-4ece-ac81-bd7b3c44775f",
+      "title": "Q1 - POEM - V2 - WEATHERS",
+      "min": 12,
+      "sec": 691
+    },
+    {
+      "id": "368fda1a-1dee-4973-a1b4-4a84411690a1",
+      "title": "Q1 - Poem - V1 - Climbling",
+      "min": 8,
+      "sec": 464
+    },
+    {
+      "id": "d5a5da8e-82bb-4c0a-8de9-265648a07ba7",
+      "title": "Q1 - POEM - V3 - THE COUNTRY MOUSE AND THE CITY MOUSE",
+      "min": 15,
+      "sec": 893
+    },
+    {
+      "id": "df57d4ca-b8fe-43a0-81ef-f07ca604caf6",
+      "title": "Q1 - Poem - V4 -Composed upon Westminster Bridge",
+      "min": 8,
+      "sec": 485
+    },
+    {
+      "id": "d18d1e94-8337-4c70-8abb-571c1490bed9",
+      "title": "Gridsheet",
+      "min": 7,
+      "sec": 444
+    }
+  ],
+  "Science & Technology": [
+    {
+      "id": "ad1d3110-eda1-402c-b44d-94835dfa2692",
+      "title": "unit 19 chemical used in daily life_1 - p4",
+      "min": 39,
+      "sec": 2322
+    },
+    {
+      "id": "2dcc4641-04c2-4979-85ff-91d0770db003",
+      "title": "unit 19 chemical used in daily daily life p3",
+      "min": 25,
+      "sec": 1515
+    },
+    {
+      "id": "544d05e5-90d5-4aef-ab01-110c1b83ea64",
+      "title": "unit 19 chemical used in daily life -p2_1",
+      "min": 39,
+      "sec": 2344
+    },
+    {
+      "id": "1505cecb-d86b-4ff7-a2ae-4cef7951a54d",
+      "title": "unit 19  chemical used in daily life -p1_1",
+      "min": 20,
+      "sec": 1202
+    },
+    {
+      "id": "6284f0f5-34f9-4801-9486-bc30cb13dee0",
+      "title": "SEE-S&T-EM-KDS-U18-HYDROCARBON 1",
+      "min": 36,
+      "sec": 2164
+    },
+    {
+      "id": "da812618-94b4-43c9-918e-07b583df714e",
+      "title": "SEE-S&T-EM-KDS-U18-HYDROCARBON 2",
+      "min": 16,
+      "sec": 971
+    },
+    {
+      "id": "a7e5af80-558b-4f82-a2b6-a0be776a0274",
+      "title": "Unit 17 Metals -p2",
+      "min": 32,
+      "sec": 1939
+    },
+    {
+      "id": "a74b475d-a726-432b-83e4-5a64e9d7e465",
+      "title": "Unit 17 Metals -p3",
+      "min": 14,
+      "sec": 869
+    },
+    {
+      "id": "b5409b80-40c4-4cb8-8a60-b54e5b4883dc",
+      "title": "Unit 17 Metals -p1",
+      "min": 13,
+      "sec": 809
+    },
+    {
+      "id": "f21ef4d8-fb88-4aad-80ae-65a10fa903ed",
+      "title": "Unit -16 Some gases- p6",
+      "min": 9,
+      "sec": 530
+    },
+    {
+      "id": "8bf86ab6-6a6b-440f-adfd-3daaa3ae30ba",
+      "title": "Unit -16 Some gases- p5",
+      "min": 21,
+      "sec": 1272
+    },
+    {
+      "id": "ead799e6-651e-4972-a495-1a94299773ab",
+      "title": "Unit -16 Some gases- p4",
+      "min": 17,
+      "sec": 1004
+    },
+    {
+      "id": "410d5245-e889-4bde-9140-85de612a7eb5",
+      "title": "Unit -16 Some gases- p3",
+      "min": 27,
+      "sec": 1618
+    },
+    {
+      "id": "1ed8b80b-3f76-4d16-9149-56856d11092c",
+      "title": "Unit -16 Some gases- p2",
+      "min": 26,
+      "sec": 1539
+    },
+    {
+      "id": "dda557d7-3231-4046-8204-7413d8843c4a",
+      "title": "Unit -16 Some gases- p1",
+      "min": 23,
+      "sec": 1363
+    },
+    {
+      "id": "c1b7e5eb-f2a3-46f9-aaf0-dd73dff3ccf2",
+      "title": "SEE-S&T-KDS-U15-P5-Rate of Chemical Reaction",
+      "min": 25,
+      "sec": 1494
+    },
+    {
+      "id": "68e8d4de-ad45-4828-96f2-8eb5e788e561",
+      "title": "Unit 15 Displacenent of chemical reaction-p4",
+      "min": 27,
+      "sec": 1634
+    },
+    {
+      "id": "6bee3b00-6a2e-4bb5-b93c-93e2975f2452",
+      "title": "Unit 15 Types of chemical reaction -p3",
+      "min": 24,
+      "sec": 1455
+    },
+    {
+      "id": "1333e171-75db-4fce-8e4e-ee790b9d7b7c",
+      "title": "Unit 15 Radical -p1 and p2",
+      "min": 25,
+      "sec": 1477
+    },
+    {
+      "id": "725c7755-f9ca-40d5-a2fa-6814d6e917f1",
+      "title": "SEE-S&T-KDS-U14-P5-S, P, D, F – Block (Modern Periodic Table) (2)",
+      "min": 55,
+      "sec": 3298
+    },
+    {
+      "id": "3d768415-7fc7-44bf-9526-7ccdcfc9d1fc",
+      "title": "SEE-S&T-KDS-U14-P5-S, P, D, F – Block (Modern Periodic Table) (1)",
+      "min": 13,
+      "sec": 783
+    },
+    {
+      "id": "c9c8572c-3339-45da-bfee-d7fa4ee646b5",
+      "title": "SEE-S&T-KDS-U14-P5-Reactivity (Metal and Non-Metal)",
+      "min": 37,
+      "sec": 2221
+    },
+    {
+      "id": "52fdc4ca-6c2b-4d17-9cb2-f861052837a1",
+      "title": "SEE-S&T-KDS-U14-P4-Lanthanide and Actinide, Electronic Configuration, Period and Group",
+      "min": 48,
+      "sec": 2875
+    },
+    {
+      "id": "4de75532-6f10-41bb-804d-562c5a38f4cc",
+      "title": "SEE-S&T-KDS-U14-P3-Alkali Metal, Alkali Earth Metal, Halogen and Inert Gas",
+      "min": 14,
+      "sec": 815
+    },
+    {
+      "id": "d6d982da-161a-4106-a6d2-542ed4ea6385",
+      "title": "SEE-S&T-KDS-U14-P2-Periodic Table (Modern)",
+      "min": 30,
+      "sec": 1806
+    },
+    {
+      "id": "4f47bb26-d9f9-4761-942e-829452f12350",
+      "title": "SEE-S&T-KDS-U14-P1-Periodic Table (Mendeleev Periodic Table) and Flash Back",
+      "min": 65,
+      "sec": 3915
+    },
+    {
+      "id": "0da17ad9-cd01-4b12-8e77-145b442819e6",
+      "title": "SEE-S&T- AP-U13-P2-P1-Influence of digital techonology & Digital Citizenship, Online reputation,digital wellbing & Audio video",
+      "min": 19,
+      "sec": 1111
+    },
+    {
+      "id": "e61a2ba4-da33-4ff0-887b-fc70f25d1e6d",
+      "title": "SEE-S&T-AP-U13-P1-Signal & Signal transmission,Communication,baseband & Boardband & Digital Transmission",
+      "min": 32,
+      "sec": 1892
+    },
+    {
+      "id": "4fd0e798-05e3-4162-9251-4417bb69a6a2",
+      "title": "SEE-S&T-EN-STS-U19-P2( FUTURE OF UNIVERSE)",
+      "min": 9,
+      "sec": 555
+    },
+    {
+      "id": "69ffb31d-7bdd-49f0-9441-c4efcb0fd8ed",
+      "title": "SEE-S&T-EM-STS-U12-P1-(INTRO,IMPORTANCE OF GRAVITATIONAL FORCE,BIG BANG THEORY,HUBBLES STUDY)",
+      "min": 22,
+      "sec": 1311
+    },
+    {
+      "id": "d3206ee3-7451-4001-9034-d99ed57fc54c",
+      "title": "SEE-S&T-EM-STS-U11-P3(TRANSFORMER)",
+      "min": 21,
+      "sec": 1251
+    },
+    {
+      "id": "3a3e4da7-327a-43aa-a847-da54eed685c5",
+      "title": "SEE-S&T-EM-STS-U11-P2(MOTOR EFFECT,ELECTROMGANETIC INDUCTION,BIG SOURCE OF ENEGRY)",
+      "min": 39,
+      "sec": 2323
+    },
+    {
+      "id": "43a62240-239b-471d-924a-8658a1afefd0",
+      "title": "SEE-S&T-EN-STS-U11-P1(CURRENT,MAGNETIC EFFECT &MAGNETIC FLUX)",
+      "min": 30,
+      "sec": 1777
+    },
+    {
+      "id": "43472424-7e3b-4dce-866d-1746fbdfeb96",
+      "title": "SEE-S&T-AP-U10-P4-Human Eye",
+      "min": 28,
+      "sec": 1680
+    },
+    {
+      "id": "8e61ca5a-ab88-4a92-93c2-de3a25c32331",
+      "title": "SEE-S&T-AP-U10-P3-Lens",
+      "min": 27,
+      "sec": 1611
+    },
+    {
+      "id": "2ff36c97-1139-495d-ae0e-533f097458b4",
+      "title": "SEE-S&T-AP-U10-P1-Refraction of wave, Refractive index, Critical Angle and total internal reflaction of light",
+      "min": 22,
+      "sec": 1300
+    },
+    {
+      "id": "3bf9553b-de0c-461f-8c24-db13ba87f712",
+      "title": "SEE-S&T-AP-U10-P2-Wave",
+      "min": 12,
+      "sec": 730
+    },
+    {
+      "id": "6d80a856-f29e-43cd-9a14-e22b9366a548",
+      "title": "SEE-S&T-AP-U9-P2-Specific Heat  Capacity, Tempreture and Thermometer",
+      "min": 16,
+      "sec": 942
+    },
+    {
+      "id": "c2ade010-e30c-4b1f-894b-823fc816d99d",
+      "title": "SEE-S&T-AP-U9-P1-Heat, Anomalous expansion of water and Heat Equation",
+      "min": 15,
+      "sec": 884
+    },
+    {
+      "id": "8f8c03d2-de0d-4a77-9e9a-df984b805caf",
+      "title": "SEE-S&T-AP-U8-P2-Upthrust and Archimedes Principle",
+      "min": 19,
+      "sec": 1131
+    },
+    {
+      "id": "46c963cb-c774-4250-afc8-d0e66f276d53",
+      "title": "SEE-S&T-AP-U8-P1-Pressure, Pressure Due to Liquid and Pascal Law",
+      "min": 21,
+      "sec": 1256
+    },
+    {
+      "id": "bf89751c-233c-435b-afab-8bad8a5d575a",
+      "title": "Unit 7 part 2_p1p2p3p4",
+      "min": 40,
+      "sec": 2386
+    },
+    {
+      "id": "03198917-8826-48f0-a3e4-4d8f1ca4c07f",
+      "title": "unit 7 gravititational force part1-2-3",
+      "min": 25,
+      "sec": 1494
+    },
+    {
+      "id": "504eaffa-9faa-40c8-8179-174f59acc57d",
+      "title": "SEE-S&T-AP-U6-Nature and Environment",
+      "min": 35,
+      "sec": 2076
+    },
+    {
+      "id": "76b826c2-ef42-4daf-b0e9-38624b0097f3",
+      "title": "UNIT 5 blood pressue and heart attack p-6-7_NEW",
+      "min": 23,
+      "sec": 1353
+    },
+    {
+      "id": "36293fd5-8e8b-4ff5-8b7b-8c8fb8aa32a5",
+      "title": "UNIT 5 BLOOD GROUP  P-2-3-4-5_NEW01",
+      "min": 29,
+      "sec": 1726
+    },
+    {
+      "id": "dd620935-9683-4e27-b759-3cb4ae095664",
+      "title": "UNIT 5 PHYSIOLOGICAL STRUCTURE AND LIFE PROCESS  P-1_NEW",
+      "min": 16,
+      "sec": 967
+    },
+    {
+      "id": "d6f6b98c-7601-400d-9b7d-694e12908bca",
+      "title": "SEE-S&T-U4- V4 -P1- SELECTIVE BREEDING ,GENETIC TECHNOLOGY,AI AND IVF_NEW",
+      "min": 21,
+      "sec": 1244
+    },
+    {
+      "id": "f73f92c5-5f8d-4a5a-a107-ce1d27f91228",
+      "title": "SEE-S&T-EM-AP-G2-U4-HEREDITY-P3-MENDELS LAW AND EXPERIMENTS1 AND 2",
+      "min": 16,
+      "sec": 988
+    },
+    {
+      "id": "63a38fd7-d756-4cd8-a4f1-2bbe00ae2135",
+      "title": "UNIT 4 DNA P1 P2 AND P3_NEW",
+      "min": 19,
+      "sec": 1112
+    },
+    {
+      "id": "136ab5da-1143-467c-9db7-f508367f54c2",
+      "title": "UNIT - 4 PART 1 AND PART 2 MITOSIS CELL DIVISION_NEW",
+      "min": 17,
+      "sec": 990
+    },
+    {
+      "id": "0e916f36-8cef-46d0-928d-1fd88f23fada",
+      "title": "SEE-S&T-EM-AP-G2-U3-HONEY BEE-P1-FULL CHAPTER_NEW",
+      "min": 19,
+      "sec": 1131
+    },
+    {
+      "id": "e9088dfc-924f-4741-b7cc-a9d8b7783aaf",
+      "title": "SEE-S&T-EM-AP-G2-U2-Classification of Living Being-P3-Kingdom Animalia (Vertebrates)_NEW",
+      "min": 23,
+      "sec": 1366
+    },
+    {
+      "id": "45d550fd-e2d8-4c55-9fe4-72bd09e881c6",
+      "title": "SEE-S&T-EM-AP-G2-U2-Classification of Living Being-P2-Kingdom Animalia (Invertibrates)_1",
+      "min": 25,
+      "sec": 1507
+    },
+    {
+      "id": "4e5bb2ec-6ead-4df5-8699-40bcc9da454c",
+      "title": "SEE-S&T-EM-AP-G2-U2-Classification of Living Being-P1-Introduction and Kingdom Plantea_NEW",
+      "min": 18,
+      "sec": 1056
+    },
+    {
+      "id": "bd69a299-8781-4096-8d0b-25452bc2b0f6",
+      "title": "SEE-S&T-EM-AP-G1-U1-Scientific Study-P1-Overview and Variables_1",
+      "min": 17,
+      "sec": 996
+    },
+    {
+      "id": "dd78029f-f6f5-4016-b068-9473feb5b08b",
+      "title": "SEE-S&T-EM-AP-G1-U1-Scientific Study-P2-Unit_1_NEW",
+      "min": 10,
+      "sec": 619
+    },
+    {
+      "id": "054c43d7-1408-4e0e-8715-f768d8e6d604",
+      "title": "Specification Grid_1",
+      "min": 11,
+      "sec": 634
+    }
+  ],
+  "SEE Demo Video": [
+    {
+      "id": "9f0aebd2-cef1-40ab-8fc8-599da2ca5e72",
+      "title": "SAMYAK PROMO FINAL",
+      "min": 7,
+      "sec": 436
+    }
+  ]
+}

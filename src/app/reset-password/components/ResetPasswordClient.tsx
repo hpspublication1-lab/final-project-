@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import AppLogo from '@/components/ui/AppLogo';
-import PasswordStrength from '../../sign-up-login-screen/components/PasswordStrength';
+import PasswordStrength from '@/app/login/components/PasswordStrength';
 import { toast } from 'sonner';
 
 export default function ResetPasswordClient() {

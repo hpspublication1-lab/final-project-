@@ -3,14 +3,14 @@ import type { Metadata } from 'next';
 import SubjectsPageClient from './components/SubjectsPageClient';
 
 export const metadata: Metadata = {
-  title: 'Medical Subjects — Samyak CEE Mastery',
-  description: 'Explore all medical subjects for CEE 2026. Biology, Chemistry, Physics, and English with chapter-wise notes and MCQ practice.',
+  title: 'Subjects & Curriculum — Samyak Tutor',
+  description: 'Explore chapter-wise video lessons, high-yield revision notes, and practice question banks for SEE Class 10 and CEE Medical Entrance.',
   alternates: {
     canonical: '/subjects',
   },
   openGraph: {
-    title: 'Medical Subjects',
-    description: 'Complete subject coverage for CEE medical entrance exam',
+    title: 'Subjects & Curriculum — Samyak Tutor',
+    description: 'Comprehensive subject curriculum for SEE Class 10 and CEE Medical Entrance',
     url: '/subjects',
     type: 'website',
     images: [
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
         url: '/assets/images/app_logo.png',
         width: 1200,
         height: 630,
-        alt: 'Medical Subjects — Samyak CEE Mastery',
+        alt: 'Subjects & Curriculum — Samyak Tutor',
       },
     ],
   },

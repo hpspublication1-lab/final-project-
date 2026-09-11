@@ -1,20 +1,11 @@
 import { Metadata } from 'next';
 import FonepayCheckout from './components/FonepayCheckout';
+import { PLAN_PRICES } from '@/lib/payments/gateways';
 
 export const metadata: Metadata = {
-  title: 'Checkout · Samyak CEE',
-  description: 'Complete your Samyak CEE subscription with Fonepay.',
+  title: 'Secure Checkout — Samyak Tutor',
+  description: 'Complete your enrollment with instant Fonepay QR payment.',
 };
-
-// Known SKUs (see PLAN_PRICES). The server re-validates, so an unknown value
-// here just falls back to the crash course.
-const KNOWN_PLANS = new Set([
-  'student-monthly',
-  'student-yearly',
-  'pro-monthly',
-  'pro-yearly',
-  'crash-course',
-]);
 
 export default async function CheckoutPage({
   searchParams,
@@ -22,6 +13,6 @@ export default async function CheckoutPage({
   searchParams: Promise<{ plan?: string }>;
 }) {
   const { plan } = await searchParams;
-  const selected = plan && KNOWN_PLANS.has(plan) ? plan : 'crash-course';
+  const selected = plan && PLAN_PRICES[plan] ? plan : 'pro-monthly';
   return <FonepayCheckout plan={selected} />;
 }

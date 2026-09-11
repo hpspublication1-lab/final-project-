@@ -70,7 +70,7 @@ const DEFAULT_TARGETS: DailyTargetItem[] = [
     subject: 'Mistakes',
     count: 20,
     label: 'Review 20 Mistakes in Mistake Notebook',
-    link: '/ai-tutor?tab=mistakes',
+    link: '/mistake-analyser',
     completed: false,
   },
 ];
@@ -352,7 +352,7 @@ export default function CeeDashboardView({
               </p>
             </div>
             <Link
-              href="/ai-tutor?tab=mistakes"
+              href="/mistake-analyser"
               className="text-xs font-bold text-primary hover:underline flex items-center gap-1 shrink-0"
             >
               <span>Full Mistake Log</span>
@@ -469,7 +469,7 @@ export default function CeeDashboardView({
         </Link>
 
         <Link
-          href="/ai-tutor?tab=mistakes"
+          href="/mistake-analyser"
           className="card-luxury p-5 rounded-2xl border border-border hover:border-error/40 transition-all flex items-center gap-3.5 group"
         >
           <div className="w-11 h-11 rounded-2xl bg-error/10 text-error flex items-center justify-center group-hover:scale-110 transition-transform">

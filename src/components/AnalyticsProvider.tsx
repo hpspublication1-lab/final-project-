@@ -6,7 +6,7 @@ import { initMixpanel, trackPageView } from '@/lib/analytics/mixpanel';
 
 const PAGE_NAMES: Record<string, string> = {
   '/': 'Home',
-  '/sign-up-login-screen': 'Auth',
+  '/login': 'Auth',
   '/student-dashboard': 'Student Dashboard',
   '/subjects': 'Subjects',
   '/practice': 'Practice MCQs',

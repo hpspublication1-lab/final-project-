@@ -4,61 +4,31 @@ import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import PublicNav from '@/components/PublicNav';
 import HeroSection from './HeroSection';
-import SectorsShowcase from './SectorsShowcase';
+import FlagshipPillarsSection from './FlagshipPillarsSection';
+import FlagshipDemoSection from './FlagshipDemoSection';
 import AnnouncementBar from './AnnouncementBar';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 
-// Lightweight skeleton placeholder for below-the-fold sections
-const SectionSkeleton = () => (
-  <div className="py-16 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="h-48 rounded-3xl bg-muted/30 animate-pulse border border-border/40" />
-  </div>
-);
-
-const PlatformFeaturesSection = dynamic(() => import('./PlatformFeaturesSection'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
-const SamyakIntelligenceSection = dynamic(() => import('@/components/SamyakIntelligenceSection'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
-const StatsSection = dynamic(() => import('./StatsSection'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
-const SubjectsSection = dynamic(() => import('./SubjectsSection'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
-const FeaturedInstructors = dynamic(() => import('./FeaturedInstructors'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
-const MCQPreviewSection = dynamic(() => import('./MCQPreviewSection'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
-const BattleArenaSection = dynamic(() => import('./BattleArenaSection'), {
-  loading: SectionSkeleton,
-  ssr: true,
-});
 const PricingSection = dynamic(() => import('./PricingSection'), {
-  loading: SectionSkeleton,
+  loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
   ssr: true,
 });
+
 const TestimonialsSection = dynamic(() => import('./TestimonialsSection'), {
-  loading: SectionSkeleton,
+  loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
   ssr: true,
 });
-const LeadMagnetSection = dynamic(() => import('./LeadMagnetSection'), {
-  loading: SectionSkeleton,
+
+const AuxiliaryProgramsBanner = dynamic(() => import('./AuxiliaryProgramsBanner'), {
+  loading: () => <div className="h-32 bg-card border-t border-border/60 animate-pulse" />,
   ssr: true,
 });
+
 const FAQSection = dynamic(() => import('./FAQSection'), {
-  loading: SectionSkeleton,
+  loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
   ssr: true,
 });
+
 const HomepageFooter = dynamic(() => import('./HomepageFooter'), {
   loading: () => <div className="h-64 bg-card border-t border-border/60" />,
   ssr: true,
@@ -78,22 +48,25 @@ export default function HomepageClient() {
 
   return (
     <PageTransitionWrapper>
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        {/* Top Announcement */}
         <AnnouncementBar onDismiss={() => setAnnounceOpen(false)} />
+
+        {/* Global Navigation */}
         <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} announcementHeight={announceOpen ? 40 : 0} />
-        <HeroSection />
-        <PlatformFeaturesSection />
-        <SectorsShowcase />
-        <SamyakIntelligenceSection />
-        <BattleArenaSection />
-        <MCQPreviewSection />
-        <StatsSection />
-        <SubjectsSection />
-        <FeaturedInstructors />
-        <LeadMagnetSection />
-        <PricingSection />
-        <TestimonialsSection />
-        <FAQSection />
+
+        {/* Main Flagship Hero (SEE Class 10 & CEE Medical) */}
+        <main className="flex-1">
+          <HeroSection />
+          <FlagshipPillarsSection />
+          <FlagshipDemoSection />
+          <PricingSection />
+          <TestimonialsSection />
+          <AuxiliaryProgramsBanner />
+          <FAQSection />
+        </main>
+
+        {/* Footer */}
         <HomepageFooter />
       </div>
     </PageTransitionWrapper>

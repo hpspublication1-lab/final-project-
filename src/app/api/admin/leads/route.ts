@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isSuperAdmin } from '@/lib/config/superAdmin';
 
 export async function GET(req: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
+    if (!isSuperAdmin(user.email)) return NextResponse.json({ error: 'Super admins only' }, { status: 403 });
+
     const admin = createAdminClient();
     if (!admin) {
-      // Return sample demo CRM data if running offline
-      return NextResponse.json(getDemoCrmData());
+      return NextResponse.json({ error: 'Server not configured' }, { status: 503 });
     }
 
     // 1. Fetch leads

@@ -501,7 +501,7 @@ export default function DashboardPageClient() {
                 </p>
               </div>
               <Link
-                href="/ai-tutor?tab=mistakes"
+                href="/mistake-analyser"
                 className="mt-4 inline-flex items-center gap-1.5 text-xs font-black text-purple-600 dark:text-purple-400 hover:underline transition-colors"
               >
                 <span>Review with AI</span>

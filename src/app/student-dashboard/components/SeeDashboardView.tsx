@@ -48,14 +48,14 @@ export default function SeeDashboardView({ displayName }: SeeDashboardViewProps)
       id: 'task-2',
       label: 'Solve 20 Science Mechanics MCQs (Target: 85%+ Accuracy)',
       type: 'mcq',
-      link: '/see#learning-suite',
+      link: '/practice?subject=science',
       completed: false,
     },
     {
       id: 'task-3',
       label: 'Solve 5 Written Questions (Group B & C step marking)',
       type: 'written',
-      link: '/see#learning-suite',
+      link: '/see/question-bank',
       completed: false,
     },
     {
@@ -253,7 +253,7 @@ export default function SeeDashboardView({ displayName }: SeeDashboardViewProps)
             <BookOpen size={18} className="text-primary" />
             <span>Class 10 Subject Progress</span>
           </h3>
-          <Link href="/see#learning-suite" className="text-xs font-bold text-primary hover:underline">
+          <Link href="/subjects?program=see_class_10" className="text-xs font-bold text-primary hover:underline">
             View All Chapters →
           </Link>
         </div>
@@ -307,7 +307,7 @@ export default function SeeDashboardView({ displayName }: SeeDashboardViewProps)
               </p>
             </div>
             <Link
-              href="/see#learning-suite"
+              href="/practice?subject=math"
               className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs text-center flex items-center justify-center gap-1.5 transition-colors"
             >
               <Zap size={13} />
@@ -326,7 +326,7 @@ export default function SeeDashboardView({ displayName }: SeeDashboardViewProps)
               </p>
             </div>
             <Link
-              href="/see#learning-suite"
+              href="/practice?subject=science"
               className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs text-center flex items-center justify-center gap-1.5 transition-colors"
             >
               <Zap size={13} />

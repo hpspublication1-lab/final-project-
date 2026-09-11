@@ -6,25 +6,45 @@ import { Lock, Sparkles, Rocket, ShieldCheck, Loader2, ArrowRight, CheckCircle2,
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import AppLogo from '@/components/ui/AppLogo';
 
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
+
 type Status = 'loading' | 'allowed' | 'guest' | 'locked';
 
 const PAID_PLANS = ['student', 'pro', 'institution'];
 
-const PERKS = [
-  'Real-time Battle Arena',
-  'Full-length mock tests + analysis',
+const CEE_PERKS = [
+  'Real-time 1v1 Battle Arena',
+  'Full-length 200-mark mock tests + analysis',
   'SamyakGURU AI Tutor & Mistake Analyser',
-  'AI MCQ Generator & study plans',
+  '15,000+ Topic-wise High Yield MCQs',
   'All 1,200+ premium notes & flashcards',
+];
+
+const SEE_PERKS = [
+  'Full NEB Class 10 Model Question Bank',
+  'AI Handwritten Subjective Answer Evaluator',
+  'Full 10-Year Solved Past Board Exam Papers',
+  'All Chapter Revision Notes & Formula Guides',
+  'Daily Live Classes & Board Prediction Drills',
 ];
 
 /**
  * Gates a premium feature. Free/guest users see a paywall; users on an active
- * paid plan (or prebookers, who are granted Pro) see the feature. Entitlement
- * is read from /api/profile/me (service-role, works despite the RLS recursion).
+ * paid plan (or prebookers, who are granted Pro) see the feature.
  */
-export default function PremiumGate({ feature = 'This feature', children }: { feature?: string; children: React.ReactNode }) {
+export default function PremiumGate({
+  feature = 'This feature',
+  program: programProp,
+  children,
+}: {
+  feature?: string;
+  program?: string;
+  children: React.ReactNode;
+}) {
   const [status, setStatus] = useState<Status>('loading');
+  const { program: contextProgram } = useProgram();
+  const canonicalId = normalizeCourseId(programProp || contextProgram);
+  const isSee = canonicalId === 'see_class_10';
 
   useEffect(() => {
     let active = true;
@@ -59,6 +79,10 @@ export default function PremiumGate({ feature = 'This feature', children }: { fe
 
   const currentPath = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/';
   const isGuest = status === 'guest';
+  const perks = isSee ? SEE_PERKS : CEE_PERKS;
+  const brandName = isSee ? 'Samyak SEE' : 'Samyak CEE';
+  const upgradeHref = isSee ? '/checkout?plan=see-class-10-board-topper-batch' : '/checkout?plan=pro-monthly';
+  const freePracticeHref = isSee ? '/see/question-bank' : '/practice';
 
   return (
     <PageTransitionWrapper>
@@ -66,7 +90,7 @@ export default function PremiumGate({ feature = 'This feature', children }: { fe
         <div className="w-full max-w-md">
           <div className="flex items-center justify-center gap-2 mb-8">
             <AppLogo size={28} />
-            <span className="font-extrabold text-base text-primary tracking-tight">Samyak CEE</span>
+            <span className="font-extrabold text-base text-primary tracking-tight">{brandName}</span>
           </div>
 
           <div className="card-base p-7 text-center">
@@ -79,13 +103,13 @@ export default function PremiumGate({ feature = 'This feature', children }: { fe
             </h1>
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
               {isGuest
-                ? 'Sign in and unlock it with any paid plan or a crash-course prebooking. Free accounts include 200 practice MCQs per month.'
-                : 'Your free plan includes 200 practice MCQs per month. Unlock this and every premium feature with a paid plan or a crash-course prebooking.'}
+                ? `Sign in and unlock full ${brandName} access with any active plan.`
+                : `Unlock ${feature} and every premium tool with the ${brandName} Pro plan.`}
             </p>
 
             {/* What you unlock */}
             <ul className="mt-6 space-y-2 text-left">
-              {PERKS.map((p) => (
+              {perks.map((p) => (
                 <li key={p} className="flex items-center gap-2.5 text-sm text-foreground">
                   <CheckCircle2 size={16} className="text-success shrink-0" />
                   {p}
@@ -104,17 +128,19 @@ export default function PremiumGate({ feature = 'This feature', children }: { fe
                 </Link>
               ) : (
                 <>
-                  <Link href="/checkout?plan=pro-monthly" className="btn-primary w-full justify-center py-3 text-base font-bold shadow-md">
+                  <Link href={upgradeHref} className="btn-primary w-full justify-center py-3 text-base font-bold shadow-md">
                     <Sparkles size={18} /> Upgrade to Pro
                     <ArrowRight size={16} />
                   </Link>
-                  <Link href="/prebook" className="btn-secondary w-full justify-center py-2.5 text-sm font-bold">
-                    <Rocket size={16} /> Prebook the Crash Course (Rs 300)
-                  </Link>
+                  {!isSee && (
+                    <Link href="/prebook" className="btn-secondary w-full justify-center py-2.5 text-sm font-bold">
+                      <Rocket size={16} /> Prebook the Crash Course (Rs 300)
+                    </Link>
+                  )}
                 </>
               )}
-              <Link href="/practice" className="text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
-                Continue with free practice MCQs →
+              <Link href={freePracticeHref} className="text-xs text-muted-foreground hover:text-primary transition-colors mt-1">
+                Continue with free practice →
               </Link>
             </div>
 

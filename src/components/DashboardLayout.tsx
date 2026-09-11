@@ -40,12 +40,12 @@ interface NavItem {
 function getPrimaryNav(canonicalId: CanonicalCourseId): NavItem[] {
   if (canonicalId === 'see_class_10') {
     return [
-      { label: 'Home',      href: '/student-dashboard',        icon: Home,        key: 'pnav-home' },
-      { label: 'Learn',     href: '/see',                      icon: BookOpen,    key: 'pnav-learn' },
-      { label: 'Practice',  href: '/see/question-bank',        icon: Zap,         key: 'pnav-practice' },
-      { label: 'Tests',     href: '/mock-tests?program=see',   icon: FileText,    key: 'pnav-tests' },
-      { label: 'Resources', href: '/see#learning-suite',       icon: Layers,      key: 'pnav-resources' },
-      { label: 'Progress',  href: '/see?tab=tracker',          icon: TrendingUp,  key: 'pnav-progress' },
+      { label: 'Home',         href: '/student-dashboard',               icon: Home,          key: 'pnav-home' },
+      { label: 'Subjects',     href: '/subjects?program=see_class_10',   icon: BookOpen,      key: 'pnav-subjects' },
+      { label: 'Question Bank',href: '/see/question-bank',               icon: FileText,      key: 'pnav-qb' },
+      { label: 'Practice',     href: '/practice?program=see_class_10',   icon: Zap,           key: 'pnav-practice' },
+      { label: 'Mock Tests',   href: '/mock-tests?program=see',          icon: ClipboardList, key: 'pnav-tests' },
+      { label: 'Live Classes', href: '/live-classes',                    icon: Radio,         key: 'pnav-live', badge: 'LIVE' },
     ];
   }
   if (canonicalId === 'ielts') {
@@ -67,12 +67,12 @@ function getPrimaryNav(canonicalId: CanonicalCourseId): NavItem[] {
   }
   // Default: CEE Medical
   return [
-    { label: 'Home',     href: '/student-dashboard',        icon: Home,           key: 'pnav-home' },
-    { label: 'Learn',    href: '/subjects',                 icon: BookOpen,       key: 'pnav-learn' },
-    { label: 'Practice', href: '/practice',                 icon: Zap,            key: 'pnav-practice' },
-    { label: 'Mocks',    href: '/mock-tests',               icon: FileText,       key: 'pnav-mocks' },
-    { label: 'Mistakes', href: '/ai-tutor?tab=mistakes',    icon: AlertTriangle,  key: 'pnav-mistakes' },
-    { label: 'Rank',     href: '/leaderboard',              icon: Trophy,         key: 'pnav-rank' },
+    { label: 'Home',         href: '/student-dashboard',        icon: Home,           key: 'pnav-home' },
+    { label: 'Subjects',     href: '/subjects',                 icon: BookOpen,       key: 'pnav-learn' },
+    { label: 'Practice MCQs',href: '/practice',                 icon: Zap,            key: 'pnav-practice' },
+    { label: 'Mock Tests',   href: '/mock-tests',               icon: FileText,       key: 'pnav-mocks' },
+    { label: 'Battle Arena', href: '/battle-arena',             icon: Swords,         key: 'pnav-arena', badge: '1v1' },
+    { label: 'Live Classes', href: '/live-classes',             icon: Radio,          key: 'pnav-live',  badge: 'LIVE' },
   ];
 }
 
@@ -80,20 +80,20 @@ function getPrimaryNav(canonicalId: CanonicalCourseId): NavItem[] {
 function getMobileNav(canonicalId: CanonicalCourseId): NavItem[] {
   if (canonicalId === 'see_class_10') {
     return [
-      { label: 'Home',     href: '/student-dashboard',        icon: Home,       key: 'mnav-home' },
-      { label: 'Learn',    href: '/see',                      icon: BookOpen,   key: 'mnav-learn' },
-      { label: 'Practice', href: '/see/question-bank',        icon: Zap,        key: 'mnav-practice' },
-      { label: 'Tests',    href: '/mock-tests?program=see',   icon: FileText,   key: 'mnav-tests' },
-      { label: 'Progress', href: '/see?tab=tracker',          icon: TrendingUp, key: 'mnav-progress' },
+      { label: 'Home',     href: '/student-dashboard',              icon: Home,          key: 'mnav-home' },
+      { label: 'Subjects', href: '/subjects?program=see_class_10',  icon: BookOpen,      key: 'mnav-subjects' },
+      { label: 'Questions',href: '/see/question-bank',              icon: FileText,      key: 'mnav-qb' },
+      { label: 'Practice', href: '/practice?program=see_class_10',  icon: Zap,           key: 'mnav-practice' },
+      { label: 'Live',     href: '/live-classes',                   icon: Radio,         key: 'mnav-live' },
     ];
   }
   // Default: CEE Medical
   return [
     { label: 'Home',     href: '/student-dashboard',        icon: Home,           key: 'mnav-home' },
+    { label: 'Subjects', href: '/subjects',                 icon: BookOpen,       key: 'mnav-learn' },
     { label: 'Practice', href: '/practice',                 icon: Zap,            key: 'mnav-practice' },
     { label: 'Mocks',    href: '/mock-tests',               icon: FileText,       key: 'mnav-mocks' },
-    { label: 'Mistakes', href: '/ai-tutor?tab=mistakes',    icon: AlertTriangle,  key: 'mnav-mistakes' },
-    { label: 'Rank',     href: '/leaderboard',              icon: Trophy,         key: 'mnav-rank' },
+    { label: 'Arena',    href: '/battle-arena',             icon: Swords,         key: 'mnav-arena' },
   ];
 }
 
@@ -111,7 +111,7 @@ function getSecondaryNav(canonicalId: CanonicalCourseId): { section: string; ite
         ]},
         { section: 'Tools', items: [
           { label: 'AI Tutor',       href: '/ai-tutor',           icon: Bot,                   key: 'snav-ai',      badge: 'AI' },
-          { label: 'Mistakes Log',   href: '/ai-tutor?tab=mistakes', icon: AlertTriangle,      key: 'snav-mistakes' },
+          { label: 'Mistakes Log',   href: '/mistake-analyser', icon: AlertTriangle,      key: 'snav-mistakes' },
           { label: 'Bookmarks',      href: '/bookmarks',          icon: Bookmark,              key: 'snav-bm' },
           { label: 'Doubts',         href: '/doubts',             icon: MessageCircleQuestion, key: 'snav-doubts' },
         ]},
