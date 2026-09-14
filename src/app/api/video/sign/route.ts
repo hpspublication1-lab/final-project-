@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import {
+  evaluateAccessContext,
+  RawUserProfile,
+  RawEnrollment,
+} from '@/lib/auth/accessControl';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,22 +20,74 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
     }
 
+    // 1. Fetch video record from video_lectures
     const { data: video } = await admin
       .from('video_lectures')
-      .select('id, video_url, is_premium, is_active')
+      .select('id, title, video_url, is_premium, is_active, batch_id, subject_id')
       .eq('id', videoId)
       .maybeSingle();
 
     if (!video || !video.is_active || !video.video_url) {
-      return NextResponse.json({ error: 'Video not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Video not found or inactive' }, { status: 404 });
     }
 
+    // 2. Entitlement verification for premium videos
+    if (video.is_premium) {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Authentication required for premium video', requiresAuth: true },
+          { status: 401 }
+        );
+      }
+
+      // Fetch user profile and enrollments
+      const [profileRes, enrollmentsRes] = await Promise.all([
+        admin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        admin.from('enrollments').select('*').eq('student_id', user.id),
+      ]);
+
+      const profile: RawUserProfile = profileRes.data || { id: user.id };
+      const rawEnrollments: RawEnrollment[] = (enrollmentsRes.data || []).map((e: any) => ({
+        id: e.id,
+        course_id: e.course_id,
+        batch_id: e.batch_id,
+        status: e.status || e.enrollment_status,
+        created_at: e.created_at,
+      }));
+
+      const accessContext = evaluateAccessContext(user, profile, rawEnrollments);
+
+      // Check if user is super_admin, admin, teacher, or has active course access
+      const isPrivileged =
+        accessContext.role === 'super_administrator' ||
+        accessContext.role === 'administrator' ||
+        accessContext.role === 'teacher';
+
+      const hasPaidAccess =
+        isPrivileged ||
+        Object.values(accessContext.courses).some((c) => c.canAccessFullCourse);
+
+      if (!hasPaidAccess) {
+        return NextResponse.json(
+          {
+            error: 'Active course enrollment required to watch this premium video',
+            requiresEnrollment: true,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // 3. Generate signed Bunny CDN stream token
     const tokenKey = process.env.BUNNY_TOKEN_KEY;
     const url = new URL(video.video_url);
 
     // Not a Bunny URL, or signing not configured → return raw URL
     if (!tokenKey || !url.hostname.endsWith('.b-cdn.net')) {
-      return NextResponse.json({ url: video.video_url, signed: false });
+      return NextResponse.json({ url: video.video_url, signed: false, isPremium: video.is_premium });
     }
 
     const dirPath = url.pathname.substring(0, url.pathname.lastIndexOf('/') + 1);
@@ -45,7 +103,13 @@ export async function GET(request: NextRequest) {
       .replace(/=+$/, '');
 
     const signedUrl = `${url.origin}${url.pathname}?token=${token}&expires=${expires}&token_path=${encodeURIComponent(dirPath)}`;
-    return NextResponse.json({ url: signedUrl, signed: true, expires });
+    return NextResponse.json({
+      url: signedUrl,
+      signed: true,
+      expires,
+      isPremium: video.is_premium,
+      title: video.title,
+    });
   } catch (err) {
     console.error('video/sign error:', err);
     return NextResponse.json({ error: 'Could not sign video URL' }, { status: 500 });

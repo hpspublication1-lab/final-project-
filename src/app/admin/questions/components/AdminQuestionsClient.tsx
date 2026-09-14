@@ -1,9 +1,36 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { ArrowLeft, Plus, Pencil, Trash2, Save, X, Zap, ToggleLeft, ToggleRight, Loader2, AlertCircle, CheckCircle2, Lock, Unlock, Upload, Download, Search, Sparkles, Lightbulb, RefreshCw } from 'lucide-react';
+import {
+  ArrowLeft,
+  Plus,
+  Pencil,
+  Trash2,
+  Save,
+  X,
+  Zap,
+  ToggleLeft,
+  ToggleRight,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Lock,
+  Unlock,
+  Upload,
+  Download,
+  Search,
+  Sparkles,
+  Lightbulb,
+  Archive,
+  ArchiveRestore,
+  Copy,
+  Layers,
+  FileCode,
+  FileSpreadsheet,
+  AlertTriangle
+} from 'lucide-react';
 import { getChatCompletion } from '@/lib/ai/chatCompletion';
 
 interface Subject { id: string; name: string; display_name: string; }
@@ -14,15 +41,15 @@ interface Question {
   subject_id: string | null;
   chapter_id: string | null;
   question_text: string;
+  options: string[] | any;
   option_a: string;
   option_b: string;
   option_c: string;
   option_d: string;
   correct_option: string;
   explanation: string | null;
-  hint: string | null;
   difficulty: 'easy' | 'medium' | 'hard';
-  is_premium: boolean;
+  is_published: boolean;
   is_active: boolean;
   created_at: string;
   subjects?: { display_name: string; name: string };
@@ -40,7 +67,7 @@ interface FormState {
   correct_option: string;
   explanation: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  is_premium: boolean;
+  status: 'draft' | 'reviewed' | 'published';
   is_active: boolean;
 }
 
@@ -67,24 +94,83 @@ interface AIEnhanceResult {
 }
 
 const defaultForm: FormState = {
-  subject_id: '', chapter_id: '', question_text: '',
-  option_a: '', option_b: '', option_c: '', option_d: '',
-  correct_option: 'a', explanation: '', difficulty: 'medium',
-  is_premium: false, is_active: true,
+  subject_id: '',
+  chapter_id: '',
+  question_text: '',
+  option_a: '',
+  option_b: '',
+  option_c: '',
+  option_d: '',
+  correct_option: 'a',
+  explanation: '',
+  difficulty: 'medium',
+  status: 'published',
+  is_active: true,
 };
 
 const defaultAIForm: AIGenerateForm = {
-  subject_id: '', topic: '', difficulty: 'medium', count: 5,
+  subject_id: '',
+  topic: '',
+  difficulty: 'medium',
+  count: 5,
 };
 
-const DIFF_COLORS = { easy: 'bg-success-light text-success', medium: 'bg-chem-light text-chem', hard: 'bg-error-light text-error' };
+const DIFF_COLORS = {
+  easy: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  hard: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+};
+
 const SUBJECT_COLORS: Record<string, string> = {
-  biology: 'bg-bio-light text-bio', chemistry: 'bg-chem-light text-chem',
-  physics: 'bg-physics-light text-physics', mental_agility: 'bg-ma-light text-ma',
+  biology: 'bg-emerald-500/10 text-emerald-600',
+  chemistry: 'bg-amber-500/10 text-amber-600',
+  physics: 'bg-sky-500/10 text-sky-600',
+  mental_agility: 'bg-purple-500/10 text-purple-600',
 };
 
 const CSV_TEMPLATE = `question_text,option_a,option_b,option_c,option_d,correct_option,explanation,difficulty,subject_name,chapter_title
 "What is the powerhouse of the cell?","Nucleus","Mitochondria","Ribosome","Golgi body","b","Mitochondria produces ATP energy","easy","biology","Cell Biology"`;
+
+const JSON_TEMPLATE = JSON.stringify([
+  {
+    "question_text": "Which organelle is responsible for cellular respiration?",
+    "options": ["Nucleus", "Mitochondria", "Ribosome", "Endoplasmic reticulum"],
+    "correct_answer": "B",
+    "explanation": "Mitochondria produce ATP through oxidative phosphorylation.",
+    "difficulty": "easy",
+    "subject_name": "Biology",
+    "chapter_title": "Cell Biology"
+  }
+], null, 2);
+
+// Calculate text similarity (Dice Coefficient)
+function calculateSimilarity(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const s2 = str2.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!s1 || !s2) return 0;
+  if (s1 === s2) return 1.0;
+  if (s1.length < 2 || s2.length < 2) return 0;
+
+  const getBigrams = (str: string) => {
+    const bigrams = new Map<string, number>();
+    for (let i = 0; i < str.length - 1; i++) {
+      const b = str.substring(i, i + 2);
+      bigrams.set(b, (bigrams.get(b) || 0) + 1);
+    }
+    return bigrams;
+  };
+
+  const b1 = getBigrams(s1);
+  const b2 = getBigrams(s2);
+  let intersection = 0;
+  for (const [k, v] of b1.entries()) {
+    if (b2.has(k)) {
+      intersection += Math.min(v, b2.get(k)!);
+    }
+  }
+  const total = (s1.length - 1) + (s2.length - 1);
+  return (2 * intersection) / total;
+}
 
 export default function AdminQuestionsClient() {
   const supabase = createClient();
@@ -98,15 +184,22 @@ export default function AdminQuestionsClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(defaultForm);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [archiveConfirm, setArchiveConfirm] = useState<string | null>(null);
+
+  // Filters
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterDiff, setFilterDiff] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'published' | 'draft' | 'archived'>('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Bulk Import State
   const [showImport, setShowImport] = useState(false);
+  const [importTab, setImportTab] = useState<'csv' | 'json'>('csv');
+  const [jsonImportText, setJsonImportText] = useState('');
   const [importing, setImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; duplicates: number; errors: string[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // AI Generate state
@@ -121,6 +214,21 @@ export default function AdminQuestionsClient() {
   const [enhancing, setEnhancing] = useState(false);
   const [enhanceResult, setEnhanceResult] = useState<AIEnhanceResult | null>(null);
   const [enhanceSaving, setEnhanceSaving] = useState(false);
+
+  // Duplicate warning for active form
+  const duplicateWarning = useMemo(() => {
+    if (!form.question_text || form.question_text.length < 10) return null;
+    const match = questions.find(
+      (q) => q.id !== editingId && calculateSimilarity(q.question_text, form.question_text) > 0.85
+    );
+    if (match) {
+      return {
+        matchedText: match.question_text,
+        subject: match.subjects?.display_name || 'Question Bank',
+      };
+    }
+    return null;
+  }, [form.question_text, questions, editingId]);
 
   const PAGE_SIZE = 20;
 
@@ -141,26 +249,40 @@ export default function AdminQuestionsClient() {
       .select('*, subjects(display_name, name), chapters(title)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
     if (filterSubject !== 'all') query = query.eq('subject_id', filterSubject);
     if (filterDiff !== 'all') query = query.eq('difficulty', filterDiff);
+
+    if (filterStatus === 'published') {
+      query = query.eq('is_published', true).eq('is_active', true);
+    } else if (filterStatus === 'draft') {
+      query = query.eq('is_published', false).eq('is_active', true);
+    } else if (filterStatus === 'archived') {
+      query = query.eq('is_active', false);
+    }
+
     if (search.trim()) query = query.ilike('question_text', `%${search.trim()}%`);
+
     const { data, error: err, count } = await query;
     if (err) setError(err.message);
-    // This DB stores options as a text[] array + correct_answer LETTER + is_published.
-    // Map to the option_a..d / correct_option / is_active shape the UI uses.
-    const mapped = (data || []).map((r: any) => ({
-      ...r,
-      option_a: Array.isArray(r.options) ? (r.options[0] ?? '') : '',
-      option_b: Array.isArray(r.options) ? (r.options[1] ?? '') : '',
-      option_c: Array.isArray(r.options) ? (r.options[2] ?? '') : '',
-      option_d: Array.isArray(r.options) ? (r.options[3] ?? '') : '',
-      correct_option: String(r.correct_answer ?? 'a').toLowerCase().replace(/[^a-d]/g, '').slice(0, 1) || 'a',
-      is_active: r.is_published ?? true,
-      is_premium: false,
-    }));
+
+    const mapped = (data || []).map((r: any) => {
+      const opts = Array.isArray(r.options) ? r.options : [];
+      return {
+        ...r,
+        option_a: r.option_a ?? (typeof opts[0] === 'object' ? opts[0]?.text : opts[0]) ?? '',
+        option_b: r.option_b ?? (typeof opts[1] === 'object' ? opts[1]?.text : opts[1]) ?? '',
+        option_c: r.option_c ?? (typeof opts[2] === 'object' ? opts[2]?.text : opts[2]) ?? '',
+        option_d: r.option_d ?? (typeof opts[3] === 'object' ? opts[3]?.text : opts[3]) ?? '',
+        correct_option: String(r.correct_answer ?? r.correct_option ?? 'a').toLowerCase().replace(/[^a-d]/g, '').slice(0, 1) || 'a',
+        is_active: r.is_active ?? true,
+        is_published: r.is_published ?? true,
+      };
+    });
+
     setQuestions(mapped);
     setTotalCount(count || 0);
-  }, [filterSubject, filterDiff, search, page]);
+  }, [filterSubject, filterDiff, filterStatus, search, page]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchQuestions(); }, [fetchQuestions]);
@@ -173,11 +295,18 @@ export default function AdminQuestionsClient() {
   const openEdit = (q: Question) => {
     setEditingId(q.id);
     setForm({
-      subject_id: q.subject_id || '', chapter_id: q.chapter_id || '',
-      question_text: q.question_text, option_a: q.option_a, option_b: q.option_b,
-      option_c: q.option_c, option_d: q.option_d, correct_option: q.correct_option,
-      explanation: q.explanation || '', difficulty: q.difficulty,
-      is_premium: q.is_premium, is_active: q.is_active,
+      subject_id: q.subject_id || '',
+      chapter_id: q.chapter_id || '',
+      question_text: q.question_text,
+      option_a: q.option_a,
+      option_b: q.option_b,
+      option_c: q.option_c,
+      option_d: q.option_d,
+      correct_option: q.correct_option,
+      explanation: q.explanation || '',
+      difficulty: q.difficulty,
+      status: q.is_published ? 'published' : 'draft',
+      is_active: q.is_active,
     });
     setShowForm(true);
   };
@@ -201,7 +330,7 @@ export default function AdminQuestionsClient() {
     const selectedSubject = subjects.find(s => s.id === aiForm.subject_id);
     const subjectName = selectedSubject?.display_name || 'General';
 
-    const prompt = `Generate exactly ${aiForm.count} multiple-choice questions (MCQs) for a medical entrance exam.
+    const prompt = `Generate exactly ${aiForm.count} multiple-choice questions (MCQs) for a medical entrance exam (CEE Nepal).
 
 Subject: ${subjectName}
 Topic: ${aiForm.topic}
@@ -210,11 +339,8 @@ Difficulty: ${aiForm.difficulty}
 Requirements:
 - Each question must have exactly 4 options (A, B, C, D)
 - Only one correct answer per question
-- Include a brief explanation for the correct answer
-- Questions should be appropriate for MDCAT/medical entrance level
-- Vary the correct answer position across questions
-
-Return ONLY a valid JSON array with this exact structure (no markdown, no extra text):
+- Include a brief conceptual explanation
+- Format strictly as JSON array without markdown:
 [
   {
     "question_text": "...",
@@ -225,24 +351,21 @@ Return ONLY a valid JSON array with this exact structure (no markdown, no extra 
     "correct_option": "a",
     "explanation": "..."
   }
-]
-
-The correct_option field must be lowercase: "a", "b", "c", or "d".`;
+]`;
 
     try {
       const response = await getChatCompletion(
         'OPEN_AI',
         'gpt-4o',
         [
-          { role: 'system', content: 'You are an expert medical educator creating MCQ questions for medical entrance exams. Always respond with valid JSON only.' },
+          { role: 'system', content: 'You are an expert educator creating high-yield MCQ questions. Respond with valid JSON only.' },
           { role: 'user', content: prompt },
         ],
         { max_completion_tokens: 4000 }
       );
 
       const content = response.choices[0]?.message?.content || '';
-      // Strip markdown code blocks if present
-      const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const jsonStr = content.replace(/\`\`\`json\n?/g, '').replace(/\`\`\`\n?/g, '').trim();
       const parsed: GeneratedMCQ[] = JSON.parse(jsonStr);
 
       if (!Array.isArray(parsed) || parsed.length === 0) {
@@ -263,8 +386,6 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
     setAISaving(true);
     setError(null);
 
-    // Map the AI's option_a..d + correct_option to this DB's real schema:
-    // options[] array + a correct_answer LETTER (A–D) + is_published.
     const payload = aiPreview.map(q => ({
       subject_id: aiForm.subject_id || null,
       chapter_id: null,
@@ -274,6 +395,7 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
       explanation: q.explanation || null,
       difficulty: aiForm.difficulty,
       is_published: true,
+      is_active: true,
     }));
 
     const { error: err } = await supabase.from('questions').insert(payload);
@@ -287,26 +409,25 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
     setAISaving(false);
   };
 
-  const removeAIPreviewQuestion = (index: number) => {
-    setAIPreview(prev => prev.filter((_, i) => i !== index));
-  };
-
   const handleSave = async () => {
     if (!form.question_text.trim()) { setError('Question text is required'); return; }
     if (!form.option_a.trim() || !form.option_b.trim() || !form.option_c.trim() || !form.option_d.trim()) {
       setError('All 4 options are required'); return;
     }
     setSaving(true); setError(null);
-    // Map the UI form to this DB's real schema: options[] + correct_answer LETTER + is_published.
+
     const payload = {
-      subject_id: form.subject_id || null, chapter_id: form.chapter_id || null,
+      subject_id: form.subject_id || null,
+      chapter_id: form.chapter_id || null,
       question_text: form.question_text.trim(),
       options: [form.option_a.trim(), form.option_b.trim(), form.option_c.trim(), form.option_d.trim()],
       correct_answer: String(form.correct_option).toUpperCase().replace(/[^A-D]/g, '').slice(0, 1) || 'A',
       explanation: form.explanation.trim() || null,
       difficulty: form.difficulty,
-      is_published: form.is_active,
+      is_published: form.status === 'published',
+      is_active: form.is_active,
     };
+
     if (editingId) {
       const { error: err } = await supabase.from('questions').update(payload).eq('id', editingId);
       if (err) setError(err.message);
@@ -319,7 +440,8 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
     setSaving(false);
   };
 
-  const handleBulkImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Bulk CSV Import
+  const handleBulkImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true);
@@ -328,6 +450,7 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
     const lines = text.split('\n').filter(l => l.trim());
     const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
     let successCount = 0;
+    let duplicateCount = 0;
     const errors: string[] = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -338,6 +461,13 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
 
         if (!row.question_text || !row.option_a || !row.option_b || !row.option_c || !row.option_d || !row.correct_option) {
           errors.push(`Row ${i}: Missing required fields`); continue;
+        }
+
+        // Duplicate Check
+        const isDuplicate = questions.some(q => calculateSimilarity(q.question_text, row.question_text) > 0.85);
+        if (isDuplicate) {
+          duplicateCount++;
+          continue;
         }
 
         let subjectId: string | null = null;
@@ -352,13 +482,15 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
         }
 
         const { error: err } = await supabase.from('questions').insert({
-          subject_id: subjectId, chapter_id: chapterId,
+          subject_id: subjectId,
+          chapter_id: chapterId,
           question_text: row.question_text,
           options: [row.option_a, row.option_b, row.option_c, row.option_d],
           correct_answer: String(row.correct_option).toUpperCase().replace(/[^A-D]/g, '').slice(0, 1) || 'A',
           explanation: row.explanation || null,
           difficulty: (['easy', 'medium', 'hard'].includes(row.difficulty) ? row.difficulty : 'medium') as 'easy' | 'medium' | 'hard',
           is_published: true,
+          is_active: true,
         });
         if (err) errors.push(`Row ${i}: ${err.message}`);
         else successCount++;
@@ -366,103 +498,106 @@ The correct_option field must be lowercase: "a", "b", "c", or "d".`;
         errors.push(`Row ${i}: Parse error`);
       }
     }
-    setImportResult({ success: successCount, failed: errors.length, errors: errors.slice(0, 5) });
+    setImportResult({ success: successCount, failed: errors.length, duplicates: duplicateCount, errors: errors.slice(0, 5) });
     setImporting(false);
     if (successCount > 0) { showSuccess(`Imported ${successCount} questions`); fetchQuestions(); }
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const downloadTemplate = () => {
-    const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'questions_template.csv'; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const closeEnhanceModal = () => {
-    setEnhanceQuestion(null);
-    setEnhanceResult(null);
-  };
-
-  const openEnhanceModal = (q: Question) => {
-    setEnhanceQuestion(q);
-    setEnhanceResult(null);
-  };
-
-  const handleAIEnhance = async (q: Question) => {
-    setEnhancing(true);
-    setEnhanceResult(null);
-    setError(null);
-
-    const correctOptionText = (q as any)[`option_${q.correct_option}`];
-    const prompt = `You are an expert medical educator. Given the following MCQ question, generate:
-1. An "alternative_explanation" — a clear, student-friendly explanation of WHY the correct answer is right, using a different approach or analogy than a typical textbook. Keep it concise (2-4 sentences).
-2. A "hint" — a short hint (1-2 sentences) that guides a student toward the correct answer WITHOUT revealing it directly.
-
-Question: ${q.question_text}
-Options:
-A. ${q.option_a}
-B. ${q.option_b}
-C. ${q.option_c}
-D. ${q.option_d}
-Correct Answer: ${q.correct_option.toUpperCase()}. ${correctOptionText}
-${q.explanation ? `Existing Explanation: ${q.explanation}` : ''}
-
-Return ONLY valid JSON with this exact structure (no markdown, no extra text):
-{
-  "alternative_explanation": "...",
-  "hint": "..."
-}`;
+  // Bulk JSON Import
+  const handleBulkImportJSON = async () => {
+    if (!jsonImportText.trim()) return;
+    setImporting(true);
+    setImportResult(null);
+    let successCount = 0;
+    let duplicateCount = 0;
+    const errors: string[] = [];
 
     try {
-      const response = await getChatCompletion(
-        'OPEN_AI',
-        'gpt-4o',
-        [
-          { role: 'system', content: 'You are an expert medical educator. Always respond with valid JSON only.' },
-          { role: 'user', content: prompt },
-        ],
-        { max_completion_tokens: 600 }
-      );
+      const parsed = JSON.parse(jsonImportText);
+      if (!Array.isArray(parsed)) throw new Error('Root must be an array of question objects');
 
-      const content = response.choices[0]?.message?.content || '';
-      const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed: AIEnhanceResult = JSON.parse(jsonStr);
+      for (let i = 0; i < parsed.length; i++) {
+        const item = parsed[i];
+        if (!item.question_text || !Array.isArray(item.options) || item.options.length < 2) {
+          errors.push(`Item ${i + 1}: Missing question_text or options array`);
+          continue;
+        }
 
-      if (!parsed.alternative_explanation || !parsed.hint) {
-        throw new Error('Invalid response format from AI');
+        const isDuplicate = questions.some(q => calculateSimilarity(q.question_text, item.question_text) > 0.85);
+        if (isDuplicate) {
+          duplicateCount++;
+          continue;
+        }
+
+        let subjectId: string | null = null;
+        if (item.subject_name) {
+          const sub = subjects.find(s => s.name === item.subject_name.toLowerCase() || s.display_name.toLowerCase() === item.subject_name.toLowerCase());
+          subjectId = sub?.id || null;
+        }
+
+        const { error: err } = await supabase.from('questions').insert({
+          subject_id: subjectId,
+          chapter_id: null,
+          question_text: item.question_text,
+          options: item.options,
+          correct_answer: String(item.correct_answer || item.correct_option || 'A').toUpperCase().replace(/[^A-D]/g, '').slice(0, 1) || 'A',
+          explanation: item.explanation || null,
+          difficulty: (['easy', 'medium', 'hard'].includes(item.difficulty) ? item.difficulty : 'medium') as any,
+          is_published: true,
+          is_active: true,
+        });
+
+        if (err) errors.push(`Item ${i + 1}: ${err.message}`);
+        else successCount++;
       }
+    } catch (e: any) {
+      errors.push('JSON Parse error: ' + e.message);
+    }
 
-      setEnhanceResult(parsed);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to generate enhancements';
-      setError(`AI enhancement failed: ${message}`);
-    } finally {
-      setEnhancing(false);
+    setImportResult({ success: successCount, failed: errors.length, duplicates: duplicateCount, errors: errors.slice(0, 5) });
+    setImporting(false);
+    if (successCount > 0) {
+      showSuccess(`Imported ${successCount} questions via JSON`);
+      setJsonImportText('');
+      fetchQuestions();
     }
   };
 
-  const handleSaveEnhancement = async () => {
-    if (!enhanceQuestion || !enhanceResult) return;
-    setEnhanceSaving(true);
-    setError(null);
-
+  // Soft Archival / Restoration (Non-destructive)
+  const handleToggleArchive = async (q: Question) => {
+    const nextActive = !q.is_active;
     const { error: err } = await supabase
       .from('questions')
       .update({
-        explanation: enhanceResult.alternative_explanation,
-        hint: enhanceResult.hint,
+        is_active: nextActive,
+        is_published: nextActive ? q.is_published : false,
       })
-      .eq('id', enhanceQuestion.id);
+      .eq('id', q.id);
 
     if (err) {
       setError(err.message);
     } else {
-      showSuccess('Question enhanced and saved successfully!');
-      closeEnhanceModal();
+      showSuccess(nextActive ? 'Question restored to bank' : 'Question soft-archived (preserved in student records)');
+      setArchiveConfirm(null);
       fetchQuestions();
     }
-    setEnhanceSaving(false);
+  };
+
+  // 1-Click Status Approval Toggle (Draft <-> Published)
+  const handleTogglePublish = async (q: Question) => {
+    const nextPublished = !q.is_published;
+    const { error: err } = await supabase
+      .from('questions')
+      .update({ is_published: nextPublished })
+      .eq('id', q.id);
+
+    if (err) {
+      setError(err.message);
+    } else {
+      showSuccess(nextPublished ? 'Question approved & published' : 'Question moved to draft review');
+      fetchQuestions();
+    }
   };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -475,201 +610,161 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
             <ArrowLeft size={18} />
           </Link>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Questions Management</h1>
-            <p className="text-xs text-muted-foreground">MCQ bank · {totalCount} total</p>
+            <h1 className="text-lg font-black text-foreground">Question Bank Management</h1>
+            <p className="text-xs text-muted-foreground">Authoring, Review Workflow &amp; Soft-Archival · {totalCount} total</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => { setShowAIGenerate(!showAIGenerate); setShowImport(false); setAIPreview([]); }}
-            className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-purple-600 border border-purple-200 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-purple-600 border border-purple-200 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
           >
-            <Sparkles size={14} /> Generate with AI
+            <Sparkles size={14} /> AI Generator
           </button>
-          <button onClick={() => setShowImport(!showImport)} className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-muted-foreground border border-border rounded-xl hover:text-foreground hover:border-primary/30 transition-colors">
-            <Upload size={14} /> Bulk Import
+          <button
+            onClick={() => { setShowImport(!showImport); setShowAIGenerate(false); }}
+            className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground border border-border rounded-xl hover:text-foreground hover:border-primary/30 transition-colors"
+          >
+            <Upload size={14} /> Bulk Import (CSV/JSON)
           </button>
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary/90 transition-colors">
+          <button onClick={openCreate} className="btn-primary py-2 px-4 text-xs font-bold gap-1.5">
             <Plus size={16} /> Add Question
           </button>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6 space-y-5">
         {error && (
-          <div className="mb-4 flex items-center gap-2 bg-error-light text-error px-4 py-3 rounded-xl text-sm">
-            <AlertCircle size={16} /> {error}
+          <div className="flex items-center gap-2 bg-rose-500/10 text-rose-600 px-4 py-3 rounded-2xl text-xs font-medium border border-rose-500/20">
+            <AlertCircle size={16} className="shrink-0" /> {error}
             <button onClick={() => setError(null)} className="ml-auto"><X size={14} /></button>
           </div>
         )}
         {success && (
-          <div className="mb-4 flex items-center gap-2 bg-success-light text-success px-4 py-3 rounded-xl text-sm">
-            <CheckCircle2 size={16} /> {success}
-          </div>
-        )}
-
-        {/* AI Generate Panel */}
-        {showAIGenerate && (
-          <div className="mb-5 bg-card border border-purple-200 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <Sparkles size={16} className="text-purple-600" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-foreground text-sm">AI Question Generator</h2>
-                  <p className="text-xs text-muted-foreground">Auto-generate MCQs using SamyakGURU</p>
-                </div>
-              </div>
-              <button onClick={closeAIGenerate} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><X size={16} /></button>
-            </div>
-
-            <div className="grid sm:grid-cols-4 gap-4 mb-4">
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Subject *</label>
-                <select
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-purple-400"
-                  value={aiForm.subject_id}
-                  onChange={e => setAIForm(f => ({ ...f, subject_id: e.target.value }))}
-                >
-                  <option value="">Select subject...</option>
-                  {subjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
-                </select>
-              </div>
-              <div className="sm:col-span-1">
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Topic / Chapter *</label>
-                <input
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-purple-400"
-                  placeholder="e.g. Cell Biology, Thermodynamics..."
-                  value={aiForm.topic}
-                  onChange={e => setAIForm(f => ({ ...f, topic: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Difficulty</label>
-                <select
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-purple-400"
-                  value={aiForm.difficulty}
-                  onChange={e => setAIForm(f => ({ ...f, difficulty: e.target.value as 'easy' | 'medium' | 'hard' }))}
-                >
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Count (1–20)</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-purple-400"
-                  value={aiForm.count}
-                  onChange={e => setAIForm(f => ({ ...f, count: Math.min(20, Math.max(1, parseInt(e.target.value) || 1)) }))}
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={handleAIGenerate}
-              disabled={aiGenerating || !aiForm.subject_id || !aiForm.topic.trim()}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-60"
-            >
-              {aiGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              {aiGenerating ? 'Generating...' : `Generate ${aiForm.count} Questions`}
-            </button>
-
-            {/* Preview Generated Questions */}
-            {aiPreview.length > 0 && (
-              <div className="mt-5">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-foreground">{aiPreview.length} questions generated — review before saving</p>
-                  <button
-                    onClick={handleSaveAIQuestions}
-                    disabled={aiSaving || aiPreview.length === 0}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-success text-white rounded-xl hover:bg-success/90 transition-colors disabled:opacity-60"
-                  >
-                    {aiSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                    {aiSaving ? 'Saving...' : `Save All ${aiPreview.length} Questions`}
-                  </button>
-                </div>
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
-                  {aiPreview.map((q, idx) => (
-                    <div key={idx} className="bg-background border border-border rounded-xl p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground mb-2">{idx + 1}. {q.question_text}</p>
-                          <div className="grid grid-cols-2 gap-1.5 mb-2">
-                            {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                              <div key={opt} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs ${q.correct_option === opt ? 'bg-success-light text-success font-semibold' : 'bg-muted text-muted-foreground'}`}>
-                                <span className="font-bold uppercase">{opt}.</span>
-                                <span>{(q as any)[`option_${opt}`]}</span>
-                              </div>
-                            ))}
-                          </div>
-                          {q.explanation && (
-                            <p className="text-xs text-muted-foreground italic">💡 {q.explanation}</p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => removeAIPreviewQuestion(idx)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-error hover:bg-error-light transition-colors shrink-0"
-                          title="Remove this question"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-4 py-3 rounded-2xl text-xs font-medium border border-emerald-500/20">
+            <CheckCircle2 size={16} className="shrink-0" /> {success}
           </div>
         )}
 
         {/* Bulk Import Panel */}
         {showImport && (
-          <div className="mb-5 bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-foreground text-sm">Bulk Import Questions (CSV)</h2>
-              <button onClick={() => setShowImport(false)} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><X size={16} /></button>
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Upload size={18} className="text-primary" />
+                <h2 className="font-black text-foreground text-sm">Bulk Question Ingestion with Duplicate Protection</h2>
+              </div>
+              <button onClick={() => setShowImport(false)} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Upload a CSV file with columns: <code className="bg-muted px-1 rounded text-xs">question_text, option_a, option_b, option_c, option_d, correct_option, explanation, difficulty, subject_name, chapter_title</code></p>
-            <div className="flex items-center gap-3 flex-wrap">
-              <button onClick={downloadTemplate} className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-primary border border-primary/30 rounded-xl hover:bg-primary/5 transition-colors">
-                <Download size={13} /> Download Template
+
+            <div className="flex gap-2 border-b border-border pb-2">
+              <button
+                onClick={() => setImportTab('csv')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${importTab === 'csv' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+              >
+                <FileSpreadsheet size={14} /> CSV Format
               </button>
-              <label className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors cursor-pointer">
-                {importing ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-                {importing ? 'Importing...' : 'Choose CSV File'}
-                <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleBulkImport} disabled={importing} />
-              </label>
+              <button
+                onClick={() => setImportTab('json')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${importTab === 'json' ? 'bg-primary text-white' : 'text-muted-foreground'}`}
+              >
+                <FileCode size={14} /> JSON Array
+              </button>
             </div>
+
+            {importTab === 'csv' ? (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Upload standard question spreadsheet. Duplicate questions (&gt;85% match) are skipped automatically.</p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      const blob = new Blob([CSV_TEMPLATE], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a'); a.href = url; a.download = 'questions_template.csv'; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-primary border border-primary/30 rounded-xl hover:bg-primary/5"
+                  >
+                    <Download size={13} /> Download Template
+                  </button>
+                  <label className="btn-primary py-2 px-4 text-xs font-bold gap-2 cursor-pointer">
+                    {importing ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                    {importing ? 'Processing File...' : 'Choose CSV File'}
+                    <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleBulkImportCSV} disabled={importing} />
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">Paste JSON array of questions. Includes duplicate detection and automatic option extraction.</p>
+                <textarea
+                  rows={6}
+                  value={jsonImportText}
+                  onChange={(e) => setJsonImportText(e.target.value)}
+                  placeholder={JSON_TEMPLATE}
+                  className="w-full p-3 rounded-2xl bg-muted/40 border border-border font-mono text-xs text-foreground"
+                />
+                <button
+                  onClick={handleBulkImportJSON}
+                  disabled={importing || !jsonImportText.trim()}
+                  className="btn-primary py-2 px-5 text-xs font-bold gap-2"
+                >
+                  {importing ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                  Validate &amp; Ingest JSON
+                </button>
+              </div>
+            )}
+
             {importResult && (
-              <div className="mt-3 p-3 bg-muted/50 rounded-xl text-xs">
-                <p className="font-semibold text-foreground">Import Result: <span className="text-success">{importResult.success} imported</span>{importResult.failed > 0 && <span className="text-error ml-2">{importResult.failed} failed</span>}</p>
-                {importResult.errors.map((e, i) => <p key={i} className="text-error mt-1">{e}</p>)}
+              <div className="p-4 bg-muted/30 border border-border rounded-2xl text-xs space-y-1">
+                <p className="font-bold text-foreground">
+                  Ingestion Results: <span className="text-emerald-600">{importResult.success} inserted</span>
+                  {importResult.duplicates > 0 && <span className="text-amber-600 ml-2">({importResult.duplicates} duplicates skipped)</span>}
+                  {importResult.failed > 0 && <span className="text-rose-600 ml-2">({importResult.failed} failed)</span>}
+                </p>
+                {importResult.errors.map((e, idx) => <p key={idx} className="text-rose-600 font-mono text-[11px]">• {e}</p>)}
               </div>
             )}
           </div>
         )}
 
-        {/* Filters */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
+        {/* Search & Status Filters Bar */}
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-48">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
-              className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary"
-              placeholder="Search questions..."
+              className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-2xl text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-xs"
+              placeholder="Search by keyword, question text, or ID..."
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(0); }}
             />
           </div>
-          <select className="px-3 py-2 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary" value={filterSubject} onChange={e => { setFilterSubject(e.target.value); setPage(0); }}>
+
+          <select
+            className="px-3.5 py-2.5 bg-card border border-border rounded-2xl text-xs font-semibold text-foreground focus:outline-none shadow-xs"
+            value={filterStatus}
+            onChange={e => { setFilterStatus(e.target.value as any); setPage(0); }}
+          >
+            <option value="all">All Statuses</option>
+            <option value="published">Published Only</option>
+            <option value="draft">Draft Review Only</option>
+            <option value="archived">Archived Only</option>
+          </select>
+
+          <select
+            className="px-3.5 py-2.5 bg-card border border-border rounded-2xl text-xs font-semibold text-foreground focus:outline-none shadow-xs"
+            value={filterSubject}
+            onChange={e => { setFilterSubject(e.target.value); setPage(0); }}
+          >
             <option value="all">All Subjects</option>
             {subjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
           </select>
-          <select className="px-3 py-2 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary" value={filterDiff} onChange={e => { setFilterDiff(e.target.value); setPage(0); }}>
+
+          <select
+            className="px-3.5 py-2.5 bg-card border border-border rounded-2xl text-xs font-semibold text-foreground focus:outline-none shadow-xs"
+            value={filterDiff}
+            onChange={e => { setFilterDiff(e.target.value); setPage(0); }}
+          >
             <option value="all">All Difficulty</option>
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
@@ -677,79 +772,141 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
           </select>
         </div>
 
-        {/* Question Form */}
+        {/* Create / Edit Question Modal / Form */}
         {showForm && (
-          <div className="mb-6 bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-bold text-foreground text-sm">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
-              <button onClick={closeForm} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><X size={16} /></button>
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-md space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-black text-foreground text-base">
+                {editingId ? 'Edit Question & Review Status' : 'Create New Authoritative Question'}
+              </h2>
+              <button onClick={closeForm} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
             </div>
-            <div className="space-y-4">
-              <div className="grid sm:grid-cols-3 gap-4">
+
+            {/* Duplicate Detection Warning */}
+            {duplicateWarning && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200">
+                <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Subject</label>
-                  <select className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary" value={form.subject_id} onChange={e => setForm(f => ({ ...f, subject_id: e.target.value, chapter_id: '' }))}>
-                    <option value="">Select subject...</option>
-                    {subjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
-                  </select>
+                  <p className="font-bold">Potential Duplicate Detected (&gt;85% Text Similarity)</p>
+                  <p className="mt-0.5">Existing question in {duplicateWarning.subject}: &ldquo;{duplicateWarning.matchedText}&rdquo;</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Chapter</label>
-                  <select className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary" value={form.chapter_id} onChange={e => setForm(f => ({ ...f, chapter_id: e.target.value }))}>
-                    <option value="">Select chapter...</option>
-                    {filteredChapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Difficulty</label>
-                  <select className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary" value={form.difficulty} onChange={e => setForm(f => ({ ...f, difficulty: e.target.value as 'easy' | 'medium' | 'hard' }))}>
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
+              </div>
+            )}
+
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-foreground mb-1">Subject</label>
+                <select
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground"
+                  value={form.subject_id}
+                  onChange={e => setForm(f => ({ ...f, subject_id: e.target.value, chapter_id: '' }))}
+                >
+                  <option value="">Select subject...</option>
+                  {subjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
+                </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Question Text *</label>
-                <textarea className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary resize-none" rows={3} value={form.question_text} onChange={e => setForm(f => ({ ...f, question_text: e.target.value }))} placeholder="Enter the question..." />
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                  <div key={opt} className={`relative rounded-xl border-2 transition-colors ${form.correct_option === opt ? 'border-success bg-success-light/30' : 'border-border'}`}>
-                    <div className="flex items-center gap-2 px-3 py-2">
-                      <button onClick={() => setForm(f => ({ ...f, correct_option: opt }))} className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${form.correct_option === opt ? 'bg-success text-white' : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}>
-                        {opt.toUpperCase()}
-                      </button>
-                      <input className="flex-1 bg-transparent text-sm text-foreground focus:outline-none" value={(form as any)[`option_${opt}`]} onChange={e => setForm(f => ({ ...f, [`option_${opt}`]: e.target.value }))} placeholder={`Option ${opt.toUpperCase()}...`} />
-                    </div>
-                  </div>
-                ))}
+                <label className="block text-xs font-bold text-foreground mb-1">Chapter</label>
+                <select
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground"
+                  value={form.chapter_id}
+                  onChange={e => setForm(f => ({ ...f, chapter_id: e.target.value }))}
+                >
+                  <option value="">Select chapter...</option>
+                  {filteredChapters.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Explanation (optional)</label>
-                <textarea className="w-full px-3 py-2 bg-background border border-border rounded-xl text-sm text-foreground focus:outline-none focus:border-primary resize-none" rows={2} value={form.explanation} onChange={e => setForm(f => ({ ...f, explanation: e.target.value }))} placeholder="Explain why the correct answer is right..." />
+                <label className="block text-xs font-bold text-foreground mb-1">Difficulty</label>
+                <select
+                  className="w-full px-3 py-2 bg-background border border-border rounded-xl text-xs text-foreground"
+                  value={form.difficulty}
+                  onChange={e => setForm(f => ({ ...f, difficulty: e.target.value as any }))}
+                >
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-foreground mb-1">Question Text *</label>
+              <textarea
+                rows={3}
+                className="w-full p-3 bg-background border border-border rounded-2xl text-xs text-foreground resize-none"
+                placeholder="Type question content..."
+                value={form.question_text}
+                onChange={e => setForm(f => ({ ...f, question_text: e.target.value }))}
+              />
+            </div>
+
+            {/* Options */}
+            <div className="grid sm:grid-cols-2 gap-3">
+              {(['a', 'b', 'c', 'd'] as const).map(opt => (
+                <div
+                  key={opt}
+                  className={`rounded-2xl border-2 p-2 flex items-center gap-2 transition-all ${
+                    form.correct_option === opt
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-border bg-muted/20'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, correct_option: opt }))}
+                    className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                      form.correct_option === opt ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    {opt.toUpperCase()}
+                  </button>
+                  <input
+                    className="flex-1 bg-transparent text-xs text-foreground focus:outline-none"
+                    placeholder={`Option ${opt.toUpperCase()}...`}
+                    value={(form as any)[`option_${opt}`]}
+                    onChange={e => setForm(f => ({ ...f, [`option_${opt}`]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-foreground mb-1">Explanation / Solution Rubric</label>
+              <textarea
+                rows={2}
+                className="w-full p-3 bg-background border border-border rounded-2xl text-xs text-foreground resize-none"
+                placeholder="Comprehensive solution steps..."
+                value={form.explanation}
+                onChange={e => setForm(f => ({ ...f, explanation: e.target.value }))}
+              />
+            </div>
+
+            {/* Approval Workflow & Active Toggle */}
+            <div className="flex items-center justify-between pt-2 border-t border-border">
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Premium</label>
-                  <button onClick={() => setForm(f => ({ ...f, is_premium: !f.is_premium }))} className={`transition-colors ${form.is_premium ? 'text-chem' : 'text-muted-foreground'}`}>
-                    {form.is_premium ? <Lock size={18} /> : <Unlock size={18} />}
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="text-xs font-semibold text-muted-foreground">Active</label>
-                  <button onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))} className={`transition-colors ${form.is_active ? 'text-success' : 'text-muted-foreground'}`}>
-                    {form.is_active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-                  </button>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-muted-foreground mb-1">Review Status</label>
+                  <select
+                    value={form.status}
+                    onChange={e => setForm(f => ({ ...f, status: e.target.value as any }))}
+                    className="bg-background border border-border rounded-xl px-3 py-1.5 text-xs font-bold text-foreground"
+                  >
+                    <option value="published">Published (Live in Student Bank)</option>
+                    <option value="draft">Draft (Faculty Review Required)</option>
+                  </select>
                 </div>
               </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={closeForm} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground border border-border rounded-xl hover:bg-muted transition-colors">Cancel</button>
-              <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-60">
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                {editingId ? 'Save Changes' : 'Create Question'}
-              </button>
+
+              <div className="flex gap-2">
+                <button onClick={closeForm} className="btn-secondary py-2.5 px-4 text-xs font-bold">
+                  Cancel
+                </button>
+                <button onClick={handleSave} disabled={saving} className="btn-primary py-2.5 px-5 text-xs font-bold gap-2">
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {editingId ? 'Save Changes' : 'Publish Question'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -758,159 +915,144 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
         {loading ? (
           <div className="flex items-center justify-center py-20"><Loader2 size={28} className="animate-spin text-primary" /></div>
         ) : questions.length === 0 ? (
-          <div className="text-center py-16 bg-card border border-border rounded-2xl">
-            <Zap size={40} className="mx-auto text-muted-foreground mb-3" />
-            <p className="text-sm font-semibold text-foreground">No questions found</p>
-            <p className="text-xs text-muted-foreground mt-1">Add questions manually or import via CSV</p>
+          <div className="text-center py-16 bg-card border border-border rounded-3xl p-8">
+            <Zap size={36} className="mx-auto text-muted-foreground mb-3 opacity-40" />
+            <p className="text-sm font-bold text-foreground">No questions matching filter</p>
+            <p className="text-xs text-muted-foreground mt-1">Adjust your filters or author new questions above.</p>
           </div>
         ) : (
-          <>
-            <div className="space-y-2">
-              {questions.map((q, idx) => (
-                <div key={q.id} className="bg-card border border-border rounded-xl p-4 hover:border-primary/20 transition-colors">
-                  <div className="flex items-start gap-3">
-                    <span className="text-xs text-muted-foreground font-mono mt-0.5 shrink-0 w-6">{page * PAGE_SIZE + idx + 1}.</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground font-medium leading-snug line-clamp-2">{q.question_text}</p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        {q.subjects && <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${SUBJECT_COLORS[q.subjects.name] || 'bg-muted text-muted-foreground'}`}>{q.subjects.display_name}</span>}
-                        {q.chapters && <span className="text-xs text-muted-foreground">· {q.chapters.title}</span>}
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${DIFF_COLORS[q.difficulty]}`}>{q.difficulty}</span>
-                        {q.is_premium && <span className="text-xs bg-chem-light text-chem px-2 py-0.5 rounded-full font-semibold">PRO</span>}
-                        {!q.is_active && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">Inactive</span>}
-                        <span className="text-xs text-success font-semibold ml-auto">✓ {q.correct_option.toUpperCase()}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => openEnhanceModal(q)} className="p-2 rounded-lg text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="Enhance with AI"><Lightbulb size={14} /></button>
-                      <button onClick={() => openEdit(q)} className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"><Pencil size={14} /></button>
-                      {deleteConfirm === q.id ? (
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleDelete(q.id)} className="px-2 py-1 text-xs font-semibold bg-error text-white rounded-lg">Confirm</button>
-                          <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-xs text-muted-foreground border border-border rounded-lg">Cancel</button>
-                        </div>
+          <div className="space-y-3">
+            {questions.map((q, idx) => (
+              <div
+                key={q.id}
+                className={`bg-card border rounded-2xl p-4 transition-all ${
+                  !q.is_active
+                    ? 'opacity-60 border-dashed border-border bg-muted/20'
+                    : !q.is_published
+                    ? 'border-amber-500/30 bg-amber-500/[0.02]'
+                    : 'border-border hover:border-primary/30 shadow-xs'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-xs font-mono text-muted-foreground shrink-0 mt-0.5">
+                    {page * PAGE_SIZE + idx + 1}.
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-foreground leading-snug">
+                      {q.question_text}
+                    </p>
+
+                    <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
+                      {q.subjects && (
+                        <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${SUBJECT_COLORS[q.subjects.name] || 'bg-muted text-muted-foreground'}`}>
+                          {q.subjects.display_name}
+                        </span>
+                      )}
+                      {q.chapters && <span className="text-muted-foreground text-[11px]">· {q.chapters.title}</span>}
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${DIFF_COLORS[q.difficulty]}`}>
+                        {q.difficulty}
+                      </span>
+                      <span className="font-bold text-emerald-600 text-xs">
+                        Correct: {q.correct_option.toUpperCase()}
+                      </span>
+
+                      {/* Approval Status Badge */}
+                      {!q.is_active ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
+                          Archived
+                        </span>
+                      ) : q.is_published ? (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          Published
+                        </span>
                       ) : (
-                        <button onClick={() => setDeleteConfirm(q.id)} className="p-2 rounded-lg text-muted-foreground hover:text-error hover:bg-error-light transition-colors"><Trash2 size={14} /></button>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                          Under Review (Draft)
+                        </span>
                       )}
                     </div>
                   </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      onClick={() => handleTogglePublish(q)}
+                      title={q.is_published ? 'Move to Draft' : 'Approve & Publish'}
+                      className={`p-2 rounded-xl transition-colors text-xs font-bold ${
+                        q.is_published
+                          ? 'text-emerald-600 hover:bg-emerald-500/10'
+                          : 'text-amber-600 hover:bg-amber-500/10'
+                      }`}
+                    >
+                      {q.is_published ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    </button>
+
+                    <button
+                      onClick={() => openEdit(q)}
+                      className="p-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil size={15} />
+                    </button>
+
+                    {/* Soft Archival / Restoration */}
+                    {archiveConfirm === q.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleToggleArchive(q)}
+                          className="px-2 py-1 text-[10px] font-bold bg-amber-600 text-white rounded-lg"
+                        >
+                          Confirm {q.is_active ? 'Archive' : 'Restore'}
+                        </button>
+                        <button
+                          onClick={() => setArchiveConfirm(null)}
+                          className="px-2 py-1 text-[10px] text-muted-foreground border border-border rounded-lg"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setArchiveConfirm(q.id)}
+                        title={q.is_active ? 'Soft-Archive Question' : 'Restore Question'}
+                        className="p-2 rounded-xl text-muted-foreground hover:text-amber-600 hover:bg-amber-500/10 transition-colors"
+                      >
+                        {q.is_active ? <Archive size={15} /> : <ArchiveRestore size={15} />}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <p className="text-xs text-muted-foreground">Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}</p>
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <p className="text-xs text-muted-foreground">
+                  Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount}
+                </p>
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className="px-3 py-1.5 text-xs font-semibold border border-border rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors">Prev</button>
-                  <span className="text-xs text-muted-foreground">{page + 1} / {totalPages}</span>
-                  <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className="px-3 py-1.5 text-xs font-semibold border border-border rounded-lg text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors">Next</button>
+                  <button
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="px-3 py-1.5 text-xs font-bold border border-border rounded-xl disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  <span className="text-xs font-semibold">{page + 1} / {totalPages}</span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                    className="px-3 py-1.5 text-xs font-bold border border-border rounded-xl disabled:opacity-40"
+                  >
+                    Next
+                  </button>
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
-
-      {/* AI Enhance Modal */}
-      {enhanceQuestion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-card border border-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="flex items-center justify-between p-5 border-b border-border">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-                  <Lightbulb size={16} className="text-indigo-600" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-foreground text-sm">AI Enhance Question</h2>
-                  <p className="text-xs text-muted-foreground">Generate alternative explanation & hint</p>
-                </div>
-              </div>
-              <button onClick={closeEnhanceModal} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted">
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              {/* Question Preview */}
-              <div className="bg-muted/40 rounded-xl p-4">
-                <p className="text-xs font-semibold text-muted-foreground mb-1.5">QUESTION</p>
-                <p className="text-sm text-foreground font-medium leading-snug">{enhanceQuestion.question_text}</p>
-                <div className="grid grid-cols-2 gap-1.5 mt-3">
-                  {(['a', 'b', 'c', 'd'] as const).map(opt => (
-                    <div key={opt} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs ${enhanceQuestion.correct_option === opt ? 'bg-success-light text-success font-semibold' : 'bg-background text-muted-foreground'}`}>
-                      <span className="font-bold uppercase">{opt}.</span>
-                      <span>{(enhanceQuestion as any)[`option_${opt}`]}</span>
-                    </div>
-                  ))}
-                </div>
-                {enhanceQuestion.explanation && (
-                  <p className="text-xs text-muted-foreground mt-2 italic">Current explanation: {enhanceQuestion.explanation}</p>
-                )}
-              </div>
-
-              {/* Generate Button */}
-              {!enhanceResult && (
-                <button
-                  onClick={() => handleAIEnhance(enhanceQuestion)}
-                  disabled={enhancing}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-60"
-                >
-                  {enhancing ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                  {enhancing ? 'Generating enhancements...' : 'Generate Alternative Explanation & Hint'}
-                </button>
-              )}
-
-              {/* Generated Results */}
-              {enhanceResult && (
-                <div className="space-y-3">
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles size={14} className="text-indigo-600" />
-                      <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Alternative Explanation</p>
-                    </div>
-                    <p className="text-sm text-foreground leading-relaxed">{enhanceResult.alternative_explanation}</p>
-                  </div>
-
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Lightbulb size={14} className="text-amber-600" />
-                      <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Student Hint</p>
-                    </div>
-                    <p className="text-sm text-foreground leading-relaxed">{enhanceResult.hint}</p>
-                  </div>
-
-                  <p className="text-xs text-muted-foreground">Saving will replace the current explanation with the alternative explanation and add the hint to the question.</p>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <button
-                      onClick={() => handleAIEnhance(enhanceQuestion)}
-                      disabled={enhancing || enhanceSaving}
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground border border-border rounded-xl hover:text-foreground hover:bg-muted transition-colors disabled:opacity-60"
-                    >
-                      <RefreshCw size={13} /> Regenerate
-                    </button>
-                    <button
-                      onClick={handleSaveEnhancement}
-                      disabled={enhanceSaving}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-success text-white rounded-xl hover:bg-success/90 transition-colors disabled:opacity-60 ml-auto"
-                    >
-                      {enhanceSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                      {enhanceSaving ? 'Saving...' : 'Save Enhancements'}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
-
-  async function handleDelete(id: string) {
-    const { error: err } = await supabase.from('questions').delete().eq('id', id);
-    if (err) setError(err.message);
-    else { showSuccess('Question deleted'); setDeleteConfirm(null); fetchQuestions(); }
-  }
 }

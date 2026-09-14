@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  LayoutDashboard, Users, BookOpen, Video, FileText, Zap, Swords, 
-  CreditCard, BarChart2, TrendingUp, ChevronRight, Activity, 
-  Shield, MessageSquare, Radio, LogOut, Menu, Sun, Moon, KeyRound, 
-  Upload, Layers, MessageCircleQuestion, Rocket, Ticket, Tag, 
-  Newspaper, HelpCircle, BellRing, Image as ImageIcon, Sliders, 
-  Award, RefreshCw, UserCheck, Megaphone, CheckCircle2, Loader2, Play
+import {
+  LayoutDashboard, Users, BookOpen, Video, FileText, Zap,
+  CreditCard, BarChart2, TrendingUp, ChevronRight, Activity,
+  Shield, MessageSquare, Radio, LogOut, Menu, Sun, Moon, KeyRound,
+  Upload, Layers, MessageCircleQuestion, Ticket, Tag,
+  BellRing, Sliders, Award, RefreshCw, UserCheck, Megaphone,
+  CheckCircle2, Loader2, Play, ExternalLink
 } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
 import { createClient } from '@/lib/supabase/client';
@@ -24,171 +24,136 @@ interface StatCard {
   bg: string;
 }
 
+// Exactly covers the 21 canonical Admin Modules
 const navItems = [
   { label: 'Overview', href: '/admin', icon: LayoutDashboard, key: 'admin-overview' },
-  { 
-    label: 'Academic & Courses', 
-    key: 'admin-academic', 
-    icon: BookOpen, 
+  {
+    label: 'Academic & Curriculum',
+    key: 'admin-academic',
+    icon: BookOpen,
     children: [
-      { label: 'Categories & Subjects', href: '/admin/subjects', icon: CategoryIcon, key: 'admin-categories' },
-      { label: 'Chapters & Syllabus', href: '/admin/chapters', icon: BookOpen, key: 'admin-chapters' },
-      { label: 'Bundle Courses (Batches)', href: '/admin/batches', icon: Layers, key: 'admin-batches' },
-      { label: 'Free Notes & PDFs', href: '/admin/uploads?tab=notes', icon: FileText, key: 'admin-free-notes' },
-    ]
+      { label: 'Courses & Programs', href: '/admin/courses', icon: BookOpen, key: 'admin-courses' },
+      { label: 'Batches (Cohorts)', href: '/admin/batches', icon: Layers, key: 'admin-batches' },
+      { label: 'Subjects & Chapters', href: '/admin/subjects', icon: Layers, key: 'admin-subjects' },
+      { label: 'Lessons & Videos', href: '/admin/lessons', icon: Video, key: 'admin-lessons' },
+      { label: 'Study Resources & PDFs', href: '/admin/resources', icon: FileText, key: 'admin-resources' },
+    ],
   },
-  { 
-    label: 'Question Bank & Quizzes', 
-    key: 'admin-evaluations', 
-    icon: Zap, 
+  {
+    label: 'Assessments & Questions',
+    key: 'admin-assessment',
+    icon: Zap,
     children: [
       { label: 'Question Bank (MCQs)', href: '/admin/questions', icon: Zap, key: 'admin-questions' },
-      { label: 'Exams & Quizzes', href: '/admin/exams', icon: FileText, key: 'admin-exams' },
-      { label: 'Quiz Results & Reports', href: '/admin/analytics?tab=quizzes', icon: Award, key: 'admin-quiz-results' },
-      { label: 'Flashcards', href: '/admin/flashcards', icon: Layers, key: 'admin-flashcards' },
-    ]
+      { label: 'Tests & Mock Exams', href: '/admin/exams', icon: FileText, key: 'admin-exams' },
+    ],
   },
-  { 
-    label: 'Users & Roles', 
-    key: 'admin-users-roles', 
-    icon: Users, 
+  {
+    label: 'Users & Privileges',
+    key: 'admin-users',
+    icon: Users,
     children: [
-      { label: 'Students', href: '/admin/users?role=student', icon: Users, key: 'admin-students' },
-      { label: 'Teachers', href: '/admin/users?role=teacher', icon: UserCheck, key: 'admin-teachers' },
-      { label: 'Marketers & Affiliates', href: '/admin/users?role=marketer', icon: Megaphone, key: 'admin-marketers' },
-      { label: 'User Groups & Privileges', href: '/admin/users?tab=roles', icon: Shield, key: 'admin-roles' },
-      { label: 'Course Enrollments', href: '/admin/batches', icon: Ticket, key: 'admin-enrollments' },
-    ]
+      { label: 'Students Directory', href: '/admin/users?role=student', icon: Users, key: 'admin-students' },
+      { label: 'Teachers & Faculty', href: '/admin/teachers', icon: UserCheck, key: 'admin-teachers' },
+      { label: 'Roles & Permissions', href: '/admin/roles', icon: Shield, key: 'admin-roles' },
+      { label: 'Course Enrollments', href: '/admin/enrollments', icon: Ticket, key: 'admin-enrollments' },
+    ],
   },
-  { 
-    label: 'Media & Live Stream', 
-    key: 'admin-media', 
-    icon: Video, 
+  {
+    label: 'Finance & Commerce',
+    key: 'admin-finance',
+    icon: CreditCard,
     children: [
-      { label: 'Bunny.net Upload Manager', href: '/admin/uploads', icon: Upload, key: 'admin-uploads' },
-      { label: 'Live Classes', href: '/admin/live-classes', icon: Radio, key: 'admin-live-classes' },
-    ]
+      { label: 'Orders & Payments', href: '/admin/orders', icon: CreditCard, key: 'admin-orders' },
+      { label: 'Coupons & Vouchers', href: '/admin/coupons', icon: Tag, key: 'admin-coupons' },
+    ],
   },
-  { 
-    label: 'Sales & Marketing', 
-    key: 'admin-marketing', 
-    icon: CreditCard, 
+  {
+    label: 'Classroom & Interaction',
+    key: 'admin-classroom',
+    icon: Radio,
     children: [
-      { label: 'Leads & Behavioral CRM', href: '/admin/leads', icon: Users, key: 'admin-leads-crm' },
-      { label: 'Payments & Fonepay Logs', href: '/admin/analytics?tab=payments', icon: CreditCard, key: 'admin-payments' },
-      { label: 'Coupons & Activation Codes', href: '/admin/activation-codes', icon: Tag, key: 'admin-coupons' },
-      { label: 'Presale & Prebookings', href: '/admin/prebookings', icon: Rocket, key: 'admin-prebookings' },
-      { label: 'Course Reports', href: '/admin/analytics', icon: BarChart2, key: 'admin-course-reports' },
-    ]
+      { label: 'Live Virtual Classes', href: '/admin/live-classes', icon: Radio, key: 'admin-live-classes' },
+      { label: 'Student Doubts & Q&A', href: '/admin/doubts', icon: MessageCircleQuestion, key: 'admin-doubts' },
+      { label: 'Broadcast Bulletins', href: '/admin/announcements', icon: Megaphone, key: 'admin-announcements' },
+      { label: 'Push Notifications', href: '/admin/notifications', icon: BellRing, key: 'admin-notifications' },
+    ],
   },
-  { 
-    label: 'CMS & Engagement', 
-    key: 'admin-cms', 
-    icon: Newspaper, 
+  {
+    label: 'Governance & Reporting',
+    key: 'admin-governance',
+    icon: Sliders,
     children: [
-      { label: 'Blog & Articles', href: '/admin/uploads?tab=feed', icon: Newspaper, key: 'admin-blog' },
-      { label: 'Community Feed', href: '/admin/uploads?tab=feed', icon: MessageSquare, key: 'admin-feed' },
-      { label: 'Flash Notices', href: '/admin/uploads?tab=notices', icon: BellRing, key: 'admin-flash-notices' },
-      { label: 'Notices & Announcements', href: '/admin/uploads?tab=notices', icon: BellRing, key: 'admin-notices' },
-      { label: 'Banner Sliders', href: '/admin/uploads?tab=slider', icon: ImageIcon, key: 'admin-sliders' },
-      { label: 'FAQs', href: '/admin/uploads?tab=faq', icon: HelpCircle, key: 'admin-faqs' },
-      { label: 'Student Doubts Q&A', href: '/admin/doubts', icon: MessageCircleQuestion, key: 'admin-doubts' },
-    ]
+      { label: 'Operational Reports', href: '/admin/reports', icon: BarChart2, key: 'admin-reports' },
+      { label: 'Platform Settings', href: '/admin/settings', icon: Sliders, key: 'admin-settings' },
+      { label: 'Immutable Audit Logs', href: '/admin/audit-logs', icon: Shield, key: 'admin-audit-logs' },
+    ],
   },
 ];
 
-function CategoryIcon(props: any) {
-  return <Layers {...props} />;
-}
-
-const enterpriseModules = [
-  { label: 'Teacher', desc: 'Teacher profiles & course assignments', href: '/admin/users?role=teacher', icon: UserCheck, color: 'text-primary', bg: 'bg-primary/10' },
-  { label: 'Payments', desc: 'Fonepay logs & financial statements', href: '/admin/analytics?tab=payments', icon: CreditCard, color: 'text-success', bg: 'bg-success-light' },
-  { label: 'Courses', desc: 'Syllabus & subject courses', href: '/admin/subjects', icon: BookOpen, color: 'text-bio', bg: 'bg-bio-light' },
-  { label: 'Bundle Course', desc: 'Multi-course bundles & packages', href: '/admin/batches', icon: Layers, color: 'text-chem', bg: 'bg-chem-light' },
-  { label: 'Live Class', desc: 'Zoom, YouTube & WebRTC streams', href: '/admin/live-classes', icon: Radio, color: 'text-error', bg: 'bg-error-light' },
-  { label: 'Category', desc: 'Exam categories (CEE Medical, etc.)', href: '/admin/subjects', icon: Layers, color: 'text-physics', bg: 'bg-physics-light' },
-  { label: 'Question Bank', desc: '268+ MCQs with explanations', href: '/admin/questions', icon: Zap, color: 'text-ma', bg: 'bg-ma-light' },
-  { label: 'Quiz', desc: 'Practice tests & chapter quizzes', href: '/admin/exams', icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
-  { label: 'User', desc: 'Manage all student profiles', href: '/admin/users', icon: Users, color: 'text-success', bg: 'bg-success-light' },
-  { label: 'User Group', desc: 'Role permissions & privileges', href: '/admin/users?tab=roles', icon: Shield, color: 'text-chem', bg: 'bg-chem-light' },
-  { label: 'Marketer', desc: 'Affiliate referral links & commissions', href: '/admin/users?role=marketer', icon: Megaphone, color: 'text-bio', bg: 'bg-bio-light' },
-  { label: 'Enrollment', desc: 'Student batch & course enrollments', href: '/admin/batches', icon: Ticket, color: 'text-physics', bg: 'bg-physics-light' },
-  { label: 'Coupon', desc: 'Discounts & activation vouchers', href: '/admin/activation-codes', icon: Tag, color: 'text-ma', bg: 'bg-ma-light' },
-  { label: 'Blog', desc: 'Articles & exam preparation guides', href: '/admin/uploads?tab=feed', icon: Newspaper, color: 'text-primary', bg: 'bg-primary/10' },
-  { label: 'Feed', desc: 'Student community updates', href: '/admin/uploads?tab=feed', icon: MessageSquare, color: 'text-success', bg: 'bg-success-light' },
-  { label: 'Free Notes', desc: 'PDF notes & revision guides', href: '/admin/uploads?tab=notes', icon: FileText, color: 'text-chem', bg: 'bg-chem-light' },
-  { label: 'FAQ', desc: 'Student help center FAQs', href: '/admin/uploads?tab=faq', icon: HelpCircle, color: 'text-bio', bg: 'bg-bio-light' },
-  { label: 'Flash Notice', desc: 'Urgent top-bar announcement banner', href: '/admin/uploads?tab=notices', icon: BellRing, color: 'text-error', bg: 'bg-error-light' },
-  { label: 'Notice', desc: 'Popup notices & bulletins', href: '/admin/uploads?tab=notices', icon: BellRing, color: 'text-physics', bg: 'bg-physics-light' },
-  { label: 'Slider', desc: 'Homepage banner sliders', href: '/admin/uploads?tab=slider', icon: ImageIcon, color: 'text-ma', bg: 'bg-ma-light' },
-  { label: 'Course Report', desc: 'Watch time & student analytics', href: '/admin/analytics', icon: BarChart2, color: 'text-primary', bg: 'bg-primary/10' },
-  { label: 'Quiz Result', desc: 'Student rank & score breakdowns', href: '/admin/analytics?tab=quizzes', icon: Award, color: 'text-success', bg: 'bg-success-light' },
-  { label: 'User Privilege', desc: 'Access levels & permission matrix', href: '/admin/users?tab=roles', icon: Shield, color: 'text-chem', bg: 'bg-chem-light' },
+// 21 Canonical Modules Dashboard Directory
+const canonicalModules = [
+  { label: 'Overview', desc: 'Real-time operational dashboard & metrics', href: '/admin', icon: LayoutDashboard, color: 'text-primary', bg: 'bg-primary/10' },
+  { label: 'Students', desc: 'Registered student accounts, progress & status', href: '/admin/users?role=student', icon: Users, color: 'text-success', bg: 'bg-success-light' },
+  { label: 'Teachers & Staff', desc: 'Faculty profiles, subject & batch assignments', href: '/admin/teachers', icon: UserCheck, color: 'text-bio', bg: 'bg-bio-light' },
+  { label: 'Roles & Permissions', desc: 'RBAC permissions matrix & super admin roles', href: '/admin/roles', icon: Shield, color: 'text-chem', bg: 'bg-chem-light' },
+  { label: 'Courses', desc: 'Samyak flagship course catalog & archiving', href: '/admin/courses', icon: BookOpen, color: 'text-physics', bg: 'bg-physics-light' },
+  { label: 'Batches', desc: 'Cohort schedules, start dates & capacities', href: '/admin/batches', icon: Layers, color: 'text-ma', bg: 'bg-ma-light' },
+  { label: 'Subjects & Chapters', desc: 'Curriculum structure, weightage & chapters', href: '/admin/subjects', icon: Layers, color: 'text-primary', bg: 'bg-primary/10' },
+  { label: 'Lessons & Videos', desc: 'HLS video streaming & free preview flags', href: '/admin/lessons', icon: Video, color: 'text-success', bg: 'bg-success-light' },
+  { label: 'Resources', desc: 'PDF notes, formula sheets & model papers', href: '/admin/resources', icon: FileText, color: 'text-chem', bg: 'bg-chem-light' },
+  { label: 'Question Bank', desc: 'MCQs with KaTeX math & exam tagging', href: '/admin/questions', icon: Zap, color: 'text-ma', bg: 'bg-ma-light' },
+  { label: 'Tests & Quizzes', desc: 'CEE 200Q mocks, SEE model exams & scoring', href: '/admin/exams', icon: FileText, color: 'text-primary', bg: 'bg-primary/10' },
+  { label: 'Live Classes', desc: 'Zoom/100ms interactive live lectures', href: '/admin/live-classes', icon: Radio, color: 'text-error', bg: 'bg-error-light' },
+  { label: 'Doubts', desc: 'Student query triage & teacher replies', href: '/admin/doubts', icon: MessageCircleQuestion, color: 'text-physics', bg: 'bg-physics-light' },
+  { label: 'Enrollments', desc: 'Access period grants & manual enrollments', href: '/admin/enrollments', icon: Ticket, color: 'text-bio', bg: 'bg-bio-light' },
+  { label: 'Orders & Payments', desc: 'Fonepay/bank verification & refund audit', href: '/admin/orders', icon: CreditCard, color: 'text-success', bg: 'bg-success-light' },
+  { label: 'Coupons', desc: 'Discount voucher generator & activation codes', href: '/admin/coupons', icon: Tag, color: 'text-ma', bg: 'bg-ma-light' },
+  { label: 'Announcements', desc: 'Urgent notices & student bulletin broadcasts', href: '/admin/announcements', icon: Megaphone, color: 'text-primary', bg: 'bg-primary/10' },
+  { label: 'Notifications', desc: 'In-app transactional alerts & notifications', href: '/admin/notifications', icon: BellRing, color: 'text-chem', bg: 'bg-chem-light' },
+  { label: 'Reports', desc: 'Verified enrollment velocity & revenue metrics', href: '/admin/reports', icon: BarChart2, color: 'text-bio', bg: 'bg-bio-light' },
+  { label: 'Platform Settings', desc: 'Payment gateways, maintenance & test toggles', href: '/admin/settings', icon: Sliders, color: 'text-physics', bg: 'bg-physics-light' },
+  { label: 'Audit Logs', desc: 'Immutable audit trail with diff inspector', href: '/admin/audit-logs', icon: Shield, color: 'text-error', bg: 'bg-error-light' },
 ];
-
-interface KpiData {
-  totalQuestions: number;
-  totalExams: number;
-  totalStudents: number;
-  loading: boolean;
-}
 
 export default function AdminDashboardClient() {
   const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['admin-academic', 'admin-evaluations']));
-  const [kpi, setKpi] = useState<KpiData>({ totalQuestions: 0, totalExams: 0, totalStudents: 0, loading: true });
-  const [syncingBunny, setSyncingBunny] = useState(false);
-
-  const [live, setLive] = useState({
-    totalStudents: 0, subscribers: 0, revenueNpr: 0, activeToday: 0,
-    mcqPublished: 0, upcomingClasses: 0, prebookings: 0, liveNow: 0,
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
+    new Set(['admin-academic', 'admin-assessment', 'admin-users', 'admin-finance'])
+  );
+  
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<any>({
+    totalStudents: 0,
+    subscribers: 0,
+    activeToday: 0,
+    totalRevenueNpr: 0,
+    mcqsPublished: 0,
+    examsPublished: 0,
+    openDoubts: 0,
+    pendingOrdersCount: 0,
+    recentAudits: [],
   });
 
-  useEffect(() => {
-    const fetchKpi = async () => {
-      const supabase = createClient();
-      const [questionsRes, examsRes, studentsRes, statsRes] = await Promise.all([
-        supabase.from('questions').select('id', { count: 'exact', head: true }),
-        supabase.from('exams').select('id', { count: 'exact', head: true }),
-        supabase.from('user_profiles').select('id', { count: 'exact', head: true }),
-        fetch('/api/admin/stats').then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      ]);
-      setKpi({
-        totalQuestions: questionsRes.count ?? 0,
-        totalExams: examsRes.count ?? 0,
-        totalStudents: studentsRes.count ?? 0,
-        loading: false,
-      });
-      if (statsRes) setLive(statsRes);
-    };
-    fetchKpi();
-  }, []);
-
-  const handleSyncBunny = async () => {
-    setSyncingBunny(true);
+  const fetchOverview = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/bunny/sync', { method: 'POST' });
+      const res = await fetch('/api/admin/overview');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to sync Bunny.net videos');
-      toast.success(`🎉 Bunny Sync Complete! Processed ${data.totalBunnyVideos || 292} videos.`);
-    } catch (err: any) {
-      toast.error(err.message || 'Error syncing Bunny videos');
+      if (res.ok && data.data) {
+        setOverview(data.data);
+      }
+    } catch (err) {
+      console.error('Error loading admin overview:', err);
     } finally {
-      setSyncingBunny(false);
+      setLoading(false);
     }
   };
 
-  const npr = (n: number) => n.toLocaleString('en-IN');
-  const statCards = [
-    { label: 'Total Students', value: npr(live.totalStudents), change: 'All-time registered', trend: 'neutral' as const, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Active Today', value: npr(live.activeToday), change: 'Signed in (24h)', trend: 'neutral' as const, icon: Activity, color: 'text-success', bg: 'bg-success-light' },
-    { label: 'Subscribers', value: npr(live.subscribers), change: 'Active paid plans', trend: 'neutral' as const, icon: CreditCard, color: 'text-chem', bg: 'bg-chem-light' },
-    { label: 'Revenue (NPR)', value: npr(Math.round(live.revenueNpr)), change: 'Confirmed payments', trend: 'neutral' as const, icon: TrendingUp, color: 'text-bio', bg: 'bg-bio-light' },
-    { label: 'Bunny.net Stream', value: '292 Videos', change: 'HLS Adaptive HD', trend: 'neutral' as const, icon: Video, color: 'text-physics', bg: 'bg-physics-light' },
-    { label: 'MCQs Published', value: npr(live.mcqPublished), change: 'In the question bank', trend: 'neutral' as const, icon: Zap, color: 'text-ma', bg: 'bg-ma-light' },
-  ];
+  useEffect(() => {
+    fetchOverview();
+  }, []);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
@@ -213,6 +178,17 @@ export default function AdminDashboardClient() {
     window.location.href = '/login';
   };
 
+  const npr = (n: number) => Number(n || 0).toLocaleString('en-IN');
+
+  const statCards = [
+    { label: 'Total Students', value: npr(overview.totalStudents), change: 'Verified database users', trend: 'neutral' as const, icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
+    { label: 'Active Today', value: npr(overview.activeToday), change: 'Signed in (24h estimate)', trend: 'neutral' as const, icon: Activity, color: 'text-success', bg: 'bg-success-light' },
+    { label: 'Subscribers', value: npr(overview.subscribers), change: 'Active paid plans', trend: 'neutral' as const, icon: CreditCard, color: 'text-chem', bg: 'bg-chem-light' },
+    { label: 'Total Revenue', value: `Rs. ${npr(overview.totalRevenueNpr)}`, change: 'Confirmed orders', trend: 'neutral' as const, icon: TrendingUp, color: 'text-bio', bg: 'bg-bio-light' },
+    { label: 'MCQs Published', value: npr(overview.mcqsPublished), change: 'Active in question bank', trend: 'neutral' as const, icon: Zap, color: 'text-ma', bg: 'bg-ma-light' },
+    { label: 'Active Exams', value: npr(overview.examsPublished), change: 'Published blueprints', trend: 'neutral' as const, icon: FileText, color: 'text-physics', bg: 'bg-physics-light' },
+  ];
+
   const Sidebar = () => (
     <aside className="flex flex-col w-64 bg-card border-r border-border h-full">
       <div className="flex items-center h-16 px-4 border-b border-border shrink-0">
@@ -220,7 +196,7 @@ export default function AdminDashboardClient() {
           <AppLogo size={32} />
           <div className="flex flex-col leading-none">
             <span className="font-extrabold text-sm text-foreground tracking-tight">Samyak Enterprise</span>
-            <span className="text-xs font-semibold text-primary">LMS Control Center</span>
+            <span className="text-xs font-semibold text-primary">21 Admin Modules</span>
           </div>
         </Link>
       </div>
@@ -269,21 +245,25 @@ export default function AdminDashboardClient() {
         })}
       </div>
 
-      <div className="border-t border-border p-3 shrink-0">
-        <div className="flex items-center gap-2.5 px-2 py-2 mb-2">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-            SA
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-bold text-foreground truncate">Super Administrator</p>
-            <p className="text-[10px] text-muted-foreground">Full Permissions</p>
-          </div>
-        </div>
-        <Link href="/student-dashboard" className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors mb-1.5">
+      <div className="border-t border-border p-3 shrink-0 space-y-1.5">
+        <Link
+          href="/teacher"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-bio/10 text-bio text-xs font-bold hover:bg-bio/20 transition-colors"
+        >
+          <UserCheck size={14} />
+          Teacher Portal (10 Modules)
+        </Link>
+        <Link
+          href="/student-dashboard"
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors"
+        >
           <LayoutDashboard size={14} />
           View Student Site
         </Link>
-        <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-error hover:bg-error-light transition-colors text-xs font-semibold">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl text-error hover:bg-error-light transition-colors text-xs font-semibold"
+        >
           <LogOut size={14} />
           Sign Out
         </button>
@@ -314,25 +294,23 @@ export default function AdminDashboardClient() {
               <Menu size={18} />
             </button>
             <div>
-              <p className="text-sm font-bold text-foreground">Enterprise LMS Control Hub</p>
-              <p className="text-xs text-muted-foreground">Samyak CEE Mastery · Admin Management Portal</p>
+              <p className="text-sm font-bold text-foreground">Samyak Operational Administration</p>
+              <p className="text-xs text-muted-foreground">Authoritative Control across 21 Enterprise LMS Modules</p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleSyncBunny}
-              disabled={syncingBunny}
-              className="flex items-center gap-2 px-3 py-1.5 bg-physics/10 hover:bg-physics/20 text-physics text-xs font-bold rounded-xl transition-colors"
+            <Link
+              href="/teacher"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-bio/10 hover:bg-bio/20 text-bio text-xs font-bold rounded-xl transition-colors"
             >
-              {syncingBunny ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              Sync Bunny.net (292)
-            </button>
+              <UserCheck size={14} />
+              Teacher Portal
+            </Link>
 
-            <div className="hidden sm:flex items-center gap-1.5 bg-success-light text-success text-xs font-semibold px-2.5 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-              Live System Active
-            </div>
+            <button onClick={fetchOverview} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted" title="Refresh Live Data">
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            </button>
 
             <button onClick={() => setIsDark(!isDark)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted">
               {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -347,18 +325,18 @@ export default function AdminDashboardClient() {
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h1 className="text-xl font-bold text-foreground">Admin Management Suite</h1>
+                <h1 className="text-xl font-bold text-foreground">Operational Admin Control Center</h1>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  23 Enterprise LMS Modules · Real-Time Control &amp; Monitoring
+                  Production Overview · Real Database Figures · Audit-Logged Mutations
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <Link href="/admin/batches" className="btn-primary py-2 px-4 text-xs font-bold">
-                  + Add Bundle Course
+                <Link href="/admin/orders" className="btn-primary py-2 px-3 text-xs font-bold flex items-center gap-1.5">
+                  <CreditCard size={14} /> Orders ({overview.pendingOrdersCount} Pending)
                 </Link>
-                <Link href="/admin/questions" className="btn-secondary py-2 px-4 text-xs font-bold">
-                  + Add Question
+                <Link href="/admin/enrollments" className="btn-secondary py-2 px-3 text-xs font-bold flex items-center gap-1.5">
+                  <Ticket size={14} /> Grant Enrollment
                 </Link>
               </div>
             </div>
@@ -370,24 +348,24 @@ export default function AdminDashboardClient() {
                   <div className={`w-8 h-8 rounded-xl ${stat.bg} flex items-center justify-center mb-2`}>
                     <stat.icon size={16} className={stat.color} />
                   </div>
-                  <p className="text-lg font-extrabold text-foreground leading-none">{kpi.loading ? '—' : stat.value}</p>
+                  <p className="text-lg font-extrabold text-foreground leading-none">{loading ? '—' : stat.value}</p>
                   <p className="text-xs font-semibold text-foreground mt-1 truncate">{stat.label}</p>
                   <p className="text-[10px] text-muted-foreground truncate mt-0.5">{stat.change}</p>
                 </div>
               ))}
             </div>
 
-            {/* 23 Enterprise LMS Modules Grid */}
+            {/* 21 Canonical Modules Directory */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <Layers size={16} className="text-primary" /> Enterprise LMS Modules (23)
+                  <Layers size={16} className="text-primary" /> Canonical Administration Modules (21)
                 </h2>
-                <span className="text-xs text-muted-foreground">Click any module to manage</span>
+                <span className="text-xs text-muted-foreground">Every module adheres to server-side authorization</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {enterpriseModules.map((m) => (
+                {canonicalModules.map((m) => (
                   <Link
                     key={m.label}
                     href={m.href}
@@ -410,6 +388,40 @@ export default function AdminDashboardClient() {
                   </Link>
                 ))}
               </div>
+            </div>
+
+            {/* Recent Audit Trail Stream */}
+            <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Shield size={16} className="text-primary" /> Live Audit Log Activity
+                </h3>
+                <Link href="/admin/audit-logs" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+                  View Full Audit Trail ({overview.recentAudits?.length || 0}) →
+                </Link>
+              </div>
+
+              {overview.recentAudits && overview.recentAudits.length > 0 ? (
+                <div className="divide-y divide-border text-xs">
+                  {overview.recentAudits.slice(0, 5).map((log: any) => (
+                    <div key={log.id} className="py-2.5 flex items-center justify-between gap-4 font-mono">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary shrink-0">
+                          {log.action}
+                        </span>
+                        <span className="font-sans font-semibold text-foreground truncate">
+                          {log.resource_type} ({log.resource_id})
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-muted-foreground shrink-0 font-sans">
+                        {new Date(log.created_at).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground py-3">No administrative audit events recorded yet.</p>
+              )}
             </div>
 
           </div>

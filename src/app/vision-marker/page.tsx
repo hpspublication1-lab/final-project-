@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import PublicNav from '@/components/PublicNav';
+import DashboardLayout from '@/components/DashboardLayout';
 import {
   Camera, Upload, Sparkles, CheckCircle2, AlertTriangle, RefreshCw,
   Award, FileText, Check, X, ArrowRight, Eye, Image as ImageIcon, BookOpen
@@ -119,26 +119,23 @@ export default function VisionMarkerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} />
-
-      {/* Hero Banner */}
-      <section className="pt-28 pb-10 bg-gradient-to-b from-amber-500/10 via-card to-background border-b border-border">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
+    <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
+      <div className="space-y-6">
+        {/* Hero Banner */}
+        <section className="bg-gradient-to-b from-amber-500/10 via-card to-card border border-border rounded-3xl p-6 sm:p-8">
+          <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 text-amber-600 text-xs font-black border border-amber-500/20">
               <Camera size={14} /> GPT-4o Vision Handwriting Marker &amp; OCR Engine
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black text-foreground tracking-tight leading-tight">
-              Snap a Photo of Your <br />
+            <h1 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight leading-tight">
+              Snap a Photo of Your{' '}
               <span className="text-amber-600">Handwritten Notebook or Exam Paper</span>
             </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl">
               Our AI Vision Marker reads your handwriting, verifies step-by-step mathematical derivations, marks mistakes, and grades handwritten IELTS essays and CEE/SEE paper answers!
             </p>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* Main Workspace */}
       <section className="py-8 max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 space-y-8">
@@ -354,5 +351,6 @@ export default function VisionMarkerPage() {
         </div>
       </section>
     </div>
+  </DashboardLayout>
   );
 }

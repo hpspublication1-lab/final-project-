@@ -93,7 +93,7 @@ export default function PricingSection() {
               </div>
 
               <div>
-                <div className="text-3xl font-black text-foreground">NPR 2,490</div>
+                <div className="text-3xl font-black text-foreground">NPR 4,990</div>
                 <p className="text-xs text-muted-foreground mt-1">Full Academic Year (365 Days Access)</p>
               </div>
 
@@ -130,7 +130,7 @@ export default function PricingSection() {
                 href="/checkout?plan=see-class-10-board-topper-batch"
                 className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-2"
               >
-                <span>Enroll in SEE Batch (NPR 2,490)</span>
+                <span>Enroll in SEE Batch (NPR 4,990)</span>
                 <ArrowRight size={14} />
               </Link>
               <p className="text-[10px] text-muted-foreground text-center">
@@ -139,7 +139,7 @@ export default function PricingSection() {
             </div>
           </div>
 
-          {/* Plan 3: CEE Medical Pro Batch */}
+          {/* Plan 3: CEE Medical Target Batch */}
           <div className="bg-card border-2 border-indigo-500 rounded-3xl p-6 sm:p-7 shadow-lg flex flex-col justify-between space-y-6 relative">
             <span className="absolute -top-3 right-6 text-[10px] font-black uppercase px-3 py-0.5 rounded-full bg-indigo-600 text-white shadow-xs">
               RECOMMENDED FOR MEDICAL
@@ -147,12 +147,12 @@ export default function PricingSection() {
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-wider text-indigo-600">CEE ENTRANCE PRO</span>
+                <span className="text-xs font-black uppercase tracking-wider text-indigo-600">CEE TARGET BATCH</span>
               </div>
 
               <div>
-                <div className="text-3xl font-black text-foreground">NPR 2,299</div>
-                <p className="text-xs text-muted-foreground mt-1">Full Entrance Cycle (365 Days Access)</p>
+                <div className="text-3xl font-black text-foreground">NPR 7,990</div>
+                <p className="text-xs text-muted-foreground mt-1">Full MECEE Cycle (180 Days Access)</p>
               </div>
 
               <ul className="space-y-2.5 text-xs text-muted-foreground pt-4 border-t border-border/60">
@@ -185,12 +185,18 @@ export default function PricingSection() {
 
             <div className="space-y-2">
               <Link
-                href="/checkout?plan=student-yearly"
+                href="/checkout?plan=cee-mbbs-mastery-2026"
                 className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-2"
               >
-                <span>Enroll in CEE Pro (NPR 2,299)</span>
+                <span>Enroll in CEE Target Batch (NPR 7,990)</span>
                 <ArrowRight size={14} />
               </Link>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 pt-1">
+                <span>Need 45-day crash course?</span>
+                <Link href="/checkout?plan=cee-45-day-crash-course" className="text-primary font-bold hover:underline">
+                  NPR 2,299 &rarr;
+                </Link>
+              </div>
               <p className="text-[10px] text-muted-foreground text-center">
                 💳 Fonepay Dynamic QR · ⚡ Instant Activation
               </p>

@@ -74,7 +74,7 @@ export default function TestimonialsSection() {
             <Sparkles size={14} /> Verified Student Success &amp; Reviews
           </div>
           <h2 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
-            Trusted by 15,000+ Students Across Nepal
+            Trusted by 5,000+ Students Across Nepal
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Authentic, verifiable reviews from students preparing for SEE, CEE, IELTS, and digital careers.

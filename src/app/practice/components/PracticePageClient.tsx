@@ -1,17 +1,42 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useTransition } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useCallback, useTransition, useMemo } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Zap, ChevronRight, ChevronLeft, BookmarkPlus, Flag, CheckCircle2, XCircle, Clock, BarChart2, Play, RotateCcw, Target, Brain, Loader2, AlertCircle, Lightbulb, X, Sparkles } from 'lucide-react';
-import { fetchPracticeQuestions, fetchSubjectChapters, savePracticeAttempt, type QuestionRow, type ChapterOption } from '../actions';
+import {
+  Zap,
+  ChevronRight,
+  ChevronLeft,
+  BookmarkPlus,
+  BookmarkCheck,
+  Flag,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  BarChart2,
+  Play,
+  RotateCcw,
+  Target,
+  Brain,
+  Loader2,
+  AlertCircle,
+  Lightbulb,
+  X,
+  Sparkles,
+  SlidersHorizontal,
+  HelpCircle,
+  Send,
+  RefreshCw,
+  TrendingUp,
+  Award
+} from 'lucide-react';
+import { fetchPracticeQuestions, fetchSubjectChapters, type QuestionRow, type ChapterOption } from '../actions';
 import { createClient } from '@/lib/supabase/client';
 import { useChat } from '@/lib/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
+import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { MathText } from '@/components/MathText';
-
 import toast from 'react-hot-toast';
 
 interface MCQOption {
@@ -33,7 +58,7 @@ interface MCQ {
   subjectId: string | null;
 }
 
-function mapRowToMCQ(row: QuestionRow): MCQ {
+function mapRowToMCQ(row: QuestionRow, isSee = false): MCQ {
   return {
     id: row.id,
     question: row.questionText,
@@ -49,7 +74,7 @@ function mapRowToMCQ(row: QuestionRow): MCQ {
     chapter: row.chapterTitle ?? '',
     difficulty: (row.difficulty.charAt(0).toUpperCase() + row.difficulty.slice(1)) as 'Easy' | 'Medium' | 'Hard',
     marks: 1,
-    negativeMarks: 0.25,
+    negativeMarks: isSee ? 0 : 0.25,
     subjectId: row.subjectId,
   };
 }
@@ -57,12 +82,38 @@ function mapRowToMCQ(row: QuestionRow): MCQ {
 type PracticeMode = 'setup' | 'loading' | 'active' | 'review';
 
 const difficultyColors: Record<string, string> = {
-  Easy: 'bg-success-light text-success',
-  Medium: 'bg-warning-light text-warning',
-  Hard: 'bg-error-light text-error',
+  Easy: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+  Medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+  Hard: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
 };
 
+interface EvaluatedDetail {
+  questionId: string;
+  selectedOption: string | null;
+  correctOption: string;
+  isCorrect: boolean;
+  marksAwarded: number;
+  explanation: string;
+  difficulty: string;
+  markingScheme?: any;
+}
+
+interface SessionMetrics {
+  totalQuestions: number;
+  attempted: number;
+  correctCount: number;
+  incorrectCount: number;
+  unattemptedCount: number;
+  totalMarksPossible: number;
+  totalScore: number;
+  percentage: number;
+  accuracyPercentage: number;
+  paceMinutesPerQuestion: number;
+  paceStatus: 'rushed' | 'on_target' | 'slow';
+}
+
 export default function PracticePageClient() {
+  const router = useRouter();
   const [isDark, setIsDark] = useState(false);
   const [mode, setMode] = useState<PracticeMode>('setup');
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -75,54 +126,45 @@ export default function PracticePageClient() {
   const [selectedSubject, setSelectedSubject] = useState('Biology');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [questionCount, setQuestionCount] = useState(10);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [liveMode, setLiveMode] = useState(false); // ⚡ generate fresh via OpenAI
+  const [liveMode, setLiveMode] = useState(false);
   const [questions, setQuestions] = useState<MCQ[]>([]);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [isPending, startTransition] = useTransition();
 
+  // Certified server evaluation results
+  const [evaluating, setEvaluating] = useState(false);
+  const [certifiedMetrics, setCertifiedMetrics] = useState<SessionMetrics | null>(null);
+  const [evaluatedDetails, setEvaluatedDetails] = useState<EvaluatedDetail[]>([]);
+
+  // Flag Question Modal
+  const [flagModalOpen, setFlagModalOpen] = useState(false);
+  const [flagReason, setFlagReason] = useState('Wrong answer key');
+  const [flagDetails, setFlagDetails] = useState('');
+  const [submittingFlag, setSubmittingFlag] = useState(false);
+
+  // Custom Practice Drawer / Modal
+  const [customPracticeOpen, setCustomPracticeOpen] = useState(false);
+
   const { user } = useAuth();
-  const { program, programDetails, isSee, isCee, isIelts, isDigitalOrAi } = useProgram();
+  const { program, programDetails, isSee } = useProgram();
   const canonicalId = normalizeCourseId(program);
 
   const ceeSubjectsList = [
-    { name: 'Biology', icon: '🧬', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
-    { name: 'Chemistry', icon: '⚗️', color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/30' },
-    { name: 'Physics', icon: '⚡', color: 'text-physics', bg: 'bg-physics-light', border: 'border-physics/30' },
-    { name: 'Mental Agility', icon: '🧠', color: 'text-ma', bg: 'bg-ma-light', border: 'border-ma/30' },
+    { name: 'Biology', icon: '🧬', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-800' },
+    { name: 'Chemistry', icon: '⚗️', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-800' },
+    { name: 'Physics', icon: '⚡', color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/30', border: 'border-sky-200 dark:border-sky-800' },
+    { name: 'Mental Agility', icon: '🧠', color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
   ];
 
   const seeSubjectsList = [
-    { name: 'Compulsory Science', icon: '🔬', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
-    { name: 'Compulsory Mathematics', icon: '📐', color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/30' },
-    { name: 'Optional Mathematics', icon: '✨', color: 'text-physics', bg: 'bg-physics-light', border: 'border-physics/30' },
-    { name: 'English', icon: '📖', color: 'text-ma', bg: 'bg-ma-light', border: 'border-ma/30' },
-    { name: 'Social Studies', icon: '🌍', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
+    { name: 'Compulsory Science', icon: '🔬', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/30', border: 'border-emerald-200 dark:border-emerald-800' },
+    { name: 'Compulsory Mathematics', icon: '📐', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/30', border: 'border-amber-200 dark:border-amber-800' },
+    { name: 'Optional Mathematics', icon: '✨', color: 'text-sky-600', bg: 'bg-sky-50 dark:bg-sky-950/30', border: 'border-sky-200 dark:border-sky-800' },
+    { name: 'English', icon: '📖', color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
+    { name: 'Social Studies', icon: '🌍', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
   ];
 
-  const ieltsSubjectsList = [
-    { name: 'Grammar & Vocabulary', icon: '📖', color: 'text-ma', bg: 'bg-ma-light', border: 'border-ma/30' },
-    { name: 'Reading Comprehension', icon: '📚', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
-    { name: 'Listening Drills', icon: '🎧', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
-    { name: 'Writing Tasks', icon: '✍️', color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/30' },
-  ];
-
-  const digitalSubjectsList = [
-    { name: 'Prompt Engineering & AI', icon: '🤖', color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/30' },
-    { name: 'Python for AI', icon: '🐍', color: 'text-bio', bg: 'bg-bio-light', border: 'border-bio/30' },
-    { name: 'Meta & Search Ads', icon: '📱', color: 'text-chem', bg: 'bg-chem-light', border: 'border-chem/30' },
-    { name: 'SEO & Copywriting', icon: '📝', color: 'text-physics', bg: 'bg-physics-light', border: 'border-physics/30' },
-  ];
-
-  const availableSubjects =
-    canonicalId === 'see_class_10'
-      ? seeSubjectsList
-      : canonicalId === 'ielts'
-      ? ieltsSubjectsList
-      : isDigitalOrAi
-      ? digitalSubjectsList
-      : ceeSubjectsList;
+  const availableSubjects = isSee || canonicalId === 'see_class_10' ? seeSubjectsList : ceeSubjectsList;
 
   // Auto-switch selected subject when program changes
   useEffect(() => {
@@ -132,9 +174,7 @@ export default function PracticePageClient() {
     }
   }, [canonicalId, availableSubjects, selectedSubject]);
 
-
-  // Persist a bookmark toggle to the DB (optimistic). Previously this button
-  // only mutated local state, so nothing ever reached the bookmarks table.
+  // Real Database Bookmark Toggle
   const toggleBookmark = useCallback(async (questionId: string) => {
     if (!user?.id) {
       toast.error('Sign in to save bookmarks');
@@ -143,7 +183,8 @@ export default function PracticePageClient() {
     const willBookmark = !bookmarked.has(questionId);
     setBookmarked((prev) => {
       const n = new Set(prev);
-      willBookmark ? n.add(questionId) : n.delete(questionId);
+      if (willBookmark) n.add(questionId);
+      else n.delete(questionId);
       return n;
     });
 
@@ -151,9 +192,17 @@ export default function PracticePageClient() {
     if (willBookmark) {
       const { error } = await supabase
         .from('bookmarks')
-        .upsert({ student_id: user.id, question_id: questionId }, { onConflict: 'student_id,question_id' });
+        .insert({
+          user_id: user.id,
+          resource_type: 'question',
+          resource_id: questionId,
+        });
       if (error) {
-        setBookmarked((prev) => { const n = new Set(prev); n.delete(questionId); return n; });
+        setBookmarked((prev) => {
+          const n = new Set(prev);
+          n.delete(questionId);
+          return n;
+        });
         toast.error('Could not save bookmark');
       } else {
         toast.success('Saved to bookmarks');
@@ -162,17 +211,23 @@ export default function PracticePageClient() {
       const { error } = await supabase
         .from('bookmarks')
         .delete()
-        .eq('student_id', user.id)
-        .eq('question_id', questionId);
+        .eq('user_id', user.id)
+        .eq('resource_type', 'question')
+        .eq('resource_id', questionId);
       if (error) {
-        setBookmarked((prev) => { const n = new Set(prev); n.add(questionId); return n; });
+        setBookmarked((prev) => {
+          const n = new Set(prev);
+          n.add(questionId);
+          return n;
+        });
         toast.error('Could not remove bookmark');
+      } else {
+        toast.success('Bookmark removed');
       }
     }
   }, [user?.id, bookmarked]);
 
-  // Pre-fill bookmark state for whatever questions are in the current session
-  // so already-saved questions show as bookmarked.
+  // Pre-fill bookmark state for questions in active session
   useEffect(() => {
     if (!user?.id || questions.length === 0) return;
     let cancelled = false;
@@ -180,28 +235,26 @@ export default function PracticePageClient() {
       const supabase = createClient();
       const { data } = await supabase
         .from('bookmarks')
-        .select('question_id')
-        .eq('student_id', user.id)
-        .in('question_id', questions.map((q) => q.id));
+        .select('resource_id')
+        .eq('user_id', user.id)
+        .eq('resource_type', 'question')
+        .in('resource_id', questions.map((q) => q.id));
       if (cancelled || !data) return;
       setBookmarked((prev) => {
         const n = new Set(prev);
-        data.forEach((r: any) => n.add(r.question_id));
+        data.forEach((r: any) => n.add(r.resource_id));
         return n;
       });
     })();
     return () => { cancelled = true; };
   }, [user?.id, questions]);
 
-  // Chapter-scoped practice, arrived at via ?subject=&chapter= from Subjects/
-  // Chapter Detail pages (previously silently ignored — those links did nothing).
   const searchParams = useSearchParams();
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [chapterFilterTitle, setChapterFilterTitle] = useState<string | null>(null);
   const [availableChapters, setAvailableChapters] = useState<ChapterOption[]>([]);
   const [loadingChapters, setLoadingChapters] = useState(false);
 
-  // Load chapters for selected subject
   useEffect(() => {
     let cancelled = false;
     setLoadingChapters(true);
@@ -222,9 +275,12 @@ export default function PracticePageClient() {
     const subj = overrideSubj ?? selectedSubject;
 
     setFetchError(null);
+    setCertifiedMetrics(null);
+    setEvaluatedDetails([]);
     setMode('loading');
+
     startTransition(async () => {
-      // ⚡ Live AI mode: generate a fresh set via OpenAI (Pro feature), no bank.
+      // Live AI mode
       if (liveMode) {
         try {
           const res = await fetch('/api/practice/live', {
@@ -252,7 +308,7 @@ export default function PracticePageClient() {
             chapter: 'Live AI',
             difficulty: (q.difficulty ? q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1) : 'Medium') as 'Easy' | 'Medium' | 'Hard',
             marks: 1,
-            negativeMarks: 0.25,
+            negativeMarks: isSee ? 0 : 0.25,
             subjectId: null,
           }));
           setQuestions(mapped);
@@ -267,37 +323,37 @@ export default function PracticePageClient() {
         return;
       }
 
-      // Free plan: 200 practice MCQs / month. Paid & prebook users are unlimited.
+      // Check quota for free accounts
       try {
         const quotaRes = await fetch('/api/practice/quota');
         if (quotaRes.ok) {
           const q = await quotaRes.json();
           if (q.limited) {
             setFetchError(
-              `You've used all ${q.limit} free practice MCQs this month. Upgrade to Pro or prebook the crash course for unlimited practice and every premium feature.`
+              `You've used all ${q.limit} free practice MCQs this month. Upgrade to Pro for unlimited practice.`
             );
             setMode('setup');
             return;
           }
         }
       } catch {
-        // fail open — never block practice on a quota hiccup
+        // fail open
       }
 
       const result = await fetchPracticeQuestions(subj, diff, count, selectedChapterId);
       if (result.error || result.questions.length === 0) {
         const scope = chapterFilterTitle ? `${chapterFilterTitle} (${subj})` : `${subj} (${diff})`;
-        setFetchError(result.error ?? `No questions found for ${scope}. Please try a different filter.`);
+        setFetchError(result.error ?? `No questions found for ${scope}. Try a different filter.`);
         setMode('setup');
         return;
       }
-      setQuestions(result.questions.map(mapRowToMCQ));
+      setQuestions(result.questions.map((q) => mapRowToMCQ(q, isSee)));
       setCurrentIdx(0);
       setSelectedAnswers({});
       setShowExplanation(false);
       setMode('active');
     });
-  }, [liveMode, questionCount, selectedDifficulty, selectedSubject, selectedChapterId, chapterFilterTitle]);
+  }, [liveMode, questionCount, selectedDifficulty, selectedSubject, selectedChapterId, chapterFilterTitle, isSee]);
 
   useEffect(() => {
     const countParam = searchParams.get('count');
@@ -319,8 +375,6 @@ export default function PracticePageClient() {
     if (autostart) {
       handleStartSession(initialCount, 'All', subjParam || undefined);
     }
-    // Only read the URL once, on initial load of the setup screen.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -364,14 +418,14 @@ export default function PracticePageClient() {
     sendHintMessage([
       {
         role: 'system',
-        content: `You are a helpful tutor for Nepal's CEE (Common Entrance Examination) for medical students. Your job is to give a SHORT conceptual hint (2–3 sentences max) that helps the student think through the question without revealing or implying the correct answer. Do NOT mention which option is correct. Do NOT say "the answer is..." or "option X is...". Focus on the underlying concept or principle they should recall.`,
+        content: `You are an expert tutor for Nepal's ${isSee ? 'SEE Class 10' : 'CEE Medical'} exams. Give a SHORT conceptual hint (2-3 sentences max) to help the student recall the key principle without revealing or giving away the correct answer option.`,
       },
       {
         role: 'user',
-        content: `Question: ${question.question}\n\nOptions:\n${optionsList}\n\nSubject: ${question.subject}${question.chapter ? ` | Chapter: ${question.chapter}` : ''}\n\nGive me a conceptual hint to help me think through this question.`,
+        content: `Question: ${question.question}\n\nOptions:\n${optionsList}\n\nSubject: ${question.subject}${question.chapter ? ` | Chapter: ${question.chapter}` : ''}\n\nGive a conceptual hint to solve this.`,
       },
     ], { max_completion_tokens: 150 });
-  }, [hints, sendHintMessage]);
+  }, [hints, sendHintMessage, isSee]);
 
   const current = questions[currentIdx];
   const selectedAnswer = current ? selectedAnswers[current.id] : undefined;
@@ -380,12 +434,12 @@ export default function PracticePageClient() {
   // Timer
   useEffect(() => {
     if (mode === 'active') {
-      const t = questionCount * 60;
+      const t = questions.length * 60;
       setTimeLeft(t);
       setTotalTime(t);
       setSessionStartTime(Date.now());
     }
-  }, [mode, questionCount]);
+  }, [mode, questions.length]);
 
   useEffect(() => {
     if (mode !== 'active') return;
@@ -409,191 +463,226 @@ export default function PracticePageClient() {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const getScore = () => {
-    let score = 0;
-    let correct = 0;
-    let incorrect = 0;
-    questions.forEach((q) => {
-      const ans = selectedAnswers[q.id];
-      if (!ans) return;
-      if (ans === q.correctId) { score += q.marks; correct++; }
-      else { score -= q.negativeMarks; incorrect++; }
-    });
-    return { score, correct, incorrect, unattempted: questions.length - correct - incorrect };
+  // Server-Side Evaluation Finish
+  const handleFinishSession = async () => {
+    setMode('review');
+    setEvaluating(true);
+    const timeTaken = sessionStartTime > 0 ? Math.round((Date.now() - sessionStartTime) / 1000) : (questions.length * 60 - timeLeft);
+
+    try {
+      const answersPayload = questions.map((q) => ({
+        questionId: q.id,
+        selectedOption: selectedAnswers[q.id] || null,
+        timeSpentSeconds: Math.max(1, Math.round(timeTaken / (questions.length || 1))),
+      }));
+
+      const res = await fetch('/api/practice/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseSlug: canonicalId,
+          subjectId: current?.subjectId || null,
+          chapterId: selectedChapterId || null,
+          totalSessionTimeSec: timeTaken,
+          answers: answersPayload,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setCertifiedMetrics(data.metrics);
+        setEvaluatedDetails(data.questionResults);
+      } else {
+        throw new Error(data.error || 'Server evaluation failed');
+      }
+    } catch (err: any) {
+      console.warn('Server evaluation failed, falling back to local calculation:', err.message);
+      // Fallback local metrics
+      let corr = 0;
+      let incorr = 0;
+      const details: EvaluatedDetail[] = questions.map((q) => {
+        const ans = selectedAnswers[q.id];
+        const isCorr = ans === q.correctId;
+        if (ans) {
+          if (isCorr) corr++;
+          else incorr++;
+        }
+        return {
+          questionId: q.id,
+          selectedOption: ans || null,
+          correctOption: q.correctId,
+          isCorrect: isCorr,
+          marksAwarded: !ans ? 0 : isCorr ? q.marks : -q.negativeMarks,
+          explanation: q.explanation,
+          difficulty: q.difficulty.toLowerCase(),
+        };
+      });
+
+      const totalMarks = questions.reduce((acc, q) => acc + q.marks, 0);
+      const totalScore = corr * 1.0 - (isSee ? 0 : incorr * 0.25);
+      const unatt = questions.length - corr - incorr;
+
+      setCertifiedMetrics({
+        totalQuestions: questions.length,
+        attempted: corr + incorr,
+        correctCount: corr,
+        incorrectCount: incorr,
+        unattemptedCount: unatt,
+        totalMarksPossible: totalMarks,
+        totalScore: Math.round(totalScore * 100) / 100,
+        percentage: totalMarks > 0 ? Math.round((Math.max(0, totalScore) / totalMarks) * 100) : 0,
+        accuracyPercentage: (corr + incorr) > 0 ? Math.round((corr / (corr + incorr)) * 100) : 0,
+        paceMinutesPerQuestion: Math.round((timeTaken / 60 / (questions.length || 1)) * 10) / 10,
+        paceStatus: 'on_target',
+      });
+      setEvaluatedDetails(details);
+    } finally {
+      setEvaluating(false);
+    }
   };
 
-  const handleFinishSession = () => {
-    setMode('review');
-    const { score, correct, incorrect, unattempted } = getScore();
-    const timeTaken = sessionStartTime > 0 ? Math.round((Date.now() - sessionStartTime) / 1000) : questionCount * 60;
-    setSaveStatus('saving');
-    startTransition(async () => {
-      const result = await savePracticeAttempt({
-        subjectName: selectedSubject,
-        difficulty: selectedDifficulty,
-        totalQuestions: questions.length,
-        correctAnswers: correct,
-        incorrectAnswers: incorrect,
-        unattempted,
-        score,
-        totalMarks: questions.length,
-        timeTakenSeconds: timeTaken,
-        questionAttempts: questions.map((q) => ({
-          questionId: q.id,
-          selectedOption: selectedAnswers[q.id] ?? '',
-          isCorrect: selectedAnswers[q.id] === q.correctId,
-          subjectId: q.subjectId,
-          difficulty: q.difficulty,
-        })).filter((qa) => qa.selectedOption !== ''),
+  // 1-Click Retry Incorrect Questions
+  const handleRetryMistakes = () => {
+    if (!evaluatedDetails.length) return;
+    const mistakeQuestionIds = new Set(
+      evaluatedDetails.filter((d) => !d.isCorrect && d.selectedOption !== null).map((d) => d.questionId)
+    );
+
+    const mistakeQuestions = questions.filter((q) => mistakeQuestionIds.has(q.id));
+    if (mistakeQuestions.length === 0) {
+      toast.success('No mistakes to retry! Excellent job!');
+      return;
+    }
+
+    setQuestions(mistakeQuestions);
+    setCurrentIdx(0);
+    setSelectedAnswers({});
+    setShowExplanation(false);
+    setCertifiedMetrics(null);
+    setEvaluatedDetails([]);
+    setMode('active');
+    toast.success(`Started revision session with ${mistakeQuestions.length} mistake questions.`);
+  };
+
+  // Handle Question Flag Submit
+  const handleReportQuestion = async () => {
+    if (!current) return;
+    setSubmittingFlag(true);
+    try {
+      const supabase = createClient();
+      await supabase.from('feedback').insert({
+        user_id: user?.id || null,
+        type: 'question_flag',
+        subject: `Question Flag: ${flagReason}`,
+        message: `Question ID: ${current.id}\nReason: ${flagReason}\nDetails: ${flagDetails}\nQuestion Text: ${current.question}`,
       });
-      setSaveStatus(result.success ? 'saved' : 'error');
-    });
+    } catch {
+      // non-blocking
+    } finally {
+      setSubmittingFlag(false);
+      setFlagModalOpen(false);
+      setFlagDetails('');
+      toast.success('Thank you! Our academic team will review this question.');
+    }
   };
 
   // ─── Setup Screen ───────────────────────────────────────────────────────────
   if (mode === 'setup' || mode === 'loading') {
     return (
       <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+          {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${programDetails.badgeBg} ${programDetails.badgeText}`}>
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                   {programDetails.badge}
                 </span>
-                <span className="text-xs text-muted-foreground">Practice Bank</span>
+                <span className="text-xs text-muted-foreground font-medium">Practice &amp; Drill Engine</span>
               </div>
-              <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                <Zap size={24} className="text-primary" /> {programDetails.shortName} MCQ Practice
+              <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-2">
+                <Zap size={26} className="text-primary fill-primary/20" /> {programDetails.shortName} Practice Engine
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">Configure your practice session and start solving.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Authentic syllabus questions with server-validated negative marking (-0.25) and step-by-step solutions.
+              </p>
             </div>
-            <div className="shrink-0">
+            <div className="shrink-0 flex items-center gap-2">
               <ProgramSwitcher size="sm" />
             </div>
           </div>
 
-          {/* Program-Aware Banner */}
-          {canonicalId === 'see_class_10' ? (
-            <div className="mb-6 bg-gradient-to-r from-primary/10 via-card to-bio-light border border-primary/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-card px-2.5 py-0.5 rounded-full border border-primary/20">
-                  <Sparkles size={13} /> SEE Board Exam Written Evaluator
-                </div>
-                <h3 className="text-base font-extrabold text-foreground">
-                  Practice SEE Subjective Written Questions
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Upload photos of your handwritten answers for instant AI examiner grading &amp; step marks breakdown.
-                </p>
-              </div>
-              <a
-                href="/practice/subjective"
-                className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-sm hover:bg-primary/90 transition-all"
+          {/* Quick Start Buttons */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Sparkles size={14} className="text-primary" /> 1-Click Quick Practice
+              </p>
+              <button
+                onClick={() => setCustomPracticeOpen(true)}
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
               >
-                <span>Subjective Written Practice</span>
-                <ChevronRight size={15} />
-              </a>
+                <SlidersHorizontal size={13} /> Custom Practice Builder
+              </button>
             </div>
-          ) : canonicalId === 'cee_medical' ? (
-            <div className="mb-6 bg-gradient-to-r from-emerald-500/10 via-card to-sky-500/10 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-card px-2.5 py-0.5 rounded-full border border-emerald-500/20">
-                  <Zap size={13} /> CEE High-Yield Medical Bank
-                </div>
-                <h3 className="text-base font-extrabold text-foreground">
-                  Negative Marking Simulation Active (-0.25)
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Practice with authentic MEC exam pattern. All questions include verified explanations and topic tags.
-                </p>
-              </div>
-              <a
-                href="/mock-tests"
-                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shrink-0 shadow-sm transition-all"
-              >
-                <span>Take 200-Q Grand Mock</span>
-                <ChevronRight size={15} />
-              </a>
-            </div>
-          ) : null}
-
-          {fetchError && (
-            <div className="mb-4 flex items-start gap-3 bg-error-light border border-error/30 rounded-xl p-4">
-              <AlertCircle size={18} className="text-error shrink-0 mt-0.5" />
-              <p className="text-sm text-error">{fetchError}</p>
-            </div>
-          )}
-
-          {/* ── Quick Start: 1-click practice buttons ──────────────────── */}
-          <div className="mb-5">
-            <p className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground mb-2">⚡ Quick Start</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { label: '10 MCQs', desc: '~5 min warm-up', count: 10, diff: 'All' },
-                { label: '25 MCQs', desc: '~12 min session', count: 25, diff: 'All' },
-                { label: '50 MCQs', desc: '~25 min deep dive', count: 50, diff: 'All' },
+                { label: '10 High-Yield MCQs', desc: '~7 min quick drill', count: 10, tag: 'Warm-up' },
+                { label: '25 Standard MCQs', desc: '~18 min timed practice', count: 25, tag: 'Most Popular' },
+                { label: '50 Mock Exam Drill', desc: '~35 min deep assessment', count: 50, tag: 'High Rigor' },
               ].map((q) => (
                 <button
                   key={q.label}
                   disabled={mode === 'loading'}
                   onClick={() => {
                     setQuestionCount(q.count);
-                    setSelectedDifficulty(q.diff);
-                    handleStartSession(q.count, q.diff);
+                    handleStartSession(q.count, 'All', selectedSubject);
                   }}
-                  className="flex flex-col items-center p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group disabled:opacity-60 cursor-pointer"
+                  className="flex flex-col text-left p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group disabled:opacity-60 cursor-pointer shadow-xs relative overflow-hidden"
                 >
-                  <Zap size={20} className="text-primary mb-1 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-black text-foreground">{q.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{q.desc}</span>
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                      {q.tag}
+                    </span>
+                    <Zap size={16} className="text-primary group-hover:scale-125 transition-transform" />
+                  </div>
+                  <span className="text-base font-black text-foreground">{q.label}</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">{q.desc}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="relative mb-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-background px-3 text-xs text-muted-foreground font-medium">or customise your session</span>
-            </div>
-          </div>
-
-          {chapterFilterTitle && (
-            <div className="mb-4 flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-2.5 text-sm">
-              <Target size={14} className="text-primary shrink-0" />
-              <span className="text-foreground">Practicing <span className="font-semibold">{chapterFilterTitle}</span> only</span>
-              <button
-                onClick={() => setSelectedChapterId(null)}
-                className="ml-auto text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs"
-              >
-                <X size={13} /> Clear
-              </button>
+          {fetchError && (
+            <div className="mb-6 flex items-start gap-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4">
+              <AlertCircle size={18} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+              <div className="text-sm text-rose-600 dark:text-rose-400">
+                <p className="font-bold">Practice Setup Alert</p>
+                <p>{fetchError}</p>
+              </div>
             </div>
           )}
 
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
-            {/* Subject */}
+          {/* Subject Cards & Chapter Configuration */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-xs">
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-foreground">Select Subject ({availableSubjects.length})</label>
-                <span className="text-xs text-muted-foreground font-mono">{programDetails.name}</span>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm font-bold text-foreground">Select Subject ({availableSubjects.length})</label>
+                <span className="text-xs text-muted-foreground font-semibold">{programDetails.name}</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {availableSubjects.map((s) => (
                   <button
                     key={s.name}
                     onClick={() => { setSelectedSubject(s.name); setSelectedChapterId(null); }}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border font-medium text-sm transition-all cursor-pointer ${
+                    className={`flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all cursor-pointer ${
                       selectedSubject === s.name
-                        ? `${s.bg} ${s.color} ${s.border} shadow-xs font-bold`
-                        : 'bg-muted/30 border-border text-muted-foreground hover:border-border hover:text-foreground'
+                        ? `${s.bg} ${s.color} ${s.border} ring-2 ring-primary/40 font-black shadow-xs`
+                        : 'bg-muted/20 border-border text-muted-foreground hover:border-border hover:text-foreground'
                     }`}
                   >
-                    <span className="text-xl">{s.icon}</span>
-                    <span className="text-xs leading-tight text-center">{s.name}</span>
+                    <span className="text-2xl">{s.icon}</span>
+                    <span className="text-xs font-bold text-center leading-snug">{s.name}</span>
                   </button>
                 ))}
               </div>
@@ -602,282 +691,327 @@ export default function PracticePageClient() {
             {/* Chapter Selection */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-semibold text-foreground">Select Chapter (Optional)</label>
+                <label className="text-sm font-bold text-foreground">Chapter Drill (Optional)</label>
                 {selectedChapterId && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedChapterId(null);
-                      setChapterFilterTitle(null);
-                    }}
-                    className="text-xs text-primary font-semibold hover:underline"
+                    onClick={() => { setSelectedChapterId(null); setChapterFilterTitle(null); }}
+                    className="text-xs text-primary font-bold hover:underline"
                   >
                     Clear Filter
                   </button>
                 )}
               </div>
-              <div className="relative">
-                <select
-                  value={selectedChapterId ?? ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (!val) {
-                      setSelectedChapterId(null);
-                      setChapterFilterTitle(null);
-                    } else {
-                      setSelectedChapterId(val);
-                      const chap = availableChapters.find((c) => c.id === val);
-                      setChapterFilterTitle(chap?.title ?? null);
-                    }
-                  }}
-                  disabled={loadingChapters}
-                  className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
-                >
-                  <option value="">
-                    {loadingChapters ? 'Loading chapters...' : `All Chapters in ${selectedSubject}`}
+              <select
+                value={selectedChapterId ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    setSelectedChapterId(null);
+                    setChapterFilterTitle(null);
+                  } else {
+                    setSelectedChapterId(val);
+                    const chap = availableChapters.find((c) => c.id === val);
+                    setChapterFilterTitle(chap?.title ?? null);
+                  }
+                }}
+                disabled={loadingChapters}
+                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+              >
+                <option value="">
+                  {loadingChapters ? 'Loading syllabus chapters...' : `All Chapters in ${selectedSubject} (Full Coverage)`}
+                </option>
+                {availableChapters.map((chap) => (
+                  <option key={chap.id} value={chap.id}>
+                    {chap.title}
                   </option>
-                  {availableChapters.map((chap) => (
-                    <option key={chap.id} value={chap.id}>
-                      {chap.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Question count */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">Number of Questions</label>
-              <div className="flex gap-2 flex-wrap">
-                {[10, 25, 50, 100].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setQuestionCount(n)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer ${
-                      questionCount === n
-                        ? 'bg-primary text-white border-primary font-bold' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {n} Qs
-                  </button>
                 ))}
+              </select>
+            </div>
+
+            {/* Practice Configuration Options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
+              <div>
+                <label className="block text-xs font-black text-foreground mb-2 uppercase tracking-wider">
+                  Difficulty Level
+                </label>
+                <div className="flex gap-2">
+                  {['All', 'Easy', 'Medium', 'Hard'].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setSelectedDifficulty(d)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        selectedDifficulty === d
+                          ? 'bg-primary text-white border-primary shadow-xs'
+                          : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-foreground mb-2 uppercase tracking-wider">
+                  Question Count
+                </label>
+                <div className="flex gap-2">
+                  {[10, 20, 30, 50].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setQuestionCount(n)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        questionCount === n
+                          ? 'bg-primary text-white border-primary shadow-xs'
+                          : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {n} Qs
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Primary Start Action */}
+            {/* Negative Marking & Feature Notice */}
+            <div className="p-4 rounded-xl bg-muted/30 border border-border flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <Target size={16} className="text-primary shrink-0" />
+                <span className="text-muted-foreground">
+                  {isSee ? (
+                    <span><strong>SEE Class 10 Mode:</strong> Standard marking scheme with CDC step rubrics.</span>
+                  ) : (
+                    <span><strong>CEE Medical Rules:</strong> +1.0 per correct answer, <strong>-0.25 penalty</strong> per wrong answer.</span>
+                  )}
+                </span>
+              </div>
+              <span className="font-bold text-foreground shrink-0">Server Verified</span>
+            </div>
+
+            {/* Launch Practice Button */}
             <button
               onClick={() => handleStartSession()}
               disabled={mode === 'loading'}
-              className="btn-primary w-full py-3.5 text-base font-black gap-2 disabled:opacity-60 cursor-pointer shadow-md"
+              className="btn-primary w-full py-4 text-base font-black gap-2 disabled:opacity-60 cursor-pointer shadow-md"
             >
               {mode === 'loading' ? (
-                <><Loader2 size={18} className="animate-spin" /> {liveMode ? 'Generating with AI…' : 'Loading Questions...'}</>
-              ) : liveMode ? (
-                <><Sparkles size={18} /> Start Live AI Practice</>
+                <><Loader2 size={18} className="animate-spin" /> Preparing Authenticated Question Set...</>
               ) : (
-                <><Play size={18} fill="currentColor" /> Start Practice Session</>
+                <><Play size={18} fill="currentColor" /> Start Practice Drill ({questionCount} Questions)</>
               )}
             </button>
-
-            {/* Collapsible Advanced Filters */}
-            <div className="pt-2 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-                className="flex items-center justify-between w-full text-xs font-bold text-muted-foreground hover:text-foreground py-2 transition-colors cursor-pointer"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Target size={14} className="text-primary" />
-                  <span>Advanced Filters &amp; Practice Modes</span>
-                </span>
-                <ChevronRight size={14} className={`transform transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} />
-              </button>
-
-              {showAdvancedOptions && (
-                <div className="pt-4 space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* Difficulty */}
-                  <div>
-                    <label className="block text-xs font-bold text-foreground mb-2 uppercase tracking-wider">Difficulty Level</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {['All', 'Easy', 'Medium', 'Hard'].map((d) => (
-                        <button
-                          key={d}
-                          onClick={() => setSelectedDifficulty(d)}
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                            selectedDifficulty === d
-                              ? 'bg-primary text-white border-primary' : 'bg-card border-border text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Practice modes */}
-                  <div>
-                    <label className="block text-xs font-bold text-foreground mb-2 uppercase tracking-wider">Mode</label>
-                    <div className="grid sm:grid-cols-3 gap-3">
-                      {[
-                        { icon: Target, title: 'Topic Practice', desc: 'Standard question bank', color: 'text-primary', active: true },
-                        { icon: Brain, title: 'Adaptive AI', desc: 'Targets your weak areas', color: 'text-chem', badge: 'Pro', comingSoon: true },
-                        { icon: Clock, title: 'Timed Sprint', desc: 'Race against time', color: 'text-physics', comingSoon: true },
-                      ].map((m) => (
-                        <div key={m.title} className={`relative rounded-xl p-3 transition-colors ${m.active ? 'bg-primary/5 border-2 border-primary cursor-default' : 'bg-muted/30 border border-border cursor-not-allowed opacity-60'}`}>
-                          <div className="absolute top-2 right-2 flex gap-1 items-center">
-                            {m.comingSoon && (
-                              <span className="text-[9px] bg-muted border border-border text-muted-foreground px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider">Soon</span>
-                            )}
-                            {m.badge && (
-                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-semibold">{m.badge}</span>
-                            )}
-                          </div>
-                          <m.icon size={16} className={`${m.color} mb-1`} />
-                          <p className="text-xs font-bold text-foreground">{m.title}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{m.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* ⚡ Live AI practice toggle */}
-                  <button
-                    type="button"
-                    onClick={() => setLiveMode((v) => !v)}
-                    className={`w-full flex items-center justify-between gap-3 rounded-xl border p-3 text-left transition-colors cursor-pointer ${
-                      liveMode ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${liveMode ? 'bg-primary text-white' : 'bg-primary/10 text-primary'}`}>
-                        <Sparkles size={16} />
-                      </span>
-                      <span>
-                        <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                          Live AI Question Generator
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-ma-light text-ma">PRO</span>
-                        </span>
-                        <span className="text-[11px] text-muted-foreground block">Generate fresh AI questions tailored for Nepal entrance exams.</span>
-                      </span>
-                    </span>
-                    <span className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${liveMode ? 'bg-primary' : 'bg-muted'}`}>
-                      <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${liveMode ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                    </span>
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  // ─── Review Screen ───────────────────────────────────────────────────────────
+  // ─── Review Screen (Server Certified) ───────────────────────────────────────
   if (mode === 'review') {
-    const { score, correct, incorrect, unattempted } = getScore();
-    const accuracy = questions.length > 0 ? Math.round((correct / questions.length) * 100) : 0;
+    const metrics = certifiedMetrics || {
+      totalQuestions: questions.length,
+      attempted: Object.keys(selectedAnswers).length,
+      correctCount: 0,
+      incorrectCount: 0,
+      unattemptedCount: questions.length,
+      totalMarksPossible: questions.length,
+      totalScore: 0,
+      percentage: 0,
+      accuracyPercentage: 0,
+      paceMinutesPerQuestion: 0,
+      paceStatus: 'on_target' as const,
+    };
+
     return (
       <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
-          <div className="bg-card border border-border rounded-2xl p-6 text-center mb-6">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <BarChart2 size={36} className="text-primary" />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          {/* Header Card */}
+          <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 text-center mb-6 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Award size={32} className="text-primary" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">Session Complete!</h2>
-            <p className="text-muted-foreground text-sm mt-1">Here&apos;s how you performed</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground">Practice Session Evaluated</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-1">
+              Verified by server grading engine with authoritative exam scoring.
+            </p>
 
-            {/* Save status */}
-            {saveStatus === 'saving' && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <Loader2 size={12} className="animate-spin" /> Saving results...
+            {evaluating ? (
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Loader2 size={14} className="animate-spin" /> Verifying score with server key...
               </div>
-            )}
-            {saveStatus === 'saved' && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-xs text-success">
-                <CheckCircle2 size={12} /> Results saved to your profile
-              </div>
-            )}
-            {saveStatus === 'error' && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <AlertCircle size={12} /> Could not save results (login required)
+            ) : (
+              <div className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+                <CheckCircle2 size={13} /> Official Server-Scored Result
               </div>
             )}
 
+            {/* Certified Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              {[
-                { label: 'Score', value: `${score}/${questions.length}`, color: 'text-primary' },
-                { label: 'Correct', value: correct, color: 'text-success' },
-                { label: 'Incorrect', value: incorrect, color: 'text-error' },
-                { label: 'Accuracy', value: `${accuracy}%`, color: 'text-ma' },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-muted/50 rounded-xl p-3">
-                  <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{stat.label}</p>
-                </div>
-              ))}
+              <div className="bg-muted/40 rounded-2xl p-4 border border-border/50">
+                <p className="text-2xl font-black text-primary">{metrics.totalScore} / {metrics.totalMarksPossible}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 font-semibold">Net Score</p>
+              </div>
+              <div className="bg-emerald-500/5 rounded-2xl p-4 border border-emerald-500/20">
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{metrics.correctCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 font-semibold">Correct</p>
+              </div>
+              <div className="bg-rose-500/5 rounded-2xl p-4 border border-rose-500/20">
+                <p className="text-2xl font-black text-rose-600 dark:text-rose-400">{metrics.incorrectCount}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 font-semibold">
+                  Incorrect {!isSee && '(-0.25 ea)'}
+                </p>
+              </div>
+              <div className="bg-purple-500/5 rounded-2xl p-4 border border-purple-500/20">
+                <p className="text-2xl font-black text-purple-600 dark:text-purple-400">{metrics.accuracyPercentage}%</p>
+                <p className="text-xs text-muted-foreground mt-0.5 font-semibold">Accuracy</p>
+              </div>
+            </div>
+
+            {/* Pacing Info */}
+            <div className="mt-4 p-3 rounded-xl bg-muted/20 border border-border flex items-center justify-between text-xs">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Clock size={14} /> Pacing: <strong>{metrics.paceMinutesPerQuestion} min / question</strong>
+              </span>
+              <span className={`font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-full ${
+                metrics.paceStatus === 'on_target' ? 'bg-emerald-500/10 text-emerald-600' :
+                metrics.paceStatus === 'rushed' ? 'bg-amber-500/10 text-amber-600' : 'bg-rose-500/10 text-rose-600'
+              }`}>
+                {metrics.paceStatus === 'on_target' ? 'On Target Pace' : metrics.paceStatus === 'rushed' ? 'Slightly Rushed' : 'Needs Speed Drill'}
+              </span>
             </div>
           </div>
 
-          <div className="space-y-3 mb-6">
+          {/* Action Buttons: Mistake Revision / New Session */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            {metrics.incorrectCount > 0 && (
+              <button
+                onClick={handleRetryMistakes}
+                className="flex-1 btn-primary py-3.5 gap-2 bg-amber-600 hover:bg-amber-700 border-amber-600 text-white font-bold"
+              >
+                <RotateCcw size={16} /> Retry {metrics.incorrectCount} Incorrect Questions
+              </button>
+            )}
+            <button
+              onClick={() => { setMode('setup'); setSelectedAnswers({}); setCurrentIdx(0); }}
+              className="flex-1 btn-secondary py-3.5 gap-2 font-bold"
+            >
+              <Zap size={16} /> New Practice Session
+            </button>
+            <button
+              onClick={() => router.push('/mistake-analyser')}
+              className="sm:w-auto px-4 btn-secondary py-3.5 gap-2 text-xs font-bold text-muted-foreground hover:text-foreground"
+              title="Open AI Mistake Analyser"
+            >
+              <Brain size={16} className="text-purple-600" /> Mistake Notebook
+            </button>
+          </div>
+
+          {/* Detailed Question Review List */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-black uppercase tracking-wider text-muted-foreground mb-2">
+              Question-by-Question Solution Breakdown
+            </h3>
             {questions.map((q, idx) => {
+              const detail = evaluatedDetails.find((d) => d.questionId === q.id);
               const ans = selectedAnswers[q.id];
-              const isCorrect = ans === q.correctId;
+              const isCorrect = detail ? detail.isCorrect : ans === q.correctId;
+              const correctKey = detail ? detail.correctOption : q.correctId;
+
               return (
-                <div key={q.id} className={`bg-card border rounded-xl p-4 ${isCorrect ? 'border-success/30' : ans ? 'border-error/30' : 'border-border'}`}>
-                  <div className="flex items-start gap-3">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
-                      isCorrect ? 'bg-success-light text-success' : ans ? 'bg-error-light text-error' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {isCorrect ? <CheckCircle2 size={14} /> : ans ? <XCircle size={14} /> : idx + 1}
+                <div
+                  key={q.id}
+                  className={`bg-card border rounded-2xl p-5 transition-all ${
+                    isCorrect
+                      ? 'border-emerald-500/30 bg-emerald-500/[0.02]'
+                      : ans
+                      ? 'border-rose-500/30 bg-rose-500/[0.02]'
+                      : 'border-border'
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                        isCorrect
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          : ans
+                          ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {isCorrect ? <CheckCircle2 size={16} /> : ans ? <XCircle size={16} /> : idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground font-medium line-clamp-2">{q.question}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Correct: <span className="font-semibold text-success">{q.options.find(o => o.id === q.correctId)?.text}</span>
-                        {ans && ans !== q.correctId && (
-                          <> · Your answer: <span className="font-semibold text-error">{q.options.find(o => o.id === ans)?.text}</span></>
-                        )}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-muted-foreground">Q{idx + 1}</span>
+                        {q.chapter && <span className="text-[11px] text-muted-foreground font-medium">· {q.chapter}</span>}
+                        <span className="ml-auto text-xs font-mono font-bold">
+                          {isCorrect ? `+${q.marks}` : ans ? `-${q.negativeMarks}` : '0'} marks
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground leading-relaxed mb-3">
+                        <MathText text={q.question} />
                       </p>
+
+                      <div className="space-y-1.5 mb-3 text-xs">
+                        <p className="text-muted-foreground">
+                          Correct Answer:{' '}
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            {correctKey.toUpperCase()}) {q.options.find((o) => o.id.toLowerCase() === correctKey.toLowerCase())?.text || correctKey}
+                          </span>
+                        </p>
+                        {ans && ans.toLowerCase() !== correctKey.toLowerCase() && (
+                          <p className="text-muted-foreground">
+                            Your Choice:{' '}
+                            <span className="font-bold text-rose-600 dark:text-rose-400">
+                              {ans.toUpperCase()}) {q.options.find((o) => o.id === ans)?.text || ans}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+
+                      {q.explanation && (
+                        <div className="p-3.5 rounded-xl bg-muted/40 border border-border text-xs text-foreground leading-relaxed">
+                          <p className="font-bold text-muted-foreground mb-1 text-[11px] uppercase tracking-wider">Explanation</p>
+                          <MathText text={q.explanation} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
           </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => { setMode('setup'); setSelectedAnswers({}); setCurrentIdx(0); setSaveStatus('idle'); }} className="flex-1 btn-secondary py-2.5 gap-2">
-              <RotateCcw size={16} /> New Session
-            </button>
-            <button onClick={() => { setCurrentIdx(0); setSelectedAnswers({}); setShowExplanation(false); setSaveStatus('idle'); setMode('active'); }} className="flex-1 btn-primary py-2.5 gap-2">
-              <Play size={16} /> Retry
-            </button>
-          </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  // ─── Active Mode ─────────────────────────────────────────────────────────────
+  // ─── Active Practice Mode ───────────────────────────────────────────────────
   if (!current) return null;
 
   const progressPct = ((currentIdx + 1) / questions.length) * 100;
   const timerPct = totalTime > 0 ? (timeLeft / totalTime) * 100 : 100;
-  const timerColor = timerPct > 50 ? 'text-success' : timerPct > 20 ? 'text-warning' : 'text-error';
+  const timerColor = timerPct > 50 ? 'text-emerald-600 dark:text-emerald-400' : timerPct > 20 ? 'text-amber-600' : 'text-rose-600';
 
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-        {/* Top bar */}
+        {/* Top Header Status Bar */}
         <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-foreground">Q {currentIdx + 1} / {questions.length}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${difficultyColors[current.difficulty]}`}>{current.difficulty}</span>
-            {current.subject && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{current.subject}</span>}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black text-foreground">Q {currentIdx + 1} of {questions.length}</span>
+            <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${difficultyColors[current.difficulty]}`}>
+              {current.difficulty}
+            </span>
+            {current.subject && (
+              <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+                {current.subject}
+              </span>
+            )}
           </div>
-          <div className={`flex items-center gap-1.5 font-mono font-bold text-sm ${timerColor}`}>
-            <Clock size={14} />
+          <div className={`flex items-center gap-1.5 font-mono font-black text-sm ${timerColor}`}>
+            <Clock size={15} />
             {formatTime(timeLeft)}
           </div>
         </div>
@@ -887,163 +1021,205 @@ export default function PracticePageClient() {
           <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${progressPct}%` }} />
         </div>
 
-        {/* Question card */}
-        <div className="bg-card border border-border rounded-2xl p-6 mb-4">
-          <div className="flex items-start justify-between gap-3 mb-5">
-            <p className="text-base font-semibold text-foreground leading-relaxed flex-1"><MathText text={current.question} /></p>
+        {/* Question Card */}
+        <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 mb-5 shadow-xs">
+          <div className="flex items-start justify-between gap-3 mb-6">
+            <div className="text-base sm:text-lg font-bold text-foreground leading-relaxed flex-1">
+              <MathText text={current.question} />
+            </div>
             <button
               onClick={() => toggleBookmark(current.id)}
               title={bookmarked.has(current.id) ? 'Remove bookmark' : 'Save to bookmarks'}
-              className={`p-2 rounded-lg transition-colors shrink-0 ${bookmarked.has(current.id) ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:bg-primary/10'}`}
+              className={`p-2.5 rounded-xl transition-all shrink-0 ${
+                bookmarked.has(current.id)
+                  ? 'text-primary bg-primary/10 border border-primary/20'
+                  : 'text-muted-foreground hover:text-primary hover:bg-muted'
+              }`}
             >
-              <BookmarkPlus size={16} />
+              {bookmarked.has(current.id) ? <BookmarkCheck size={18} /> : <BookmarkPlus size={18} />}
             </button>
           </div>
 
-          <div className="space-y-2.5">
+          {/* Option Choices */}
+          <div className="space-y-3">
             {current.options.map((option) => {
-              let optionClass = 'border-border bg-muted/30 text-foreground hover:border-primary/40 hover:bg-primary/5';
+              let optionClass = 'border-border bg-muted/20 text-foreground hover:border-primary/40 hover:bg-primary/5';
               if (isAnswered) {
-                if (option.id === current.correctId) optionClass = 'border-success bg-success-light text-success';
-                else if (option.id === selectedAnswer) optionClass = 'border-error bg-error-light text-error';
-                else optionClass = 'border-border bg-muted/20 text-muted-foreground';
+                if (option.id === current.correctId) {
+                  optionClass = 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+                } else if (option.id === selectedAnswer) {
+                  optionClass = 'border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300';
+                } else {
+                  optionClass = 'border-border/50 bg-muted/10 text-muted-foreground opacity-60';
+                }
               }
+
               return (
                 <button
                   key={option.id}
                   onClick={() => handleAnswer(option.id)}
                   disabled={isAnswered}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left text-sm font-medium transition-all duration-200 ${optionClass}`}
+                  className={`w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl border text-left text-sm font-medium transition-all cursor-pointer ${optionClass}`}
                 >
-                  <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
-                    isAnswered && option.id === current.correctId ? 'border-success bg-success text-white' :
-                    isAnswered && option.id === selectedAnswer && option.id !== current.correctId ? 'border-error bg-error text-white' : 'border-current'
-                  }`}>
+                  <span
+                    className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center text-xs font-black shrink-0 ${
+                      isAnswered && option.id === current.correctId
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : isAnswered && option.id === selectedAnswer
+                        ? 'border-rose-600 bg-rose-600 text-white'
+                        : 'border-muted-foreground/40 text-foreground'
+                    }`}
+                  >
                     {option.id.toUpperCase()}
                   </span>
                   <MathText text={option.text} className="flex-1" />
-                  {isAnswered && option.id === current.correctId && <CheckCircle2 size={15} className="ml-auto text-success shrink-0" />}
-                  {isAnswered && option.id === selectedAnswer && option.id !== current.correctId && <XCircle size={15} className="ml-auto text-error shrink-0" />}
+                  {isAnswered && option.id === current.correctId && (
+                    <CheckCircle2 size={18} className="ml-auto text-emerald-600 shrink-0" />
+                  )}
+                  {isAnswered && option.id === selectedAnswer && option.id !== current.correctId && (
+                    <XCircle size={18} className="ml-auto text-rose-600 shrink-0" />
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* AI Hint — only before answering */}
+          {/* AI Hint */}
           {!isAnswered && (
-            <div className="mt-4">
+            <div className="mt-5 pt-4 border-t border-border">
               <button
                 onClick={() => handleGetHint(current)}
                 disabled={hintLoading && hintRequestedFor === current.id}
-                className="flex items-center gap-2 text-sm font-semibold text-amber-600 hover:text-amber-700 transition-colors disabled:opacity-60"
+                className="flex items-center gap-2 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors disabled:opacity-60 cursor-pointer"
               >
                 {hintLoading && hintRequestedFor === current.id ? (
-                  <><Loader2 size={15} className="animate-spin" /> Generating hint...</>
+                  <><Loader2 size={14} className="animate-spin" /> Thinking conceptual hint...</>
                 ) : hints[current.id] ? (
-                  <><Lightbulb size={15} className="fill-amber-400 text-amber-500" /> {hintVisible[current.id] ? 'Hide Hint' : 'Show Hint'}</>
+                  <><Lightbulb size={14} className="fill-amber-400 text-amber-500" /> {hintVisible[current.id] ? 'Hide Conceptual Hint' : 'Show Conceptual Hint'}</>
                 ) : (
-                  <><Lightbulb size={15} /> Get AI Hint</>
+                  <><Lightbulb size={14} /> Get AI Conceptual Hint</>
                 )}
               </button>
 
               {hintVisible[current.id] && hints[current.id] && (
-                <div className="mt-3 flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <Lightbulb size={16} className="text-amber-500 shrink-0 mt-0.5 fill-amber-200" />
+                <div className="mt-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+                  <Lightbulb size={16} className="text-amber-500 shrink-0 mt-0.5 fill-amber-300" />
                   <div>
-                    <p className="text-xs font-semibold text-amber-700 mb-1">Conceptual Hint</p>
-                    <p className="text-sm text-amber-900 leading-relaxed">{hints[current.id]}</p>
+                    <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mb-1">Conceptual Hint</p>
+                    <p className="text-xs text-foreground leading-relaxed">{hints[current.id]}</p>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Instant feedback + Explanation */}
+          {/* Instant feedback + Explanation toggle */}
           {isAnswered && (
-            <div className="mt-4">
-              {/* Instant feedback banner */}
-              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl mb-3 ${
-                selectedAnswer === current.correctId
-                  ? 'bg-success-light border border-success/30' :'bg-error-light border border-error/30'
-              }`}>
+            <div className="mt-5 pt-4 border-t border-border">
+              <div
+                className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl mb-3 ${
+                  selectedAnswer === current.correctId
+                    ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400'
+                }`}
+              >
                 {selectedAnswer === current.correctId ? (
-                  <><CheckCircle2 size={16} className="text-success shrink-0" /><span className="text-sm font-semibold text-success">Correct! +{current.marks} marks</span></>
+                  <>
+                    <CheckCircle2 size={18} className="shrink-0" />
+                    <span className="text-xs font-bold">
+                      Correct Answer! +{current.marks} mark awarded.
+                    </span>
+                  </>
                 ) : (
-                  <><XCircle size={16} className="text-error shrink-0" /><span className="text-sm font-semibold text-error">Incorrect — -{current.negativeMarks} mark</span></>
+                  <>
+                    <XCircle size={18} className="shrink-0" />
+                    <span className="text-xs font-bold">
+                      Incorrect! {!isSee && '-0.25 negative marking applied.'}
+                    </span>
+                  </>
                 )}
               </div>
 
               <button
                 onClick={() => setShowExplanation(!showExplanation)}
-                className="text-sm text-primary font-semibold hover:underline"
+                className="text-xs text-primary font-bold hover:underline flex items-center gap-1 cursor-pointer"
               >
-                {showExplanation ? 'Hide' : 'Show'} Explanation
+                {showExplanation ? 'Hide Detailed Solution' : 'View Step-by-Step Solution'}
               </button>
+
               {showExplanation && current.explanation && (
-                <div className="mt-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                  <p className="text-sm text-foreground leading-relaxed">{current.explanation}</p>
-                  {(current.subject || current.chapter) && (
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-                      {current.subject && <span>{current.subject}</span>}
-                      {current.subject && current.chapter && <span>·</span>}
-                      {current.chapter && <span>{current.chapter}</span>}
-                      <span>·</span>
-                      <span>+{current.marks} marks</span>
-                    </div>
-                  )}
+                <div className="mt-3 p-4 bg-muted/40 border border-border rounded-2xl text-xs text-foreground leading-relaxed">
+                  <p className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] mb-1">
+                    Verified Solution
+                  </p>
+                  <MathText text={current.explanation} />
                 </div>
               )}
             </div>
           )}
         </div>
 
-        {/* Navigation */}
+        {/* Navigation Bar */}
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => { setCurrentIdx((i) => Math.max(0, i - 1)); setShowExplanation(false); }}
             disabled={currentIdx === 0}
-            className="btn-secondary py-2.5 px-4 gap-2 disabled:opacity-40"
+            className="btn-secondary py-3 px-5 gap-2 disabled:opacity-40 font-bold text-xs"
           >
             <ChevronLeft size={16} /> Previous
           </button>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => toast.success('Question reported! We will review it shortly.')}
-              className="p-2 rounded-lg text-muted-foreground hover:text-error hover:bg-error-light transition-colors"
-            >
-              <Flag size={15} />
-            </button>
-          </div>
+
+          <button
+            onClick={() => setFlagModalOpen(true)}
+            title="Report question problem"
+            className="p-3 rounded-xl text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+          >
+            <Flag size={16} />
+          </button>
+
           {currentIdx < questions.length - 1 ? (
             <button
               onClick={() => { setCurrentIdx((i) => i + 1); setShowExplanation(false); }}
-              className="btn-primary py-2.5 px-4 gap-2"
+              className="btn-primary py-3 px-5 gap-2 font-bold text-xs"
             >
               Next <ChevronRight size={16} />
             </button>
           ) : (
-            <button onClick={handleFinishSession} className="btn-primary py-2.5 px-4 gap-2 bg-success border-success hover:bg-success/90">
-              Finish <CheckCircle2 size={16} />
+            <button
+              onClick={handleFinishSession}
+              className="btn-primary py-3 px-6 gap-2 bg-emerald-600 hover:bg-emerald-700 border-emerald-600 text-white font-black text-xs"
+            >
+              Finish &amp; Evaluate <CheckCircle2 size={16} />
             </button>
           )}
         </div>
 
-        {/* Question palette */}
-        <div className="mt-5 bg-card border border-border rounded-2xl p-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-3">Question Palette</p>
-          <div className="flex flex-wrap gap-1.5">
+        {/* Question Navigation Palette */}
+        <div className="mt-6 bg-card border border-border rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3 text-xs text-muted-foreground font-semibold">
+            <span>Question Palette ({questions.length} Items)</span>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Correct</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> Wrong</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" /> Unanswered</span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
             {questions.map((q, idx) => {
               const ans = selectedAnswers[q.id];
-              const isCorrect = ans === q.correctId;
+              const isCorr = ans === q.correctId;
               return (
                 <button
                   key={q.id}
                   onClick={() => { setCurrentIdx(idx); setShowExplanation(false); }}
-                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                    idx === currentIdx ? 'ring-2 ring-primary ring-offset-1' : ''
+                  className={`w-9 h-9 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                    idx === currentIdx ? 'ring-2 ring-primary ring-offset-2 scale-105' : ''
                   } ${
-                    !ans ? 'bg-muted text-muted-foreground' :
-                    isCorrect ? 'bg-success-light text-success' : 'bg-error-light text-error'
+                    !ans
+                      ? 'bg-muted/40 text-muted-foreground hover:bg-muted'
+                      : isCorr
+                      ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                      : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
                   }`}
                 >
                   {idx + 1}
@@ -1052,6 +1228,66 @@ export default function PracticePageClient() {
             })}
           </div>
         </div>
+
+        {/* Flag Question Modal */}
+        {flagModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <div className="bg-card border border-border rounded-3xl p-6 max-w-md w-full shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Flag size={18} className="text-rose-600" /> Report Question Issue
+                </h3>
+                <button onClick={() => setFlagModalOpen(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1">Issue Category</label>
+                  <select
+                    value={flagReason}
+                    onChange={(e) => setFlagReason(e.target.value)}
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground"
+                  >
+                    <option value="Wrong answer key">Wrong answer key in options</option>
+                    <option value="Typo or formatting error">Typo / equation rendering error</option>
+                    <option value="Ambiguous question">Question is ambiguous or incomplete</option>
+                    <option value="Out of syllabus">Out of current exam syllabus</option>
+                    <option value="Other">Other problem</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-foreground mb-1">Details (Optional)</label>
+                  <textarea
+                    rows={3}
+                    value={flagDetails}
+                    onChange={(e) => setFlagDetails(e.target.value)}
+                    placeholder="Describe what is incorrect so our faculty can fix it..."
+                    className="w-full bg-background border border-border rounded-xl p-3 text-xs text-foreground resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setFlagModalOpen(false)}
+                    className="flex-1 btn-secondary py-2.5 text-xs font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleReportQuestion}
+                    disabled={submittingFlag}
+                    className="flex-1 btn-primary py-2.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 border-rose-600 text-white"
+                  >
+                    {submittingFlag ? <Loader2 size={14} className="animate-spin" /> : 'Submit Report'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

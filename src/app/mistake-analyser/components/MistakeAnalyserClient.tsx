@@ -1,15 +1,31 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useChat } from '@/lib/hooks/useChat';
 import DashboardLayout from '@/components/DashboardLayout';
-import { AlertTriangle, TrendingUp, Loader2, ChevronDown, ChevronUp, Target, BookOpen, FlaskConical, Atom, Brain, Lightbulb, CheckCircle2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  TrendingUp,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Target,
+  BookOpen,
+  FlaskConical,
+  Atom,
+  Brain,
+  Lightbulb,
+  CheckCircle2,
+  Zap,
+  Play,
+  RotateCcw
+} from 'lucide-react';
 import toast from 'react-hot-toast';
-import Icon from '@/components/ui/AppIcon';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { optionLetterToText } from '@/lib/scoring';
-
+import { MathText } from '@/components/MathText';
 
 interface WrongAnswer {
   question: string;
@@ -25,13 +41,6 @@ interface AnalysisResult {
   overallInsight: string;
   revisionPlan: string[];
 }
-
-const SUBJECT_ICONS: Record<string, React.ElementType> = {
-  Biology: BookOpen,
-  Chemistry: FlaskConical,
-  Physics: Atom,
-  'Mental Agility': Brain,
-};
 
 function parseAnalysis(raw: string): AnalysisResult | null {
   try {
@@ -54,8 +63,6 @@ export default function MistakeAnalyserClient() {
   const { user } = useAuth();
   const { response, isLoading, error, sendMessage } = useChat('OPEN_AI', 'gpt-4o', false);
 
-  // Load the student's real wrong answers from their practice history
-  // (manual entries via "Add Wrong Answer" are appended on top, in-memory only)
   useEffect(() => {
     if (!user?.id) {
       setLoadingMistakes(false);
@@ -65,11 +72,12 @@ export default function MistakeAnalyserClient() {
     (async () => {
       setLoadingMistakes(true);
       const supabase = createClient();
+      // Fetch practice attempts where student got question wrong
       const { data, error: fetchError } = await supabase
         .from('practice_attempts')
         .select(`
           question_id, selected_option, created_at,
-          questions ( question_text, option_a, option_b, option_c, option_d, correct_option, chapter_id, chapters ( title ) ),
+          questions ( id, question_text, options, correct_answer, chapter_id, chapters ( title ) ),
           subjects ( display_name )
         `)
         .eq('student_id', user.id)
@@ -88,14 +96,19 @@ export default function MistakeAnalyserClient() {
         for (const row of (data ?? []) as any[]) {
           if (!row.questions || seen.has(row.question_id)) continue;
           seen.add(row.question_id);
+
+          const q = row.questions;
+          const yourAnsText = optionLetterToText(q, row.selected_option);
+          const correctAnsText = optionLetterToText(q, q.correct_answer || 'A');
+
           real.push({
-            question: row.questions.question_text,
+            question: q.question_text || '',
             subject: row.subjects?.display_name ?? 'General',
-            yourAnswer: optionLetterToText(row.questions, row.selected_option),
-            correctAnswer: optionLetterToText(row.questions, row.questions.correct_option),
-            topic: row.questions.chapters?.title ?? row.subjects?.display_name ?? 'General',
+            yourAnswer: yourAnsText,
+            correctAnswer: correctAnsText,
+            topic: q.chapters?.title ?? row.subjects?.display_name ?? 'General',
           });
-          if (real.length >= 20) break;
+          if (real.length >= 25) break;
         }
         setWrongAnswers(real);
       }
@@ -119,17 +132,17 @@ export default function MistakeAnalyserClient() {
         toast.error('Could not parse analysis. Please try again.');
       }
     }
-  }, [response, isLoading]);
+  }, [response, isLoading, analysed]);
 
   const handleAnalyse = () => {
-    if (wrongAnswers.length < 3) {
-      toast.error('Add at least 3 wrong answers to analyse patterns.');
+    if (wrongAnswers.length < 2) {
+      toast.error('At least 2 wrong answers are needed to analyse mistake patterns.');
       return;
     }
     setAnalysed(true);
     setAnalysis(null);
 
-    const prompt = `You are an expert CEE exam coach. Analyse these wrong answers from a student and identify mistake patterns.
+    const prompt = `You are an expert CEE & SEE exam diagnostic tutor. Analyse these wrong answers from a student and identify mistake patterns.
 
 Wrong Answers:
 ${wrongAnswers.map((w, i) => `${i + 1}. Subject: ${w.subject} | Topic: ${w.topic}
@@ -148,10 +161,10 @@ Return ONLY valid JSON (no extra text):
     }
   ],
   "overallInsight": "2-3 sentence overall assessment of the student's mistake patterns",
-  "revisionPlan": ["Step 1", "Step 2", "Step 3", "Step 4", "Step 5"]
+  "revisionPlan": ["Step 1", "Step 2", "Step 3", "Step 4"]
 }
 
-Severity: High = 3+ mistakes, Medium = 2 mistakes, Low = 1 mistake but important topic.`;
+Severity: High = 3+ mistakes or fundamental misconception, Medium = 2 mistakes, Low = minor calculation or recall error.`;
 
     sendMessage([{ role: 'user', content: prompt }], { max_completion_tokens: 2000 });
   };
@@ -161,10 +174,11 @@ Severity: High = 3+ mistakes, Medium = 2 mistakes, Low = 1 mistake but important
       toast.error('Please fill all fields');
       return;
     }
-    setWrongAnswers((prev) => [...prev, newEntry as WrongAnswer]);
+    setWrongAnswers((prev) => [newEntry as WrongAnswer, ...prev]);
     setNewEntry({});
     setShowAddForm(false);
     setAnalysis(null);
+    toast.success('Added mistake entry');
   };
 
   const handleRemove = (i: number) => {
@@ -181,199 +195,235 @@ Severity: High = 3+ mistakes, Medium = 2 mistakes, Low = 1 mistake but important
   };
 
   const severityColor: Record<string, string> = {
-    High: 'text-error bg-error-light border-error/20',
-    Medium: 'text-warning bg-warning-light border-warning/20',
-    Low: 'text-success bg-success-light border-success/20',
+    High: 'text-rose-600 bg-rose-500/10 border-rose-500/20',
+    Medium: 'text-amber-600 bg-amber-500/10 border-amber-500/20',
+    Low: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
   };
 
   return (
     <DashboardLayout isDark={isDark} onToggleDark={() => setIsDark(!isDark)}>
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-error-light flex items-center justify-center">
-              <AlertTriangle size={20} className="text-error" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center shrink-0">
+              <AlertTriangle size={24} className="text-rose-600" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground leading-none">Mistake Analyser</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">AI detects patterns in your wrong answers</p>
+              <h1 className="text-xl sm:text-2xl font-black text-foreground">AI Mistake Notebook &amp; Diagnostic</h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Automatically tracks questions you miss during practice and diagnoses conceptual gaps.
+              </p>
             </div>
           </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="btn-primary text-sm py-2 px-4"
-          >
-            + Add Wrong Answer
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/practice"
+              className="btn-primary py-2.5 px-4 text-xs font-bold gap-1.5"
+            >
+              <Zap size={14} /> Practice Engine
+            </Link>
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="btn-secondary py-2.5 px-4 text-xs font-bold"
+            >
+              {showAddForm ? 'Cancel' : '+ Add Manual Entry'}
+            </button>
+          </div>
         </div>
 
-        {/* Add form */}
+        {/* Add manual wrong answer modal/form */}
         {showAddForm && (
-          <div className="bg-card border border-border rounded-2xl p-5 space-y-3">
-            <p className="text-sm font-bold text-foreground">Add Wrong Answer</p>
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
+            <h3 className="text-sm font-bold text-foreground">Add Custom Mistake Record</h3>
             <div className="grid sm:grid-cols-2 gap-3">
               <input
-                className="input-field text-sm"
+                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground"
                 placeholder="Question text"
                 value={newEntry.question || ''}
                 onChange={(e) => setNewEntry((p) => ({ ...p, question: e.target.value }))}
               />
               <select
-                className="input-field text-sm"
+                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground"
                 value={newEntry.subject || ''}
                 onChange={(e) => setNewEntry((p) => ({ ...p, subject: e.target.value }))}
               >
                 <option value="">Select Subject</option>
-                {['Biology', 'Chemistry', 'Physics', 'Mental Agility'].map((s) => (
+                {['Biology', 'Chemistry', 'Physics', 'Mental Agility', 'Compulsory Science', 'Compulsory Mathematics'].map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </select>
               <input
-                className="input-field text-sm"
+                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground"
                 placeholder="Topic / Chapter"
                 value={newEntry.topic || ''}
                 onChange={(e) => setNewEntry((p) => ({ ...p, topic: e.target.value }))}
               />
               <input
-                className="input-field text-sm"
+                className="w-full bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground"
                 placeholder="Your wrong answer"
                 value={newEntry.yourAnswer || ''}
                 onChange={(e) => setNewEntry((p) => ({ ...p, yourAnswer: e.target.value }))}
               />
               <input
-                className="input-field text-sm sm:col-span-2"
+                className="w-full sm:col-span-2 bg-background border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground"
                 placeholder="Correct answer"
                 value={newEntry.correctAnswer || ''}
                 onChange={(e) => setNewEntry((p) => ({ ...p, correctAnswer: e.target.value }))}
               />
             </div>
-            <div className="flex gap-2">
-              <button onClick={handleAddEntry} className="btn-primary text-sm py-2 px-4">Add</button>
-              <button onClick={() => setShowAddForm(false)} className="btn-secondary text-sm py-2 px-4">Cancel</button>
-            </div>
+            <button onClick={handleAddEntry} className="btn-primary py-2 px-4 text-xs font-bold">
+              Save Entry
+            </button>
           </div>
         )}
 
-        {/* Wrong answers list */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border">
-            <p className="text-sm font-bold text-foreground">{wrongAnswers.length} Wrong Answers Logged</p>
-            <button
-              onClick={handleAnalyse}
-              disabled={isLoading || wrongAnswers.length < 3}
-              className="flex items-center gap-2 btn-primary text-sm py-2 px-4 disabled:opacity-50"
-            >
-              {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />}
-              {isLoading ? 'Analysing…' : 'Analyse Patterns'}
-            </button>
+        {/* Diagnosis Trigger Card */}
+        <div className="bg-card border border-border rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
+          <div>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Recorded Mistakes: {wrongAnswers.length} Questions
+            </span>
+            <h2 className="text-base sm:text-lg font-black text-foreground mt-0.5">
+              Run AI Diagnostic Pattern Analysis
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Find out whether your mistakes stem from memory slips, conceptual traps, or calculation speed.
+            </p>
           </div>
-          {loadingMistakes ? (
-            <div className="flex items-center justify-center py-10">
-              <Loader2 size={20} className="animate-spin text-muted-foreground" />
-            </div>
-          ) : wrongAnswers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-10 px-5">
-              <CheckCircle2 size={26} className="text-success opacity-70 mb-2" />
-              <p className="text-sm text-foreground font-medium">No wrong answers on record yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Practice some MCQs, or add a mistake manually above, then come back to analyse patterns.</p>
-            </div>
-          ) : (
-          <div className="divide-y divide-border">
-            {wrongAnswers.map((w, i) => {
-              const Icon = SUBJECT_ICONS[w.subject] || BookOpen;
-              return (
-                <div key={i} className="flex items-start gap-3 px-5 py-3 hover:bg-muted/50 transition-colors">
-                  <Icon size={15} className={`mt-0.5 shrink-0 ${
-                    w.subject === 'Biology' ? 'text-bio' :
-                    w.subject === 'Chemistry' ? 'text-chem' :
-                    w.subject === 'Physics' ? 'text-physics' : 'text-ma'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground leading-snug truncate">{w.question}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-muted-foreground">{w.subject} · {w.topic}</span>
-                      <span className="text-xs text-error">You: {w.yourAnswer}</span>
-                      <span className="text-xs text-success">Correct: {w.correctAnswer}</span>
-                    </div>
-                  </div>
-                  <button onClick={() => handleRemove(i)} className="text-muted-foreground hover:text-error text-xs shrink-0">✕</button>
-                </div>
-              );
-            })}
-          </div>
-          )}
+          <button
+            onClick={handleAnalyse}
+            disabled={isLoading || wrongAnswers.length === 0}
+            className="btn-primary py-3.5 px-6 text-xs font-black gap-2 shrink-0 disabled:opacity-50 cursor-pointer shadow-md"
+          >
+            {isLoading ? (
+              <><Loader2 size={16} className="animate-spin" /> Analyzing Patterns...</>
+            ) : (
+              <><Brain size={16} /> Diagnose My Weak Topics</>
+            )}
+          </button>
         </div>
 
-        {/* Analysis results */}
+        {/* Analysis Results Display */}
         {analysis && (
-          <div className="space-y-4">
-            {/* Overall insight */}
-            <div className="bg-secondary border border-primary/20 rounded-2xl p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp size={16} className="text-primary" />
-                <p className="text-sm font-bold text-primary">AI Analysis</p>
-              </div>
-              <p className="text-sm text-foreground leading-relaxed">{analysis.overallInsight}</p>
+          <div className="bg-card border border-primary/30 rounded-3xl p-6 space-y-6 shadow-sm">
+            <div>
+              <span className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                <Lightbulb size={14} /> AI Diagnostic Report
+              </span>
+              <p className="text-sm text-foreground font-semibold leading-relaxed">
+                {analysis.overallInsight}
+              </p>
             </div>
 
             {/* Patterns */}
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <p className="text-sm font-bold text-foreground mb-3">Mistake Patterns Detected</p>
-              <div className="space-y-2">
-                {analysis.patterns?.map((p, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="w-5 h-5 rounded-lg bg-error-light text-error text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                    <p className="text-sm text-foreground leading-relaxed">{p}</p>
-                  </div>
-                ))}
+            {analysis.patterns?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-2">
+                  Key Mistake Patterns Detected
+                </h4>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {analysis.patterns.map((p, idx) => (
+                    <div key={idx} className="p-3 bg-muted/40 border border-border rounded-xl text-xs font-medium text-foreground">
+                      • {p}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Weak topics */}
-            <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="px-5 py-3 border-b border-border">
-                <p className="text-sm font-bold text-foreground">Weak Topics — Personalised Coaching</p>
-              </div>
-              <div className="divide-y divide-border">
-                {analysis.weakTopics?.map((t, i) => (
-                  <div key={i} className="px-5 py-3">
-                    <button
-                      onClick={() => toggleTopic(i)}
-                      className="w-full flex items-center justify-between gap-3"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${severityColor[t.severity]}`}>{t.severity}</span>
-                        <span className="text-sm font-semibold text-foreground">{t.topic}</span>
-                        <span className="text-xs text-muted-foreground">· {t.subject}</span>
+            {/* Weak Topics */}
+            {analysis.weakTopics?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-2">
+                  Priority Topics to Revise
+                </h4>
+                <div className="space-y-2">
+                  {analysis.weakTopics.map((w, idx) => (
+                    <div key={idx} className="p-4 bg-muted/20 border border-border rounded-2xl">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-bold text-foreground">{w.topic} ({w.subject})</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${severityColor[w.severity] || 'text-muted-foreground'}`}>
+                          {w.severity} Priority
+                        </span>
                       </div>
-                      {expandedTopics.has(i) ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
-                    </button>
-                    {expandedTopics.has(i) && (
-                      <div className="mt-3 flex items-start gap-2 bg-muted rounded-xl px-3 py-2.5">
-                        <Lightbulb size={14} className="text-ma shrink-0 mt-0.5" />
-                        <p className="text-sm text-foreground leading-relaxed">{t.advice}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      <p className="text-xs text-muted-foreground">{w.advice}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Revision plan */}
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <p className="text-sm font-bold text-foreground mb-3">Personalised Revision Plan</p>
-              <div className="space-y-2">
-                {analysis.revisionPlan?.map((step, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="w-6 h-6 rounded-xl bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                    <p className="text-sm text-foreground leading-relaxed">{step}</p>
-                  </div>
-                ))}
+            {/* Revision Plan */}
+            {analysis.revisionPlan?.length > 0 && (
+              <div className="pt-2 border-t border-border">
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider mb-2">
+                  Actionable 4-Step Revision Plan
+                </h4>
+                <div className="space-y-1.5">
+                  {analysis.revisionPlan.map((step, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-xs text-foreground">
+                      <span className="font-bold text-primary shrink-0">{idx + 1}.</span>
+                      <span>{step}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
+
+        {/* List of Wrong Answers */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-black text-muted-foreground uppercase tracking-wider">
+            Recent Practice Misses ({wrongAnswers.length})
+          </h3>
+
+          {loadingMistakes ? (
+            <div className="py-12 flex justify-center">
+              <Loader2 size={24} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : wrongAnswers.length === 0 ? (
+            <div className="py-12 text-center bg-card border border-border rounded-2xl p-6">
+              <CheckCircle2 size={32} className="text-emerald-500 mx-auto mb-2 opacity-60" />
+              <p className="text-sm font-bold text-foreground">No mistakes recorded!</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Every time you miss a question during practice, it will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            wrongAnswers.map((w, idx) => (
+              <div key={idx} className="p-4 bg-card border border-border rounded-2xl shadow-xs">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 flex-wrap text-xs">
+                    <span className="font-bold text-primary">{w.subject}</span>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">{w.topic}</span>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(idx)}
+                    className="text-xs text-muted-foreground hover:text-rose-600 transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+                <div className="text-xs sm:text-sm font-semibold text-foreground leading-relaxed mb-3">
+                  <MathText text={w.question} />
+                </div>
+                <div className="grid sm:grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300">
+                    <span className="font-bold block text-[10px] uppercase">Your Answer</span>
+                    <MathText text={w.yourAnswer} />
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                    <span className="font-bold block text-[10px] uppercase">Correct Answer</span>
+                    <MathText text={w.correctAnswer} />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

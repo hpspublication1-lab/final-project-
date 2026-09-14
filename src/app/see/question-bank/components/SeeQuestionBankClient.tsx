@@ -58,8 +58,14 @@ export default function SeeQuestionBankClient() {
   const searchParams = useSearchParams();
   const [isDark, setIsDark] = useState(false);
 
-  // Active View Tab: 'practice' | 'questions' | 'digest' | 'mistakes' | 'bookmarks'
-  const [activeView, setActiveView] = useState<'practice' | 'questions' | 'digest' | 'mistakes' | 'bookmarks'>('practice');
+  // Active View Tab: 'practice' | 'questions' | 'digest' | 'mistakes' | 'bookmarks' | 'printable'
+  // Printable Practice Sets State
+  const [printSubject, setPrintSubject] = useState<string>('science');
+  const [printFormat, setPrintFormat] = useState<'full_board' | 'quick_25' | 'group_a' | 'group_b' | 'group_c' | 'group_d'>('full_board');
+  const [includeRubricInPrint, setIncludeRubricInPrint] = useState<boolean>(true);
+  const [printSchoolName, setPrintSchoolName] = useState<string>('Samyak Tutor SEE Board Preparation');
+
+  const [activeView, setActiveView] = useState<'practice' | 'questions' | 'digest' | 'mistakes' | 'bookmarks' | 'printable'>('practice');
 
   // Simple Practice Mode Selection
   const [simpleSubject, setSimpleSubject] = useState<string>('science');
@@ -386,6 +392,20 @@ export default function SeeQuestionBankClient() {
               >
                 <Flame size={15} />
                 <span>❌ My Mistakes ({studentMistakes.length})</span>
+              </button>
+
+              
+              {/* Mode 6: Printable Sets */}
+              <button
+                onClick={() => setActiveView('printable')}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-2 transition-all ${
+                  activeView === 'printable'
+                    ? 'bg-emerald-700 text-white shadow-md'
+                    : 'bg-muted/40 text-muted-foreground hover:text-foreground border border-border'
+                }`}
+              >
+                <Download size={15} />
+                <span>🖨️ Printable Board Sets</span>
               </button>
 
               {/* Mode 5: Bookmarks */}

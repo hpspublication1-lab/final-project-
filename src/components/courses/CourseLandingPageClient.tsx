@@ -44,9 +44,7 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
 
   const isEnrolled = profile?.subscription_plan && profile.subscription_plan !== 'free';
 
-  const checkoutUrl = course.routePath.includes('see')
-    ? `/see/checkout?plan=mission_a`
-    : `/checkout?plan=${course.sku}`;
+  const checkoutUrl = `/checkout?plan=${course.sku}`;
 
   const toggleModule = (idx: number) => {
     setOpenModuleIndex(openModuleIndex === idx ? null : idx);

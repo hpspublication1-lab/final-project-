@@ -321,7 +321,7 @@ export default function AdminAnalyticsClient() {
       const base = (masteryData || []).filter((_: any, idx: number) => idx % 6 === i);
       const getAvg = (subj: string) => {
         const rows = base.filter((r: any) => r.subjects?.name === subj);
-        if (!rows.length) return Math.round(50 + Math.random() * 30);
+        if (!rows.length) return 0;
         return Math.round(rows.reduce((a: number, r: any) => a + (r.mastery_score || 0), 0) / rows.length);
       };
       return { week, biology: getAvg('biology'), chemistry: getAvg('chemistry'), physics: getAvg('physics'), mental_agility: getAvg('mental_agility') };

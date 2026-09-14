@@ -26,9 +26,5 @@ export const metadata: Metadata = {
 };
 
 export default function MockTestsPage() {
-  return (
-    <PremiumGate feature="Mock Tests">
-      <MockTestsPageClient />
-    </PremiumGate>
-  );
+  return <MockTestsPageClient />;
 }

@@ -18,6 +18,7 @@ import {
   FileText,
   ClipboardList,
   ArrowLeft,
+  ArrowRight,
   ExternalLink,
   Download,
   PlayCircle,
@@ -585,9 +586,23 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
                   </h4>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[11px] font-bold text-emerald-600">
-                  <span>Watch Stream</span>
-                  <PlayCircle size={14} />
+                <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[11px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideo(v)}
+                    className="text-emerald-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <PlayCircle size={14} />
+                    <span>Quick Play</span>
+                  </button>
+                  <Link
+                    href={`/learn/${v.id}`}
+                    className="text-primary hover:underline flex items-center gap-0.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span>Study Player</span>
+                    <ArrowRight size={11} />
+                  </Link>
                 </div>
               </div>
             ))}

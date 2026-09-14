@@ -14,6 +14,7 @@ interface UserProfile {
   college?: string;
   cee_year?: number;
   role?: string;
+  role_name?: string;
   is_admin?: boolean;
   subscription_plan: string;
   subscription_expires_at?: string;

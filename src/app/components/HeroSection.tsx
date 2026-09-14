@@ -76,7 +76,7 @@ export default function HeroSection() {
             <div className="pt-8 space-y-3">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-muted-foreground font-semibold">Board Topper Batch:</span>
-                <span className="text-lg font-black text-foreground">NPR 2,490 <span className="text-xs font-normal text-muted-foreground">/ Full Year</span></span>
+                <span className="text-lg font-black text-foreground">NPR 4,990 <span className="text-xs font-normal text-muted-foreground">/ Full Year</span></span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -138,8 +138,8 @@ export default function HeroSection() {
 
             <div className="pt-8 space-y-3">
               <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground font-semibold">Medical Entrance Pass:</span>
-                <span className="text-lg font-black text-foreground">NPR 2,299 <span className="text-xs font-normal text-muted-foreground">/ Full Year</span></span>
+                <span className="text-xs text-muted-foreground font-semibold">MBBS Target Batch:</span>
+                <span className="text-lg font-black text-foreground">NPR 7,990 <span className="text-xs font-normal text-muted-foreground">/ 180 Days</span></span>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -151,7 +151,7 @@ export default function HeroSection() {
                   <ArrowRight size={13} />
                 </Link>
                 <Link
-                  href="/checkout?plan=student-yearly"
+                  href="/checkout?plan=cee-mbbs-mastery-2026"
                   className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs text-center shadow-sm transition-all"
                 >
                   Join Batch

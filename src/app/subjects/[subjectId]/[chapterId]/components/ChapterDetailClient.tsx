@@ -294,7 +294,7 @@ export default function ChapterDetailClient({ subjectId, chapterId }: ChapterDet
                     {[
                       { icon: Zap, label: 'Practice MCQs', href: practiceHref, color: 'text-primary' },
                       { icon: FileText, label: 'Take Chapter Test', href: '/mock-tests', color: 'text-chem' },
-                      { icon: PlayCircle, label: 'Samyak Guru App', href: '/app-feature?feature=video-lectures', color: 'text-physics' },
+                      videos.length > 0 ? { icon: PlayCircle, label: 'Watch Video Lectures', href: `/learn/${videos[0].id}`, color: 'text-physics' } : { icon: PlayCircle, label: 'Practice MCQs', href: practiceHref, color: 'text-physics' },
                       { icon: BarChart2, label: 'View Progress', href: '/student-dashboard', color: style.textColor },
                     ].map((action) => (
                       <Link
@@ -340,19 +340,49 @@ export default function ChapterDetailClient({ subjectId, chapterId }: ChapterDet
 
             {/* Videos */}
             {activeTab === 'videos' && (
-              <div className="bg-card border border-border rounded-2xl p-8 text-center">
-                <div className={`w-14 h-14 rounded-2xl ${style.bgLight} flex items-center justify-center mx-auto mb-3`}>
-                  <PlayCircle size={26} className={style.textColor} />
-                </div>
-                <h3 className="text-base font-bold text-foreground mb-1">
-                  Video Lectures Available in Samyak Guru App
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto leading-relaxed">
-                  HD video lectures, playback controls, and offline downloads for {chapterRow.title} are hosted on the Samyak Guru mobile app.
-                </p>
-                <Link href="/app-feature?feature=video-lectures" className="btn-primary inline-flex items-center gap-2 text-xs font-bold py-2.5 px-5">
-                  Get Samyak Guru App →
-                </Link>
+              <div className="space-y-3">
+                {videos.length === 0 ? (
+                  <div className="bg-card border border-border rounded-2xl p-10 text-center space-y-2">
+                    <PlayCircle size={36} className="text-muted-foreground mx-auto mb-2" />
+                    <h4 className="text-base font-bold text-foreground">No video lectures recorded yet</h4>
+                    <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                      Lectures for {chapterRow.title} are currently scheduled. Practice MCQs or read notes in the meantime.
+                    </p>
+                  </div>
+                ) : (
+                  videos.map((v, idx) => (
+                    <Link
+                      key={v.id}
+                      href={`/learn/${v.id}`}
+                      className="group flex items-center justify-between p-4 bg-card border border-border rounded-2xl hover:border-primary/40 hover:shadow-card-hover transition-all"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className={`w-10 h-10 rounded-xl ${style.bgLight} ${style.textColor} flex items-center justify-center shrink-0`}>
+                          <PlayCircle size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                            {idx + 1}. {v.title}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-mono">
+                            <span className="flex items-center gap-1"><Clock size={12} /> {formatDuration(v.duration_sec)}</span>
+                            {v.is_premium ? (
+                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">Premium</span>
+                            ) : (
+                              <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded font-bold">Free Preview</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                          Study Lecture →
+                        </span>
+                      </div>
+                    </Link>
+                  ))
+                )}
               </div>
             )}
 

@@ -34,10 +34,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          // `Secure` cookies are rejected over plain http (localhost), which
-          // desyncs the session on token refresh and logs the user out. Only
-          // force Secure in production; SameSite=Lax keeps the session on
-          // same-origin navigations. Mirrors src/lib/supabase/server.ts.
           const isProd = process.env.NODE_ENV === 'production';
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value);
@@ -55,14 +51,13 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAuthenticated = !!user;
 
-  // Every route that serves student content or account actions requires login.
-  // Public routes (marketing / auth / legal) are the explicit allowlist below.
+  // 1. General Student Protected Routes
   const protectedPaths = [
     '/student-dashboard',
+    '/my-courses',
     '/onboarding',
     '/dashboard',
     '/account',
-    // Purchase / account flows — must be signed in:
     '/checkout',
     '/payment-success',
     '/activate-plan',
@@ -72,17 +67,47 @@ export async function middleware(request: NextRequest) {
   if (!isAuthenticated && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    // Preserve the intended destination so login returns the user here.
     url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
     return NextResponse.redirect(url);
   }
 
-  // ── Admin Area Access Control ─────────────────────────────────────────────
+  // If logged in, verify account is not suspended and fetch role
+  let userProfile: { is_banned?: boolean; is_admin?: boolean; role_name?: string; role?: string } | null = null;
+  if (isAuthenticated && user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('is_banned, is_admin, role_name, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    userProfile = profile;
+
+    if (profile?.is_banned) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.search = '?error=account_suspended';
+      return NextResponse.redirect(url);
+    }
+
+    // 2. Teacher Area Access Control (/teacher and /teacher/*)
+    if (pathname === '/teacher' || pathname.startsWith('/teacher/')) {
+      const role = (profile?.role_name || profile?.role || '').toLowerCase();
+      const isAuthorizedTeacher = role === 'teacher' || profile?.is_admin || isSuperAdmin(user.email);
+      if (!isAuthorizedTeacher) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/student-dashboard';
+        url.search = '?error=teacher_required';
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
+  // 3. Admin Area Access Control (/admin and /admin/*)
   const adminKey = process.env.ADMIN_ACCESS_KEY;
   const secretEntrance = adminKey ? `/admin-${adminKey}` : null;
   const isAdminArea = pathname === '/admin' || pathname.startsWith('/admin/');
 
-  // 1) Secret entrance handling: sets unlock cookie for super admin
+  // Secret entrance handling
   if (secretEntrance && pathname === secretEntrance) {
     if (!user) {
       return NextResponse.redirect(
@@ -106,10 +131,6 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  // 2) Protected /admin area access control:
-  //    - If not logged in -> redirect to login with redirect back to /admin
-  //    - If logged in but not super admin -> redirect to student dashboard with error
-  //    - If super admin -> allow access with noindex headers
   if (isAdminArea) {
     if (!user) {
       const url = request.nextUrl.clone();
@@ -118,18 +139,40 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (!isSuperAdmin(user.email)) {
+    const role = (userProfile?.role_name || userProfile?.role || '').toLowerCase();
+    const isFullAdmin = isSuperAdmin(user.email) || !!userProfile?.is_admin || role === 'admin' || role === 'super_admin';
+    const isPayStaff = role === 'payment_staff';
+
+    if (!isFullAdmin && !isPayStaff) {
       const url = request.nextUrl.clone();
       url.pathname = '/student-dashboard';
       url.search = '?error=unauthorized_admin';
       return NextResponse.redirect(url);
     }
 
-    // Add security and noindex headers for admin area
+    // Restrict payment staff strictly to allowed finance paths
+    if (isPayStaff && !isFullAdmin) {
+      const allowedFinancePaths = [
+        '/admin',
+        '/admin/orders',
+        '/admin/enrollments',
+        '/admin/coupons',
+        '/admin/activation-codes',
+        '/admin/users',
+      ];
+      const isAllowed = allowedFinancePaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+      if (!isAllowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/admin';
+        url.search = '?error=finance_role_restricted';
+        return NextResponse.redirect(url);
+      }
+    }
+
     supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
 
-  // 3) Staff area (/staff and /staff/*) access control
+  // 4. Staff Area (/staff and /staff/*)
   if (pathname === '/staff' || pathname.startsWith('/staff/')) {
     if (!user) {
       const url = request.nextUrl.clone();
