@@ -10,24 +10,26 @@ import {
   Sparkles, BadgeCheck, Wallet, Copy, ChevronRight, PartyPopper, Layers, Smartphone, RefreshCw,
 } from 'lucide-react';
 
+import { SUPPORT_CONFIG } from '@/lib/config/support';
+import { PREBOOK_OFFER } from '@/lib/courses/catalog';
+
 // ═══════════════════════════════════════════════════════════════════════════
-// CONFIG — edit these before launch
+// CONFIG — Synchronized with Authoritative Single Source of Truth
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Offer deadline (6 days from now). Nepal time (UTC+05:45).
 const PREBOOKING_DEADLINE = new Date('2026-08-03T23:59:59+05:45');
 
-const PREBOOK_FEE = 300;       // pay now to reserve
-const COURSE_PRICE = 2299;     // prebooker price for the full course
-const ORIGINAL_PRICE = 2999;   // regular price
-const COURSE_DAYS = 45;
-const SAVINGS = ORIGINAL_PRICE - COURSE_PRICE; // 700
+const PREBOOK_FEE = PREBOOK_OFFER.depositAmountNpr;          // 300 NPR payable now to reserve
+const COURSE_PRICE = PREBOOK_OFFER.totalCourseFeeNpr;        // 2299 NPR total course fee
+const ORIGINAL_PRICE = PREBOOK_OFFER.comparisonPriceNpr;     // 4990 NPR regular comparison price
+const REMAINING_BALANCE = PREBOOK_OFFER.remainingBalanceNpr; // 1999 NPR payable later when batch commences
+const COURSE_DAYS = PREBOOK_OFFER.crashCourseDays;           // 45 days
+const SAVINGS = PREBOOK_OFFER.totalSavingsNpr;               // 2691 NPR
 
 // Fonepay dynamic-QR polling — a QR expires around 5 minutes.
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_MS = 5 * 60 * 1000;
-
-import { SUPPORT_CONFIG } from '@/lib/config/support';
 
 // Payment details — editable configuration.
 const PAYMENT = {
@@ -54,10 +56,22 @@ const APP_FEATURES = [
 ];
 
 const FAQS = [
-  { q: 'What exactly am I paying for now?', a: `Rs ${PREBOOK_FEE} reserves your seat and locks the discounted course price. When the 45-day crash course begins, you pay only Rs ${COURSE_PRICE} instead of Rs ${ORIGINAL_PRICE}.` },
-  { q: 'Is the Rs 300 refundable?', a: 'Your prebooking amount is adjusted toward your course fee. If we ever cancel the batch, you are fully refunded.' },
-  { q: 'When does the crash course start?', a: 'The batch begins right after the prebooking window closes. You\'ll get the exact schedule on WhatsApp and inside the app.' },
-  { q: 'How do I get access to the app?', a: 'The moment your payment is confirmed, we activate your account so you can start using all the app features immediately.' },
+  {
+    q: 'What exactly am I paying for now?',
+    a: `You pay only NPR ${PREBOOK_FEE} today as a refundable seat reservation deposit. When the 45-day crash course begins, your NPR ${PREBOOK_FEE} is 100% credited toward your tuition and you pay only the remaining balance of NPR ${REMAINING_BALANCE} (total course fee NPR ${COURSE_PRICE}, saving NPR ${SAVINGS} off the regular NPR ${ORIGINAL_PRICE}).`
+  },
+  {
+    q: 'Is the Rs 300 deposit refundable?',
+    a: 'Yes. Your NPR 300 deposit is 100% refundable prior to the batch start date if your study plans change. If we ever cancel or reschedule the batch, you receive an immediate full refund upon request.'
+  },
+  {
+    q: 'When does the crash course start and how do I pay the balance?',
+    a: `The batch begins right after the prebooking window closes. You will receive an SMS/WhatsApp reminder and a direct link in your student dashboard to clear the remaining balance of NPR ${REMAINING_BALANCE} via Fonepay dynamic QR.`
+  },
+  {
+    q: 'How do I get immediate access to the app while waiting?',
+    a: 'The moment your NPR 300 deposit is confirmed via Fonepay, we automatically activate 90 days of full CEE AI Pro platform access so you can immediately practice 15,000+ MCQs, take grand mocks, and use the AI doubt solver right away.'
+  },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -425,28 +439,40 @@ export default function PrebookClient() {
               Reserve Now & Lock Your Early-Bird Discount!
             </h3>
 
-            <div className="grid sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-card/80 backdrop-blur border border-border/80 shadow-inner">
+            <div className="grid sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-card/80 backdrop-blur border border-border/80 shadow-inner">
               {/* Token Fee Box */}
               <div className="flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-border pb-3 sm:pb-0 sm:pr-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Pay Now to Reserve</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">1. Pay Now (Deposit)</p>
                 <div className="flex items-baseline gap-1 my-1">
-                  <span className="text-4xl sm:text-5xl font-black text-primary leading-none">Rs {PREBOOK_FEE}</span>
-                  <span className="text-xs font-bold text-muted-foreground">/ token</span>
+                  <span className="text-3xl sm:text-4xl font-black text-primary leading-none">Rs {PREBOOK_FEE}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground">/ seat</span>
                 </div>
-                <p className="text-[11px] font-bold text-ma flex items-center gap-1">
-                  <Wallet size={12} /> 100% Adjusts toward your final fee!
+                <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <Wallet size={12} /> 100% Credited to fee
                 </p>
               </div>
 
-              {/* Course Price Box */}
-              <div className="flex flex-col justify-between pt-1 sm:pt-0 sm:pl-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Final 45-Day Course Price</p>
-                <div className="flex items-baseline gap-2 my-1 flex-wrap">
-                  <span className="text-3xl sm:text-4xl font-black text-foreground leading-none">Rs {COURSE_PRICE}</span>
-                  <span className="text-sm font-bold text-muted-foreground line-through decoration-error/60">Rs {ORIGINAL_PRICE}</span>
+              {/* Balance Box */}
+              <div className="flex flex-col justify-between border-b sm:border-b-0 sm:border-r border-border pb-3 sm:pb-0 sm:pr-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">2. Pay Later (Balance)</p>
+                <div className="flex items-baseline gap-1 my-1">
+                  <span className="text-3xl sm:text-4xl font-black text-indigo-600 dark:text-indigo-400 leading-none">Rs {REMAINING_BALANCE}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground">/ balance</span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-[11px] font-black text-success bg-success-light px-2 py-0.5 rounded-md w-fit">
-                  <CheckCircle2 size={11} /> SAVE RS {SAVINGS} INSTANTLY
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Due when batch commences
+                </p>
+              </div>
+
+              {/* Total Course Price Box */}
+              <div className="flex flex-col justify-between pt-1 sm:pt-0 sm:pl-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Total Discounted Price</p>
+                <div className="flex items-baseline gap-1.5 my-1 flex-wrap">
+                  <span className="text-2xl sm:text-3xl font-black text-foreground leading-none">Rs {COURSE_PRICE}</span>
+                  <span className="text-xs font-bold text-muted-foreground line-through decoration-error/60">Rs {ORIGINAL_PRICE}</span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md w-fit">
+                  <CheckCircle2 size={11} /> SAVE RS {SAVINGS}
                 </span>
               </div>
             </div>

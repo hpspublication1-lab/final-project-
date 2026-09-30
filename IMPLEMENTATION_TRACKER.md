@@ -138,8 +138,8 @@ flowchart TD
 | Prompt ID | Title | Core Objective & Deliverables | Dependencies | Baseline Status | Next Action |
 | :---: | :--- | :--- | :--- | :---: | :--- |
 | **Prompt 1** | **Project Inspection & Safe Baseline** | Map routes, verify setup, establish baseline build, create tracker | None | ✅ **COMPLETED** | Archive baseline; begin Prompt 2 |
-| **Prompt 2** | **Single Source of Truth for Courses & Offers** | Consolidate course IDs, pricing, comparison prices, Rs 300 deposit into unified model | Prompt 1 | 🟡 **READY** | Audit `/courses`, `/prebook`, `/cee-medical-entrance` |
-| **Prompt 3** | **Repair Trust Claims, Support Details & Policies** | Remove unsubstantiated student counts, clarify AI vs human faculty, unify refund policy | Prompt 2 | ⚪ PENDING | Audit social proof, faculty bios, refund terms |
+| **Prompt 2** | **Single Source of Truth for Courses & Offers** | Consolidate course IDs, pricing, comparison prices, Rs 300 deposit into unified model | Prompt 1 | ✅ **COMPLETED** | Single catalog & offer breakdown verified |
+| **Prompt 3** | **Repair Trust Claims, Support Details & Policies** | Remove unsubstantiated student counts, clarify AI vs human faculty, unify refund policy | Prompt 2 | 🟡 **READY** | Audit social proof, faculty bios, refund terms |
 | **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | ⚪ PENDING | Refactor `HeroSection`, `SubjectsSection`, spacing |
 | **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | ⚪ PENDING | Audit navigation menus, mobile drawer, course filters |
 | **Prompt 6** | **Repair Signup, Login, Roles & Onboarding** | Enforce server-side role validation, fix session expiry, streamline onboarding | Prompt 5 | ⚪ PENDING | Review `@supabase/ssr` auth, redirect flows, onboarding |
@@ -197,4 +197,34 @@ Based on actual inspection of the current code and configuration:
 - [x] Concrete backlog of defects, placeholders, and integration blockers cataloged.
 - [x] Implementation tracker established on branch `cee-implementation`.
 - [x] No sensitive credentials or secrets exposed.
-- [x] Ready to proceed to **Prompt 2: Create one source of truth for courses and offers**.
+- [x] Completed **Prompt 1: Inspect the project and establish a safe baseline**.
+
+---
+
+## 6. Acceptance Criteria Checklist for Prompt 2
+
+- [x] Authoritative single source of truth created in `src/lib/courses/catalog.ts` (`CANONICAL_CATALOG`, `PREBOOK_OFFER`, `getOfferBreakdown`).
+- [x] Reconciled course identity, currency (`NPR`), regular price, comparison price, payable-now, payable-later, access validity, and included features.
+- [x] Reconciled CEE 45-Day Crash Course prebooking math:
+  - **Total Discounted Fee**: NPR 2,299 (Comparison price NPR 4,990, savings NPR 2,691).
+  - **Seat Reservation Deposit (Pay Now)**: NPR 300 (100% credited toward course fee).
+  - **Remaining Balance (Pay Later)**: NPR 1,999 (Due upon batch commencement).
+- [x] Reconciled payment gateway SKUs (`src/lib/payments/gateways.ts`):
+  - Added `'cee-crash-course-deposit'` (NPR 300) and `'cee-crash-course-balance'` (NPR 1,999).
+- [x] Reconciled checkout plan dictionary (`src/app/checkout/components/FonepayCheckout.tsx`):
+  - Configured original comparison prices and deposit/balance SKU mappings.
+- [x] Reconciled landing page comparison prices (`src/lib/courses/landingData.ts`):
+  - Synchronized CEE (NPR 7,990 / 14,990), SEE (NPR 4,990 / 7,990), and IELTS (NPR 3,490 / 5,990).
+- [x] Reconciled prebooking UI & metadata (`src/app/prebook/page.tsx`, `src/app/prebook/components/PrebookClient.tsx`):
+  - Transparent 3-box breakdown: Pay Now (Deposit), Pay Later (Balance), Total Course Fee.
+- [x] Reconciled batch enrollment client-side flow (`src/app/batches/[slug]/components/BatchDetailClient.tsx`):
+  - Fixed security bypass: paid/premium batches now route to `/checkout?plan=${slug}` rather than inserting direct free enrollments.
+- [x] Reconciled SEE page batch cards (`src/app/see/page.tsx`):
+  - English and Nepali medium cards now clearly link to full Topper Batch checkout (NPR 4,990).
+- [x] Reconciled Schema.org Structured Data (`src/lib/seo/structuredData.ts`):
+  - JSON-LD Course and Product offerings synchronized with canonical prices (NPR 7,990, 4,990, 3,490, 2,299, 300).
+- [x] Automated test suite expanded to 207 tests (18 test suites) with `src/lib/courses/__tests__/courseOffers.test.ts` (all passing).
+- [x] Zero TypeScript compilation errors (`npx tsc --noEmit`).
+- [x] Clean Next.js 15.5.18 production build (exit code 0 across 237 routes).
+- [x] Ready to proceed to **Prompt 3: Repair trust claims, support details, and policies**.
+

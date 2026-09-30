@@ -17,29 +17,33 @@ interface QrResponse {
   qrDataUrl: string;
 }
 
-const PLAN_DETAILS: Record<string, { title: string; price: number; validity: string; desc: string }> = {
+const PLAN_DETAILS: Record<string, { title: string; price: number; originalPrice?: number; validity: string; desc: string }> = {
   // New Unified CEE Monthly Tiers
   'cee-premium-monthly': { title: 'CEE Premium · Monthly Plan', price: 350, validity: '30 Days', desc: 'Complete Notes, 15K MCQs, Verified PYQs & 4 Grand Mocks' },
   'cee-ai-pro-monthly': { title: 'CEE AI Pro · Monthly Plan', price: 600, validity: '30 Days', desc: 'Everything in Premium + Unlimited Mocks, AI Mistake Diagnosis & 75 AI Requests/Day' },
-  'cee-premium-yearly': { title: 'CEE Premium · Annual Plan', price: 3150, validity: '365 Days (1 Year)', desc: '1-Year Full Access to Notes, Question Bank, Verified PYQs & SM-2 Flashcards' },
-  'cee-ai-pro-yearly': { title: 'CEE AI Pro · Annual Intensive', price: 5400, validity: '365 Days (1 Year)', desc: '1-Year Unlimited CEE Mocks, 75 AI Requests/Day, AI Flashcard Generator & Weak-Topic Reports' },
+  'cee-premium-yearly': { title: 'CEE Premium · Annual Plan', price: 3150, originalPrice: 4200, validity: '365 Days (1 Year)', desc: '1-Year Full Access to Notes, Question Bank, Verified PYQs & SM-2 Flashcards' },
+  'cee-ai-pro-yearly': { title: 'CEE AI Pro · Annual Intensive', price: 5400, originalPrice: 7200, validity: '365 Days (1 Year)', desc: '1-Year Unlimited CEE Mocks, 75 AI Requests/Day, AI Flashcard Generator & Weak-Topic Reports' },
 
-  // CEE Medical Entrance (Preserved Legacy)
+  // CEE Medical Entrance Flagships & Crash Courses
+  'cee-mbbs-mastery-2026': { title: 'CEE MBBS Super Target Batch 2026', price: 7990, originalPrice: 14990, validity: '180 Days (Full Cycle)', desc: 'Nepal\'s premier MECEE MBBS/BDS Entrance Batch with daily live masterclasses, 15K MCQs & -0.25 mock tests' },
+  'cee-45-day-crash-course': { title: 'CEE 45-Day Ultimate Crash Course 2026', price: 2299, originalPrice: 4990, validity: '45 Days Intensive', desc: 'Complete Fast-Track Revision, 500 Formulae, and 20 Full-Length Timed Mocks' },
+  'cee-crash-course-deposit': { title: 'CEE 45-Day Crash Course · Seat Reservation Deposit', price: 300, validity: '90 Days AI Pro Access', desc: 'NPR 300 refundable reservation deposit. 100% credited toward course fee. Remaining balance NPR 1,999 due at launch.' },
+  'cee-crash-course-balance': { title: 'CEE 45-Day Crash Course · Remaining Balance', price: 1999, originalPrice: 2299, validity: '45 Days Intensive', desc: 'Remaining balance after NPR 300 seat reservation deposit. Grants full access to live crash course batch.' },
+  'crash-course': { title: 'CEE 45-Day Crash Course', price: 2299, originalPrice: 4990, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
+  'cee-physics-chemistry-booster': { title: 'CEE Physics & Chemistry Booster', price: 3990, originalPrice: 5990, validity: '90 Days', desc: 'High-Yield Formula Batch and Calculation Shortcuts' },
+
+  // Preserved Legacy SKUs
   'pro-monthly': { title: 'CEE Pro · Monthly Plan', price: 1299, validity: '30 Days', desc: 'Full Access to 15K MCQs, Mocks & 24/7 AI Tutor' },
   'pro-yearly': { title: 'CEE Pro · Yearly Intensive', price: 11690, validity: '365 Days (1 Year)', desc: '1-Year Full Access to 15K MCQs, Grand Mocks, 1v1 Arena & Weak-Topic Reports' },
   'student-monthly': { title: 'CEE Student · Monthly Plan', price: 799, validity: '30 Days', desc: 'Monthly CEE Question Bank, Flashcards & Chapter Mocks' },
   'student-yearly': { title: 'CEE Student · Yearly Plan', price: 7190, validity: '365 Days (1 Year)', desc: 'Full-Year Access to CEE Question Bank & Chapter Tests' },
-  'crash-course': { title: 'CEE 45-Day Crash Course', price: 2299, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
-  'cee-45-day-crash-course': { title: 'CEE 45-Day Crash Course', price: 2299, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
-  'cee-mbbs-mastery-2026': { title: 'CEE MBBS Super Target Batch 2026', price: 7990, validity: '180 Days', desc: 'Intensive MECEE MBBS/BDS Entrance Batch with daily live drills' },
-  'cee-physics-chemistry-booster': { title: 'CEE Physics & Chemistry Booster', price: 3990, validity: '90 Days', desc: 'High-Yield Formula Batch and Calculation Shortcuts' },
 
   // SEE Class 10 Board
-  'see-class-10-board-topper-batch': { title: 'SEE Class 10 Board Topper Batch 2082/2083', price: 4990, validity: '365 Days (1 Year)', desc: 'Full Class 10 video curriculum, 10-year model paper bank, AI Vision Marker & Live Classes' },
-  'see-opt-math-science-mastery': { title: 'SEE Optional Math & Science Score Booster', price: 2990, validity: '120 Days', desc: 'Targeted score booster for Class 10 Science & Optional Math' },
+  'see-class-10-board-topper-batch': { title: 'SEE Class 10 Board Topper Batch 2082/2083', price: 4990, originalPrice: 7990, validity: '365 Days (Full Academic Year)', desc: 'Full Class 10 video curriculum, 10-year model paper bank, AI Vision Marker & Live Classes' },
+  'see-opt-math-science-mastery': { title: 'SEE Optional Math & Science Score Booster', price: 2990, originalPrice: 4990, validity: '120 Days', desc: 'Targeted score booster for Class 10 Science & Optional Math' },
 
   // Secondary Tracks
-  'english-ielts-target-8-mastery': { title: 'IELTS Target Band 8.0+ Mastery', price: 3490, validity: '60 Days', desc: 'AI Speaking simulator, Writing Task 1 & 2 evaluation, full Cambridge tests' },
+  'english-ielts-target-8-mastery': { title: 'IELTS Target Band 8.0+ Mastery', price: 3490, originalPrice: 5990, validity: '60 Days', desc: 'AI Speaking simulator, Writing Task 1 & 2 evaluation, full Cambridge tests' },
   'english-spoken-fluency-pro': { title: 'Spoken English & Fluency Masterclass', price: 1990, validity: '60 Days', desc: 'Daily speaking practice and professional pronunciation drills' },
   'digital-ai-prompt-engineering': { title: 'AI Tools & Prompt Engineering', price: 1490, validity: '30 Days', desc: 'ChatGPT, Midjourney, Claude & Automation for Beginners' },
   'digital-python-programming-zero-to-hero': { title: 'Python Programming Zero to Hero', price: 2490, validity: '60 Days', desc: 'Hands-on Python coding, automation scripts and AI API integrations' },

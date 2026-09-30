@@ -45,6 +45,7 @@ export interface CourseData {
   slug: string;
   planSku: string;
   track: CourseTrack;
+  currency: 'NPR';
   title: string;
   badge: string;
   targetStudent: string;
@@ -53,6 +54,9 @@ export interface CourseData {
   description: string;
   priceNpr: number;
   originalPriceNpr?: number;
+  payableNowNpr: number;
+  payableLaterNpr: number;
+  depositNpr?: number;
   validityDays: number;
   validityText: string;
   languageMedium: string;
@@ -66,7 +70,27 @@ export interface CourseData {
   faqs: { q: string; a: string }[];
   primaryCtaText: string;
   enrollPath: string;
+  prebookPath?: string;
 }
+
+/**
+ * Authoritative single source of truth for the CEE 45-Day Crash Course Prebooking Offer.
+ * Resolves all ambiguous comparison prices and provides explicit payable-now and payable-later amounts.
+ */
+export const PREBOOK_OFFER = {
+  sku: 'cee-45-day-crash-course',
+  depositSku: 'cee-crash-course-deposit',
+  balanceSku: 'cee-crash-course-balance',
+  currency: 'NPR',
+  depositAmountNpr: 300,
+  totalCourseFeeNpr: 2299,
+  remainingBalanceNpr: 1999, // 2299 - 300
+  comparisonPriceNpr: 4990,
+  totalSavingsNpr: 2691, // 4990 - 2299
+  accessDaysImmediate: 90,
+  crashCourseDays: 45,
+  refundPolicy: '100% refundable seat deposit prior to batch commencement; fully credited toward final fee upon enrollment.',
+} as const;
 
 export const CANONICAL_CATALOG: CourseData[] = [
   // ── SEE CLASS 10 FLAGSHIP ─────────────────────────────────────────────
@@ -74,6 +98,7 @@ export const CANONICAL_CATALOG: CourseData[] = [
     slug: 'see-class-10-board-topper-batch',
     planSku: 'see-class-10-board-topper-batch',
     track: 'see_class_10',
+    currency: 'NPR',
     title: 'SEE Class 10 Board Topper Batch 2082/2083',
     badge: 'FLAGSHIP · BOARD PREP',
     targetStudent: 'Grade 10 students in Nepal aiming for GPA 4.0 in National Examination Board (NEB) finals.',
@@ -82,6 +107,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     description: 'A comprehensive, structured academic year program covering all 5 core board subjects with live interactive classes, 10-year past papers solved with marking rubrics, and AI handwritten answer grading.',
     priceNpr: 4990,
     originalPriceNpr: 7990,
+    payableNowNpr: 4990,
+    payableLaterNpr: 0,
     validityDays: 365,
     validityText: 'Full Academic Year (365 Days Access)',
     languageMedium: 'English & Nepali Medium',
@@ -157,6 +184,7 @@ export const CANONICAL_CATALOG: CourseData[] = [
     slug: 'cee-mbbs-mastery-2026',
     planSku: 'cee-mbbs-mastery-2026',
     track: 'cee_medical',
+    currency: 'NPR',
     title: 'CEE Medical Entrance Super Target Batch 2026',
     badge: 'FLAGSHIP · MEDICAL ENTRANCE',
     targetStudent: '+2 Science graduates and re-takers preparing for the Medical Education Commission (MECEE) entrance exam.',
@@ -165,6 +193,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     description: '15,000+ topic-wise MCQs with step-by-step rationales, 200-question timed mock exams with official -0.25 negative marking, high-yield sub-chapter notes, and 24/7 AI medical doubt resolution.',
     priceNpr: 7990,
     originalPriceNpr: 14990,
+    payableNowNpr: 7990,
+    payableLaterNpr: 0,
     validityDays: 180,
     validityText: '6 Months (Full Entrance Cycle Access)',
     languageMedium: 'English',
@@ -239,6 +269,7 @@ export const CANONICAL_CATALOG: CourseData[] = [
     slug: 'cee-45-day-crash-course',
     planSku: 'cee-45-day-crash-course',
     track: 'cee_medical',
+    currency: 'NPR',
     title: 'CEE 45-Day Ultimate Crash Course 2026',
     badge: 'INTENSIVE REVISION',
     targetStudent: 'Students seeking fast-track revision, high-yield formula review, and daily full-length mock exams.',
@@ -247,6 +278,10 @@ export const CANONICAL_CATALOG: CourseData[] = [
     description: 'Focused revision series pinpointing the most frequently asked sub-topics in Zoology, Botany, Chemistry, Physics, and MAT with daily timed mock test drills.',
     priceNpr: 2299,
     originalPriceNpr: 4990,
+    payableNowNpr: 2299,
+    payableLaterNpr: 0,
+    depositNpr: 300,
+    prebookPath: '/prebook',
     validityDays: 45,
     validityText: '45 Days Intensive Access',
     languageMedium: 'English',
@@ -296,6 +331,7 @@ export const CANONICAL_CATALOG: CourseData[] = [
     slug: 'see-opt-math-science-mastery',
     planSku: 'see-opt-math-science-mastery',
     track: 'see_class_10',
+    currency: 'NPR',
     title: 'SEE Optional Math & Science Score Booster',
     badge: 'SUBJECT SPECIAL',
     targetStudent: 'Grade 10 students wanting targeted excellence in the two most challenging board subjects.',
@@ -304,6 +340,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     description: 'Intensive theorem proofs, trigonometry identities, vector geometry, and physics/chemistry numerical problem solving for SEE board candidates.',
     priceNpr: 2990,
     originalPriceNpr: 4990,
+    payableNowNpr: 2990,
+    payableLaterNpr: 0,
     validityDays: 120,
     validityText: '4 Months (120 Days Access)',
     languageMedium: 'English & Nepali Medium',
@@ -353,6 +391,7 @@ export const CANONICAL_CATALOG: CourseData[] = [
     slug: 'english-ielts-target-8-mastery',
     planSku: 'english-ielts-target-8-mastery',
     track: 'skills_languages',
+    currency: 'NPR',
     title: 'IELTS Academic & General Target Band 8.0+',
     badge: 'AUXILIARY · LANGUAGE',
     targetStudent: 'Students and professionals preparing for IELTS Academic or General Training exams.',
@@ -361,6 +400,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     description: 'Complete IELTS masterclass featuring real-time AI Speaking cue card assessment, instant writing task 1 & 2 lexical feedback, and authentic Cambridge mock tests.',
     priceNpr: 3490,
     originalPriceNpr: 5990,
+    payableNowNpr: 3490,
+    payableLaterNpr: 0,
     validityDays: 60,
     validityText: '2 Months (60 Days Access)',
     languageMedium: 'English',
@@ -424,3 +465,65 @@ export function getFeaturedFlagships(): CourseData[] {
     CANONICAL_CATALOG[1], // CEE Medical Super Target
   ];
 }
+
+export interface OfferBreakdown {
+  slug: string;
+  planSku: string;
+  title: string;
+  currency: 'NPR';
+  fullPriceNpr: number;
+  originalPriceNpr: number;
+  payableNowNpr: number;
+  payableLaterNpr: number;
+  depositNpr?: number;
+  savingsNpr: number;
+  validityText: string;
+  isPrebookable: boolean;
+  prebookPath?: string;
+  enrollPath: string;
+}
+
+export function getOfferBreakdown(slugOrSku: string): OfferBreakdown | null {
+  const norm = slugOrSku.toLowerCase().trim();
+  if (norm === 'prebook' || norm === 'crash-course-deposit' || norm === 'cee-crash-course-deposit') {
+    return {
+      slug: PREBOOK_OFFER.sku,
+      planSku: PREBOOK_OFFER.depositSku,
+      title: 'CEE 45-Day Crash Course · Seat Reservation Deposit',
+      currency: 'NPR',
+      fullPriceNpr: PREBOOK_OFFER.totalCourseFeeNpr,
+      originalPriceNpr: PREBOOK_OFFER.comparisonPriceNpr,
+      payableNowNpr: PREBOOK_OFFER.depositAmountNpr,
+      payableLaterNpr: PREBOOK_OFFER.remainingBalanceNpr,
+      depositNpr: PREBOOK_OFFER.depositAmountNpr,
+      savingsNpr: PREBOOK_OFFER.totalSavingsNpr,
+      validityText: `${PREBOOK_OFFER.accessDaysImmediate} Days Immediate AI Pro + ${PREBOOK_OFFER.crashCourseDays} Days Crash Course`,
+      isPrebookable: true,
+      prebookPath: '/prebook',
+      enrollPath: '/prebook',
+    };
+  }
+
+  const course = getCourseBySlug(norm);
+  if (!course) return null;
+
+  return {
+    slug: course.slug,
+    planSku: course.planSku,
+    title: course.title,
+    currency: course.currency,
+    fullPriceNpr: course.priceNpr,
+    originalPriceNpr: course.originalPriceNpr || course.priceNpr,
+    payableNowNpr: course.payableNowNpr,
+    payableLaterNpr: course.payableLaterNpr,
+    depositNpr: course.depositNpr,
+    savingsNpr: (course.originalPriceNpr || course.priceNpr) - course.priceNpr,
+    validityText: course.validityText,
+    isPrebookable: !!course.depositNpr,
+    prebookPath: course.prebookPath,
+    enrollPath: course.enrollPath,
+  };
+}
+
+export const COURSES = CANONICAL_CATALOG;
+

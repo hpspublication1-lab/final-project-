@@ -204,7 +204,7 @@ export default function PricingSection() {
                 </Link>
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                💳 Fonepay Dynamic QR · eSewa · ⚡ Instant Activation
+                💳 Fonepay Dynamic QR / Mobile Banking · ⚡ Instant Activation
               </p>
             </div>
           </div>

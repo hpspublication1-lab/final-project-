@@ -140,7 +140,7 @@ export default function DedicatedSeeLandingPage() {
                   <span className="px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/30 text-[10px] font-black">
                     🇬🇧 ENGLISH MEDIUM (ID: 379737)
                   </span>
-                  <span className="text-xs font-black text-foreground">NPR 1,999</span>
+                  <span className="text-xs font-bold text-muted-foreground">In Topper Batch · NPR 4,990</span>
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-foreground">SEE 2026 — English Medium Mastery</h3>
@@ -150,8 +150,8 @@ export default function DedicatedSeeLandingPage() {
                   <Link href="/batches/see-2026-english-medium" className="text-xs font-bold text-blue-600 hover:underline">
                     View Curriculum →
                   </Link>
-                  <Link href="/batches/see-2026-english-medium" className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-sm">
-                    Enroll English Medium
+                  <Link href="/checkout?plan=see-class-10-board-topper-batch" className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black shadow-sm">
+                    Enroll Full Batch (NPR 4,990)
                   </Link>
                 </div>
               </div>
@@ -161,7 +161,7 @@ export default function DedicatedSeeLandingPage() {
                   <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/30 text-[10px] font-black">
                     🇳🇵 NEPALI MEDIUM (ID: 367785)
                   </span>
-                  <span className="text-xs font-black text-foreground">NPR 1,999</span>
+                  <span className="text-xs font-bold text-muted-foreground">In Topper Batch · NPR 4,990</span>
                 </div>
                 <div>
                   <h3 className="text-sm font-black text-foreground">SEE 2026 — Nepali Medium (नेपाली माध्यम)</h3>
@@ -171,8 +171,8 @@ export default function DedicatedSeeLandingPage() {
                   <Link href="/batches/see-2026-nepali-medium" className="text-xs font-bold text-red-600 hover:underline">
                     पाठ्यक्रम हेर्नुहोस् →
                   </Link>
-                  <Link href="/batches/see-2026-nepali-medium" className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-sm">
-                    Enroll Nepali Medium
+                  <Link href="/checkout?plan=see-class-10-board-topper-batch" className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black shadow-sm">
+                    Enroll Full Batch (NPR 4,990)
                   </Link>
                 </div>
               </div>

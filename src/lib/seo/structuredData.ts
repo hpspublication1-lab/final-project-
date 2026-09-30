@@ -40,7 +40,7 @@ export function getOrganizationSchema() {
       longitude: 85.3428,
     },
     hasMap: 'https://maps.google.com/?q=Old+Baneshwor,+Kathmandu,+Nepal',
-    priceRange: 'NPR 300 - NPR 2499',
+    priceRange: 'NPR 300 - NPR 7990',
     openingHoursSpecification: [
       {
         '@type': 'OpeningHoursSpecification',
@@ -132,10 +132,10 @@ export function getFeaturedCoursesSchema() {
           },
           offers: {
             '@type': 'Offer',
-            price: '999',
+            price: '4990',
             priceCurrency: 'NPR',
             availability: 'https://schema.org/InStock',
-            url: `${BASE_URL}/see/checkout`,
+            url: `${BASE_URL}/checkout?plan=see-class-10-board-topper-batch`,
             validFrom: '2026-01-01',
           },
           aggregateRating: {
@@ -170,10 +170,10 @@ export function getFeaturedCoursesSchema() {
           },
           offers: {
             '@type': 'Offer',
-            price: '2499',
+            price: '7990',
             priceCurrency: 'NPR',
             availability: 'https://schema.org/InStock',
-            url: `${BASE_URL}/courses?sector=cee`,
+            url: `${BASE_URL}/checkout?plan=cee-mbbs-mastery-2026`,
             validFrom: '2026-01-01',
           },
           aggregateRating: {
@@ -208,10 +208,10 @@ export function getFeaturedCoursesSchema() {
           },
           offers: {
             '@type': 'Offer',
-            price: '1499',
+            price: '3490',
             priceCurrency: 'NPR',
             availability: 'https://schema.org/InStock',
-            url: `${BASE_URL}/english`,
+            url: `${BASE_URL}/checkout?plan=english-ielts-target-8-mastery`,
             validFrom: '2026-01-01',
           },
           aggregateRating: {
@@ -245,23 +245,43 @@ export function getProductPricingSchema() {
     offers: [
       {
         '@type': 'Offer',
-        name: 'SEE Mission A+ Batch',
-        price: '999',
+        name: 'SEE Board Topper Batch (Full Year)',
+        price: '4990',
         priceCurrency: 'NPR',
         priceValidUntil: '2027-12-31',
         itemCondition: 'https://schema.org/NewCondition',
         availability: 'https://schema.org/InStock',
-        url: `${BASE_URL}/see/checkout`,
+        url: `${BASE_URL}/checkout?plan=see-class-10-board-topper-batch`,
       },
       {
         '@type': 'Offer',
-        name: 'Prebooking Early Bird Token',
+        name: 'CEE Crash Course Prebooking Reservation Deposit',
         price: '300',
         priceCurrency: 'NPR',
         priceValidUntil: '2027-12-31',
         itemCondition: 'https://schema.org/NewCondition',
         availability: 'https://schema.org/InStock',
         url: `${BASE_URL}/prebook`,
+      },
+      {
+        '@type': 'Offer',
+        name: 'CEE 45-Day Intensive Crash Course',
+        price: '2299',
+        priceCurrency: 'NPR',
+        priceValidUntil: '2027-12-31',
+        itemCondition: 'https://schema.org/NewCondition',
+        availability: 'https://schema.org/InStock',
+        url: `${BASE_URL}/checkout?plan=cee-45-day-crash-course`,
+      },
+      {
+        '@type': 'Offer',
+        name: 'CEE Medical Entrance Target Batch (180 Days)',
+        price: '7990',
+        priceCurrency: 'NPR',
+        priceValidUntil: '2027-12-31',
+        itemCondition: 'https://schema.org/NewCondition',
+        availability: 'https://schema.org/InStock',
+        url: `${BASE_URL}/checkout?plan=cee-mbbs-mastery-2026`,
       },
     ],
     aggregateRating: {

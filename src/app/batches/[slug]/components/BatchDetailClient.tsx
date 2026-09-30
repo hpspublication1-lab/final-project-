@@ -318,10 +318,17 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
 
   const handleEnroll = async () => {
     if (!user) {
-      router.push('/login');
+      router.push(`/login?redirect=/batches/${encodeURIComponent(slug)}`);
       return;
     }
     if (!batch) return;
+
+    // Paid or premium batches must go through checkout
+    if ((batch.price_npr && batch.price_npr > 0) || batch.is_premium) {
+      router.push(`/checkout?plan=${encodeURIComponent(batch.slug || slug)}`);
+      return;
+    }
+
     setEnrolling(true);
     try {
       const supabase = createClient();
@@ -470,7 +477,13 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
                     isNepaliMedium ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
                   }`}
                 >
-                  {enrolling ? <Loader2 size={15} className="animate-spin" /> : 'Enroll in Batch'}
+                  {enrolling ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : batch.price_npr > 0 ? (
+                    `Enroll & Pay — Rs. ${batch.price_npr.toLocaleString()}`
+                  ) : (
+                    'Enroll in Free Batch'
+                  )}
                 </button>
               )}
 
