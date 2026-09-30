@@ -3,11 +3,31 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { dispatchEmailNow } from '@/lib/crm/emailAutomation';
 import { LeadRecord } from '@/lib/crm/types';
 
+function isAuthorizedCron(req: NextRequest): boolean {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    // Fail closed in production if CRON_SECRET is unconfigured
+    return process.env.NODE_ENV !== 'production';
+  }
+  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return false;
+  }
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  return token === cronSecret;
+}
+
 export async function GET(req: NextRequest) {
+  if (!isAuthorizedCron(req)) {
+    return NextResponse.json({ error: 'Unauthorized: Invalid cron secret' }, { status: 401 });
+  }
   return handleCron();
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAuthorizedCron(req)) {
+    return NextResponse.json({ error: 'Unauthorized: Invalid cron secret' }, { status: 401 });
+  }
   return handleCron();
 }
 

@@ -14,7 +14,7 @@ export default function PricingSection() {
   };
 
   return (
-    <section id="pricing" className="py-20 bg-background border-t border-border/60 relative overflow-hidden">
+    <section id="pricing" aria-label="Pricing plans" className="py-20 bg-background border-t border-border/60 relative overflow-hidden">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         
         {/* Header */}
@@ -185,20 +185,26 @@ export default function PricingSection() {
 
             <div className="space-y-2">
               <Link
-                href="/checkout?plan=cee-mbbs-mastery-2026"
-                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-2"
+                href="/checkout?plan=cee-ai-pro-monthly"
+                className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-2"
               >
-                <span>Enroll in CEE Target Batch (NPR 7,990)</span>
+                <span>Subscribe CEE AI Pro (NPR 600 / Mo)</span>
                 <ArrowRight size={14} />
               </Link>
+              <Link
+                href="/checkout?plan=cee-premium-monthly"
+                className="w-full py-2.5 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold text-xs text-center border border-indigo-500/30 transition-all flex items-center justify-center gap-2"
+              >
+                <span>CEE Premium (NPR 350 / Mo)</span>
+              </Link>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 pt-1">
-                <span>Need 45-day crash course?</span>
-                <Link href="/checkout?plan=cee-45-day-crash-course" className="text-primary font-bold hover:underline">
-                  NPR 2,299 &rarr;
+                <span>Full 180-day Target Batch?</span>
+                <Link href="/checkout?plan=cee-mbbs-mastery-2026" className="text-primary font-bold hover:underline">
+                  NPR 7,990 &rarr;
                 </Link>
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                💳 Fonepay Dynamic QR · ⚡ Instant Activation
+                💳 Fonepay Dynamic QR · eSewa · ⚡ Instant Activation
               </p>
             </div>
           </div>
@@ -216,7 +222,7 @@ export default function PricingSection() {
             className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:underline"
           >
             <MessageCircle size={15} />
-            <span>Chat with an Academic Counselor on WhatsApp: +977 {WHATSAPP_NUMBER}</span>
+            <span>Chat with an Academic Counselor on WhatsApp: {SUPPORT_CONFIG.phoneDisplay}</span>
           </a>
         </div>
 

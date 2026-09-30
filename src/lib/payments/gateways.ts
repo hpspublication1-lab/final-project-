@@ -12,6 +12,13 @@ import crypto from 'crypto';
 type PlanSku = { npr: number; days: number; plan: 'student' | 'pro'; label: string };
 
 export const PLAN_PRICES: Record<string, PlanSku> = {
+  // New Unified CEE Monthly Tiers
+  'cee-premium-monthly': { npr: 350, days: 30, plan: 'student', label: 'CEE Premium · Monthly Plan (NPR 350)' },
+  'cee-ai-pro-monthly': { npr: 600, days: 30, plan: 'pro', label: 'CEE AI Pro · Monthly Plan (NPR 600)' },
+  'cee-premium-yearly': { npr: 3150, days: 365, plan: 'student', label: 'CEE Premium · Annual (NPR 3,150)' },
+  'cee-ai-pro-yearly': { npr: 5400, days: 365, plan: 'pro', label: 'CEE AI Pro · Annual (NPR 5,400)' },
+
+  // Preserved Legacy SKUs (Ensures zero customer entitlement disruption)
   'student-monthly': { npr: 799, days: 30, plan: 'student', label: 'Student Plan · Monthly' },
   'student-yearly': { npr: 7190, days: 365, plan: 'student', label: 'Student Plan · Yearly' },
   'pro-monthly': { npr: 1299, days: 30, plan: 'pro', label: 'Pro Plan · Monthly' },

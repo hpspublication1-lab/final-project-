@@ -57,7 +57,7 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
     { label: 'All Subjects',  href: '/subjects',          icon: BookOpen,      key: 'd-subjects' },
     { label: 'Practice MCQs', href: '/practice',          icon: Zap,           key: 'd-practice' },
     { label: 'Grand Mocks',   href: '/mock-tests',        icon: ClipboardList, key: 'd-tests' },
-    { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: '1v1' },
+    { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: 'Rs 1K' },
     { label: 'Live Classes',  href: '/live-classes',      icon: Radio,         key: 'd-live', badge: 'LIVE' },
     { label: 'AI Tutor',      href: '/ai-tutor',          icon: Bot,           key: 'd-ai', badge: 'AI' },
     { label: 'Study Plan',    href: '/study-plan',        icon: CalendarScheduleIcon, key: 'd-plan' },

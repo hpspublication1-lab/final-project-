@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
         .from('user_profiles')
         .update({
           subscription_plan: 'pro',
+          plan_tier: 'cee_ai_pro',
           subscription_expires_at: new Date(Date.now() + PREBOOK_PRO_DAYS * 86400000).toISOString(),
           updated_at: new Date().toISOString(),
         })

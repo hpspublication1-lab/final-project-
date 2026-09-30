@@ -64,75 +64,31 @@ export default function BookmarksPageClient() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const supabase = createClient();
-
-      // Query bookmarks using authoritative schema: user_id, resource_type = 'question'
-      const { data: bmData, error: bmError } = await supabase
-        .from('bookmarks')
-        .select('id, resource_id, created_at')
-        .eq('user_id', user.id)
-        .eq('resource_type', 'question')
-        .order('created_at', { ascending: false });
-
-      if (cancelled) return;
-      if (bmError || !bmData || bmData.length === 0) {
-        if (bmError) console.error('Failed to load bookmarks:', bmError.message);
-        setItems([]);
-        setLoading(false);
-        return;
-      }
-
-      const qIds = bmData.map((b: any) => b.resource_id).filter(Boolean);
-      const { data: qData, error: qError } = await supabase
-        .from('questions')
-        .select(`
-          id, question_text, options, correct_answer, explanation, difficulty,
-          subjects ( display_name ), chapters ( title )
-        `)
-        .in('id', qIds);
-
-      if (cancelled) return;
-      if (qError) {
-        console.error('Failed to load bookmarked questions:', qError.message);
-        setItems([]);
-      } else {
-        const qMap = new Map<string, any>();
-        (qData || []).forEach((q: any) => qMap.set(q.id, q));
-
-        const mapped: BookmarkedQuestion[] = [];
-        for (const bm of bmData) {
-          const q = qMap.get(bm.resource_id);
-          if (!q) continue;
-
-          let formattedOpts: { key: string; text: string }[] = [];
-          if (Array.isArray(q.options)) {
-            const keys = ['a', 'b', 'c', 'd'];
-            formattedOpts = q.options.map((opt: any, idx: number) => ({
-              key: keys[idx] || String(idx),
-              text: typeof opt === 'object' && opt !== null ? (opt.text || opt.title || String(opt)) : String(opt),
-            }));
-          } else {
-            formattedOpts = [
-              { key: 'a', text: q.option_a || '' },
-              { key: 'b', text: q.option_b || '' },
-              { key: 'c', text: q.option_c || '' },
-              { key: 'd', text: q.option_d || '' },
-            ];
-          }
-
-          mapped.push({
-            bookmarkId: bm.id,
-            questionId: bm.resource_id,
-            questionText: q.question_text || '',
-            options: formattedOpts,
-            correctOption: String(q.correct_answer || q.correct_option || 'a').toLowerCase().trim(),
-            explanation: q.explanation,
-            difficulty: q.difficulty,
-            subjectLabel: q.subjects?.display_name ?? null,
-            chapterLabel: q.chapters?.title ?? null,
-          });
+      try {
+        const res = await fetch('/api/bookmarks');
+        if (cancelled) return;
+        if (!res.ok) {
+          setItems([]);
+          setLoading(false);
+          return;
         }
+        const data = await res.json();
+        const bms = data.bookmarks || [];
+        const mapped: BookmarkedQuestion[] = bms.map((bm: any) => ({
+          bookmarkId: bm.id,
+          questionId: bm.resource_id,
+          questionText: bm.question?.question_text || '',
+          options: bm.question?.options || [],
+          correctOption: String(bm.question?.correct_answer || 'a').toLowerCase().trim(),
+          explanation: bm.question?.explanation || null,
+          difficulty: bm.question?.difficulty || 'medium',
+          subjectLabel: bm.question?.subject_name || null,
+          chapterLabel: bm.question?.chapter_title || null,
+        }));
         setItems(mapped);
+      } catch (err) {
+        console.error('Failed to load bookmarks:', err);
+        setItems([]);
       }
       setLoading(false);
     })();

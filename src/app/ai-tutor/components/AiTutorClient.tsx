@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useTransition } from 'react';
+import React, { useState, useRef, useEffect, useTransition, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useProgram, ProgramType, normalizeCourseId } from '@/contexts/ProgramContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 
 import ProgramSwitcher from '@/components/ProgramSwitcher';
-import { Bot, Send, User, Sparkles, RefreshCw, Copy, Check, Lightbulb, Zap, Trash2, ArrowUpRight, GraduationCap, Stethoscope, Scan, BarChart2 } from 'lucide-react';
+import { Bot, Send, User, Sparkles, RefreshCw, Copy, Check, Lightbulb, Zap, Trash2, ArrowUpRight, GraduationCap, Stethoscope, Scan, BarChart2, Target, AlertTriangle, ShieldCheck, Flame } from 'lucide-react';
 import { MathText } from '@/components/MathText';
 import toast from 'react-hot-toast';
 
@@ -173,6 +176,14 @@ export default function AiTutorClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [, startTransition] = useTransition();
 
+  const searchParams = useSearchParams();
+  const { user, profile } = useAuth();
+  const [quotaUsed, setQuotaUsed] = useState<number>(0);
+  const [quotaLimit, setQuotaLimit] = useState<number>(5);
+  const [userTier, setUserTier] = useState<string>('free');
+  const [weakTopics, setWeakTopics] = useState<Array<{ name: string; subject: string; mistakes: number }>>([]);
+  const handledParamRef = useRef(false);
+
   const { program, programDetails } = useProgram();
   const canonicalId = normalizeCourseId(program);
 
@@ -332,6 +343,7 @@ export default function AiTutorClient() {
         };
 
         setMessages((prev) => [...prev, aiMsg]);
+        setQuotaUsed((prev) => Math.min(quotaLimit, prev + 1));
       } catch (err: any) {
         setActiveAgents([]);
         toast.error(err.message || 'Something went wrong. Please try again.');
@@ -349,6 +361,62 @@ export default function AiTutorClient() {
     });
   };
 
+  useEffect(() => {
+    const tier = (profile as any)?.plan_tier || 'free';
+    setUserTier(tier);
+    const limit = tier === 'cee_ai_pro' || tier === 'legacy_pro' ? 75 : tier === 'cee_premium' ? 15 : 5;
+    setQuotaLimit(limit);
+
+    if (!user?.id) return;
+    const supabase = createClient();
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kathmandu' });
+
+    supabase
+      .from('ai_usage_daily')
+      .select('request_count')
+      .eq('user_id', user.id)
+      .eq('usage_date', todayStr)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setQuotaUsed((data as any).request_count || 0);
+      });
+
+    supabase
+      .from('practice_attempts')
+      .select(`
+        chapter_id,
+        chapters ( title ),
+        subjects ( display_name )
+      `)
+      .eq('student_id', user.id)
+      .eq('is_correct', false)
+      .order('created_at', { ascending: false })
+      .limit(30)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return;
+        const counts = new Map<string, { subject: string; count: number }>();
+        for (const row of data as any[]) {
+          const topic = row.chapters?.title || 'Core Concepts';
+          const subj = row.subjects?.display_name || 'CEE';
+          const existing = counts.get(topic) || { subject: subj, count: 0 };
+          counts.set(topic, { subject: subj, count: existing.count + 1 });
+        }
+        const sorted = Array.from(counts.entries())
+          .map(([name, val]) => ({ name, subject: val.subject, mistakes: val.count }))
+          .sort((a, b) => b.mistakes - a.mistakes)
+          .slice(0, 3);
+        setWeakTopics(sorted);
+      });
+  }, [user?.id, profile]);
+
+  useEffect(() => {
+    if (handledParamRef.current) return;
+    const doubtParam = searchParams.get('doubt') || searchParams.get('diagnostic') || searchParams.get('q');
+    if (doubtParam) {
+      handledParamRef.current = true;
+      handleSend(doubtParam);
+    }
+  }, [searchParams]);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -450,6 +518,62 @@ export default function AiTutorClient() {
             </div>
           </Link>
         </div>
+        {/* Daily Quota Widget & Plan Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-card border border-border rounded-2xl shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-foreground">
+                  {userTier === 'cee_ai_pro' ? 'CEE AI Pro Plan' : userTier === 'cee_premium' ? 'CEE Premium Plan' : 'Free Plan'}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">
+                  {quotaUsed} / {quotaLimit} queries used today
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Resets daily at 00:00 NPT. Socratic medical entrance pedagogy &amp; step-by-step reasoning.
+              </p>
+            </div>
+          </div>
+
+          {userTier !== 'cee_ai_pro' && (
+            <Link
+              href="/checkout?plan=cee-ai-pro-monthly"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 hover:brightness-105 transition-all shadow-xs shrink-0"
+            >
+              <Flame size={14} /> Upgrade to CEE AI Pro (75/day) →
+            </Link>
+          )}
+        </div>
+
+        {/* Weak Topics Diagnostic Pill Bar */}
+        {weakTopics.length > 0 && (
+          <div className="p-4 bg-card border border-border rounded-2xl space-y-2">
+            <div className="flex items-center gap-2">
+              <Target size={14} className="text-rose-500" />
+              <p className="text-xs font-bold text-foreground">Your High-Yield Weak Spots (From Recent Practice):</p>
+              <span className="text-[10px] text-muted-foreground">Click any topic to diagnose with AI Copilot</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {weakTopics.map((topic, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(`Diagnose my conceptual understanding of ${topic.name} (${topic.subject}) for CEE Medical Entrance. What are the common exam pitfalls, key formulas, and must-know rules?`)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/20 transition-all cursor-pointer"
+                >
+                  <AlertTriangle size={12} className="text-rose-500" />
+                  <span>{topic.name}</span>
+                  <span className="text-[10px] bg-rose-500/20 text-rose-600 dark:text-rose-400 px-1.5 py-0.5 rounded-full font-bold">
+                    {topic.mistakes} misses
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Subject Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">

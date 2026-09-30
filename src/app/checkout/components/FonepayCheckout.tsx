@@ -18,7 +18,13 @@ interface QrResponse {
 }
 
 const PLAN_DETAILS: Record<string, { title: string; price: number; validity: string; desc: string }> = {
-  // CEE Medical Entrance
+  // New Unified CEE Monthly Tiers
+  'cee-premium-monthly': { title: 'CEE Premium · Monthly Plan', price: 350, validity: '30 Days', desc: 'Complete Notes, 15K MCQs, Verified PYQs & 4 Grand Mocks' },
+  'cee-ai-pro-monthly': { title: 'CEE AI Pro · Monthly Plan', price: 600, validity: '30 Days', desc: 'Everything in Premium + Unlimited Mocks, AI Mistake Diagnosis & 75 AI Requests/Day' },
+  'cee-premium-yearly': { title: 'CEE Premium · Annual Plan', price: 3150, validity: '365 Days (1 Year)', desc: '1-Year Full Access to Notes, Question Bank, Verified PYQs & SM-2 Flashcards' },
+  'cee-ai-pro-yearly': { title: 'CEE AI Pro · Annual Intensive', price: 5400, validity: '365 Days (1 Year)', desc: '1-Year Unlimited CEE Mocks, 75 AI Requests/Day, AI Flashcard Generator & Weak-Topic Reports' },
+
+  // CEE Medical Entrance (Preserved Legacy)
   'pro-monthly': { title: 'CEE Pro · Monthly Plan', price: 1299, validity: '30 Days', desc: 'Full Access to 15K MCQs, Mocks & 24/7 AI Tutor' },
   'pro-yearly': { title: 'CEE Pro · Yearly Intensive', price: 11690, validity: '365 Days (1 Year)', desc: '1-Year Full Access to 15K MCQs, Grand Mocks, 1v1 Arena & Weak-Topic Reports' },
   'student-monthly': { title: 'CEE Student · Monthly Plan', price: 799, validity: '30 Days', desc: 'Monthly CEE Question Bank, Flashcards & Chapter Mocks' },

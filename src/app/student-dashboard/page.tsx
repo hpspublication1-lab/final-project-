@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import DashboardPageClient from './components/DashboardPageClient';
 
 export const metadata: Metadata = {
+  title: 'My Dashboard — Samyak Tutor',
   robots: { index: false, follow: false },
 };
 

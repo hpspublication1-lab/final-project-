@@ -83,6 +83,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (Array.isArray(ids) && ids.length > 0) {
+      if (ids.length > 100) {
+        return NextResponse.json({ success: false, error: 'Maximum 100 notification IDs allowed per request.' }, { status: 400 });
+      }
+
       const { error } = await admin
         .from('notifications')
         .update({ is_read: true })

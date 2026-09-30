@@ -77,8 +77,8 @@ async function callOpenAI(
 async function enforceRateLimit(supabase: Awaited<ReturnType<typeof createClient>>): Promise<NextResponse | null> {
   try {
     const { data, error } = await supabase.rpc('check_and_increment_ai_usage', {
-      p_free_limit: 50,
-      p_pro_limit: 500,
+      p_free_limit: 5,
+      p_pro_limit: 75,
     });
     if (error) return null;
     const row = Array.isArray(data) ? data[0] : data;
@@ -86,7 +86,10 @@ async function enforceRateLimit(supabase: Awaited<ReturnType<typeof createClient
       return NextResponse.json(
         {
           error: 'Daily AI limit reached',
-          details: `You've used all ${row.daily_limit} AI requests for today. Upgrade to Pro for a higher limit.`,
+          details: `You've used all ${row.daily_limit} AI requests for today. Upgrade to CEE AI Pro for 75 requests/day or CEE Premium for 15 requests/day.`,
+          currentUsage: row.current_count,
+          dailyLimit: row.daily_limit,
+          tier: row.plan_tier || 'free',
         },
         { status: 429 }
       );

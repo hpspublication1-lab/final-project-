@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 import SeeQuestionBankClient from '@/app/see/question-bank/components/SeeQuestionBankClient';
+import CeeQuestionBankClient from './CeeQuestionBankClient';
 import { GraduationCap, Stethoscope, ArrowRight, BookOpen, Zap, Layers, Sparkles } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 
@@ -23,7 +24,7 @@ export default function QuestionBankRouterClient() {
       return;
     }
     if (programParam === 'cee' || programParam === 'cee_medical') {
-      router.replace('/practice');
+      setResolvedMode('cee');
       return;
     }
 
@@ -35,14 +36,14 @@ export default function QuestionBankRouterClient() {
         return;
       }
       if (canonical === 'cee_medical') {
-        router.replace('/practice');
+        setResolvedMode('cee');
         return;
       }
     }
 
     // 3. Fallback: prompt user to choose their target examination
     setResolvedMode('chooser');
-  }, [programParam, program, router]);
+  }, [programParam, program]);
 
   if (resolvedMode === 'loading') {
     return (
@@ -54,6 +55,10 @@ export default function QuestionBankRouterClient() {
 
   if (resolvedMode === 'see') {
     return <SeeQuestionBankClient />;
+  }
+
+  if (resolvedMode === 'cee') {
+    return <CeeQuestionBankClient />;
   }
 
   return (
@@ -153,11 +158,11 @@ export default function QuestionBankRouterClient() {
             <button
               onClick={() => {
                 setProgram('cee_medical');
-                router.push('/practice');
+                setResolvedMode('cee');
               }}
               className="mt-6 w-full py-3.5 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >
-              <span>Open CEE Practice Bank</span>
+              <span>Open CEE Question Bank &amp; PYQs</span>
               <ArrowRight size={15} />
             </button>
           </div>

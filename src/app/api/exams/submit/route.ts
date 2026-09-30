@@ -10,6 +10,7 @@ import {
 } from '@/lib/exams/examRegistry';
 import { normalizeOptionKey, isAnswerCorrect } from '@/lib/scoring';
 import { SEE_QUESTION_BANK } from '@/lib/data/seeQuestionBankData';
+import { CEE_VERIFIED_PYQ_DATA } from '@/lib/data/ceePastPapersData';
 
 export const dynamic = 'force-dynamic';
 
@@ -134,6 +135,23 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Authoritative lookup in verified CEE PYQ repository
+    CEE_VERIFIED_PYQ_DATA.forEach((cpq) => {
+      if (!questionMap.has(cpq.id)) {
+        questionMap.set(cpq.id, {
+          id: cpq.id,
+          question_text: cpq.questionText,
+          options: cpq.options.map((o) => o.text),
+          correct_answer: cpq.correctOption,
+          explanation: cpq.explanation,
+          difficulty: cpq.highYieldPriority === 'must_know' ? 'hard' : 'medium',
+          subject: cpq.subjectDisplayName,
+          chapter: cpq.chapterTitle,
+          marks: posMarks,
+        });
+      }
+    });
+
     // 3. Grade each question server-side
     const keyMap = new Map<string, { correctOption: string; marks: number; negativeMarks: number }>();
     const questionsForBreakdown: any[] = [];
@@ -148,6 +166,12 @@ export async function POST(request: NextRequest) {
 
     for (const qId of qIdsToFetch) {
       const q = questionMap.get(qId);
+      // REJECT fabricated, placeholder, or synthetic question IDs
+      if (!q) {
+        console.warn(`Unverified question ID rejected from exam scoring: ${qId}`);
+        continue;
+      }
+
       const qMarks = q?.marks ?? posMarks;
       const qNeg = isSee ? 0 : negMarks;
       totalPossibleMarks += qMarks;

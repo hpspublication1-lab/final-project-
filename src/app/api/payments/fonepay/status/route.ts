@@ -67,9 +67,12 @@ export async function POST(request: NextRequest) {
       .update({ status: 'completed', gateway_ref: result.traceId, gateway_response: result.raw })
       .eq('id', tx.id);
 
+    const resolvedTier = tx.plan === 'pro' ? 'cee_ai_pro' : 'cee_premium';
+
     await admin.from('user_profiles')
       .update({
         subscription_plan: tx.plan,
+        plan_tier: resolvedTier,
         subscription_expires_at: new Date(Date.now() + tx.duration_days * 86400000).toISOString(),
         updated_at: new Date().toISOString(),
       })

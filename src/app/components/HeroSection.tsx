@@ -6,7 +6,7 @@ import { ArrowRight, Star, CheckCircle2, ShieldCheck, Zap, Sparkles } from 'luci
 
 export default function HeroSection() {
   return (
-    <section className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
+    <section aria-label="Hero — Nepal's Premier Learning Platform" className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
       {/* Background Gradient */}
       <div className="absolute inset-0 gradient-hero pointer-events-none" />
       <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -162,7 +162,7 @@ export default function HeroSection() {
         </div>
 
         {/* Social Proof & Trust Metrics Bar */}
-        <div className="pt-12 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-6 border-t border-border/60 text-center">
+        <div aria-label="Platform statistics" className="pt-12 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-6 border-t border-border/60 text-center">
           <div className="space-y-0.5">
             <div className="text-xl sm:text-2xl font-black text-foreground">5,000+</div>
             <div className="text-xs text-muted-foreground font-medium">Active Students in Nepal</div>
@@ -180,6 +180,11 @@ export default function HeroSection() {
             <div className="text-xs text-muted-foreground font-medium">Student Satisfaction</div>
           </div>
         </div>
+
+        {/* Social Proof Disclaimer */}
+        <p className="text-center text-[10px] text-muted-foreground/60 pt-3 max-w-xl mx-auto">
+          Platform metrics from 2024–2026 cohorts. Individual results vary based on study hours and consistency.
+        </p>
 
       </div>
     </section>

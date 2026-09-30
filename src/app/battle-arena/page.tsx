@@ -28,9 +28,7 @@ export const metadata: Metadata = {
 export default function BattleArenaPage() {
   return (
     <Suspense fallback={null}>
-      <PremiumGate feature="Battle Arena">
-        <BattleArenaPageClient />
-      </PremiumGate>
+      <BattleArenaPageClient />
     </Suspense>
   );
 }

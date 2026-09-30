@@ -10,8 +10,21 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { anonymous_id, lead_email, event_type, url, metadata } = body;
 
-    if (!event_type) {
-      return NextResponse.json({ error: 'Missing event_type' }, { status: 400 });
+    if (!event_type || typeof event_type !== 'string' || event_type.length > 100) {
+      return NextResponse.json({ error: 'Invalid event_type' }, { status: 400 });
+    }
+
+    const sanitizedUrl = typeof url === 'string' ? url.slice(0, 500) : null;
+    const sanitizedAnonId = typeof anonymous_id === 'string' ? anonymous_id.slice(0, 100) : null;
+    const sanitizedEmail = typeof lead_email === 'string' ? lead_email.trim().toLowerCase().slice(0, 255) : null;
+    let sanitizedMeta = {};
+    if (metadata && typeof metadata === 'object') {
+      try {
+        const str = JSON.stringify(metadata);
+        if (str.length <= 5000) {
+          sanitizedMeta = metadata;
+        }
+      } catch {}
     }
 
     const admin = createAdminClient();
@@ -50,10 +63,10 @@ export async function POST(req: NextRequest) {
     // 2. Insert event
     await admin.from('lead_events').insert({
       lead_id: leadId,
-      anonymous_id: anonymous_id || null,
+      anonymous_id: sanitizedAnonId,
       event_type,
-      url: url || null,
-      metadata: metadata || {},
+      url: sanitizedUrl,
+      metadata: sanitizedMeta,
     });
 
     // 3. Update lead score & segmentation if lead is known

@@ -35,14 +35,24 @@ const HomepageFooter = dynamic(() => import('./HomepageFooter'), {
 });
 
 export default function HomepageClient() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const stored = localStorage.getItem('samyak-theme');
+      if (stored) return stored === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch { return false; }
+  });
   const [announceOpen, setAnnounceOpen] = useState(true);
 
   useEffect(() => {
+    const root = document.documentElement;
     if (isDark) {
-      document.documentElement?.classList?.add('dark');
+      root.classList.add('dark');
+      localStorage.setItem('samyak-theme', 'dark');
     } else {
-      document.documentElement?.classList?.remove('dark');
+      root.classList.remove('dark');
+      localStorage.setItem('samyak-theme', 'light');
     }
   }, [isDark]);
 
@@ -56,7 +66,7 @@ export default function HomepageClient() {
         <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} announcementHeight={announceOpen ? 40 : 0} />
 
         {/* Main Flagship Hero (SEE Class 10 & CEE Medical) */}
-        <main className="flex-1">
+        <main id="main-content" className="flex-1">
           <HeroSection />
           <FlagshipPillarsSection />
           <FlagshipDemoSection />

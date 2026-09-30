@@ -590,12 +590,24 @@ export function validateSubmissionSecurity(
 
 /**
  * Result Privacy filter: ensures answer keys, solutions, and explanations
- * are NEVER leaked to the client during active examination (only upon final grading)
+ * are NEVER leaked to the client during active examination (only upon final grading).
+ * Strips all variants: correct_option, correctOption, correct_answer, explanation, solution.
  */
-export function sanitizeQuestionsForActiveExam<T extends { explanation?: string | null; correct_option?: string }>(
+export function sanitizeQuestionsForActiveExam<T extends Record<string, any>>(
   questions: T[]
-): Omit<T, 'explanation' | 'correct_option'>[] {
-  return questions.map(({ explanation, correct_option, ...safeQ }) => safeQ);
+): Record<string, any>[] {
+  return questions.map((q) => {
+    const {
+      explanation,
+      correct_option,
+      correctOption,
+      correct_answer,
+      solution,
+      markingScheme,
+      ...safeQ
+    } = q;
+    return safeQ;
+  });
 }
 
 export type ScheduledStatus = 'upcoming' | 'live' | 'closed' | 'open_anytime';

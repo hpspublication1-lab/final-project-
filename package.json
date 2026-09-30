@@ -65,7 +65,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/katex": "^0.16.8",
-    "framer-motion": "latest",
+    "framer-motion": "^11.15.0",
     "hls.js": "^1.5.17",
     "jsonwebtoken": "^9.0.3",
     "katex": "^0.18.1",
@@ -81,7 +81,7 @@
     "recharts": "^2.15.2",
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
-    "sonner": "latest",
+    "sonner": "^1.7.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -25,15 +25,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing booking reference or phone.' }, { status: 400 });
     }
 
-    console.log("Runtime Env Check:", {
-      VERCEL_ENV: process.env.VERCEL_ENV,
-      NODE_ENV: process.env.NODE_ENV,
-      FONEPAY_ENV: process.env.FONEPAY_ENV,
-      FONEPAY_MERCHANT_CODE: process.env.FONEPAY_MERCHANT_CODE ? "EXISTS" : "MISSING",
-      FONEPAY_USERNAME: process.env.FONEPAY_USERNAME ? "EXISTS" : "MISSING",
-      FONEPAY_PASSWORD: process.env.FONEPAY_PASSWORD ? "EXISTS" : "MISSING",
-      FONEPAY_SECRET_KEY: process.env.FONEPAY_SECRET_KEY ? "EXISTS" : "MISSING",
-    });
 
     function fonepayConfigured(): boolean {
       return !!(
@@ -83,7 +74,6 @@ export async function POST(request: NextRequest) {
 
     let qr: any;
     try {
-      console.log('Calling generateFonepayQr with prn:', prn);
       qr = await generateFonepayQr({
         amountNpr: PREBOOK_AMOUNT_NPR,
         prn,
@@ -91,7 +81,6 @@ export async function POST(request: NextRequest) {
         remarks2: 'Prebook',
         config,
       });
-      console.log('generateFonepayQr returned:', JSON.stringify(qr));
     } catch (err: any) {
       console.error('generateFonepayQr Exception:', err);
       return NextResponse.json({ error: 'Gateway exception: ' + (err?.message || 'unknown') }, { status: 502 });

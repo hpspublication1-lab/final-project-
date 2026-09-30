@@ -386,82 +386,22 @@ export default function MockTestsPageClient() {
   });
   const examTabSwitches = cheatCounts.tab_switch + cheatCounts.window_blur;
 
-  // Load Exam Questions with full fallbacks
+  // Load Exam Questions via Secure Server-Authoritative Endpoint
   const loadExamQuestions = async (exam: MockExam) => {
     setQuestionsLoading(true);
     try {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('questions')
-        .select('id, question_text, options, correct_answer, explanation, subject_id, difficulty')
-        .eq('is_published', true)
-        .limit(300);
-
-      let pool = (data ?? []).filter(
-        (r: any) => Array.isArray(r.options) && r.options.length >= 2 && r.question_text
+      const res = await fetch(
+        `/api/exams/questions?examId=${encodeURIComponent(exam.id)}&programType=${encodeURIComponent(canonicalId)}&limit=${exam.totalQuestions || 20}`
       );
+      const json = await res.json();
 
-      // Subject display lookup
-      const { data: subjectData } = await supabase.from('subjects').select('id, display_name');
-      const subjectMap = new Map<string, string>();
-      (subjectData || []).forEach((s: any) => subjectMap.set(s.id, s.display_name));
-
-      // Fisher-Yates shuffle
-      for (let i = pool.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [pool[i], pool[j]] = [pool[j], pool[i]];
+      if (json.success && Array.isArray(json.questions) && json.questions.length > 0) {
+        setQuestions(json.questions);
+        setQuestionsLoading(false);
+        return true;
       }
 
-      // If database has fewer questions than requested, generate high-yield authentic questions
-      const targetCount = exam.totalQuestions || 20;
-      let mapped: ExamMCQ[] = pool.slice(0, Math.min(targetCount, pool.length)).map((r: any) => ({
-        id: r.id,
-        question_text: r.question_text,
-        option_a: r.options[0] ?? '',
-        option_b: r.options[1] ?? '',
-        option_c: r.options[2] ?? '',
-        option_d: r.options[3] ?? '',
-        correct_option: toOptionId(r.correct_answer, r.options),
-        explanation: r.explanation ?? '',
-        subject: subjectMap.get(r.subject_id) ?? 'General Science',
-        marks: exam.positiveMarks,
-        negativeMarks: exam.negativeMarks,
-      }));
-
-      // If questions are still fewer than requested (e.g., CEE 200-Q test), supplement with authentic items
-      if (mapped.length < targetCount) {
-        const subjectsList =
-          canonicalId === 'see_class_10'
-            ? ['Science', 'Mathematics', 'Optional Mathematics', 'English', 'Social Studies']
-            : ['Physics', 'Chemistry', 'Botany', 'Zoology', 'Mental Agility Test (MAT)'];
-
-        const needed = targetCount - mapped.length;
-        for (let i = 0; i < needed; i++) {
-          const sIndex = i % subjectsList.length;
-          const sName = subjectsList[sIndex];
-          const qNum = mapped.length + 1;
-          mapped.push({
-            id: `synthetic-mock-q-${exam.id}-${qNum}`,
-            question_text:
-              canonicalId === 'see_class_10'
-                ? `[SEE ${sName}] Question ${qNum}: Calculate the value using standard board principles under standard laboratory conditions.`
-                : `[CEE ${sName}] Question ${qNum}: A particle undergoes kinematic transition according to standard MEC clinical physics parameters. What is the correct equilibrium value?`,
-            option_a: 'Option A: 2.5 × 10^3 units',
-            option_b: 'Option B: 5.0 × 10^3 units',
-            option_c: 'Option C: 7.5 × 10^3 units',
-            option_d: 'Option D: 1.0 × 10^4 units',
-            correct_option: ['a', 'b', 'c', 'd'][i % 4],
-            explanation: `Authentic step-by-step derivation for ${sName} question ${qNum}. Apply standard NEB/MEC formula sheets.`,
-            subject: sName,
-            marks: exam.positiveMarks,
-            negativeMarks: exam.negativeMarks,
-          });
-        }
-      }
-
-      setQuestions(mapped);
-      setQuestionsLoading(false);
-      return true;
+      throw new Error(json.error || 'No questions available for this examination.');
     } catch (err) {
       console.error('Error loading questions:', err);
       toast.error('Failed to load questions. Retrying...');

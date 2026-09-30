@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import AuthPageClient from './components/AuthPageClient';
 
 export const metadata: Metadata = {
-  title: 'Log In — Samyak CEE Mastery',
+  title: 'Log In — Samyak Tutor',
   robots: { index: false, follow: true },
 };
 

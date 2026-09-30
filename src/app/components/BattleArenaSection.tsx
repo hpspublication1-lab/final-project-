@@ -176,20 +176,20 @@ export default function BattleArenaSection() {
 
             <div className="flex flex-wrap gap-4 pt-4">
               <Link
-                href="/match-lobby"
-                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2.5 shadow-xl shadow-amber-500/20 hover:scale-[1.02] transition-all"
+                href="/battle-arena"
+                className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2.5 shadow-xl shadow-amber-500/25 hover:scale-[1.02] transition-all"
               >
-                <Swords size={18} />
-                <span>Enter Live Arena Matchmaking</span>
+                <Trophy size={18} className="text-slate-950" />
+                <span>🏆 Daily Rs. 1,000 Championship (Free)</span>
                 <ArrowRight size={16} />
               </Link>
 
               <Link
-                href="/battle-arena?mode=demo"
+                href="/match-lobby"
                 className="px-6 py-4 rounded-2xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-xs sm:text-sm flex items-center gap-2 transition-all"
               >
-                <Play size={16} />
-                <span>Play Demo Match (0 ELO)</span>
+                <Swords size={16} />
+                <span>1v1 Live Matchmaking</span>
               </Link>
             </div>
           </div>

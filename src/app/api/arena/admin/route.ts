@@ -81,6 +81,62 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, message: `User status set to ${newStatus}` });
     }
 
+    if (action === 'record_championship_payout') {
+      const { winnerUserId, amountNpr, esewaId, transactionRef, notes } = body;
+      if (!winnerUserId) {
+        return NextResponse.json({ error: 'winnerUserId is required' }, { status: 400 });
+      }
+
+      // Check if there is an existing pending payout for this user
+      const { data: existingPayout } = await supabaseAdmin
+        .from('championship_payouts')
+        .select('*')
+        .eq('winner_user_id', winnerUserId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let payoutRecord;
+      if (existingPayout) {
+        const { data: updated } = await supabaseAdmin
+          .from('championship_payouts')
+          .update({
+            esewa_id: esewaId,
+            transaction_ref: transactionRef,
+            amount_npr: amountNpr || 1000,
+            payout_status: 'completed',
+            admin_notes: notes,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', existingPayout.id)
+          .select('*')
+          .single();
+        payoutRecord = updated;
+      } else {
+        const { data: inserted } = await supabaseAdmin
+          .from('championship_payouts')
+          .insert({
+            winner_user_id: winnerUserId,
+            esewa_id: esewaId,
+            transaction_ref: transactionRef,
+            amount_npr: amountNpr || 1000,
+            payout_method: 'esewa',
+            payout_status: 'completed',
+            admin_notes: notes,
+            completed_at: new Date().toISOString(),
+          })
+          .select('*')
+          .single();
+        payoutRecord = inserted;
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Championship payout recorded and completed',
+        payout: payoutRecord,
+      });
+    }
+
     return NextResponse.json({ error: 'Invalid admin action' }, { status: 400 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Admin action failed' }, { status: 500 });

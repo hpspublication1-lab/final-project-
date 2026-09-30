@@ -27,6 +27,7 @@ ALTER TABLE public.battle_rooms
   ADD COLUMN IF NOT EXISTS question_count INTEGER DEFAULT 10,
   ADD COLUMN IF NOT EXISTS time_limit_seconds INTEGER DEFAULT 300,
   ADD COLUMN IF NOT EXISTS question_ids UUID[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS is_ranked BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
@@ -83,6 +84,44 @@ ALTER TABLE public.battle_answers
   ADD COLUMN IF NOT EXISTS is_correct BOOLEAN DEFAULT false,
   ADD COLUMN IF NOT EXISTS time_taken_seconds INTEGER DEFAULT 0,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+
+-- 1.8 Ensure championship_entries columns
+CREATE TABLE IF NOT EXISTS public.championship_entries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+);
+ALTER TABLE public.championship_entries
+  ADD COLUMN IF NOT EXISTS championship_id UUID,
+  ADD COLUMN IF NOT EXISTS user_id UUID,
+  ADD COLUMN IF NOT EXISTS match_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS total_score NUMERIC(7,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS accuracy_percentage NUMERIC(5,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS total_time_seconds INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS correct_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS incorrect_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS anti_cheat_flags_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS flagged_for_review BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS processed_room_ids TEXT[] DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS disqualified BOOLEAN DEFAULT false,
+  ADD COLUMN IF NOT EXISTS disqualification_reason TEXT,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+
+-- 1.9 Create championship_matches table for atomic concurrency
+CREATE TABLE IF NOT EXISTS public.championship_matches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  championship_id UUID,
+  participant_id UUID,
+  room_id UUID,
+  match_points NUMERIC(7,2) DEFAULT 0,
+  correct_count INTEGER DEFAULT 0,
+  incorrect_count INTEGER DEFAULT 0,
+  time_taken_seconds INTEGER DEFAULT 0,
+  accuracy NUMERIC(5,2) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT uq_champ_match_participant_room UNIQUE (championship_id, participant_id, room_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_champ_matches_user_champ
+  ON public.championship_matches(championship_id, participant_id);
 
 -- ------------------------------------------------------------
 -- STEP 2: HELPER FUNCTIONS & RPC CREATION
@@ -166,11 +205,11 @@ BEGIN
 
     INSERT INTO public.battle_rooms (
       room_code, creator_id, opponent_id, status, question_count,
-      time_limit_seconds, question_ids, started_at
+      time_limit_seconds, question_ids, is_ranked, started_at
     ) VALUES (
       v_room_code, v_opponent.player_id, v_my_id, 'active',
       GREATEST(COALESCE(array_length(v_question_ids, 1), 0), 1),
-      300, v_question_ids, now()
+      300, v_question_ids, (p_queue_mode = 'ranked'), now()
     )
     RETURNING id INTO v_room_id;
 
@@ -377,19 +416,36 @@ BEGIN
   v_my_delta := ROUND(K * (v_my_outcome - v_expected_my));
   v_other_delta := ROUND(K * (v_other_outcome - v_expected_other));
 
-  UPDATE public.battle_results SET rating_change = v_my_delta, is_winner = (v_my_outcome = 1)
-    WHERE room_id = p_room_id AND player_id = v_my_id;
-  UPDATE public.battle_results SET rating_change = v_other_delta, is_winner = (v_other_outcome = 1)
-    WHERE room_id = p_room_id AND player_id = v_other_id;
+  IF COALESCE(v_room.is_ranked, false) = true THEN
+    UPDATE public.battle_results SET rating_change = v_my_delta, is_winner = (v_my_outcome = 1)
+      WHERE room_id = p_room_id AND player_id = v_my_id;
+    UPDATE public.battle_results SET rating_change = v_other_delta, is_winner = (v_other_outcome = 1)
+      WHERE room_id = p_room_id AND player_id = v_other_id;
 
-  UPDATE public.user_profiles SET
-    battle_rating = GREATEST(0, COALESCE(battle_rating, 1000) + v_my_delta),
-    total_points = COALESCE(total_points, 0) + GREATEST(0, ROUND(v_my_result.score))
-    WHERE id = v_my_id;
-  UPDATE public.user_profiles SET
-    battle_rating = GREATEST(0, COALESCE(battle_rating, 1000) + v_other_delta),
-    total_points = COALESCE(total_points, 0) + GREATEST(0, ROUND(v_other_result.score))
-    WHERE id = v_other_id;
+    UPDATE public.user_profiles SET
+      battle_rating = GREATEST(0, COALESCE(battle_rating, 1000) + v_my_delta),
+      total_points = COALESCE(total_points, 0) + GREATEST(0, ROUND(v_my_result.score))
+      WHERE id = v_my_id;
+    UPDATE public.user_profiles SET
+      battle_rating = GREATEST(0, COALESCE(battle_rating, 1000) + v_other_delta),
+      total_points = COALESCE(total_points, 0) + GREATEST(0, ROUND(v_other_result.score))
+      WHERE id = v_other_id;
+  ELSE
+    -- Friendly / Practice Room: do not alter competitive ELO
+    v_my_delta := 0;
+    v_other_delta := 0;
+    UPDATE public.battle_results SET rating_change = 0, is_winner = (v_my_outcome = 1)
+      WHERE room_id = p_room_id AND player_id = v_my_id;
+    UPDATE public.battle_results SET rating_change = 0, is_winner = (v_other_outcome = 1)
+      WHERE room_id = p_room_id AND player_id = v_other_id;
+
+    UPDATE public.user_profiles SET
+      total_points = COALESCE(total_points, 0) + GREATEST(0, ROUND(v_my_result.score))
+      WHERE id = v_my_id;
+    UPDATE public.user_profiles SET
+      total_points = COALESCE(total_points, 0) + GREATEST(0, ROUND(v_other_result.score))
+      WHERE id = v_other_id;
+  END IF;
 
   UPDATE public.battle_rooms SET status = 'completed', completed_at = now() WHERE id = p_room_id;
 

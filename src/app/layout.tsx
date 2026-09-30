@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, IBM_Plex_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -16,6 +16,16 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   variable: '--font-plus-jakarta-sans',
   display: 'swap',
 });
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-plex-mono',
+  display: 'swap',
+});
+
+// Inline script to apply dark mode from localStorage BEFORE first paint (prevents FOUC)
+const DARK_MODE_SCRIPT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('samyak-theme');if(t==='dark'||(t==null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){d.classList.add('dark')}}catch(e){}})();`;
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -97,8 +107,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={plusJakartaSans.variable}>
+    <html lang="en" className={`${plusJakartaSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
       <head>
+        {/* Apply dark mode before paint to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: DARK_MODE_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -107,6 +119,13 @@ export default function RootLayout({
         />
       </head>
       <body className={plusJakartaSans.className}>
+        {/* Skip to main content link for keyboard/screen-reader users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-xl focus:text-sm focus:font-bold focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <AuthProvider>
           <TrialProvider>
             <ProgramProvider>

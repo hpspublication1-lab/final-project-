@@ -28,7 +28,8 @@ import {
   Send,
   RefreshCw,
   TrendingUp,
-  Award
+  Award,
+  Layers
 } from 'lucide-react';
 import { fetchPracticeQuestions, fetchSubjectChapters, type QuestionRow, type ChapterOption } from '../actions';
 import { createClient } from '@/lib/supabase/client';
@@ -426,6 +427,91 @@ export default function PracticePageClient() {
       },
     ], { max_completion_tokens: 150 });
   }, [hints, sendHintMessage, isSee]);
+
+  // AI Copilot Mistake Diagnostic & SM-2 Flashcard states
+  const [diagnosticOpen, setDiagnosticOpen] = useState<Record<string, boolean>>({});
+  const [diagnostics, setDiagnostics] = useState<Record<string, string>>({});
+  const [diagnosticLoading, setDiagnosticLoading] = useState<Record<string, boolean>>({});
+  const [flashcardSaved, setFlashcardSaved] = useState<Record<string, boolean>>({});
+  const [savingFlashcard, setSavingFlashcard] = useState<Record<string, boolean>>({});
+
+  const handleDiagnoseWithCopilot = useCallback(async (q: MCQ, chosenAns?: string, correctAns?: string) => {
+    if (diagnostics[q.id]) {
+      setDiagnosticOpen((prev) => ({ ...prev, [q.id]: !prev[q.id] }));
+      return;
+    }
+    setDiagnosticLoading((prev) => ({ ...prev, [q.id]: true }));
+    setDiagnosticOpen((prev) => ({ ...prev, [q.id]: true }));
+    try {
+      const res = await fetch('/api/ai/chat-completion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: `You are the Samyak CEE AI Medical Entrance Copilot. Diagnose the student's mistake concisely in high-yield bullet points:
+1. ⚠️ The Conceptual Pitfall: Why the chosen distractor was tempting.
+2. 💡 The Core Principle: The key formula, rule, or biological mechanism needed.
+3. 🎯 High-Yield Exam Takeaway: A mnemonic or 1-line rule for future CEE entrance tests.`
+            },
+            {
+              role: 'user',
+              content: `Subject: ${q.subject || 'CEE'} | Chapter: ${q.chapter || 'General'}
+Question: ${q.question}
+Student's Choice: ${chosenAns || 'Unattempted'}
+Correct Answer: ${correctAns || q.correctId}
+Official Explanation: ${q.explanation || 'None provided'}`
+            }
+          ],
+          temperature: 0.5,
+          max_tokens: 350
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const reply = data.choices?.[0]?.message?.content || data.reply || 'No diagnosis generated.';
+        setDiagnostics((prev) => ({ ...prev, [q.id]: reply }));
+      } else {
+        toast.error(data.details || 'Could not fetch AI diagnosis');
+        setDiagnosticOpen((prev) => ({ ...prev, [q.id]: false }));
+      }
+    } catch {
+      toast.error('AI Copilot diagnosis failed');
+      setDiagnosticOpen((prev) => ({ ...prev, [q.id]: false }));
+    } finally {
+      setDiagnosticLoading((prev) => ({ ...prev, [q.id]: false }));
+    }
+  }, [diagnostics]);
+
+  const handleConvertToFlashcard = useCallback(async (q: MCQ, correctAns: string) => {
+    if (flashcardSaved[q.id]) return;
+    setSavingFlashcard((prev) => ({ ...prev, [q.id]: true }));
+    try {
+      const res = await fetch('/api/flashcards/convert-mistake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          front: q.question,
+          back: `**Correct Answer: ${correctAns}**\n\n${q.explanation || ''}`,
+          hint: q.chapter ? `Topic: ${q.chapter}` : undefined,
+          subjectId: q.subjectId,
+          topic: q.chapter || q.subject,
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFlashcardSaved((prev) => ({ ...prev, [q.id]: true }));
+        toast.success(data.message || 'Added to your SM-2 flashcard queue!');
+      } else {
+        toast.error(data.details || 'Could not add to flashcards');
+      }
+    } catch {
+      toast.error('Failed to create flashcard');
+    } finally {
+      setSavingFlashcard((prev) => ({ ...prev, [q.id]: false }));
+    }
+  }, [flashcardSaved]);
 
   const current = questions[currentIdx];
   const selectedAnswer = current ? selectedAnswers[current.id] : undefined;
@@ -974,6 +1060,59 @@ export default function PracticePageClient() {
                         <div className="p-3.5 rounded-xl bg-muted/40 border border-border text-xs text-foreground leading-relaxed">
                           <p className="font-bold text-muted-foreground mb-1 text-[11px] uppercase tracking-wider">Explanation</p>
                           <MathText text={q.explanation} />
+                        </div>
+                      )}
+
+                      {/* AI Copilot & Flashcards Action Bar */}
+                      <div className="mt-3 pt-3 border-t border-border/50 flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => handleDiagnoseWithCopilot(q, ans, correctKey)}
+                          disabled={diagnosticLoading[q.id]}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all cursor-pointer"
+                        >
+                          {diagnosticLoading[q.id] ? (
+                            <><Loader2 size={13} className="animate-spin" /> Diagnosing...</>
+                          ) : (
+                            <><Brain size={13} /> {diagnosticOpen[q.id] ? 'Hide AI Diagnosis' : 'Diagnose with Copilot'}</>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => handleConvertToFlashcard(q, correctKey)}
+                          disabled={savingFlashcard[q.id] || flashcardSaved[q.id]}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                            flashcardSaved[q.id]
+                              ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                              : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border-border'
+                          }`}
+                        >
+                          {savingFlashcard[q.id] ? (
+                            <><Loader2 size={13} className="animate-spin" /> Saving Card...</>
+                          ) : flashcardSaved[q.id] ? (
+                            <><CheckCircle2 size={13} /> Flashcard Scheduled (SM-2)</>
+                          ) : (
+                            <><Layers size={13} /> Convert to Flashcard</>
+                          )}
+                        </button>
+
+                        <button
+                          onClick={() => router.push(`/ai-tutor?doubt=${encodeURIComponent(`I have a doubt on this CEE question:\n\nQ: ${q.question}\nCorrect Answer: ${correctKey}\nExplanation: ${q.explanation || ''}`)}`)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:text-primary transition-colors ml-auto cursor-pointer"
+                        >
+                          Open in AI Tutor <Sparkles size={12} />
+                        </button>
+                      </div>
+
+                      {/* Inline AI Copilot Diagnostic Result */}
+                      {diagnosticOpen[q.id] && diagnostics[q.id] && (
+                        <div className="mt-3 p-4 rounded-xl bg-purple-500/5 border border-purple-500/20 text-xs text-foreground space-y-2">
+                          <div className="flex items-center gap-2 font-bold text-purple-600 dark:text-purple-400">
+                            <Sparkles size={14} />
+                            <span>Samyak CEE Copilot Diagnostic</span>
+                          </div>
+                          <div className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                            <MathText text={diagnostics[q.id]} />
+                          </div>
                         </div>
                       )}
                     </div>

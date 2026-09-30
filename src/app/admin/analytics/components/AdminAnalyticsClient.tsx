@@ -315,17 +315,26 @@ export default function AdminAnalyticsClient() {
       };
     });
 
-    // ── Trend Data (last 6 weeks, simulated from real data) ───────────────────
+    // ── Trend Data (last 6 weeks, grouped by actual timestamps) ────────────────
+    const now = Date.now();
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
     const weeks = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6'];
     const builtTrend: TrendPoint[] = weeks.map((week, i) => {
-      const base = (masteryData || []).filter((_: any, idx: number) => idx % 6 === i);
+      const weekEnd = now - i * WEEK_MS;
+      const weekStart = weekEnd - WEEK_MS;
+      const weekRows = (masteryData || []).filter((r: any) => {
+        const ts = r.updated_at || r.created_at;
+        if (!ts) return false;
+        const t = new Date(ts).getTime();
+        return t >= weekStart && t < weekEnd;
+      });
       const getAvg = (subj: string) => {
-        const rows = base.filter((r: any) => r.subjects?.name === subj);
+        const rows = weekRows.filter((r: any) => r.subjects?.name === subj);
         if (!rows.length) return 0;
         return Math.round(rows.reduce((a: number, r: any) => a + (r.mastery_score || 0), 0) / rows.length);
       };
       return { week, biology: getAvg('biology'), chemistry: getAvg('chemistry'), physics: getAvg('physics'), mental_agility: getAvg('mental_agility') };
-    });
+    }).reverse();
 
     // ── KPIs ───────────────────────────────────────────────────────────────────
     const totalStudents = profilesData?.length || 0;

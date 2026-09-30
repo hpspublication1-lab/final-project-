@@ -19,7 +19,9 @@ import {
   CheckCircle2,
   Zap,
   Play,
-  RotateCcw
+  RotateCcw,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createClient } from '@/lib/supabase/client';
@@ -59,9 +61,39 @@ export default function MistakeAnalyserClient() {
   const [analysed, setAnalysed] = useState(false);
   const [newEntry, setNewEntry] = useState<Partial<WrongAnswer>>({});
   const [showAddForm, setShowAddForm] = useState(false);
+  const [flashcardSaved, setFlashcardSaved] = useState<Record<number, boolean>>({});
+  const [savingFlashcard, setSavingFlashcard] = useState<Record<number, boolean>>({});
 
   const { user } = useAuth();
   const { response, isLoading, error, sendMessage } = useChat('OPEN_AI', 'gpt-4o', false);
+
+  const handleConvertMistakeToFlashcard = async (w: WrongAnswer, index: number) => {
+    if (flashcardSaved[index]) return;
+    setSavingFlashcard((prev) => ({ ...prev, [index]: true }));
+    try {
+      const res = await fetch('/api/flashcards/convert-mistake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          front: w.question,
+          back: `**Correct Answer: ${w.correctAnswer}**\n\n(Previously answered: ${w.yourAnswer})`,
+          hint: `Subject: ${w.subject} | Topic: ${w.topic}`,
+          topic: w.topic,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFlashcardSaved((prev) => ({ ...prev, [index]: true }));
+        toast.success(data.message || 'Converted mistake into an active SM-2 Flashcard!');
+      } else {
+        toast.error(data.details || 'Could not save flashcard');
+      }
+    } catch {
+      toast.error('Failed to convert mistake to flashcard');
+    } finally {
+      setSavingFlashcard((prev) => ({ ...prev, [index]: false }));
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) {
@@ -419,6 +451,33 @@ Severity: High = 3+ mistakes or fundamental misconception, Medium = 2 mistakes, 
                     <span className="font-bold block text-[10px] uppercase">Correct Answer</span>
                     <MathText text={w.correctAnswer} />
                   </div>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-border/50 flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleConvertMistakeToFlashcard(w, idx)}
+                    disabled={savingFlashcard[idx] || flashcardSaved[idx]}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      flashcardSaved[idx]
+                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                        : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border-border'
+                    }`}
+                  >
+                    {savingFlashcard[idx] ? (
+                      <><Loader2 size={12} className="animate-spin" /> Saving Card...</>
+                    ) : flashcardSaved[idx] ? (
+                      <><CheckCircle2 size={12} /> Scheduled in Flashcards (SM-2)</>
+                    ) : (
+                      <><Layers size={12} /> Convert to SM-2 Flashcard</>
+                    )}
+                  </button>
+
+                  <Link
+                    href={`/ai-tutor?doubt=${encodeURIComponent(`I made a mistake during practice on this question and need help understanding the concept:\n\nSubject: ${w.subject} | Topic: ${w.topic}\nQuestion: ${w.question}\nMy Answer: ${w.yourAnswer}\nCorrect Answer: ${w.correctAnswer}`)}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 transition-all cursor-pointer ml-auto"
+                  >
+                    <Sparkles size={12} /> Diagnose with Copilot
+                  </Link>
                 </div>
               </div>
             ))

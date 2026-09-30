@@ -25,9 +25,13 @@ export async function GET() {
 
     const { data: profile } = await admin
       .from('user_profiles')
-      .select('full_name, phone, college, cee_year, is_admin, subscription_plan, subscription_expires_at, battle_rating, total_points, avatar_url')
+      .select('full_name, phone, college, cee_year, is_admin, subscription_plan, plan_tier, subscription_expires_at, battle_rating, total_points, avatar_url')
       .eq('id', user.id)
       .single();
+
+    const plan = profile?.subscription_plan ?? 'free';
+    const rawTier = (profile as any)?.plan_tier;
+    const resolvedTier = rawTier || (plan === 'pro' || plan === 'institution' ? 'cee_ai_pro' : plan === 'student' ? 'cee_premium' : 'free');
 
     return NextResponse.json({
       id: user.id,
@@ -38,7 +42,8 @@ export async function GET() {
       cee_year: profile?.cee_year ?? null,
       is_admin: !!profile?.is_admin,
       is_super_admin: isSuperAdmin(user.email),
-      subscription_plan: profile?.subscription_plan ?? 'free',
+      subscription_plan: plan,
+      plan_tier: resolvedTier,
       subscription_expires_at: profile?.subscription_expires_at ?? null,
       battle_rating: profile?.battle_rating ?? 1000,
       total_points: profile?.total_points ?? 0,

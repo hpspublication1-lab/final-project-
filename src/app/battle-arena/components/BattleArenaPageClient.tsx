@@ -21,6 +21,7 @@ import {
 import { MathText } from '@/components/MathText';
 import { sounds } from '@/utils/soundEffects';
 import { triggerConfetti } from '@/utils/confetti';
+import DailyChampionshipLobby from './DailyChampionshipLobby';
 
 export function getEloRankTier(rating: number) {
   if (rating >= 1900) return { name: 'Grandmaster', icon: '🏆', color: 'text-amber-400 bg-amber-400/10 border-amber-400/30' };
@@ -197,6 +198,7 @@ export default function BattleArenaPageClient() {
 
   const [mode, setMode] = useState<BattleMode>('lobby');
   const [errorMsg, setErrorMsg] = useState('');
+  const [arenaTab, setArenaTab] = useState<'championship' | 'quick' | 'ranked' | 'private'>('championship');
 
   // Private room create/join (lobby view)
   const [joinCode, setJoinCode] = useState('');
@@ -330,26 +332,46 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
 
     // Preset question set (real 2-player rooms) — preserve the shared order.
     if (ids.length > 0) {
-      const { data: qRows } = await supabase
-        .from('questions')
-        .select('id, question_text, options, correct_answer, difficulty, subject_id')
-        .in('id', ids);
-      const byId = new Map((qRows ?? []).map((q: any) => [q.id, q]));
-      const ordered = normalize(ids.map((qid) => byId.get(qid)).filter(Boolean));
-      setQuestions(ordered.length > 0 ? ordered : FALLBACK_BATTLE_QUESTIONS);
-      return true;
+      try {
+        const res = await fetch(`/api/arena/questions?roomId=${roomRow.id || ''}&ids=${ids.join(',')}`);
+        const data = await res.json();
+        const qRows = data.questions || [];
+        const byId = new Map((qRows ?? []).map((q: any) => [q.id, q]));
+        const ordered = normalize(ids.map((qid) => byId.get(qid)).filter(Boolean));
+        setQuestions(ordered.length > 0 ? ordered : FALLBACK_BATTLE_QUESTIONS);
+        return true;
+      } catch {
+        setQuestions(FALLBACK_BATTLE_QUESTIONS);
+        return true;
+      }
     }
 
-    // No preset ids (quick / bot match) — pull real published questions at random.
+    // No preset ids (quick / bot match) — pull real published questions with deterministic room seed
     const wanted = roomRow.question_count || 10;
-    const { data: rnd } = await supabase
-      .from('questions')
-      .select('id, question_text, options, correct_answer, difficulty, subject_id')
-      .eq('is_published', true)
-      .limit(60);
-    const pool = normalize(rnd ?? []);
+    let pool: any[] = [];
+    try {
+      const res = await fetch(`/api/arena/questions?roomId=${roomRow.id || ''}&count=${wanted}`);
+      const data = await res.json();
+      pool = normalize(data.questions ?? []);
+    } catch {
+      pool = normalize([]);
+    }
+    // Sort stably first by ID so both clients start from the identical list
+    pool.sort((a, b) => a.id.localeCompare(b.id));
+
+    // Seeded pseudo-random shuffle based on the room's unique identifier
+    const seedStr = String(roomRow.id || roomRow.room_code || 'battle-arena-seed');
+    let seed = 0;
+    for (let i = 0; i < seedStr.length; i++) {
+      seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+    }
+    const pseudoRandom = () => {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      return (seed >>> 0) / 4294967296;
+    };
+
     for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(pseudoRandom() * (i + 1));
       [pool[i], pool[j]] = [pool[j], pool[i]];
     }
     const picked = pool.slice(0, wanted);
@@ -664,6 +686,20 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
 
     await sendProgress({ questionIndex: questions.length, score, correctCount: correctAnswers, finished: true });
 
+    // Sync match to Daily Championship if authenticated and real match
+    if (user && !isDemoParam && room?.id && !room.id.startsWith('room-demo-')) {
+      fetch('/api/arena/championship', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: room.id,
+          correctCount: correctAnswers,
+          incorrectCount: incorrectAnswers,
+          timeTakenSeconds: timeTaken,
+        }),
+      }).catch((e) => console.warn('Championship sync warning:', e));
+    }
+
     try {
       const { data, error } = await supabase.rpc('submit_battle_result', {
         p_room_id: room.id,
@@ -852,6 +888,13 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
 
     try {
       const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const { data: qPool } = await supabase
+        .from('questions')
+        .select('id')
+        .eq('is_published', true)
+        .limit(30);
+      const chosenIds = (qPool ?? []).map((q: any) => q.id).slice(0, createCount || 10);
+
       const { data: newRoom, error: insertError } = await supabase
         .from('battle_rooms')
         .insert({
@@ -860,6 +903,7 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
           status: 'waiting',
           question_count: createCount || 10,
           time_limit_seconds: 300,
+          question_ids: chosenIds,
         })
         .select('id, room_code')
         .single();
@@ -1046,7 +1090,42 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
             </div>
           )}
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          {/* 4 Arena Modes Selector */}
+          <div className="flex items-center gap-1.5 p-1.5 bg-muted/50 border border-border/60 rounded-2xl mb-6 overflow-x-auto">
+            {[
+              { id: 'championship', label: 'Daily Championship (Rs. 1,000)', icon: Trophy, badge: 'CASH PRIZE' },
+              { id: 'quick', label: 'Quick Match', icon: Zap },
+              { id: 'ranked', label: 'Ranked Battle', icon: Swords },
+              { id: 'private', label: 'Private Room', icon: Shield },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = arenaTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setArenaTab(tab.id as any)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all ${
+                    isActive
+                      ? 'bg-card text-foreground shadow-sm border border-border/60'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon size={16} className={tab.id === 'championship' ? 'text-amber-500' : 'text-primary'} />
+                  <span>{tab.label}</span>
+                  {tab.badge && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-black font-black uppercase">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {arenaTab === 'championship' ? (
+            <DailyChampionshipLobby onStartBattle={() => router.push('/match-lobby?mode=championship')} />
+          ) : (
+            <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
               {/* Quick match → real ELO matchmaking lives in Match Lobby */}
               <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-6">
@@ -1207,7 +1286,8 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </DashboardLayout>
     );
