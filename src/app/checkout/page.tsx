@@ -3,7 +3,7 @@ import FonepayCheckout from './components/FonepayCheckout';
 import { PLAN_PRICES } from '@/lib/payments/gateways';
 
 export const metadata: Metadata = {
-  title: 'Secure Checkout — Samyak Tutor',
+  title: 'Secure Checkout — Samyak Guru',
   description: 'Complete your enrollment with instant Fonepay QR payment.',
 };
 

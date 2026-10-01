@@ -302,7 +302,58 @@ Based on actual inspection of the current code and configuration:
   - Automated test suite: 211 / 211 tests passing across 18 test suites.
   - Zero TypeScript compilation errors (`npx tsc --noEmit`).
   - Next.js production build succeeded with exit code 0 across 237 routes.
-- [x] Ready to proceed to **Prompt 5: Fix navigation and course discovery**.
+- [x] Completed **Prompt 4: Build a coherent visual system and homepage**.
+
+---
+
+## 9. Acceptance Criteria Checklist for Prompt 5
+
+- [x] **Organized navigation around 6 core pillars**:
+  - **Learn**: All Subjects & Chapters (`/subjects`), Live Classes (`/live-classes`), and canonical curriculum.
+  - **Practice**: MCQ Bank (`/practice`), Question Bank (`/question-bank`, `/see/question-bank`), Battle Arena (`/battle-arena`), AI Tutor (`/ai-tutor`), Vision Marker (`/vision-marker`).
+  - **Mock Tests**: Grand Mocks & Model Tests (`/mock-tests`).
+  - **Revise**: Mistakes Log & Spaced Review (`/mistake-analyser`), Daily Study Plan (`/study-plan`).
+  - **Progress**: Student Dashboard (`/student-dashboard`), Performance & Readiness metrics.
+  - **Support**: Help Center & WhatsApp Support (`/contact`), FAQs (`/faq`).
+- [x] **Eliminated 404 orphan routes with canonical server redirects**:
+  - Created `/learn` -> redirects to `/subjects`.
+  - Created `/mock` -> redirects to `/mock-tests`.
+  - Created `/revise` -> redirects to `/mistake-analyser`.
+  - Created `/revision` -> redirects to `/mistake-analyser`.
+  - Created `/progress` -> redirects to `/student-dashboard`.
+  - Created `/support` -> redirects to `/contact`.
+- [x] **Identified and clearly separated CEE, SEE, and secondary tracks**:
+  - `PublicNav.tsx`: Clear top-level links for Courses, CEE Medical Entrance (`/cee-medical-entrance`, badge: 'Flagship'), and SEE Class 10 (`/see`, badge: 'Class 10').
+  - `DashboardLayout.tsx`: Track-aware desktop sidebar with visible Active Track Indicator, track switching modal, and pillar section headings (`LEARN`, `PRACTICE`, `MOCK TESTS`, `REVISE`, `SUPPORT`).
+  - Enriched Cmd+K global search with published courses, subjects, practice tools, and support channels.
+- [x] **Repaired broken links and misleading destinations**:
+  - Repaired `/batches/see-2026-english-medium` and `/batches/see-2026-nepali-medium`: Added fallback cohort resolution in `BatchDetailClient.tsx` so users and students no longer encounter "Batch Not Found" screens when opening Bunny.net video playlists.
+  - Repaired `BatchesPageClient.tsx`: Added fallback cohorts so SEE students can access their video lectures even if the DB hasn't been seeded.
+  - Updated metadata in `src/app/batches/page.tsx`, `src/app/subjects/page.tsx`, and `src/app/checkout/page.tsx` from "Samyak Tutor" to "Samyak Guru".
+  - Reconciled CEE landing FAQ subscription duration (180 days instead of contradictory 365 days).
+- [x] **Connected course discovery to actual published records with loading, empty, and retry states**:
+  - `src/app/courses/page.tsx`:
+    - Bound to `getAllCourses()` from canonical `catalog.ts`.
+    - Synced query params (`?track=...`, `?q=...`) to pre-select filters from external links.
+    - Added track count badges (All, CEE Medical, SEE Class 10, Skills & Languages).
+    - Added search clear (X) button.
+    - Added comprehensive empty state with "Reset All Filters" and WhatsApp counseling inquiry button.
+    - Wrapped in `Suspense` for clean loading.
+- [x] **Enhanced 404 error recovery page (`src/app/not-found.tsx`)**:
+  - Replaced sparse dead-end screen with a helpful 404 recovery dashboard featuring direct navigation cards for all 6 pillars (Courses, Practice MCQs, Mock Exams, Mistakes Log, Student Home, Help & Support).
+- [x] **Explained account-required actions and preserved intended destinations**:
+  - `src/app/login/components/AuthPageClient.tsx`:
+    - Created `getRedirectInfo` helper supporting `redirect`, `returnUrl`, `redirectTo`, and `next` query parameters.
+    - Added prominent, reassuring "Account Required" notice card displaying the specific reason (e.g. course checkout, mock exam scoring, bookmarks) and intended destination.
+    - Auto-routes already authenticated users (`user?.id`) to their destination instead of stranding them on the login form.
+    - Preserved destination parameter through Google OAuth callback (`/auth/callback?next=...`) and email OTP / password flows.
+- [x] **Verification & Test Coverage**:
+  - Created automated test suite `src/lib/navigation/__tests__/navigationRouting.test.ts` with 12 tests covering catalog slugs, pillar mappings, destination preservation, and open-redirect protection (all 12 passing).
+  - Full Vitest suite: 223 / 223 tests passing across 19 test suites.
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+  - Next.js production build succeeded with exit code 0 across 243 routes.
+- [x] Completed **Prompt 5: Fix navigation and course discovery**.
+- [x] Ready to proceed to **Prompt 6: Repair signup, login, roles, and onboarding**.
 
 
 

@@ -75,12 +75,48 @@ function friendlyError(err: unknown): string {
   return err instanceof Error ? err.message : 'Something went wrong. Please try again.';
 }
 
+function getRedirectInfo(searchStr: string) {
+  if (typeof window === 'undefined') return { redirectUrl: null, reasonText: null };
+  const params = new URLSearchParams(searchStr);
+  const raw = params.get('redirect') || params.get('returnUrl') || params.get('redirectTo') || params.get('next');
+  const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
+  const explicitReason = params.get('reason');
+
+  if (explicitReason) {
+    return { redirectUrl: safeRedirect, reasonText: explicitReason };
+  }
+
+  if (safeRedirect) {
+    if (safeRedirect.includes('/checkout')) {
+      return { redirectUrl: safeRedirect, reasonText: 'Sign in to complete your course enrollment and activate your batch access.' };
+    }
+    if (safeRedirect.includes('/mock-tests')) {
+      return { redirectUrl: safeRedirect, reasonText: 'Sign in to save your mock exam scores and track your national percentile rank.' };
+    }
+    if (safeRedirect.includes('/practice')) {
+      return { redirectUrl: safeRedirect, reasonText: 'Sign in to save question bookmarks and track your topic accuracy.' };
+    }
+    if (safeRedirect.includes('/study-plan')) {
+      return { redirectUrl: safeRedirect, reasonText: 'Sign in to access your personalized daily study plan and tasks.' };
+    }
+    if (safeRedirect.includes('/mistake')) {
+      return { redirectUrl: safeRedirect, reasonText: 'Sign in to access your personalized mistakes notebook and revision sets.' };
+    }
+    if (safeRedirect.includes('/batches')) {
+      return { redirectUrl: safeRedirect, reasonText: 'Sign in to access your live cohort masterclasses, replays, and notes.' };
+    }
+    return { redirectUrl: safeRedirect, reasonText: 'Sign in to continue to your learning destination. You will be redirected automatically.' };
+  }
+
+  return { redirectUrl: null, reasonText: null };
+}
+
 interface AuthPageClientProps {
   initialMode?: 'signin' | 'signup';
 }
 
 export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClientProps = {}) {
-  const { signInWithEmailOtp, verifyEmailOtp, signIn, signUp, signInWithOAuth, resetPasswordForEmail } = useAuth();
+  const { signInWithEmailOtp, verifyEmailOtp, signIn, signUp, signInWithOAuth, resetPasswordForEmail, user } = useAuth();
 
   const [authMode, setAuthMode] = useState<AuthMode>('password');
   const [passwordAction, setPasswordAction] = useState<PasswordAction>(initialMode);
@@ -97,6 +133,10 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
+  const [redirectInfo, setRedirectInfo] = useState<{ redirectUrl: string | null; reasonText: string | null }>({
+    redirectUrl: null,
+    reasonText: null,
+  });
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   const passwordInputRef = useRef<HTMLInputElement | null>(null);
@@ -104,7 +144,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
 
   const emailValid = EMAIL_RE.test(email.trim());
 
-  // Auto-detect signup / register from URL path or query params
+  // Auto-detect signup / register from URL path or query params & read redirect info
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname.toLowerCase();
@@ -115,6 +155,8 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
     } else if (path.includes('/signin') || path.includes('/login') || modeParam === 'signin') {
       setPasswordAction('signin');
     }
+
+    setRedirectInfo(getRedirectInfo(window.location.search));
   }, []);
 
   useEffect(() => {
@@ -142,7 +184,8 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
 
   const routeAfterLogin = useCallback(async () => {
     const searchStr = typeof window !== 'undefined' ? window.location.search : '';
-    const raw = new URLSearchParams(searchStr).get('redirect');
+    const params = new URLSearchParams(searchStr);
+    const raw = params.get('redirect') || params.get('returnUrl') || params.get('redirectTo') || params.get('next');
     const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
 
     let destination = safeRedirect ?? '/student-dashboard';
@@ -162,13 +205,21 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
     window.location.href = destination;
   }, []);
 
+  // Auto-route to destination if already authenticated
+  useEffect(() => {
+    if (user?.id) {
+      routeAfterLogin();
+    }
+  }, [user?.id, routeAfterLogin]);
+
   // Handle Google OAuth with dynamic redirect preservation and account picker
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError(null);
     try {
       const searchStr = typeof window !== 'undefined' ? window.location.search : '';
-      const rawRedirect = new URLSearchParams(searchStr).get('redirect');
+      const params = new URLSearchParams(searchStr);
+      const rawRedirect = params.get('redirect') || params.get('returnUrl') || params.get('redirectTo') || params.get('next');
       const safeRedirect = rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : null;
 
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -356,7 +407,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
             )}
             <div className="flex-1 flex items-center justify-center gap-2">
               <AppLogo size={30} />
-              <span className="font-extrabold text-base text-primary tracking-tight">Samyak CEE</span>
+              <span className="font-extrabold text-base text-primary tracking-tight">Samyak Guru</span>
             </div>
             <div className="w-10" aria-hidden />
           </div>
@@ -364,8 +415,24 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
           <div className="card-base p-6 sm:p-8">
             {step === 'email' ? (
               <div>
+                {/* Account-Required Action Notice */}
+                {redirectInfo.reasonText && (
+                  <div className="mb-5 p-3.5 rounded-2xl bg-primary/10 border border-primary/20 flex items-start gap-2.5 animate-fade-in text-xs text-foreground">
+                    <ShieldCheck size={16} className="text-primary shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-primary">Account Required</p>
+                      <p className="text-muted-foreground leading-relaxed">{redirectInfo.reasonText}</p>
+                      {redirectInfo.redirectUrl && (
+                        <p className="text-[10px] font-mono text-muted-foreground pt-0.5">
+                          Destination: <span className="text-foreground font-semibold">{redirectInfo.redirectUrl}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-5">
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary mb-1">Welcome to Samyak CEE</p>
+                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary mb-1">Welcome to Samyak Guru</p>
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                     Log in or sign up
                   </h1>

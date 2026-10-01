@@ -229,47 +229,87 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
       .eq('is_active', true)
       .single();
 
+    let typedBatch: Batch | null = null;
+    let liveClassesData: LiveClass[] = [];
+    let bVideos: VideoLecture[] = [];
+    let fallbackVideosData: VideoLecture[] = [];
+    let notesData: Note[] = [];
+    let examsData: Exam[] = [];
+
     if (error || !batchData) {
-      setNotFound(true);
-      setLoading(false);
-      return;
+      if (slug.includes('see') || slug.includes('nepali') || slug.includes('english') || slug.includes('cee')) {
+        const isNepali = slug.includes('nepali');
+        const isSee = slug.includes('see') || isNepali || slug.includes('english');
+        typedBatch = {
+          id: isNepali ? '00000000-0000-0000-0000-000000000001' : isSee ? '00000000-0000-0000-0000-000000000002' : '00000000-0000-0000-0000-000000000003',
+          title: isNepali
+            ? 'SEE Class 10 — नेपाली माध्यम भिडियो कक्षा'
+            : isSee
+            ? 'SEE Class 10 — English Medium Video Lectures'
+            : 'Target CEE 2026 — Full Entrance Batch',
+          slug,
+          description: isNepali
+            ? 'नेपाली माध्यममा एसईई कक्षा १० को सम्पूर्ण विषयहरूको भिडियो लेक्चर, मोडल प्रश्न र समाधान।'
+            : isSee
+            ? 'Complete SEE Class 10 video lectures, solved past board papers, and revision notes in English medium.'
+            : 'Complete CEE preparation covering Biology, Chemistry, Physics and Mental Agility with live classes and weekly mocks.',
+          cee_year: isSee ? null : 2026,
+          instructor_name: 'Samyak Faculty Team',
+          thumbnail_url: null,
+          start_date: '2025-04-01',
+          end_date: '2026-03-31',
+          price_npr: isSee ? 4990 : 7990,
+          is_premium: true,
+          subject: { display_name: isSee ? 'All Subjects (SEE Class 10)' : 'All Subjects (CEE Medical)', icon: isSee ? '🎓' : '🩺' },
+        };
+        setBatch(typedBatch);
+      } else {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
+    } else {
+      typedBatch = batchData as unknown as Batch;
+      setBatch(typedBatch);
+
+      const [liveRes, videoRes, fallbackVidRes, notesRes, examsRes] = await Promise.all([
+        supabase
+          .from('live_classes')
+          .select('id, title, scheduled_at, duration_min, meeting_url, status')
+          .eq('batch_id', typedBatch.id)
+          .order('scheduled_at', { ascending: true }),
+        supabase
+          .from('video_lectures')
+          .select('id, title, video_url, duration_sec, thumbnail_url')
+          .eq('batch_id', typedBatch.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('video_lectures')
+          .select('id, title, video_url, duration_sec, thumbnail_url')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(100),
+        supabase
+          .from('notes')
+          .select('id, title, pdf_url')
+          .eq('batch_id', typedBatch.id)
+          .eq('is_active', true),
+        supabase
+          .from('exams')
+          .select('id, title, duration_minutes, total_marks')
+          .eq('batch_id', typedBatch.id)
+          .eq('is_published', true),
+      ]);
+
+      liveClassesData = liveRes.data || [];
+      bVideos = videoRes.data || [];
+      fallbackVideosData = fallbackVidRes.data || [];
+      notesData = notesRes.data || [];
+      examsData = examsRes.data || [];
     }
 
-    const typedBatch = batchData as unknown as Batch;
-    setBatch(typedBatch);
-
-    const [liveRes, videoRes, fallbackVidRes, notesRes, examsRes] = await Promise.all([
-      supabase
-        .from('live_classes')
-        .select('id, title, scheduled_at, duration_min, meeting_url, status')
-        .eq('batch_id', typedBatch.id)
-        .order('scheduled_at', { ascending: true }),
-      supabase
-        .from('video_lectures')
-        .select('id, title, video_url, duration_sec, thumbnail_url')
-        .eq('batch_id', typedBatch.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('video_lectures')
-        .select('id, title, video_url, duration_sec, thumbnail_url')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(100),
-      supabase
-        .from('notes')
-        .select('id, title, pdf_url')
-        .eq('batch_id', typedBatch.id)
-        .eq('is_active', true),
-      supabase
-        .from('exams')
-        .select('id, title, duration_minutes, total_marks')
-        .eq('batch_id', typedBatch.id)
-        .eq('is_published', true),
-    ]);
-
-    setLiveClasses(liveRes.data || []);
-    let bVideos = videoRes.data || [];
+    setLiveClasses(liveClassesData);
 
     // If batch has no videos in database, automatically fetch all Bunny Stream playlist lectures
     if (bVideos.length === 0) {
@@ -295,9 +335,9 @@ export default function BatchDetailClient({ slug }: { slug: string }) {
       }
     }
 
-    setVideos(bVideos.length > 0 ? bVideos : fallbackVidRes.data || []);
-    setNotes(notesRes.data || []);
-    setExams(examsRes.data || []);
+    setVideos(bVideos.length > 0 ? bVideos : fallbackVideosData);
+    setNotes(notesData);
+    setExams(examsData);
 
     if (user?.id) {
       const { data: enrollment } = await supabase

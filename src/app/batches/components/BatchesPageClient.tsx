@@ -70,14 +70,45 @@ export default function BatchesPageClient() {
 
     const allBatches = (data as unknown as Batch[]) || [];
     
-    // Strict filter for SEE Batches only
+    // Filter for SEE Batches
     const seeOnly = allBatches.filter((b) => {
       const s = (b.slug || '').toLowerCase();
       const t = (b.title || '').toLowerCase();
       return s.includes('see') || t.includes('see') || t.includes('नेपाली माध्यम');
     });
 
-    setBatches(seeOnly);
+    const defaultBatches: Batch[] = [
+      {
+        id: '00000000-0000-0000-0000-000000000001',
+        title: 'SEE Class 10 — नेपाली माध्यम भिडियो कक्षा',
+        slug: 'see-2026-nepali-medium',
+        description: 'नेपाली माध्यममा एसईई कक्षा १० को सम्पूर्ण विषयहरूको भिडियो लेक्चर, मोडल प्रश्न र समाधान।',
+        cee_year: null,
+        instructor_name: 'Samyak Faculty Team',
+        thumbnail_url: null,
+        start_date: '2025-04-01',
+        end_date: '2026-03-31',
+        price_npr: 4990,
+        is_premium: true,
+        subject: { display_name: 'SEE Class 10 (नेपाली)', icon: '🇳🇵', color: 'emerald' },
+      },
+      {
+        id: '00000000-0000-0000-0000-000000000002',
+        title: 'SEE Class 10 — English Medium Video Lectures',
+        slug: 'see-2026-english-medium',
+        description: 'Complete SEE Class 10 video lectures, solved past board papers, and revision notes in English medium.',
+        cee_year: null,
+        instructor_name: 'Samyak Faculty Team',
+        thumbnail_url: null,
+        start_date: '2025-04-01',
+        end_date: '2026-03-31',
+        price_npr: 4990,
+        is_premium: true,
+        subject: { display_name: 'SEE Class 10 (English)', icon: '🇬🇧', color: 'blue' },
+      },
+    ];
+
+    setBatches(seeOnly.length > 0 ? seeOnly : defaultBatches);
 
     if (user?.id) {
       const { data: enrollments } = await supabase

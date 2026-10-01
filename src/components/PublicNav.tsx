@@ -50,14 +50,16 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
     };
   }, [mobileOpen]);
 
-  // Primary navigation items requested:
-  // Courses | SEE | CEE | Free Resources | Results | Sign In | Start Learning
+  // Primary navigation items organized around Core Tracks & Academic Pillars:
+  // Courses | CEE Medical | SEE Class 10 | Practice | Mock Tests | Free Resources | Support
   const navLinks = [
     { label: 'Courses', href: '/courses' },
-    { label: 'SEE', href: '/see', badge: 'Class 10' },
-    { label: 'CEE', href: '/cee-medical-entrance', badge: 'Medical' },
+    { label: 'CEE Medical', href: '/cee-medical-entrance', badge: 'Flagship' },
+    { label: 'SEE Class 10', href: '/see', badge: 'Class 10' },
+    { label: 'Practice', href: '/practice', badge: '15K+' },
+    { label: 'Mock Tests', href: '/mock-tests' },
     { label: 'Free Resources', href: '/free-resources' },
-    { label: 'Results', href: '/results' },
+    { label: 'Support', href: '/contact' },
   ];
 
   return (
@@ -81,12 +83,12 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
           </Link>
 
           {/* Desktop Primary Navigation */}
-          <div className="hidden lg:flex items-center gap-1.5 text-sm font-bold">
+          <div className="hidden lg:flex items-center gap-1 xl:gap-1.5 text-xs xl:text-sm font-bold">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5"
+                className="px-2.5 xl:px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5 whitespace-nowrap"
               >
                 <span>{link.label}</span>
                 {link.badge && (

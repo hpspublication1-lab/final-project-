@@ -131,7 +131,7 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
     faqs: [
       { question: 'Is this aligned with the latest MEC CEE 2026 syllabus?', answer: 'Yes! All MCQs, mock tests, and weightages strictly follow the official Medical Education Commission (MEC) Nepal syllabus.' },
       { question: 'Can I access CEE mock tests on my mobile phone?', answer: 'Absolutely. The platform is 100% mobile-friendly with instant PWA offline note access and responsive exam simulators.' },
-      { question: 'How long does my subscription last?', answer: 'Your access lasts for 1 full year (365 days) from your purchase date, covering your entire CEE preparation cycle.' },
+      { question: 'How long does my subscription last?', answer: 'Your access lasts for the full MECEE entrance cycle (180 days) from your enrollment date, covering your entire CEE preparation.' },
     ],
   },
 

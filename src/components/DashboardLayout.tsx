@@ -9,7 +9,7 @@ import {
   User, ChevronLeft, ChevronRight, Sun, Moon, Swords, AlertTriangle, LogOut,
   ClipboardList, Bot, Sparkles, Users, CheckCheck, X, Menu, Home, Trophy,
   Layers, MessageCircleQuestion, Bookmark, Lock, TrendingUp, Radio,
-  Search, ShieldCheck, CheckCircle2, ChevronDown
+  Search, ShieldCheck, CheckCircle2, ChevronDown, HelpCircle
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +24,7 @@ interface NavItem {
   icon: any;
   key: string;
   badge?: string;
+  section?: 'LEARN' | 'PRACTICE' | 'MOCK TESTS' | 'REVISE' | 'SUPPORT';
 }
 
 // ── Mobile 5-Tab Navigation (Home, Learn, Practice, Tests, Profile) ──────────
@@ -35,33 +36,45 @@ const MOBILE_FIVE_TABS: NavItem[] = [
   { label: 'Profile',  href: '/profile',           icon: User,          key: 'm-profile' },
 ];
 
-// ── Desktop Primary Nav (Track Aware) ─────────────────────────────────────────
+// ── Desktop Primary Nav (Track Aware & Organized Around Core Pillars) ─────────
 function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
   if (canonicalId === 'see_class_10') {
     return [
       { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
-      { label: 'All Subjects',  href: '/subjects?program=see_class_10',  icon: BookOpen,      key: 'd-subjects' },
-      { label: 'Question Bank', href: '/see/question-bank',              icon: FileText,      key: 'd-qb' },
-      { label: 'Practice Drills',href: '/practice?program=see_class_10', icon: Zap,           key: 'd-practice' },
-      { label: 'Model Tests',   href: '/mock-tests?program=see',         icon: ClipboardList, key: 'd-tests' },
-      { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE' },
-      { label: 'AI Rubric Marker', href: '/vision-marker',               icon: Sparkles,      key: 'd-vision', badge: 'AI' },
-      { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan' },
-      { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes' },
+      // Learn
+      { label: 'All Subjects',  href: '/subjects?program=see_class_10',  icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+      // Practice
+      { label: 'Question Bank', href: '/see/question-bank',              icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
+      { label: 'Practice Drills',href: '/practice?program=see_class_10', icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
+      { label: 'AI Rubric Marker', href: '/vision-marker',               icon: Sparkles,      key: 'd-vision', badge: 'AI', section: 'PRACTICE' },
+      // Mock Tests
+      { label: 'Model Tests',   href: '/mock-tests?program=see',         icon: ClipboardList, key: 'd-tests', badge: 'NEB', section: 'MOCK TESTS' },
+      // Revise
+      { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+      // Support
+      { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
 
   // Default / CEE Medical Entrance
   return [
     { label: 'Dashboard',     href: '/student-dashboard', icon: Home,          key: 'd-home' },
-    { label: 'All Subjects',  href: '/subjects',          icon: BookOpen,      key: 'd-subjects' },
-    { label: 'Practice MCQs', href: '/practice',          icon: Zap,           key: 'd-practice' },
-    { label: 'Grand Mocks',   href: '/mock-tests',        icon: ClipboardList, key: 'd-tests' },
-    { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: 'Rs 1K' },
-    { label: 'Live Classes',  href: '/live-classes',      icon: Radio,         key: 'd-live', badge: 'LIVE' },
-    { label: 'AI Tutor',      href: '/ai-tutor',          icon: Bot,           key: 'd-ai', badge: 'AI' },
-    { label: 'Study Plan',    href: '/study-plan',        icon: CalendarScheduleIcon, key: 'd-plan' },
-    { label: 'Mistakes Log',  href: '/mistake-analyser',  icon: AlertTriangle, key: 'd-mistakes' },
+    // Learn
+    { label: 'All Subjects',  href: '/subjects',          icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+    { label: 'Live Classes',  href: '/live-classes',      icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+    // Practice
+    { label: 'Practice MCQs', href: '/practice',          icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
+    { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: '1v1', section: 'PRACTICE' },
+    { label: 'AI Tutor',      href: '/ai-tutor',          icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+    // Mock Tests
+    { label: 'Grand Mocks',   href: '/mock-tests',        icon: ClipboardList, key: 'd-tests', badge: 'MEC', section: 'MOCK TESTS' },
+    // Revise
+    { label: 'Mistakes Log',  href: '/mistake-analyser',  icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+    { label: 'Study Plan',    href: '/study-plan',        icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+    // Support
+    { label: 'Help & Support',href: '/contact',           icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
   ];
 }
 
@@ -158,16 +171,25 @@ export default function DashboardLayout({
   const roleName = profile?.role_name || (profile?.subscription_plan && profile.subscription_plan !== 'free' ? 'Paid Student' : 'Free Student');
 
   const searchableLinks = [
-    { title: 'Compulsory Science (Physics, Chemistry, Biology)', href: '/subjects?subject=science', category: 'SEE Subject' },
-    { title: 'Compulsory Mathematics (Algebra, Geometry)', href: '/subjects?subject=mathematics', category: 'SEE Subject' },
-    { title: 'Optional Mathematics (Vectors, Trigonometry)', href: '/subjects?subject=opt_math', category: 'SEE Subject' },
+    { title: 'CEE Medical Entrance Super Target Batch 2026', href: '/courses/cee-mbbs-mastery-2026', category: 'Flagship Course' },
+    { title: 'SEE Class 10 Board Topper Batch 2082/2083', href: '/courses/see-class-10-board-topper-batch', category: 'Flagship Course' },
+    { title: 'CEE 45-Day Ultimate Crash Course 2026', href: '/courses/cee-45-day-crash-course', category: 'Crash Course' },
+    { title: 'SEE Optional Math & Science Score Booster', href: '/courses/see-opt-math-science-mastery', category: 'Booster Batch' },
+    { title: 'All Courses & Admissions Catalogue', href: '/courses', category: 'Directory' },
     { title: 'Medical Biology (Zoology & Botany 80 Marks)', href: '/subjects?subject=biology', category: 'CEE Subject' },
     { title: 'Medical Physics (Mechanics, Optics 50 Marks)', href: '/subjects?subject=physics', category: 'CEE Subject' },
     { title: 'Medical Chemistry (Organic & Physical 50 Marks)', href: '/subjects?subject=chemistry', category: 'CEE Subject' },
-    { title: 'Timed Full Mock Exams', href: '/mock-tests', category: 'Assessment' },
+    { title: 'Compulsory Science (Physics, Chemistry, Biology)', href: '/subjects?subject=science', category: 'SEE Subject' },
+    { title: 'Compulsory Mathematics (Algebra, Geometry)', href: '/subjects?subject=mathematics', category: 'SEE Subject' },
+    { title: 'Optional Mathematics (Vectors, Trigonometry)', href: '/subjects?subject=opt_math', category: 'SEE Subject' },
+    { title: 'Practice 15,000+ Topicwise MCQs', href: '/practice', category: 'Practice' },
+    { title: 'Full-Length Timed Mock Exams (-0.25 Marking)', href: '/mock-tests', category: 'Assessment' },
+    { title: 'Personalized Mistakes Notebook & Revision', href: '/mistake-analyser', category: 'Revision' },
+    { title: 'Daily Study Plan & Tasks', href: '/study-plan', category: 'Planning' },
     { title: 'Interactive Live Batch Classes', href: '/live-classes', category: 'Live Class' },
     { title: 'AI Handwritten Vision Marker', href: '/vision-marker', category: 'Subjective AI' },
     { title: '1v1 Battle Arena Duels', href: '/battle-arena', category: 'Practice' },
+    { title: 'Help Center & WhatsApp Support', href: '/contact', category: 'Support' },
   ];
 
   const filteredLinks = searchQuery.trim()
@@ -272,33 +294,42 @@ export default function DashboardLayout({
 
           {/* Navigation Links */}
           <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-            {desktopNav.map((item) => {
+            {desktopNav.map((item, idx) => {
               const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href.split('?')[0]));
+              const prevItem = idx > 0 ? desktopNav[idx - 1] : null;
+              const showSection = !sidebarCollapsed && item.section && (!prevItem || prevItem.section !== item.section);
+
               return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                    active
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-                  }`}
-                  title={sidebarCollapsed ? item.label : undefined}
-                >
-                  <item.icon size={18} className="shrink-0" />
-                  {!sidebarCollapsed && (
-                    <div className="flex-1 flex items-center justify-between">
-                      <span>{item.label}</span>
-                      {item.badge && (
-                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full font-black uppercase ${
-                          item.badge === 'LIVE' ? 'bg-red-500 text-white animate-pulse' : active ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
-                        }`}>
-                          {item.badge}
-                        </span>
-                      )}
+                <React.Fragment key={item.key}>
+                  {showSection && (
+                    <div className="pt-3 pb-1 px-3 text-[9px] font-black tracking-widest uppercase text-muted-foreground/60 select-none">
+                      {item.section}
                     </div>
                   )}
-                </Link>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                      active
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                    }`}
+                    title={sidebarCollapsed ? item.label : undefined}
+                  >
+                    <item.icon size={18} className="shrink-0" />
+                    {!sidebarCollapsed && (
+                      <div className="flex-1 flex items-center justify-between">
+                        <span>{item.label}</span>
+                        {item.badge && (
+                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full font-black uppercase ${
+                            item.badge === 'LIVE' ? 'bg-red-500 text-white animate-pulse' : active ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </Link>
+                </React.Fragment>
               );
             })}
           </div>
@@ -566,17 +597,28 @@ export default function DashboardLayout({
 
               {/* Navigation Items */}
               <div className="space-y-1">
-                {desktopNav.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    onClick={() => setMobileDrawerOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all"
-                  >
-                    <item.icon size={17} />
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
+                {desktopNav.map((item, idx) => {
+                  const prevItem = idx > 0 ? desktopNav[idx - 1] : null;
+                  const showSection = item.section && (!prevItem || prevItem.section !== item.section);
+
+                  return (
+                    <React.Fragment key={item.key}>
+                      {showSection && (
+                        <div className="pt-2 pb-0.5 px-3 text-[9px] font-black tracking-widest uppercase text-muted-foreground/60 select-none">
+                          {item.section}
+                        </div>
+                      )}
+                      <Link
+                        href={item.href}
+                        onClick={() => setMobileDrawerOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2 rounded-2xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-all"
+                      >
+                        <item.icon size={17} />
+                        <span>{item.label}</span>
+                      </Link>
+                    </React.Fragment>
+                  );
+                })}
               </div>
             </div>
 
