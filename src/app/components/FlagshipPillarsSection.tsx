@@ -63,7 +63,7 @@ export default function FlagshipPillarsSection() {
             Built for Academic Board &amp; Entrance Excellence
           </h2>
           <p className="text-base text-muted-foreground leading-relaxed">
-            Every feature on Samyak Tutor is engineered to help students build rock-solid concepts, retain high-yield formulas, and maximize exam scores.
+            Every feature on Samyak Guru is engineered to help students build rock-solid concepts, retain high-yield formulas, and maximize exam scores.
           </p>
         </div>
 

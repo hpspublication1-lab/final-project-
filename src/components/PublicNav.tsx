@@ -74,7 +74,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
         <div className="flex items-center justify-between h-16 sm:h-20">
           
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group" aria-label="Samyak Tutor — Home">
+          <Link href="/" className="flex items-center gap-2 group" aria-label="Samyak Guru — Home">
             <div className="transition-transform duration-200 group-hover:scale-105">
               <AppLogo size={36} showText={true} />
             </div>

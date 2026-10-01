@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, Languages, TrendingUp, Cpu } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function AuxiliaryProgramsBanner() {
   return (

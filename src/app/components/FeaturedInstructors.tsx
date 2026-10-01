@@ -49,7 +49,7 @@ const INSTRUCTORS = [
 
 export default function FeaturedInstructors() {
   return (
-    <section className="py-20 bg-background border-b border-border/60">
+    <section id="faculty" className="py-20 bg-muted/20 border-t border-border/60">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">

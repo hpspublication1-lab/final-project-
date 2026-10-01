@@ -9,6 +9,11 @@ import FlagshipDemoSection from './FlagshipDemoSection';
 import AnnouncementBar from './AnnouncementBar';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 
+const FeaturedInstructors = dynamic(() => import('./FeaturedInstructors'), {
+  loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
+  ssr: true,
+});
+
 const PricingSection = dynamic(() => import('./PricingSection'), {
   loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
   ssr: true,
@@ -70,6 +75,7 @@ export default function HomepageClient() {
           <HeroSection />
           <FlagshipPillarsSection />
           <FlagshipDemoSection />
+          <FeaturedInstructors />
           <PricingSection />
           <TestimonialsSection />
           <AuxiliaryProgramsBanner />

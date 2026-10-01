@@ -171,7 +171,7 @@ export default function HomepageFooter() {
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            © 2026 Samyak Tutor. All rights reserved.
+            © 2026 Samyak Guru. All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/40">Payments powered by</span>

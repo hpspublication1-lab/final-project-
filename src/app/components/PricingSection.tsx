@@ -9,7 +9,7 @@ const WHATSAPP_NUMBER = SUPPORT_CONFIG.whatsappNumber;
 
 export default function PricingSection() {
   const buildWhatsAppUrl = (planName: string, priceStr: string) => {
-    const message = `Hi! I need guidance with enrollment for *\${planName}* (\${priceStr}) on Samyak Tutor. Please help me get started.`;
+    const message = `Hi! I need guidance with enrollment for *\${planName}* (\${priceStr}) on Samyak Guru. Please help me get started.`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 
@@ -185,22 +185,23 @@ export default function PricingSection() {
 
             <div className="space-y-2">
               <Link
-                href="/checkout?plan=cee-ai-pro-monthly"
-                className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-2"
+                href="/checkout?plan=cee-mbbs-mastery-2026"
+                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs text-center shadow-md transition-all flex items-center justify-center gap-2"
               >
-                <span>Subscribe CEE AI Pro (NPR 600 / Mo)</span>
+                <span>Enroll in CEE Batch (NPR 7,990)</span>
                 <ArrowRight size={14} />
               </Link>
               <Link
-                href="/checkout?plan=cee-premium-monthly"
-                className="w-full py-2.5 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold text-xs text-center border border-indigo-500/30 transition-all flex items-center justify-center gap-2"
+                href="/prebook"
+                className="w-full py-2.5 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold text-xs text-center border border-indigo-500/30 transition-all flex items-center justify-center gap-1.5"
               >
-                <span>CEE Premium (NPR 350 / Mo)</span>
+                <span>CEE Crash Course Prebook (Deposit Rs 300)</span>
+                <ArrowRight size={13} />
               </Link>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 pt-1">
-                <span>Full 180-day Target Batch?</span>
-                <Link href="/checkout?plan=cee-mbbs-mastery-2026" className="text-primary font-bold hover:underline">
-                  NPR 7,990 &rarr;
+                <span>Monthly AI Pro Pass:</span>
+                <Link href="/checkout?plan=cee-ai-pro-monthly" className="text-primary font-bold hover:underline">
+                  NPR 600 / Mo &rarr;
                 </Link>
               </div>
               <p className="text-[10px] text-muted-foreground text-center">

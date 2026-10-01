@@ -35,7 +35,7 @@ const WORKFLOW_CASE_STUDIES = [
   },
   {
     key: 'test-3',
-    name: 'Pooja Superior',
+    name: 'Pooja Shrestha',
     college: 'IELTS Academic Aspirant',
     subject: 'IELTS Speaking & Writing',
     sectorBadge: 'English & IELTS',
@@ -65,7 +65,7 @@ const WORKFLOW_CASE_STUDIES = [
 
 export default function TestimonialsSection() {
   return (
-    <section id="success" className="py-16 bg-background">
+    <section id="success" className="py-20 bg-muted/20 border-t border-border/60">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 space-y-12">
         
         {/* Header */}

@@ -140,8 +140,8 @@ flowchart TD
 | **Prompt 1** | **Project Inspection & Safe Baseline** | Map routes, verify setup, establish baseline build, create tracker | None | ✅ **COMPLETED** | Archive baseline; begin Prompt 2 |
 | **Prompt 2** | **Single Source of Truth for Courses & Offers** | Consolidate course IDs, pricing, comparison prices, Rs 300 deposit into unified model | Prompt 1 | ✅ **COMPLETED** | Single catalog & offer breakdown verified |
 | **Prompt 3** | **Repair Trust Claims, Support Details & Policies** | Remove unsubstantiated student counts, clarify AI vs human faculty, unify refund policy | Prompt 2 | ✅ **COMPLETED** | Verified trust claims, faculty, policies, tests |
-| **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | 🟡 **READY** | Refactor `HeroSection`, `SubjectsSection`, spacing |
-| **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | ⚪ PENDING | Audit navigation menus, mobile drawer, course filters |
+| **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | ✅ **COMPLETED** | Refactored Hero, mounted faculty, clear CEE offer |
+| **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | 🟡 **READY** | Audit navigation menus, mobile drawer, course filters |
 | **Prompt 6** | **Repair Signup, Login, Roles & Onboarding** | Enforce server-side role validation, fix session expiry, streamline onboarding | Prompt 5 | ⚪ PENDING | Review `@supabase/ssr` auth, redirect flows, onboarding |
 | **Prompt 7** | **Course Catalog & Complete Enrollment** | Detail pages with syllabus, real faculty, sample preview, link directly to checkout | Prompt 2, 6 | ⚪ PENDING | Connect `COURSES_DATA` to DB, wire enroll buttons |
 | **Prompt 8** | **Reliable Nepal Payments & Access Activation** | Server-verified Fonepay dynamic QR, idempotent activation, prevent double access | Prompt 7 | ⚠️ BLOCKED (Live Keys) | Verify UAT sandbox flow; document live key blocker |
@@ -266,6 +266,43 @@ Based on actual inspection of the current code and configuration:
   - Automated test suite expanded to 211 tests (18 test suites) with new suite `Trust Claims, Support Details & Policy Integrity (Prompt 3 Verification)` (all 211 passing).
   - Zero TypeScript compilation errors (`npx tsc --noEmit`).
   - Next.js production build succeeded with exit code 0 across 237 routes.
-- [x] Ready to proceed to **Prompt 4: Coherent visual system and homepage**.
+- [x] Completed **Prompt 3: Repair trust claims, support details, and policies**.
+
+---
+
+## 8. Acceptance Criteria Checklist for Prompt 4
+
+- [x] **Unified visual system, typography & brand identity**:
+  - Replaced lingering "Samyak Tutor" brand strings with canonical "Samyak Guru" across `FlagshipPillarsSection.tsx`, `PricingSection.tsx`, `FAQSection.tsx`, `HomepageFooter.tsx`, and `PublicNav.tsx`.
+  - Enforced harmonious alternating section rhythm (`bg-background` -> `bg-muted/20` -> `bg-background` -> `bg-muted/20`) eliminating monotonous stacked blocks.
+  - Preserved luxury design tokens (`--primary: #5243E0`, `--background: #F8FAFC`, `--foreground: #090D1A`, `--card: #FFFFFF`, optical heading tracking, layered elevation shadows).
+- [x] **Prioritized Flagship CEE Medical Journey**:
+  - Elevated CEE Medical Entrance (`MECEE 2026 ENTRANCE`) as Flagship 1 in `HeroSection.tsx` with primary indigo badge (`★ FLAGSHIP CEE 2026 ENTRANCE`), followed by SEE Class 10 Board Exam (`NEB CLASS 10 BOARD EXAM`).
+  - Cleaned literal escaped apostrophes (`\'`) in JSX text.
+  - Linked primary hero CTA directly to `/cee-medical-entrance` and `/checkout?plan=cee-mbbs-mastery-2026`.
+- [x] **Useful Sample & Interactive Demo**:
+  - `FlagshipDemoSection.tsx` verified: interactive real exam questions for CEE (Botany PEP carboxylase and Physics kinetic energy with instant rationales) and SEE (Force & Gravitation 4-mark board question rubric).
+- [x] **Promoted Genuine Faculty to Homepage**:
+  - Mounted `FeaturedInstructors.tsx` in `HomepageClient.tsx` right between `FlagshipDemoSection` and `PricingSection`.
+  - Displays verified educators (`Dr. Samyak Shrestha`, `Pradeep Poudel Sir`, `Er. Bishal Adhikari`, `Er. Ramesh Karki`, `Nabin KC`) with genuine qualifications (`MBBS`, `M.Sc. Physics`, `Software Engineer`), and clearly separates `Coach Aria` as an automated AI Persona.
+- [x] **Clear, Honest Offers in Pricing Section**:
+  - Reconciled CEE pricing card: displays canonical NPR 7,990 (Full MECEE Cycle 180 Days Access) with primary CTA `Enroll in CEE Batch (NPR 7,990)`, secondary prebook link `CEE Crash Course Prebook (Deposit Rs 300) → /prebook`, and monthly AI Pro pass option (NPR 600/mo).
+  - Reconciled SEE pricing card (NPR 4,990 / Full Year) and Free Starter Pass.
+  - Highlighted 7-day money-back guarantee on all paid plans.
+- [x] **Student-Friendly Language & No Algorithm/Database Jargon**:
+  - Replaced technical jargon with clear educational terms (interactive live classes, past paper bank, timed mock exams, step-by-step doubt solver, exam blueprints).
+- [x] **Auxiliary Programs Accessible Without Overwhelming**:
+  - `AuxiliaryProgramsBanner.tsx` displays clean, non-intrusive card connecting to `/courses` for IELTS, Digital Marketing, and AI Python.
+  - Cleaned unused icon imports.
+- [x] **Responsive & Contrast Audit**:
+  - `AnnouncementBar.tsx`: Added `pr-12 sm:pr-8` and text truncation on small mobile screens to prevent dismiss button overlap.
+  - `PublicNav.tsx`: Clean mobile drawer navigation with dark mode toggle, accessible aria labels, and zero layout shift.
+  - `TestimonialsSection.tsx`: Replaced placeholder student name `Pooja Superior` with natural name `Pooja Shrestha`.
+- [x] **Verification & Test Coverage**:
+  - Automated test suite: 211 / 211 tests passing across 18 test suites.
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+  - Next.js production build succeeded with exit code 0 across 237 routes.
+- [x] Ready to proceed to **Prompt 5: Fix navigation and course discovery**.
+
 
 

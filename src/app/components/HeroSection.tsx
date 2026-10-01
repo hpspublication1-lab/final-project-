@@ -18,7 +18,7 @@ export default function HeroSection() {
         <div className="text-center max-w-3xl mx-auto space-y-4 animate-fade-in">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider shadow-xs">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>NEPAL\'S PREMIER LEARNING PLATFORM · 2026 ADMISSIONS OPEN</span>
+            <span>NEPAL&apos;S FOCUSED LEARNING PLATFORM · 2026 ADMISSIONS OPEN</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold text-foreground tracking-tight leading-[1.08]">
@@ -27,14 +27,78 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium">
-            Nepal\'s focused LMS built for academic board and entrance exam success. Master Class 10 board exams with GPA 4.0 curriculum or crack the Medical Education Commission (MECEE) entrance with 15,000+ high-yield questions.
+            Nepal&apos;s digital learning platform built for academic board and entrance exam success. Master the Medical Education Commission (MECEE) entrance with 15,000+ high-yield questions, or conquer Class 10 board exams with GPA 4.0 curriculum.
           </p>
         </div>
 
         {/* 2 Flagship Commercial Gateways (SEE vs CEE) */}
+        {/* 2 Flagship Commercial Gateways (CEE Medical vs SEE Class 10) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 max-w-5xl mx-auto items-stretch">
           
-          {/* FLAGSHIP 1: SEE Class 10 */}
+          {/* FLAGSHIP 1: CEE Medical Entrance (Primary Flagship) */}
+          <div className="bg-card border-2 border-primary/40 hover:border-primary rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <span className="px-3.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-black uppercase tracking-wider shadow-xs">
+                  ★ FLAGSHIP CEE 2026 ENTRANCE
+                </span>
+                <span className="text-2xl">🩺</span>
+              </div>
+
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground group-hover:text-primary transition-colors">
+                  CEE Medical Entrance
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+                  MBBS / BDS / B.Sc Nursing · MEC Syllabus · Target Scholarship
+                </p>
+              </div>
+
+              <ul className="space-y-2.5 text-xs sm:text-sm text-foreground/85 pt-2 border-t border-border/60">
+                <li className="flex items-start gap-2 font-medium">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <span>15,000+ Topicwise High-Yield MCQs with step-by-step rationales</span>
+                </li>
+                <li className="flex items-start gap-2 font-medium">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <span>200-Question Timed Mock Exams with -0.25 negative marking</span>
+                </li>
+                <li className="flex items-start gap-2 font-medium">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <span>High-yield subchapter notes &amp; formula sheets (Bio, Chem, Phys)</span>
+                </li>
+                <li className="flex items-start gap-2 font-medium">
+                  <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
+                  <span>Real-time 1v1 Battle Arena &amp; 24/7 AI Medical Doubt Solver</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-8 space-y-3">
+              <div className="flex items-baseline justify-between">
+                <span className="text-xs text-muted-foreground font-semibold">MBBS Target Batch:</span>
+                <span className="text-lg font-black text-foreground">NPR 7,990 <span className="text-xs font-normal text-muted-foreground">/ 180 Days</span></span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Link
+                  href="/cee-medical-entrance"
+                  className="w-full py-3 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs text-center border border-primary/30 transition-all flex items-center justify-center gap-1"
+                >
+                  <span>Explore CEE</span>
+                  <ArrowRight size={13} />
+                </Link>
+                <Link
+                  href="/checkout?plan=cee-mbbs-mastery-2026"
+                  className="w-full py-3 rounded-2xl bg-primary hover:bg-primary-dark text-primary-foreground font-bold text-xs text-center shadow-sm transition-all"
+                >
+                  Join Batch
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* FLAGSHIP 2: SEE Class 10 */}
           <div className="bg-card border-2 border-emerald-500/30 hover:border-emerald-500/60 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
@@ -90,69 +154,6 @@ export default function HeroSection() {
                 <Link
                   href="/checkout?plan=see-class-10-board-topper-batch"
                   className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center shadow-sm transition-all"
-                >
-                  Join Batch
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          {/* FLAGSHIP 2: CEE Medical Entrance */}
-          <div className="bg-card border-2 border-indigo-500/30 hover:border-indigo-500/60 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-wider border border-indigo-500/20">
-                  MECEE 2026 ENTRANCE
-                </span>
-                <span className="text-2xl">🩺</span>
-              </div>
-
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground group-hover:text-indigo-600 transition-colors">
-                  CEE Medical Entrance
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-                  MBBS / BDS / B.Sc Nursing · MEC Syllabus · Target Scholarship
-                </p>
-              </div>
-
-              <ul className="space-y-2.5 text-xs sm:text-sm text-foreground/85 pt-2 border-t border-border/60">
-                <li className="flex items-start gap-2 font-medium">
-                  <CheckCircle2 size={16} className="text-indigo-500 shrink-0 mt-0.5" />
-                  <span>15,000+ Topicwise High-Yield MCQs with step-by-step rationales</span>
-                </li>
-                <li className="flex items-start gap-2 font-medium">
-                  <CheckCircle2 size={16} className="text-indigo-500 shrink-0 mt-0.5" />
-                  <span>200-Question Timed Mock Exams with -0.25 negative marking</span>
-                </li>
-                <li className="flex items-start gap-2 font-medium">
-                  <CheckCircle2 size={16} className="text-indigo-500 shrink-0 mt-0.5" />
-                  <span>High-yield subchapter notes &amp; formula sheets (Bio, Chem, Phys)</span>
-                </li>
-                <li className="flex items-start gap-2 font-medium">
-                  <CheckCircle2 size={16} className="text-indigo-500 shrink-0 mt-0.5" />
-                  <span>Real-time 1v1 Battle Arena &amp; 24/7 AI Medical Doubt Solver</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="pt-8 space-y-3">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground font-semibold">MBBS Target Batch:</span>
-                <span className="text-lg font-black text-foreground">NPR 7,990 <span className="text-xs font-normal text-muted-foreground">/ 180 Days</span></span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Link
-                  href="/cee-medical-entrance"
-                  className="w-full py-3 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-bold text-xs text-center border border-indigo-500/30 transition-all flex items-center justify-center gap-1"
-                >
-                  <span>Explore CEE</span>
-                  <ArrowRight size={13} />
-                </Link>
-                <Link
-                  href="/checkout?plan=cee-mbbs-mastery-2026"
-                  className="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs text-center shadow-sm transition-all"
                 >
                   Join Batch
                 </Link>

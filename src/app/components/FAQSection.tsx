@@ -22,17 +22,17 @@ const FAQS = [
   {
     key: 'faq-4',
     q: 'How does Fonepay payment work?',
-    a: 'During checkout, a dynamic Fonepay QR code is generated instantly. You can scan and pay using any Nepali mobile banking app (NIC Asia, Nabil, Global IME, etc.) or digital wallet (eSewa, Khalti). Your access is activated immediately upon successful payment.',
+    a: 'During checkout, a dynamic Fonepay QR code is generated instantly. You can scan and pay directly using any of 50+ Nepali mobile banking apps (NIC Asia, Nabil, Global IME, Sanima, Prabhu, etc.). Your access is activated automatically the moment the transaction completes.',
   },
   {
     key: 'faq-5',
     q: 'Can I study on my mobile phone or tablet?',
-    a: 'Yes! Samyak Tutor is fully responsive on mobile browsers, and you can also use our official Samyak Guru mobile app to attend live classes, take timed mock tests, and read notes offline.',
+    a: 'Yes! Samyak Guru is 100% responsive across mobile, tablet, and desktop browsers, and also supports our progressive web app (PWA) to attend live classes, solve timed mock tests, and access notes.',
   },
   {
     key: 'faq-6',
     q: 'What is your refund policy?',
-    a: 'We offer a 7-day money-back guarantee. If you feel the platform does not meet your learning expectations, simply contact our support team within 7 days of enrollment for a full refund.',
+    a: 'We offer a 7-day 100% money-back guarantee for full course enrollments if less than 10% of the lessons have been watched and fewer than 2 full mock exams have been submitted. Prebooking tokens (Rs 300) are also 100% refundable prior to batch commencement.',
   },
 ];
 
