@@ -139,8 +139,8 @@ flowchart TD
 | :---: | :--- | :--- | :--- | :---: | :--- |
 | **Prompt 1** | **Project Inspection & Safe Baseline** | Map routes, verify setup, establish baseline build, create tracker | None | ✅ **COMPLETED** | Archive baseline; begin Prompt 2 |
 | **Prompt 2** | **Single Source of Truth for Courses & Offers** | Consolidate course IDs, pricing, comparison prices, Rs 300 deposit into unified model | Prompt 1 | ✅ **COMPLETED** | Single catalog & offer breakdown verified |
-| **Prompt 3** | **Repair Trust Claims, Support Details & Policies** | Remove unsubstantiated student counts, clarify AI vs human faculty, unify refund policy | Prompt 2 | 🟡 **READY** | Audit social proof, faculty bios, refund terms |
-| **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | ⚪ PENDING | Refactor `HeroSection`, `SubjectsSection`, spacing |
+| **Prompt 3** | **Repair Trust Claims, Support Details & Policies** | Remove unsubstantiated student counts, clarify AI vs human faculty, unify refund policy | Prompt 2 | ✅ **COMPLETED** | Verified trust claims, faculty, policies, tests |
+| **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | 🟡 **READY** | Refactor `HeroSection`, `SubjectsSection`, spacing |
 | **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | ⚪ PENDING | Audit navigation menus, mobile drawer, course filters |
 | **Prompt 6** | **Repair Signup, Login, Roles & Onboarding** | Enforce server-side role validation, fix session expiry, streamline onboarding | Prompt 5 | ⚪ PENDING | Review `@supabase/ssr` auth, redirect flows, onboarding |
 | **Prompt 7** | **Course Catalog & Complete Enrollment** | Detail pages with syllabus, real faculty, sample preview, link directly to checkout | Prompt 2, 6 | ⚪ PENDING | Connect `COURSES_DATA` to DB, wire enroll buttons |
@@ -226,5 +226,46 @@ Based on actual inspection of the current code and configuration:
 - [x] Automated test suite expanded to 207 tests (18 test suites) with `src/lib/courses/__tests__/courseOffers.test.ts` (all passing).
 - [x] Zero TypeScript compilation errors (`npx tsc --noEmit`).
 - [x] Clean Next.js 15.5.18 production build (exit code 0 across 237 routes).
-- [x] Ready to proceed to **Prompt 3: Repair trust claims, support details, and policies**.
+- [x] Completed **Prompt 2: Single source of truth for courses and offers**.
+
+---
+
+## 7. Acceptance Criteria Checklist for Prompt 3
+
+- [x] **Audited and eliminated unverified social proof and student metrics**:
+  - Replaced inflated metrics in `src/app/components/HeroSection.tsx` (`5,000+ Active Students`, `98.4% Pass Rate`, `180+ Scorers`, `4.9/5.0`) with verifiable platform deliverables (`15,000+ Topicwise High-Yield MCQs`, `10-Year Solved Board Question Bank`, `200-Q Mocks (-0.25 Marking)`, `24/7 AI Step-by-Step Doubt Solver`).
+  - Removed fabricated review counts (`5,270+`, `1,840+`, `2,450+`) from `HeroSection.tsx`, `TestimonialsSection.tsx`, `contact/page.tsx`, and `FeaturedInstructors.tsx`.
+  - Replaced unverified star rating decorations with verified teacher qualifications and credentials.
+- [x] **Separated human faculty from AI personas across the platform**:
+  - Reconciled faculty in `src/lib/courses/catalog.ts`, `src/lib/courses/landingData.ts`, and `src/app/components/FeaturedInstructors.tsx`:
+    - **Human Faculty**: Dr. Samyak Shrestha (MBBS IOM Maharajgunj, Chief Medical Educator), Pradeep Poudel Sir (M.Sc. Physics TU, Science Lead), Er. Bishal Adhikari (M.Sc. Physics TU, Physics Specialist), Er. Ramesh Karki (B.E. IOE Pulchowk, Math Lead), Subash Bhattarai (M.A. English, Certified IELTS Trainer), Nabin KC (Software Engineer, AI & Tech Educator).
+    - **AI Personas**: Coach Aria (Senior IELTS Speech Assessor, Cambridge Rubric Model), Samyak AI Doubt Solver.
+- [x] **Replaced broad or misleading "official" language with accurate descriptions**:
+  - `src/app/english/speaking/page.tsx`: Changed "Submit & Get Official IELTS Band Score" to "Submit & Get Estimated IELTS Band Score (AI Evaluator)".
+  - `src/app/english/syllabus/page.tsx`: Replaced "Designed by ex-British Council Senior Examiners" with "Structured by certified language faculty and aligned with Cambridge Assessment English, CEFR C1/C2 benchmarks, and public IELTS Band Descriptors".
+  - `src/components/portals/IeltsPortalView.tsx`: Changed "Official British Council General Training Mock Set 3" to "Cambridge-Style General Training Full Mock Set 3".
+  - Added explicit disclaimers in `HomepageFooter.tsx` and `HeroSection.tsx` clarifying that Samyak Guru is an independent digital learning platform aligned with CDC/NEB/MEC curricula and is not affiliated with or endorsed by MEC Nepal, NEB, or the British Council.
+- [x] **Reconciled refund policies and prebooking token terms**:
+  - Resolved policy contradiction in `src/app/refund/page.tsx` Section 3: confirmed the NPR 300 prebooking deposit is 100% credited toward total course tuition upon enrollment and 100% refundable upon request prior to batch commencement.
+  - Reconciled 7-day money-back guarantee terms for full course enrollments across `/refund`, FAQ schemas, and course catalog.
+- [x] **Fixed non-canonical and broken legal URLs**:
+  - Fixed `/refund-policy` and `/privacy-policy` links across `HomepageFooter.tsx`, `FonepayCheckout.tsx`, and `contact/page.tsx` to canonical `/refund` and `/privacy`.
+  - Cleaned non-canonical redirects from `src/app/sitemap.ts`.
+- [x] **Eliminated artificial urgency & misleading countdown timers**:
+  - Replaced rolling 6-day `localStorage` countdown in `src/app/prebook/components/PrebookClient.tsx` with fixed cohort target launch date.
+  - Reconciled prebook banner copy from stale `Rs 2,999` to canonical catalog pricing (`Rs 2,299` total fee, `Rs 4,990` regular price, `Rs 2,691` total savings).
+- [x] **Cleaned Schema.org structured data (JSON-LD)**:
+  - Removed unverified `aggregateRating` blocks from `getFeaturedCoursesSchema()`, `getProductPricingSchema()`, and `getTestimonialsReviewsSchema()` in `src/lib/seo/structuredData.ts`.
+  - Reconciled payment methods in FAQ schemas to accurately state live Fonepay Dynamic QR and manual bank transfer support.
+- [x] **Validated phone formatting and external destinations**:
+  - Replaced dummy placeholder phone numbers (`9800000000`, `+977-1-4200000`) and wrong domains (`support@samyaktutor.com`) across `ActivatePlanClient.tsx`, `AccountManagementClient.tsx`, `api/mobile/config/route.ts`, `privacy/page.tsx`, and `profile/page.tsx`.
+  - Standardized on canonical `SUPPORT_CONFIG` (`+977 9709066151`, Old Baneshwor, Kathmandu, Nepal).
+  - Fixed WhatsApp link generator to prevent duplicate `+977+977` prefixes.
+  - Reconciled course validity duration for `ai-python-course` in `landingData.ts` (60 Days).
+- [x] **Verification & Test Coverage**:
+  - Automated test suite expanded to 211 tests (18 test suites) with new suite `Trust Claims, Support Details & Policy Integrity (Prompt 3 Verification)` (all 211 passing).
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+  - Next.js production build succeeded with exit code 0 across 237 routes.
+- [x] Ready to proceed to **Prompt 4: Coherent visual system and homepage**.
+
 

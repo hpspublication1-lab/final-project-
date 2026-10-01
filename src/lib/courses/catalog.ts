@@ -206,8 +206,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
       { name: 'Mental Agility Test (MAT)', chaptersCount: 10, icon: '🧠' },
     ],
     faculty: [
-      { name: 'Dr. Samyak Shrestha', role: 'Chief Medical Educator', qualification: 'MBBS (IOM Maharajgunj), CEE Top 10 Ranker', verified: true },
-      { name: 'Er. Aakash Sharma', role: 'Senior Physics Faculty', qualification: 'M.Tech, 12+ Years Medical Entrance Specialist', verified: true },
+      { name: 'Dr. Samyak Shrestha', role: 'Chief Medical Educator', qualification: 'MBBS (IOM Maharajgunj), CEE Entrance Specialist', verified: true },
+      { name: 'Er. Bishal Adhikari', role: 'Physics Entrance Specialist', qualification: 'M.Sc. Physics (TU), 10+ Yrs Entrance Training', verified: true },
     ],
     batchSchedule: {
       batchName: 'MECEE 2026 Super Batch',

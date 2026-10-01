@@ -134,7 +134,7 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
 
                   <p className="text-[11px] text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
                     <ShieldCheck size={13} className="text-emerald-500" />
-                    <span>Fonepay Accepted · Instant Automatic Course Activation · 365 Days</span>
+                    <span>Fonepay Accepted · Instant Automatic Course Activation · {course.validityLabel}</span>
                   </p>
                 </div>
 
@@ -178,7 +178,7 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
                 <CreditCard size={18} className="text-primary shrink-0" />
                 <div>
                   <span className="font-bold text-foreground block">Fonepay Accepted</span>
-                  <span className="text-[10px] text-muted-foreground">eSewa, Khalti &amp; 50+ Banks</span>
+                  <span className="text-[10px] text-muted-foreground">50+ Mobile Banking Apps</span>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-card border border-border/60">
@@ -198,8 +198,8 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
               <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-card border border-border/60">
                 <Clock size={18} className="text-indigo-500 shrink-0" />
                 <div>
-                  <span className="font-bold text-foreground block">365 Days Validity</span>
-                  <span className="text-[10px] text-muted-foreground">Full 1-Year Unlocked</span>
+                  <span className="font-bold text-foreground block">{course.validityDays} Days Validity</span>
+                  <span className="text-[10px] text-muted-foreground">{course.validityLabel}</span>
                 </div>
               </div>
             </div>
@@ -374,7 +374,7 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
               <span className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 font-mono">TRANSPARENT PRICING</span>
               <h2 className="text-3xl font-black text-foreground">Enroll in {course.seoTitle.split('|')[0]}</h2>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Get 365 days of full course access with Fonepay accepted dynamic QR checkout.
+                Get {course.validityLabel} with Fonepay accepted dynamic QR checkout.
               </p>
             </div>
 
@@ -387,7 +387,7 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
                   NPR {course.price.toLocaleString()}
                   <span className="text-xs font-normal text-muted-foreground"> / one-time</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Full course access for 1 year (365 days)</p>
+                <p className="text-xs text-muted-foreground">Full course access ({course.validityLabel})</p>
               </div>
 
               <ul className="space-y-2.5 text-xs text-muted-foreground border-t border-b border-border py-4">
@@ -434,7 +434,7 @@ export default function CourseLandingPageClient({ course }: { course: CourseLand
                     <span>256-Bit Encrypted Fonepay Dynamic QR Checkout</span>
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    Need help? <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="font-bold underline text-foreground">WhatsApp Support +977 {WHATSAPP_NUMBER}</a>
+                    Need help? <a href={`https://wa.me/${WHATSAPP_NUMBER}`} target="_blank" rel="noopener noreferrer" className="font-bold underline text-foreground">WhatsApp Academic Counseling: {SUPPORT_CONFIG.phoneDisplay}</a>
                   </p>
                 </div>
               </div>

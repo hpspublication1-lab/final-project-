@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { KeyRound, CheckCircle2, AlertCircle, Loader2, MessageCircle, ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
+import { SUPPORT_CONFIG } from '@/lib/config/support';
 
 type ActivationState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -193,7 +194,7 @@ export default function ActivatePlanClient() {
                   Don&apos;t have a code yet?
                 </p>
                 <a
-                  href="https://wa.me/9779800000000?text=Hi!%20I%20want%20to%20get%20an%20activation%20code%20for%20Samyak%20CEE%20Mastery."
+                  href={`https://wa.me/${SUPPORT_CONFIG.whatsappNumber}?text=${encodeURIComponent('Hi! I want to get an activation code for Samyak CEE Mastery.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-secondary w-full justify-center flex items-center gap-2"

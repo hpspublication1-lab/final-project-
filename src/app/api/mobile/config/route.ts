@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { SUPPORT_CONFIG } from '@/lib/config/support';
+import { PAYMENT_METHODS } from '@/lib/config/payments';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   const config = {
-    appName: 'Samyak Tutor',
+    appName: 'Samyak Guru',
     minAppVersion: '1.0.0',
     latestAppVersion: '1.2.0',
     forceUpdate: false,
@@ -21,15 +23,13 @@ export async function GET() {
       doubts: true,
     },
     activePaymentGateways: [
-      { id: 'fonepay', name: 'Fonepay Direct / Dynamic QR', enabled: true },
-      { id: 'esewa', name: 'eSewa Mobile Wallet', enabled: true },
-      { id: 'manual_bank', name: 'Direct Bank Deposit (Nepal Bank / Nabil)', enabled: true },
+      { id: 'fonepay', name: 'Fonepay Dynamic QR (50+ Banks)', enabled: PAYMENT_METHODS.fonepay },
     ],
     supportChannels: {
-      whatsapp: '+977-9800000000',
-      email: 'support@samyaktutor.com',
-      phone: '+977-1-4200000',
-      hours: 'Sun–Fri 07:00 – 20:00 NPT',
+      whatsapp: SUPPORT_CONFIG.phone,
+      email: SUPPORT_CONFIG.email,
+      phone: SUPPORT_CONFIG.phone,
+      hours: SUPPORT_CONFIG.hours,
     },
     emergencyNotice: null,
   };

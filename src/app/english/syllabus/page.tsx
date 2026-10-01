@@ -170,7 +170,7 @@ export default function WorldClassIeltsSyllabusPage() {
               <span className="text-amber-600">Masterclass Syllabus</span>
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Designed by ex-British Council and IDP Senior Examiners. Aligned with Cambridge Assessment English, CEFR C1/C2 benchmarks, and official Band 9.0 assessment descriptors.
+              Structured by certified language faculty and aligned with Cambridge Assessment English, CEFR C1/C2 benchmarks, and public IELTS Band Descriptors.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">

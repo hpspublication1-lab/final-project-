@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { PAYMENT_METHODS as PAY_FLAGS } from '@/lib/config/payments';
+import { SUPPORT_CONFIG } from '@/lib/config/support';
 import {
   User, Lock, Shield, Download, KeyRound, CreditCard,
   Loader2, CheckCircle2, AlertCircle, Eye, EyeOff,
@@ -16,7 +17,7 @@ import {
 } from 'lucide-react';
 
 
-const WHATSAPP_NUMBER = '9779800000000';
+const WHATSAPP_NUMBER = SUPPORT_CONFIG.whatsappNumber;
 
 interface ActivationCodeRecord {
   id: string;

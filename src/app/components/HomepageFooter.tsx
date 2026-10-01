@@ -80,8 +80,8 @@ const footerLinks = [
       { key: 'fl-faq', label: 'Frequently Asked Questions (FAQ)', href: '/faq' },
       { key: 'fl-contact', label: 'Contact Us', href: '/contact' },
       { key: 'fl-terms', label: 'Terms of Service', href: '/terms' },
-      { key: 'fl-privacy', label: 'Privacy Policy', href: '/privacy-policy' },
-      { key: 'fl-refund', label: 'Refund Policy', href: '/refund-policy' },
+      { key: 'fl-privacy', label: 'Privacy Policy', href: '/privacy' },
+      { key: 'fl-refund', label: 'Refund Policy', href: '/refund' },
     ],
   },
 ];
@@ -120,7 +120,6 @@ export default function HomepageFooter() {
               >
                 <MapPin size={14} className="shrink-0 text-primary group-hover:scale-110 transition-transform" />
                 <span>{SUPPORT_CONFIG.location}</span>
-                <span className="text-[10px] text-amber-400 font-bold ml-1">★ 4.9 on Google</span>
               </a>
             </div>
             <div className="flex items-center gap-2 pt-1 flex-wrap">
@@ -161,6 +160,13 @@ export default function HomepageFooter() {
               </ul>
             </div>
           ))}
+        </div>
+
+        {/* Exam Authority Disclaimer */}
+        <div className="border-t border-white/10 pt-6 pb-4 text-[11px] text-white/50 leading-relaxed space-y-1">
+          <p>
+            <strong className="text-white/70">Academic Disclaimer:</strong> Samyak Guru (Samyak CEE Mastery) is an independent online educational preparation platform. All curricula, question blueprints, and examination guidelines are aligned with publicly issued curricula from the Curriculum Development Centre (CDC) Nepal, National Examination Board (NEB), and Medical Education Commission (MEC) Nepal. Samyak Guru is not affiliated with, endorsed by, sponsored by, or officially associated with MEC Nepal, NEB, or the British Council.
+          </p>
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">

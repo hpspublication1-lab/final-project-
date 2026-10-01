@@ -15,51 +15,51 @@ const WORKFLOW_CASE_STUDIES = [
     color: 'bg-primary/20 text-primary',
     quote: 'The weak-topic detection feature pinpointed the exact sub-chapters of Cell Biology where I was making mistakes. Focusing practice on those targeted topics systematically improved my accuracy from 62% to 84%.',
     workflowTag: 'Targeted Topic Practice',
-    verifiedSource: 'Trustpilot Verified',
+    verifiedSource: 'CEE Prep Cohort',
     stars: 5,
-    date: '2 weeks ago',
+    date: '2026 Batch',
   },
   {
     key: 'test-2',
     name: 'Aayush Adhikari',
-    college: 'SEE Class 10 Student (GPA 3.95)',
+    college: 'SEE Class 10 Student',
     subject: 'Grade 10 Science & Opt Math',
     sectorBadge: 'SEE Class 10',
     initial: 'A',
     color: 'bg-emerald-500/20 text-emerald-600',
     quote: 'The model answer sheets and 4-way CDC question bank helped me structure my handwritten derivations clearly for board examiners. Scored A+ in both Science and Math!',
     workflowTag: 'Model Answer Sheet Derivations',
-    verifiedSource: 'Google Review',
+    verifiedSource: 'SEE Board Batch',
     stars: 5,
-    date: '1 month ago',
+    date: '2081/2082 Batch',
   },
   {
     key: 'test-3',
     name: 'Pooja Superior',
-    college: 'IELTS Academic (Band 8.0)',
+    college: 'IELTS Academic Aspirant',
     subject: 'IELTS Speaking & Writing',
     sectorBadge: 'English & IELTS',
     initial: 'P',
     color: 'bg-amber-500/20 text-amber-600',
     quote: 'The AI Speaking Evaluator gave instant feedback on filler words, WPM speech rate, and pronunciation tips. Daily 15-minute drills significantly built my fluency without needing a physical tutor.',
-    workflowTag: 'AI 10-Stage Acoustic Feedback',
-    verifiedSource: 'Trustpilot Verified',
+    workflowTag: 'AI Acoustic Feedback',
+    verifiedSource: 'IELTS Study Lab',
     stars: 5,
-    date: '3 weeks ago',
+    date: '2026 Cohort',
   },
   {
     key: 'test-4',
     name: 'Rohan Gurung',
-    college: 'Tech & Freelance Aspirant',
+    college: 'Digital Skills Aspirant',
     subject: 'Python & AI Prompts',
     sectorBadge: 'Digital & AI',
     initial: 'R',
     color: 'bg-purple-500/20 text-purple-600',
     quote: 'The structured Python project labs and ChatGPT prompt engineering playbooks gave me practical, real-world skills to build small automation scripts and land remote freelance contracts.',
     workflowTag: 'Project-Based Coding Labs',
-    verifiedSource: 'Facebook Community',
+    verifiedSource: 'AI Skills Cohort',
     stars: 5,
-    date: '1 month ago',
+    date: '2026 Cohort',
   },
 ];
 
@@ -71,21 +71,21 @@ export default function TestimonialsSection() {
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-black">
-            <Sparkles size={14} /> Verified Student Success &amp; Reviews
+            <Sparkles size={14} /> Student Study Workflows &amp; Feedback
           </div>
           <h2 className="text-2xl sm:text-4xl font-black text-foreground tracking-tight">
-            Trusted by 5,000+ Students Across Nepal
+            How Students Learn with Samyak
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Authentic, verifiable reviews from students preparing for SEE, CEE, IELTS, and digital careers.
+            Authentic study workflows and experiences from students preparing for SEE, CEE, IELTS, and digital skills.
           </p>
         </div>
 
-        {/* External Trustbar (Trustpilot + Google + Facebook) */}
+        {/* External Trust & Community Links */}
         <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
           {/* Trustpilot Box */}
           <a
-            href="https://www.trustpilot.com/evaluate/samyakcee.com"
+            href={SUPPORT_CONFIG.trustpilotReviewLink}
             target="_blank"
             rel="noopener noreferrer"
             className="p-4 rounded-2xl bg-card border border-border hover:border-emerald-500/40 p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition-all group"
@@ -98,11 +98,11 @@ export default function TestimonialsSection() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black text-foreground">Trustpilot</span>
                   <span className="text-[10px] font-mono font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.2 rounded">
-                    EXCELLENT
+                    PROFILE
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-emerald-500 text-xs">
-                  {'★★★★★'} <span className="text-[11px] font-bold text-muted-foreground ml-1">4.9 / 5.0</span>
+                <div className="text-xs text-muted-foreground pt-0.5">
+                  Read &amp; Share Student Reviews
                 </div>
               </div>
             </div>
@@ -126,22 +126,22 @@ export default function TestimonialsSection() {
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black text-foreground">Google Business</span>
                   <span className="text-[10px] font-mono font-bold text-amber-600 bg-amber-500/10 px-1.5 py-0.2 rounded">
-                    VERIFIED
+                    CAMPUS
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-amber-500 text-xs">
-                  {'★★★★★'} <span className="text-[11px] font-bold text-muted-foreground ml-1">4.9 (5,270+)</span>
+                <div className="text-xs text-muted-foreground pt-0.5">
+                  Old Baneshwor, Kathmandu
                 </div>
               </div>
             </div>
             <span className="text-[11px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-              Review →
+              View →
             </span>
           </a>
 
           {/* Facebook Student Community Box */}
           <a
-            href="https://facebook.com/samyakguru"
+            href={SUPPORT_CONFIG.social.facebook}
             target="_blank"
             rel="noopener noreferrer"
             className="p-4 rounded-2xl bg-card border border-border hover:border-blue-500/40 p-4 flex items-center justify-between shadow-xs hover:shadow-sm transition-all group"
@@ -152,18 +152,18 @@ export default function TestimonialsSection() {
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black text-foreground">Facebook</span>
+                  <span className="text-xs font-black text-foreground">Facebook Page</span>
                   <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-500/10 px-1.5 py-0.2 rounded">
-                    98% POSITIVE
+                    COMMUNITY
                   </span>
                 </div>
-                <div className="flex items-center gap-1 text-blue-500 text-xs">
-                  {'★★★★★'} <span className="text-[11px] font-bold text-muted-foreground ml-1">4.8 / 5.0</span>
+                <div className="text-xs text-muted-foreground pt-0.5">
+                  Official Exam Updates &amp; Tips
                 </div>
               </div>
             </div>
             <span className="text-[11px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-              Join →
+              Follow →
             </span>
           </a>
         </div>

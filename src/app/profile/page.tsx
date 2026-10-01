@@ -43,7 +43,7 @@ export default function StudentProfilePage() {
   // Withdrawal Modal
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('1000');
-  const [paymentDetails, setPaymentDetails] = useState('eSewa ID: 9800000000');
+  const [paymentDetails, setPaymentDetails] = useState('');
 
   useEffect(() => {
     fetch('/api/profile/me')
@@ -337,6 +337,7 @@ export default function StudentProfilePage() {
                         type="text"
                         value={paymentDetails}
                         onChange={(e) => setPaymentDetails(e.target.value)}
+                        placeholder="e.g. Fonepay Mobile / eSewa ID (98XXXXXXXX)"
                         className="w-full p-3 rounded-xl bg-muted/30 border border-border text-foreground"
                       />
                     </div>

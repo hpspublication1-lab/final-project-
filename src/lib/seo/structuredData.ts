@@ -138,13 +138,6 @@ export function getFeaturedCoursesSchema() {
             url: `${BASE_URL}/checkout?plan=see-class-10-board-topper-batch`,
             validFrom: '2026-01-01',
           },
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.9',
-            reviewCount: '1840',
-            bestRating: '5',
-            worstRating: '1',
-          },
         },
       },
       {
@@ -176,13 +169,6 @@ export function getFeaturedCoursesSchema() {
             url: `${BASE_URL}/checkout?plan=cee-mbbs-mastery-2026`,
             validFrom: '2026-01-01',
           },
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.95',
-            reviewCount: '2450',
-            bestRating: '5',
-            worstRating: '1',
-          },
         },
       },
       {
@@ -213,13 +199,6 @@ export function getFeaturedCoursesSchema() {
             availability: 'https://schema.org/InStock',
             url: `${BASE_URL}/checkout?plan=english-ielts-target-8-mastery`,
             validFrom: '2026-01-01',
-          },
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: '4.88',
-            reviewCount: '980',
-            bestRating: '5',
-            worstRating: '1',
           },
         },
       },
@@ -284,13 +263,6 @@ export function getProductPricingSchema() {
         url: `${BASE_URL}/checkout?plan=cee-mbbs-mastery-2026`,
       },
     ],
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '5270',
-      bestRating: '5',
-      worstRating: '1',
-    },
   };
 }
 
@@ -302,13 +274,6 @@ export function getTestimonialsReviewsSchema() {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: 'Samyak Guru Education Platform',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '5270',
-      bestRating: '5',
-      worstRating: '1',
-    },
     review: [
       {
         '@type': 'Review',
@@ -388,7 +353,7 @@ export function getHomepageFAQSchema() {
         name: 'What payment methods are supported in Nepal?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We support all major Nepal payment methods including Fonepay Dynamic QR (connect direct from any mobile banking app), eSewa, Khalti, IME Pay, and direct bank transfers with 100% instant automated course activation.',
+          text: 'We accept Fonepay Dynamic QR (compatible with 50+ Nepal mobile banking apps) with instant automated course activation, as well as direct bank transfers with manual payment verification.',
         },
       },
       {
@@ -516,7 +481,7 @@ export function getFullFAQSchema() {
         name: 'What payment methods are supported in Nepal?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'We accept Fonepay Dynamic QR (compatible with all Nepal mobile banking apps), eSewa, Khalti, IME Pay, ConnectIPS, and direct bank transfers. Course access is activated instantly via automated server-side verification.',
+          text: 'We accept Fonepay Dynamic QR (compatible with 50+ Nepal mobile banking apps) for automated activation, as well as direct bank transfers. Manual verification is available for alternative bank deposits.',
         },
       },
       {
@@ -564,7 +529,7 @@ export function getFullFAQSchema() {
         name: 'Is personal 1-on-1 human doubt support available?',
         acceptedAnswer: {
           '@type': 'Answer',
-          text: 'Yes. In addition to 24/7 instant AI tutor support, Pro & Master plan students can submit complex doubts to our faculty board (Dr. Samyak Shrestha, Pradeep Poudel Sir, etc.) during weekly live doubt-clearing sessions.',
+          text: 'Yes. In addition to 24/7 instant AI tutor support, Pro & Master plan students can submit complex doubts to our faculty board (Dr. Samyak Shrestha, Pradeep Poudel Sir, Er. Bishal Adhikari, Er. Ramesh Karki) during weekly live doubt-clearing sessions.',
         },
       },
       {

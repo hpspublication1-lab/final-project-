@@ -53,7 +53,7 @@ export default function IeltsPortalView({
 
   const fullMocks = [
     { id: 'im-1', title: 'Cambridge IELTS 19 Academic Full Test 1 (All 4 Skills)', time: '2h 45m', badge: 'NEW 2026' },
-    { id: 'im-2', title: 'Official British Council General Training Mock Set 3', time: '2h 45m', badge: 'GT EXAM' },
+    { id: 'im-2', title: 'Cambridge-Style General Training Full Mock Set 3', time: '2h 45m', badge: 'GT EXAM' },
     { id: 'im-3', title: 'IELTS Band 8.5 Speed Reading & Audio Drill 4', time: '60 min', badge: 'L+R' },
   ];
 

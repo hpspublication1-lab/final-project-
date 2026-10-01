@@ -381,7 +381,7 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
                           By continuing, you agree to Samyak CEE{' '}
                           <Link href="/terms" target="_blank" className="underline hover:text-foreground">Terms</Link>{' '}
                           &amp;{' '}
-                          <Link href="/refund-policy" target="_blank" className="underline hover:text-foreground">Refund Policy</Link>.
+                          <Link href="/refund" target="_blank" className="underline hover:text-foreground">Refund Policy</Link>.
                         </p>
                       </div>
                     </div>

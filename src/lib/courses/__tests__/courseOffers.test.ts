@@ -7,6 +7,12 @@ import {
 } from '@/lib/courses/catalog';
 import { PLAN_PRICES } from '@/lib/payments/gateways';
 import { COURSE_LANDING_DATA } from '@/lib/courses/landingData';
+import { SUPPORT_CONFIG } from '@/lib/config/support';
+import {
+  getFeaturedCoursesSchema,
+  getProductPricingSchema,
+  getTestimonialsReviewsSchema,
+} from '@/lib/seo/structuredData';
 
 describe('Authoritative Course & Offer Catalog (Prompt 2 Source of Truth)', () => {
   it('enforces mathematical consistency on the crash-course prebooking offer', () => {
@@ -106,3 +112,54 @@ describe('Authoritative Course & Offer Catalog (Prompt 2 Source of Truth)', () =
     expect(unknownBreakdown).toBeNull();
   });
 });
+
+describe('Trust Claims, Support Details & Policy Integrity (Prompt 3 Verification)', () => {
+  it('validates canonical support configuration contains real contact endpoints and no dummy placeholders', () => {
+    expect(SUPPORT_CONFIG.phone).toBe('+977 9709066151');
+    expect(SUPPORT_CONFIG.whatsappNumber).toBe('9779709066151');
+    expect(SUPPORT_CONFIG.whatsappLink).toContain('9779709066151');
+    expect(SUPPORT_CONFIG.whatsappLink).not.toContain('9800000000');
+    expect(SUPPORT_CONFIG.location).toContain('Old Baneshwor, Kathmandu');
+    expect(SUPPORT_CONFIG.email).toBe('support@samyakcee.com.np');
+  });
+
+  it('verifies structured data schemas do not contain unverified aggregate ratings or fake review counts', () => {
+    const coursesSchema = getFeaturedCoursesSchema();
+    for (const listItem of coursesSchema.itemListElement) {
+      expect((listItem.item as Record<string, unknown>).aggregateRating).toBeUndefined();
+    }
+
+    const productSchema = getProductPricingSchema() as Record<string, unknown>;
+    expect(productSchema.aggregateRating).toBeUndefined();
+
+    const reviewsSchema = getTestimonialsReviewsSchema() as Record<string, unknown>;
+    expect(reviewsSchema.aggregateRating).toBeUndefined();
+  });
+
+  it('reconciles instructors across course landing data with verified faculty and AI personas', () => {
+    // CEE Medical instructors
+    const ceeInstructors = COURSE_LANDING_DATA['cee-medical-entrance'].instructors;
+    expect(ceeInstructors.some((i) => i.name === 'Dr. Samyak Shrestha')).toBe(true);
+    expect(ceeInstructors.some((i) => i.name === 'Er. Bishal Adhikari')).toBe(true);
+
+    // SEE Class 10 instructors
+    const seeInstructors = COURSE_LANDING_DATA['see-class-10'].instructors;
+    expect(seeInstructors.some((i) => i.name === 'Pradeep Poudel Sir')).toBe(true);
+    expect(seeInstructors.some((i) => i.name === 'Er. Ramesh Karki')).toBe(true);
+
+    // IELTS separates human faculty from AI persona
+    const ieltsInstructors = COURSE_LANDING_DATA['ielts-preparation'].instructors;
+    expect(ieltsInstructors.some((i) => i.name === 'Subash Bhattarai')).toBe(true);
+    expect(ieltsInstructors.some((i) => i.name.includes('Coach Aria') && i.name.includes('AI'))).toBe(true);
+  });
+
+  it('ensures course access duration in landing metadata matches validityDays without contradiction', () => {
+    const pythonCourse = COURSE_LANDING_DATA['ai-python-course'];
+    expect(pythonCourse.validityDays).toBe(60);
+
+    const accessStat = pythonCourse.stats.find((s) => s.label === 'Course Access');
+    expect(accessStat).toBeDefined();
+    expect(accessStat!.value).toBe('60 Days');
+  });
+});
+

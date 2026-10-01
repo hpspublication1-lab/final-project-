@@ -161,29 +161,29 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Social Proof & Trust Metrics Bar */}
-        <div aria-label="Platform statistics" className="pt-12 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-6 border-t border-border/60 text-center">
+        {/* Verified Academic Platform Features Bar */}
+        <div aria-label="Platform deliverables" className="pt-12 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-6 border-t border-border/60 text-center">
           <div className="space-y-0.5">
-            <div className="text-xl sm:text-2xl font-black text-foreground">5,000+</div>
-            <div className="text-xs text-muted-foreground font-medium">Active Students in Nepal</div>
+            <div className="text-xl sm:text-2xl font-black text-foreground">15,000+</div>
+            <div className="text-xs text-muted-foreground font-medium">Topicwise High-Yield MCQs</div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-xl sm:text-2xl font-black text-emerald-600">98.4%</div>
-            <div className="text-xs text-muted-foreground font-medium">SEE Board Pass Rate</div>
+            <div className="text-xl sm:text-2xl font-black text-emerald-600">10-Year</div>
+            <div className="text-xs text-muted-foreground font-medium">Solved Board Question Bank</div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-xl sm:text-2xl font-black text-indigo-600">180+</div>
-            <div className="text-xs text-muted-foreground font-medium">CEE Medical Scorers</div>
+            <div className="text-xl sm:text-2xl font-black text-indigo-600">200-Q Mocks</div>
+            <div className="text-xs text-muted-foreground font-medium">MEC Blueprint (-0.25 Marking)</div>
           </div>
           <div className="space-y-0.5">
-            <div className="text-xl sm:text-2xl font-black text-amber-500">4.9 / 5.0</div>
-            <div className="text-xs text-muted-foreground font-medium">Student Satisfaction</div>
+            <div className="text-xl sm:text-2xl font-black text-amber-500">24/7</div>
+            <div className="text-xs text-muted-foreground font-medium">AI Step-by-Step Doubt Solver</div>
           </div>
         </div>
 
-        {/* Social Proof Disclaimer */}
-        <p className="text-center text-[10px] text-muted-foreground/60 pt-3 max-w-xl mx-auto">
-          Platform metrics from 2024–2026 cohorts. Individual results vary based on study hours and consistency.
+        {/* Academic Affiliation Disclaimer */}
+        <p className="text-center text-[10px] text-muted-foreground/60 pt-3 max-w-2xl mx-auto leading-relaxed">
+          Samyak Guru is an independent digital learning platform. All examination curricula, subject weightages, and marking schemes are based on official guidelines published by CDC Nepal and the Medical Education Commission (MEC) Nepal. Samyak Guru is not affiliated with or endorsed by MEC Nepal or NEB.
         </p>
 
       </div>

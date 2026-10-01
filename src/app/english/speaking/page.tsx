@@ -619,7 +619,7 @@ export default function IeltsSpeakingLivePage() {
                 ) : (
                   <>
                     <Sparkles size={18} />
-                    <span>Submit &amp; Get Official IELTS Band Score</span>
+                    <span>Submit &amp; Get Estimated IELTS Band Score (AI Evaluator)</span>
                   </>
                 )}
               </button>

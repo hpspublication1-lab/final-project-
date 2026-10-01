@@ -78,25 +78,24 @@ const FAQS = [
 // Countdown
 // ═══════════════════════════════════════════════════════════════════════════
 
-function useCountdown() {
-  const [targetMs] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('prebook_offer_deadline_v2');
-      if (saved && !isNaN(Number(saved))) {
-        return Number(saved);
-      }
-      const newTarget = Date.now() + 6 * 24 * 60 * 60 * 1000;
-      localStorage.setItem('prebook_offer_deadline_v2', String(newTarget));
-      return newTarget;
-    }
-    return Date.now() + 6 * 24 * 60 * 60 * 1000;
-  });
+// Fixed Target Cohort Prebooking Window (Target MECEE 2026 Batch Launch)
+const PREBOOK_COHORT_TARGET_MS = new Date('2026-11-30T23:59:59+05:45').getTime();
 
-  const [left, setLeft] = useState({ days: 6, hours: 0, minutes: 0, seconds: 0, done: false });
+function useCountdown() {
+  const [left, setLeft] = useState(() => {
+    const diff = Math.max(0, PREBOOK_COHORT_TARGET_MS - Date.now());
+    return {
+      days: Math.floor(diff / 86400000),
+      hours: Math.floor((diff % 86400000) / 3600000),
+      minutes: Math.floor((diff % 3600000) / 60000),
+      seconds: Math.floor((diff % 60000) / 1000),
+      done: diff <= 0,
+    };
+  });
 
   useEffect(() => {
     const tick = () => {
-      const diff = targetMs - Date.now();
+      const diff = PREBOOK_COHORT_TARGET_MS - Date.now();
       if (diff <= 0) {
         setLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, done: true });
         return;
@@ -112,7 +111,7 @@ function useCountdown() {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [targetMs]);
+  }, []);
 
   return left;
 }
@@ -494,7 +493,7 @@ export default function PrebookClient() {
               Pay <span className="text-primary underline decoration-primary/40">Rs 300</span> Today
             </div>
             <p className="text-xs text-muted-foreground leading-snug">
-              Secure your 45-Day Crash Course at <strong>Rs 2,299</strong> (Save Rs 700 before price increases to Rs 2,999).
+              Secure your 45-Day Crash Course at <strong>Rs {COURSE_PRICE.toLocaleString()}</strong> (Save Rs {SAVINGS.toLocaleString()} off regular Rs {ORIGINAL_PRICE.toLocaleString()}).
             </p>
             <button
               onClick={scrollToReserve}

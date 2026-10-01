@@ -223,7 +223,7 @@ export default function PrivacyPolicyPage() {
             <div className="p-4 rounded-2xl bg-card border border-border space-y-1 text-xs">
               <p><strong>Platform:</strong> Samyak Guru &amp; Samyak CEE Mastery</p>
               <p><strong>Email:</strong> <a href="mailto:privacy@samyakcee.com" className="text-primary hover:underline font-bold">privacy@samyakcee.com</a> / <a href="mailto:support@samyakcee.com" className="text-primary hover:underline font-bold">support@samyakcee.com</a></p>
-              <p><strong>Helpline:</strong> +977-9800000000 / Kathmandu, Nepal</p>
+              <p><strong>Helpline / WhatsApp:</strong> +977 9709066151 / Old Baneshwor, Kathmandu, Nepal</p>
             </div>
           </section>
 

@@ -143,9 +143,9 @@ export default function RefundPolicyPage() {
             <p>
               The <strong>NPR 300 Prebooking Token</strong> is an early-bird reservation deposit that guarantees your seat in upcoming live cohorts and locks in exclusive launch discounts (up to 50% off).
             </p>
-            <div className="p-4 rounded-2xl bg-card border border-border text-xs space-y-1.5">
-              <p><strong>Credit Guarantee:</strong> 100% of your NPR 300 token is automatically deducted as an upfront credit from your final batch enrollment balance.</p>
-              <p><strong>Non-Refundable in Cash:</strong> Because prebooking reserves a limited live cohort seat and locks maximum early-bird pricing, prebooking tokens are non-refundable in cash, but remain valid for enrollment across any batch for 12 months.</p>
+            <div className="p-4 rounded-2xl bg-card border border-border text-xs space-y-2">
+              <p><strong>100% Course Fee Credit:</strong> 100% of your NPR 300 reservation deposit is automatically credited toward your total course fee. Upon batch launch, you only pay the remaining balance of NPR 1,999 (saving NPR 2,691 off the regular NPR 4,990 fee).</p>
+              <p><strong>Cancellation Prior to Batch Launch:</strong> If you request cancellation before your registered live cohort commences, your NPR 300 reservation deposit is 100% refundable with no questions asked. Once live batch classes begin, the deposit is non-refundable in cash but remains fully transferable as course credit valid for 12 months.</p>
             </div>
           </section>
 

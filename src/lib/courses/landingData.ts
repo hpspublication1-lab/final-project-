@@ -121,7 +121,7 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { title: 'Mental Aptitude Test (MAT)', desc: 'Numerical Reasoning, Logical Patterns, Verbal Fluency & Spatial Test.', lessonsCount: 20, topics: ['Numerical Series & Logic', 'Verbal Reasoning Drills', 'Spatial & Diagram Patterns', 'Speed Calculation Techniques'] },
     ],
     instructors: [
-      { name: 'Dr. Rohan Shrestha', title: 'Senior Biology Faculty', credentials: 'MBBS (IOM Maharajgunj), 8+ Yrs CEE Coaching', bio: 'Specialist in Human Physiology and High-Yield Botany diagrams for CEE toppers.', avatar: '/images/instructors/rohan.jpg' },
+      { name: 'Dr. Samyak Shrestha', title: 'Chief Medical Educator', credentials: 'MBBS (IOM Maharajgunj), CEE Entrance Specialist', bio: 'Specialist in Human Physiology, High-Yield Botany, and high-frequency entrance MCQ breakdowns.', avatar: '/images/instructors/samyak.jpg' },
       { name: 'Er. Bishal Adhikari', title: 'Physics Entrance Specialist', credentials: 'M.Sc. Physics (TU), 10+ Yrs Entrance Training', bio: 'Pioneer of shortcut derivation techniques and rapid numerical solving formulas for CEE.', avatar: '/images/instructors/bishal.jpg' },
     ],
     testimonials: [
@@ -190,8 +190,8 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { title: 'English & Nepali Grammar', desc: 'Reading Comprehension, Essay Writing, Grammar Drills & Literature.', lessonsCount: 28, topics: ['Grammar Rules & Essay Structure', 'Seen & Unseen Passages', 'व्याकरण र शुद्धलेखन', 'कथा, कविता र निबन्ध'] },
     ],
     instructors: [
-      { name: 'Suman Paudel', title: 'Head of SEE Science', credentials: 'M.Sc. Chemistry, 12+ Yrs Board Teaching', bio: 'Has guided over 5,000 students to A+ grade in Class 10 Science.', avatar: '/images/instructors/suman.jpg' },
-      { name: 'Nabin Khadka', title: 'Senior Mathematics Lead', credentials: 'M.Sc. Mathematics, Author of SEE Prep Guide', bio: 'Master of shortcut geometry proofs and numerical problem solving.', avatar: '/images/instructors/nabin.jpg' },
+      { name: 'Pradeep Poudel Sir', title: 'Head of SEE Science', credentials: 'M.Sc. Physics (TU), 12+ Yrs Board Teaching', bio: 'Secondary education specialist in Class 10 Science, Opt Math derivations, and marking rubrics.', avatar: '/images/instructors/pradeep.jpg' },
+      { name: 'Er. Ramesh Karki', title: 'Senior Mathematics Lead', credentials: 'B.E. (IOE Pulchowk), Author of SEE Topper Series', bio: 'Master of shortcut geometry proofs and numerical problem solving.', avatar: '/images/instructors/ramesh.jpg' },
     ],
     testimonials: [
       { name: 'Samyak Giri', role: 'SEE 2025 Student', score: 'GPA 3.95 in SEE', text: 'The AI Handwritten Answer Checker showed me exactly where I was losing marks in Science long questions. Samyak made SEE revision effortless!', avatar: '🎓' },
@@ -259,8 +259,8 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { title: 'IELTS Speaking Confidence', desc: 'Part 1, 2 Cue Card & Part 3 Discussion drills.', lessonsCount: 16, topics: ['Part 1 Fluency & Confidence', 'Part 2 Cue Card Strategy', 'Part 3 Abstract Discussion', 'Pronunciation & Intonation'] },
     ],
     instructors: [
-      { name: 'Sarah Jenkins', title: 'Certified IELTS Trainer', credentials: 'CELTA Certified, Ex-British Council Examiner', bio: 'Over 10 years experience training South Asian candidates for Band 8.0+ success.', avatar: '/images/instructors/sarah.jpg' },
-      { name: 'Subash Bhattarai', title: 'Senior English Faculty', credentials: 'M.A. English Literature, Band 8.5 Achiever', bio: 'Specialist in Task 2 essay structuring and advanced academic vocabulary.', avatar: '/images/instructors/subash.jpg' },
+      { name: 'Subash Bhattarai', title: 'Senior English Language Faculty', credentials: 'M.A. English Literature, Certified IELTS Trainer', bio: 'Specialist in Task 2 essay structuring, academic collocations, and speaking fluency drills.', avatar: '/images/instructors/subash.jpg' },
+      { name: 'Coach Aria (AI Assessor)', title: 'AI Speech & Rubric Evaluator', credentials: 'Cambridge IELTS Band Descriptors Calibration', bio: 'Interactive voice persona delivering real-time acoustic and rubric feedback across Fluency, Vocabulary, Grammar, and Pronunciation.', avatar: '/images/instructors/aria.jpg' },
     ],
     testimonials: [
       { name: 'Prashant Adhikari', role: 'Student at University of Sydney', score: 'Overall Band 8.0', text: 'The AI Writing Evaluator pinpointed my coherence errors in Task 2 essays immediately. Raised my score from 6.0 to 7.5 in just 3 weeks!', avatar: '✈️' },
@@ -368,7 +368,7 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { label: 'Python & AI Modules', value: '10+' },
       { label: 'Hands-On Projects', value: '6 Projects' },
       { label: 'API Integrations', value: 'OpenAI, Gemini' },
-      { label: 'Course Access', value: '365 Days' },
+      { label: 'Course Access', value: '60 Days' },
     ],
     problemStatement: {
       title: 'Why Traditional Programming Courses Feel Outdated',
@@ -407,7 +407,7 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
     faqs: [
       { question: 'Is this suitable for complete beginners in coding?', answer: 'Yes! We start from absolute scratch with Python variables and build up to AI API integrations.' },
       { question: 'What software or laptop specs do I need?', answer: 'Any standard laptop (Windows, Mac, or Linux) with an internet connection will work. We use free tools like VS Code and Python 3.x.' },
-      { question: 'How long do I have access to the course?', answer: 'You get full 1-year (365 days) access to all video lessons, code repositories, and project templates.' },
+      { question: 'How long do I have access to the course?', answer: 'You get full 60-day access to all video lessons, code repositories, and project templates.' },
     ],
   },
 };

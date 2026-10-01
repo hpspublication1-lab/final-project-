@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Star, Award, GraduationCap, ArrowRight, Sparkles } from 'lucide-react';
+import { Award, GraduationCap, ArrowRight, Sparkles } from 'lucide-react';
 
 const INSTRUCTORS = [
   {
@@ -12,7 +12,7 @@ const INSTRUCTORS = [
     sectorBadge: 'bg-primary/10 text-primary dark:text-primary-light border-primary/30 font-bold',
     avatar: '🩺',
     experience: '8+ Years Teaching',
-    rating: 4.9,
+    credentialBadge: 'MBBS (IOM Maharajgunj)',
     bio: 'Medical Educator specializing in CEE entrance strategy, high-yield biology sub-chapter notes, and high-frequency MCQ explanation breakdowns.',
   },
   {
@@ -22,7 +22,7 @@ const INSTRUCTORS = [
     sectorBadge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 font-bold',
     avatar: '🎓',
     experience: '12+ Years Teaching',
-    rating: 4.95,
+    credentialBadge: 'M.Sc. Physics (TU)',
     bio: 'Secondary Education Educator specializing in Grade 10 Science & Opt Math problem-solving and step-by-step model exam derivations.',
   },
   {
@@ -31,8 +31,8 @@ const INSTRUCTORS = [
     sector: 'English Learning',
     sectorBadge: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30 font-bold',
     avatar: '🗣️',
-    experience: 'Cambridge Rubric Model',
-    rating: 4.92,
+    experience: 'Automated AI Model',
+    credentialBadge: 'Cambridge Descriptors',
     bio: 'AI Speech Assessor persona modeled after official Cambridge IELTS Band Descriptors (FC, LR, GRA, PR) with ElevenLabs studio audio.',
   },
   {
@@ -42,7 +42,7 @@ const INSTRUCTORS = [
     sectorBadge: 'bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-500/30 font-bold',
     avatar: '🤖',
     experience: '6+ Years Tech Industry',
-    rating: 4.96,
+    credentialBadge: 'Software Engineer',
     bio: 'Software Engineer & Instructor guiding students on Python programming, ChatGPT prompt engineering, and digital skill building.',
   },
 ];
@@ -106,8 +106,8 @@ export default function FeaturedInstructors() {
                 <span className="text-muted-foreground flex items-center gap-1">
                   <GraduationCap size={14} className="text-primary" /> {inst.experience}
                 </span>
-                <span className="flex items-center gap-1 text-amber-600">
-                  <Star size={13} className="fill-amber-500 text-amber-500" /> {inst.rating}
+                <span className="flex items-center gap-1 text-primary">
+                  <Award size={13} className="text-primary" /> {inst.credentialBadge}
                 </span>
               </div>
             </div>

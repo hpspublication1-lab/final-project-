@@ -288,7 +288,7 @@ export default function ContactPage() {
                 </div>
                 <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
                   <p className="font-bold text-foreground">What if I need a refund?</p>
-                  <p className="text-muted-foreground">We offer a 7-day risk-free money-back guarantee. Check our <Link href="/refund-policy" className="text-primary font-bold underline">Refund Policy</Link> for complete details.</p>
+                  <p className="text-muted-foreground">We offer a 7-day risk-free money-back guarantee. Check our <Link href="/refund" className="text-primary font-bold underline">Refund Policy</Link> for complete details.</p>
                 </div>
               </div>
             </div>
@@ -299,8 +299,8 @@ export default function ContactPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xl">⭐</span>
                   <div>
-                    <h4 className="text-xs font-black text-foreground">Google Verified Business</h4>
-                    <p className="text-[11px] text-muted-foreground">4.9 ★★★★★ (5,270+ Student Reviews)</p>
+                    <h4 className="text-xs font-black text-foreground">Google Business Profile</h4>
+                    <p className="text-[11px] text-muted-foreground">Old Baneshwor, Kathmandu, Nepal</p>
                   </div>
                 </div>
                 <span className="text-[10px] font-mono font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full">
