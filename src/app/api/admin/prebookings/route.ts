@@ -1,30 +1,20 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { isSuperAdmin } from '@/lib/config/superAdmin';
+import { verifyServerPermission } from '@/lib/auth/serverGuard';
 
 /**
  * GET /api/admin/prebookings
  *
- * Admin-only list of prebooking (presale) leads. Verifies the caller is an
- * admin and reads the table with the service-role client — both checks bypass
- * the recursive user_profiles RLS policy (FIX-AUTH-RLS.sql pending).
+ * Authorized list of prebooking (presale) leads (admin, super_admin, payment_staff).
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-    }
+    const guard = await verifyServerPermission(req, 'orders:view');
+    if (!guard.authorized) return guard.response;
 
     const admin = createAdminClient();
     if (!admin) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 503 });
-    }
-
-    if (!isSuperAdmin(user.email)) {
-      return NextResponse.json({ error: 'Super admins only' }, { status: 403 });
     }
 
     const { data: rows, error } = await admin

@@ -26,7 +26,11 @@ export async function POST(request: NextRequest) {
     const phone = typeof body.phone === 'string' ? body.phone.trim() : '';
     const college = typeof body.college === 'string' ? body.college.trim() : (typeof body.school === 'string' ? body.school.trim() : '');
     const program = typeof body.program === 'string' ? body.program.trim() : (typeof body.targetProgram === 'string' ? body.targetProgram.trim() : 'cee_medical');
-    
+    const prepStage = typeof body.prepStage === 'string' ? body.prepStage.trim() : 'class_12_fresh';
+    const dailyStudyHours = Number(body.dailyStudyHours) > 0 ? Math.min(16, Number(body.dailyStudyHours)) : 3;
+    const languagePreference = typeof body.languagePreference === 'string' ? body.languagePreference.trim() : 'english';
+    const consentAccepted = body.consentAccepted !== false;
+
     let ceeYear: number | null = null;
     if (body.ceeYear && !isNaN(parseInt(String(body.ceeYear), 10))) {
       ceeYear = parseInt(String(body.ceeYear), 10);
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
     }
     if (phone && !/^\+977[9][6-9]\d{8}$/.test(phone)) {
-      return NextResponse.json({ error: 'Enter a valid Nepal mobile number.' }, { status: 400 });
+      return NextResponse.json({ error: 'Enter a valid Nepal mobile number (e.g. 9812345678).' }, { status: 400 });
     }
 
     const admin = createAdminClient();
@@ -46,9 +50,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 503 });
     }
 
+    const nowIso = new Date().toISOString();
     const updatePayload: Record<string, any> = {
       full_name: fullName,
-      updated_at: new Date().toISOString(),
+      updated_at: nowIso,
     };
 
     if (phone) updatePayload.phone = phone;
@@ -65,7 +70,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Could not save your details. Please try again.' }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true, program });
+    // Persist onboarding preferences in auth user_metadata so returning sessions never loop
+    try {
+      await admin.auth.admin.updateUserById(user.id, {
+        user_metadata: {
+          ...(user.user_metadata || {}),
+          full_name: fullName,
+          ...(phone ? { phone } : {}),
+          ...(college ? { college } : {}),
+          ...(ceeYear !== null ? { cee_year: ceeYear } : {}),
+          target_exam: program,
+          prep_stage: prepStage,
+          daily_study_hours: dailyStudyHours,
+          language_preference: languagePreference,
+          onboarding_completed: true,
+          onboarding_completed_at: nowIso,
+          ...(consentAccepted ? { consent_accepted_at: user.user_metadata?.consent_accepted_at || nowIso } : {}),
+        },
+      });
+    } catch (metaErr) {
+      console.warn('profile/complete metadata update warning:', metaErr);
+    }
+
+    // Best-effort sync of daily study hours into study_plans
+    try {
+      const planTitle =
+        program === 'see_class_10'
+          ? 'SEE Class 10 GPA 4.0 Daily Blueprint'
+          : 'CEE Medical Entrance High-Yield Blueprint';
+      const { data: existingPlan } = await admin
+        .from('study_plans')
+        .select('id')
+        .eq('student_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (existingPlan?.id) {
+        await admin
+          .from('study_plans')
+          .update({ title: planTitle, daily_hours: dailyStudyHours })
+          .eq('id', existingPlan.id);
+      }
+    } catch {
+      // Non-blocking if study_plans schema differs
+    }
+
+    return NextResponse.json({
+      ok: true,
+      program,
+      prepStage,
+      dailyStudyHours,
+      languagePreference,
+      onboarding_completed: true,
+    });
   } catch (err) {
     console.error('profile/complete error:', err);
     return NextResponse.json({ error: 'Could not save your details. Please try again.' }, { status: 500 });

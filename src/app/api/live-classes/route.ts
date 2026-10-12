@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     if (user) {
       const [profileRes, enrollmentsRes] = await Promise.all([
-        admin.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+        admin.from('user_profiles').select('*').eq('id', user.id).maybeSingle(),
         admin.from('enrollments').select('*').eq('student_id', user.id),
       ]);
 

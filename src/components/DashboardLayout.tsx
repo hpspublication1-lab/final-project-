@@ -348,7 +348,10 @@ export default function DashboardLayout({
                   </div>
                 </Link>
                 <button
-                  onClick={() => signOut()}
+                  onClick={async () => {
+                    await signOut();
+                    router.replace('/login');
+                  }}
                   className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
                   title="Sign Out"
                 >
@@ -357,7 +360,10 @@ export default function DashboardLayout({
               </div>
             ) : (
               <button
-                onClick={() => signOut()}
+                onClick={async () => {
+                  await signOut();
+                  router.replace('/login');
+                }}
                 className="w-full p-2 flex justify-center text-muted-foreground hover:text-red-500"
                 title="Sign Out"
               >
@@ -633,9 +639,10 @@ export default function DashboardLayout({
                 <span>Profile &amp; Settings</span>
               </Link>
               <button
-                onClick={() => {
+                onClick={async () => {
                   setMobileDrawerOpen(false);
-                  signOut();
+                  await signOut();
+                  router.replace('/login');
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-2xl text-xs font-bold text-red-500 hover:bg-red-500/10 transition-colors"
               >

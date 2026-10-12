@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { isSuperAdmin } from '@/lib/config/superAdmin';
+import { verifyServerPermission } from '@/lib/auth/serverGuard';
 
 /**
- * GET /api/admin/users — super-admin-only directory of every student.
+ * GET /api/admin/users — authorized directory of students (admin, super_admin, support_staff, payment_staff).
  *
  * Joins auth.users (email, last sign-in), user_profiles (plan, points, etc.),
  * and prebookings (who reserved the crash course). Computes each user's tier
@@ -14,12 +13,10 @@ import { isSuperAdmin } from '@/lib/config/superAdmin';
 const PAID_PLANS = ['student', 'pro', 'institution'];
 const ACTIVE_WINDOW_DAYS = 30;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-    if (!isSuperAdmin(user.email)) return NextResponse.json({ error: 'Super admins only' }, { status: 403 });
+    const guard = await verifyServerPermission(req, 'users:view');
+    if (!guard.authorized) return guard.response;
 
     const admin = createAdminClient();
     if (!admin) return NextResponse.json({ error: 'Server not configured' }, { status: 503 });

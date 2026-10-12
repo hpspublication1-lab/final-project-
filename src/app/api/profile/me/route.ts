@@ -25,22 +25,42 @@ export async function GET() {
 
     const { data: profile } = await admin
       .from('user_profiles')
-      .select('full_name, phone, college, cee_year, is_admin, subscription_plan, plan_tier, subscription_expires_at, battle_rating, total_points, avatar_url')
+      .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     const plan = profile?.subscription_plan ?? 'free';
     const rawTier = (profile as any)?.plan_tier;
     const resolvedTier = rawTier || (plan === 'pro' || plan === 'institution' ? 'cee_ai_pro' : plan === 'student' ? 'cee_premium' : 'free');
 
+    const meta = user.user_metadata || {};
+    const emailPrefix = (user.email ?? '').split('@')[0];
+    const fullName = profile?.full_name || meta.full_name || '';
+    const rawRole = (profile as any)?.role || (profile as any)?.role_name || meta.role || 'student_free';
+    const isStaffOrAdmin =
+      !!profile?.is_admin ||
+      isSuperAdmin(user.email) ||
+      ['admin', 'super_admin', 'teacher', 'support_staff', 'support_agent', 'payment_staff', 'content_manager'].includes(
+        String(rawRole).toLowerCase()
+      );
+
+    const onboardingCompleted = Boolean(
+      meta.onboarding_completed === true ||
+      isStaffOrAdmin ||
+      (fullName && fullName !== emailPrefix && (profile?.phone || meta.prep_stage || meta.target_exam))
+    );
+
     return NextResponse.json({
       id: user.id,
       email: user.email ?? '',
-      full_name: profile?.full_name ?? '',
-      phone: profile?.phone ?? '',
-      college: profile?.college ?? '',
-      cee_year: profile?.cee_year ?? null,
+      full_name: fullName,
+      phone: profile?.phone ?? meta.phone ?? '',
+      college: profile?.college ?? meta.college ?? '',
+      cee_year: profile?.cee_year ?? meta.cee_year ?? null,
+      role: rawRole,
+      role_name: (profile as any)?.role_name ?? rawRole,
       is_admin: !!profile?.is_admin,
+      is_banned: !!(profile as any)?.is_banned,
       is_super_admin: isSuperAdmin(user.email),
       subscription_plan: plan,
       plan_tier: resolvedTier,
@@ -48,6 +68,12 @@ export async function GET() {
       battle_rating: profile?.battle_rating ?? 1000,
       total_points: profile?.total_points ?? 0,
       avatar_url: profile?.avatar_url ?? null,
+      onboarding_completed: onboardingCompleted,
+      target_exam: meta.target_exam ?? (profile as any)?.primary_program ?? 'cee_medical',
+      prep_stage: meta.prep_stage ?? null,
+      daily_study_hours: meta.daily_study_hours ?? 3,
+      language_preference: meta.language_preference ?? 'english',
+      consent_accepted_at: meta.consent_accepted_at ?? null,
     });
   } catch (err) {
     console.error('profile/me error:', err);

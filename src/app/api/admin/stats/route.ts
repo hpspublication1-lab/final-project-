@@ -1,10 +1,9 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { isSuperAdmin } from '@/lib/config/superAdmin';
+import { verifyServerPermission } from '@/lib/auth/serverGuard';
 
 /**
- * GET /api/admin/stats — real dashboard KPIs for the super admin.
+ * GET /api/admin/stats — real dashboard KPIs for authorized admins.
  * Every count is best-effort (a missing table just yields 0), so the panel
  * always renders. Revenue = completed payment_transactions + confirmed
  * prebooking deposits (Rs 300 each).
@@ -20,12 +19,10 @@ async function count(admin: any, table: string, apply?: (q: any) => any): Promis
   } catch { return 0; }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-    if (!isSuperAdmin(user.email)) return NextResponse.json({ error: 'Super admins only' }, { status: 403 });
+    const guard = await verifyServerPermission(req, 'admin:access');
+    if (!guard.authorized) return guard.response;
 
     const admin = createAdminClient();
     if (!admin) return NextResponse.json({ error: 'Server not configured' }, { status: 503 });

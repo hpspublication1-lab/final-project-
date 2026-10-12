@@ -153,6 +153,27 @@ export function canAccessCourse(
 }
 
 /**
+ * Normalizes any raw database role string or alias into a canonical UserRoleType.
+ */
+export function normalizeRoleType(
+  rawRole?: string | null,
+  isAdminFlag?: boolean
+): UserRoleType {
+  const r = (rawRole || '').toLowerCase().trim();
+  if (r === 'super_admin' || r === 'super_administrator') return 'super_admin';
+  if (isAdminFlag || r === 'admin' || r === 'administrator') return 'admin';
+  if (r === 'teacher' || r === 'faculty' || r === 'instructor') return 'teacher';
+  if (r === 'content_manager' || r === 'content_reviewer') return 'content_manager';
+  if (r === 'payment_staff' || r === 'finance_staff') return 'payment_staff';
+  if (r === 'support_staff' || r === 'support_agent' || r === 'support') return 'support_staff';
+  if (r === 'student_all_access') return 'student_all_access';
+  if (r === 'student_paid_cee') return 'student_paid_cee';
+  if (r === 'student_paid_see') return 'student_paid_see';
+  if (r === 'student_free' || r === 'student') return 'student_free';
+  return 'visitor';
+}
+
+/**
  * Convenience role classifiers
  */
 export function isTeacher(role?: UserRoleType | null): boolean {
@@ -171,6 +192,21 @@ export function isPaymentStaff(role?: UserRoleType | null): boolean {
   return role === 'payment_staff' || role === 'admin' || role === 'super_admin';
 }
 
+export function isSupportStaff(role?: UserRoleType | null): boolean {
+  return role === 'support_staff' || role === 'admin' || role === 'super_admin';
+}
+
+export function isStaffRole(role?: UserRoleType | null): boolean {
+  return (
+    role === 'support_staff' ||
+    role === 'payment_staff' ||
+    role === 'content_manager' ||
+    role === 'teacher' ||
+    role === 'admin' ||
+    role === 'super_admin'
+  );
+}
+
 export function canManageAcademicContent(role?: UserRoleType | null): boolean {
   return hasPermission(role, 'content:edit') || hasPermission(role, 'tests:create');
 }
@@ -178,3 +214,4 @@ export function canManageAcademicContent(role?: UserRoleType | null): boolean {
 export function canManageFinance(role?: UserRoleType | null): boolean {
   return hasPermission(role, 'orders:verify') || hasPermission(role, 'orders:refund');
 }
+

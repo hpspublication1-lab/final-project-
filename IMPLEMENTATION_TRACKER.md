@@ -141,9 +141,9 @@ flowchart TD
 | **Prompt 2** | **Single Source of Truth for Courses & Offers** | Consolidate course IDs, pricing, comparison prices, Rs 300 deposit into unified model | Prompt 1 | ✅ **COMPLETED** | Single catalog & offer breakdown verified |
 | **Prompt 3** | **Repair Trust Claims, Support Details & Policies** | Remove unsubstantiated student counts, clarify AI vs human faculty, unify refund policy | Prompt 2 | ✅ **COMPLETED** | Verified trust claims, faculty, policies, tests |
 | **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | ✅ **COMPLETED** | Refactored Hero, mounted faculty, clear CEE offer |
-| **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | 🟡 **READY** | Audit navigation menus, mobile drawer, course filters |
-| **Prompt 6** | **Repair Signup, Login, Roles & Onboarding** | Enforce server-side role validation, fix session expiry, streamline onboarding | Prompt 5 | ⚪ PENDING | Review `@supabase/ssr` auth, redirect flows, onboarding |
-| **Prompt 7** | **Course Catalog & Complete Enrollment** | Detail pages with syllabus, real faculty, sample preview, link directly to checkout | Prompt 2, 6 | ⚪ PENDING | Connect `COURSES_DATA` to DB, wire enroll buttons |
+| **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | ✅ **COMPLETED** | Verified 6 pillars, canonical redirects, 404 recovery |
+| **Prompt 6** | **Repair Signup, Login, Roles & Onboarding** | Enforce server-side role validation, fix session expiry, streamline onboarding | Prompt 5 | ✅ **COMPLETED** | Server RBAC guards, recovery flow, 4-step onboarding |
+| **Prompt 7** | **Course Catalog & Complete Enrollment** | Detail pages with syllabus, real faculty, sample preview, link directly to checkout | Prompt 2, 6 | 🟡 **IN PROGRESS** | Connect catalog detail pages, syllabus, sample preview, checkout |
 | **Prompt 8** | **Reliable Nepal Payments & Access Activation** | Server-verified Fonepay dynamic QR, idempotent activation, prevent double access | Prompt 7 | ⚠️ BLOCKED (Live Keys) | Verify UAT sandbox flow; document live key blocker |
 | **Prompt 9** | **Actionable Student Dashboard** | Real progress, upcoming classes, due revisions, resume learning, empty states | Prompt 6, 7 | ⚪ PENDING | Audit `StudentDashboardClient.tsx`, topic mastery |
 | **Prompt 10** | **Video Player & Live-Class Experience** | Bunny Stream signed URLs, playback resume, notes attachment, 100ms class schedule | Prompt 9 | ⚠️ BLOCKED (Bunny Keys) | Implement resilient playback + mock/test fallbacks |
@@ -355,5 +355,31 @@ Based on actual inspection of the current code and configuration:
 - [x] Completed **Prompt 5: Fix navigation and course discovery**.
 - [x] Ready to proceed to **Prompt 6: Repair signup, login, roles, and onboarding**.
 
+---
 
+## 10. Acceptance Criteria Checklist for Prompt 6
 
+- [x] **Centralized Server-Side RBAC & Role Normalization (`src/lib/auth/rbac.ts`, `src/lib/auth/serverGuard.ts`, `src/lib/auth/accessControl.ts`)**:
+  - Added `normalizeRoleType`, `isSupportStaff`, and `isStaffRole` to map all database role variants (`support`, `support_agent`, `support_staff`, `content_reviewer`, `content_manager`, `payment_staff`, `finance_staff`, `teacher`, `faculty`, `instructor`, `admin`, `administrator`, `super_admin`, `super_administrator`, `student`, `student_free`) to canonical `UserRoleType`.
+  - Updated `verifyServerPermission` to enforce account suspension (`is_banned -> 403 Forbidden`) and granular permissions across server API routes.
+  - Replaced hardcoded `isSuperAdmin(user.email)` checks with `verifyServerPermission` in `/api/admin/users`, `/api/admin/leads`, `/api/admin/prebookings`, `/api/admin/stats`, and `/api/admin/live-classes`.
+- [x] **Repaired Next.js Middleware Route Protection (`src/middleware.ts`)**:
+  - Fixed critical unauthenticated bypass on `/teacher` and `/teacher/*` (now redirects unauthenticated visitors to `/login?redirect=...` and non-teachers to `/student-dashboard?error=teacher_required`).
+  - Unified `/admin`, `/teacher`, and `/staff` middleware authorization using `normalizeRoleType`, `isAdmin`, `isTeacher`, and `isStaffRole`.
+  - Added `/profile`, `/account`, and `/activate-plan` to protected paths.
+- [x] **Repaired Wrong Profile Table Name Across 6 Core API Routes**:
+  - Fixed `.from('profiles')` to `.from('user_profiles')` in `src/app/api/student/dashboard/route.ts`, `src/app/api/curriculum/route.ts`, `src/app/api/live-classes/route.ts`, `src/app/api/student/batch/switch/route.ts`, `src/app/api/video/offline-download/route.ts`, and `src/app/api/video/sign/route.ts`.
+- [x] **Repaired Signup Consent, Login, Logout, Password Recovery & Role-Aware Redirects**:
+  - `src/app/login/components/AuthPageClient.tsx`: Added required policy consent checkbox (`/terms` and `/privacy`) on account registration, `?mode=forgot` support, and role-aware post-login routing (`/admin`, `/teacher`, `/staff`, `/onboarding`, or intended destination).
+  - `src/app/reset-password/components/ResetPasswordClient.tsx`: Added PKCE `?code=` and `?token_hash=` session exchange, session verification, expired/invalid link recovery UI, and 8-character minimum validation.
+  - `src/contexts/AuthContext.tsx` & `src/components/DashboardLayout.tsx`: Added `force` refresh to `fetchProfile`, cleared `lastFetchedUserId` on `signOut()`, and wired desktop/mobile logout buttons to `await signOut(); router.replace('/login');`.
+- [x] **Introduced Short 4-Step Onboarding Without Redirect Loops (`src/app/onboarding/components/OnboardingClient.tsx`, `/api/profile/me`, `/api/profile/complete`)**:
+  - Collects Target Exam, Preparation Stage, Available Daily Study Time (`2`, `4`, `6` hrs/day), and Preferred Study Medium (`english`, `bilingual`, `nepali`), plus student name and optional phone/college.
+  - Eliminated the missing-phone redirect loop by making phone optional and persisting `onboarding_completed: true` in `auth.users.user_metadata` and `localStorage`.
+  - Added optional Free 10-Min Baseline Diagnostic CTA alongside primary "Complete Setup & Open Dashboard" and "Skip to Dashboard" actions; no purchase required for free features.
+- [x] **Verification & Test Coverage**:
+  - Expanded `src/lib/auth/__tests__/accessControl.test.ts` to 38 unit tests covering RBAC role normalization, staff/teacher/admin route isolation, free feature access without purchase, and onboarding open-redirect sanitization.
+  - Full Vitest suite: **231 / 231 tests passing** across 19 test suites.
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+- [x] Completed **Prompt 6: Repair signup, login, roles, and onboarding**.
+- [x] Ready to proceed to **Prompt 7: Make the course catalog and enrollment experience complete**.

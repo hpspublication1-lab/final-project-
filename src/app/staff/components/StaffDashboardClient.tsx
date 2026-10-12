@@ -5,26 +5,31 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MessageCircleQuestion, ShieldCheck, FileText, Loader2, ArrowRight, Users, LayoutDashboard, LogOut } from 'lucide-react';
-
-const STAFF_ROLES = ['admin', 'teacher', 'content_reviewer', 'support_agent'];
+import { MessageCircleQuestion, ShieldCheck, FileText, Loader2, ArrowRight, Users, LayoutDashboard, LogOut, CreditCard } from 'lucide-react';
+import { normalizeRoleType, isStaffRole, isAdmin as checkIsAdmin } from '@/lib/auth/rbac';
+import { isSuperAdmin } from '@/lib/config/superAdmin';
 
 const ROLE_LABELS: Record<string, string> = {
+  super_admin: 'Super Administrator',
   admin: 'Administrator',
-  teacher: 'Teacher',
-  content_reviewer: 'Content Reviewer',
-  support_agent: 'Support Agent',
+  teacher: 'Faculty Teacher',
+  content_manager: 'Content Manager',
+  payment_staff: 'Finance & Payment Staff',
+  support_staff: 'Support & Counseling Staff',
 };
 
 export default function StaffDashboardClient() {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
   const [openDoubts, setOpenDoubts] = useState<number | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  const role = profile?.role ?? '';
-  const isStaff = STAFF_ROLES.includes(role);
-  const isAdmin = role === 'admin';
+  const normalizedRole = isSuperAdmin(user?.email)
+    ? 'super_admin'
+    : normalizeRoleType(profile?.role || profile?.role_name, profile?.is_admin);
+  const role = normalizedRole;
+  const isStaff = isStaffRole(normalizedRole);
+  const isAdmin = checkIsAdmin(normalizedRole);
 
   // Route guard: students don't belong here.
   useEffect(() => {
@@ -52,8 +57,7 @@ export default function StaffDashboardClient() {
   }, [isStaff]);
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await signOut();
     router.replace('/login');
   };
 
@@ -76,7 +80,7 @@ export default function StaffDashboardClient() {
   const cards = [
     {
       key: 'doubts',
-      show: true,
+      show: isAdmin || role === 'teacher' || role === 'support_staff' || role === 'content_manager',
       title: 'Answer Doubts',
       desc: 'Respond to student questions',
       href: '/admin/doubts',
@@ -87,7 +91,7 @@ export default function StaffDashboardClient() {
     },
     {
       key: 'review',
-      show: role === 'admin' || role === 'content_reviewer',
+      show: isAdmin || role === 'content_manager' || role === 'teacher',
       title: 'Review AI Content',
       desc: 'Grade generated questions & notes',
       href: '/admin/ai-review',
@@ -98,7 +102,7 @@ export default function StaffDashboardClient() {
     },
     {
       key: 'uploads',
-      show: role === 'admin' || role === 'content_reviewer',
+      show: isAdmin || role === 'content_manager' || role === 'teacher',
       title: 'Content Uploads',
       desc: 'Notes, videos, materials, live classes',
       href: '/admin/uploads',
@@ -109,13 +113,24 @@ export default function StaffDashboardClient() {
     },
     {
       key: 'leads',
-      show: isAdmin || role === 'support_agent',
+      show: isAdmin || role === 'support_staff',
       title: 'Leads & Behavioral CRM',
       desc: 'Track prospects, nurture emails & funnel',
       href: '/admin/leads',
       icon: Users,
       color: 'text-amber-500',
       bg: 'bg-amber-500/10',
+      badge: null,
+    },
+    {
+      key: 'orders',
+      show: isAdmin || role === 'payment_staff',
+      title: 'Orders & Enrollments',
+      desc: 'Verify payments, receipts & batch access',
+      href: '/admin/orders',
+      icon: CreditCard,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-500/10',
       badge: null,
     },
     {

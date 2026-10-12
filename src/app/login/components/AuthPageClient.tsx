@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Analytics } from '@/lib/analytics/mixpanel';
+import { SUPPORT_CONFIG } from '@/lib/config/support';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import PasswordStrength from './PasswordStrength';
 
@@ -127,6 +128,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedConsent, setAcceptedConsent] = useState(true);
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
 
   const [loading, setLoading] = useState(false);
@@ -144,13 +146,15 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
 
   const emailValid = EMAIL_RE.test(email.trim());
 
-  // Auto-detect signup / register from URL path or query params & read redirect info
+  // Auto-detect signup / register / forgot from URL path or query params & read redirect info
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname.toLowerCase();
     const modeParam = new URLSearchParams(window.location.search).get('mode');
 
-    if (path.includes('/signup') || path.includes('/register') || modeParam === 'signup') {
+    if (modeParam === 'forgot' || modeParam === 'reset') {
+      setAuthMode('forgot_password');
+    } else if (path.includes('/signup') || path.includes('/register') || modeParam === 'signup') {
       setPasswordAction('signup');
     } else if (path.includes('/signin') || path.includes('/login') || modeParam === 'signin') {
       setPasswordAction('signin');
@@ -193,10 +197,31 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
       const res = await fetch('/api/profile/me');
       if (res.ok) {
         const me = await res.json();
-        const emailPrefix = (me?.email || '').split('@')[0];
-        const isNewIncomplete = !me?.full_name || me.full_name === emailPrefix || !me?.phone;
-        if (isNewIncomplete && !safeRedirect) {
-          destination = '/onboarding';
+        const role = String(me?.role || me?.role_name || '').toLowerCase();
+        const isFullAdmin = Boolean(me?.is_admin || me?.is_super_admin || role === 'admin' || role === 'super_admin');
+        const isTeacherRole = role === 'teacher';
+        const isStaffRole = ['support_staff', 'support_agent', 'content_manager', 'content_reviewer', 'payment_staff'].includes(role);
+
+        if (!safeRedirect) {
+          if (isFullAdmin) {
+            destination = '/admin';
+          } else if (isTeacherRole) {
+            destination = '/teacher';
+          } else if (isStaffRole) {
+            destination = '/staff';
+          }
+        }
+
+        const localCompleted =
+          typeof window !== 'undefined' && localStorage.getItem('samyak_onboarding_completed') === 'true';
+        const isOnboardingDone = Boolean(
+          me?.onboarding_completed || localCompleted || isFullAdmin || isTeacherRole || isStaffRole
+        );
+
+        if (!isOnboardingDone) {
+          destination = safeRedirect
+            ? `/onboarding?redirect=${encodeURIComponent(safeRedirect)}`
+            : '/onboarding';
         }
       }
     } catch {
@@ -304,6 +329,10 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
       setError('Password must be at least 8 characters long');
       return;
     }
+    if (passwordAction === 'signup' && !acceptedConsent) {
+      setError('Please accept the Terms of Service and Privacy Policy to create an account');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -318,6 +347,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
         await signUp(email.trim(), password, {
           fullName: fullName.trim(),
           phone: phone.trim() || undefined,
+          consentAcceptedAt: new Date().toISOString(),
         });
         Analytics.signedUp('password');
         toast.success('Account created! Redirecting…');
@@ -863,6 +893,32 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
                             <PasswordStrength password={password} />
                           )}
                         </div>
+
+                        {passwordAction === 'signup' && (
+                          <label htmlFor="auth-consent" className="flex items-start gap-2.5 pt-1 cursor-pointer select-none">
+                            <input
+                              id="auth-consent"
+                              type="checkbox"
+                              checked={acceptedConsent}
+                              onChange={(e) => {
+                                setAcceptedConsent(e.target.checked);
+                                setError(null);
+                              }}
+                              className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-primary/30"
+                            />
+                            <span className="text-[11px] text-muted-foreground leading-relaxed">
+                              I agree to Samyak Guru&apos;s{' '}
+                              <Link href="/terms" className="font-bold text-primary hover:underline">
+                                Terms of Service
+                              </Link>{' '}
+                              and{' '}
+                              <Link href="/privacy" className="font-bold text-primary hover:underline">
+                                Privacy Policy
+                              </Link>
+                              . Free practice &amp; diagnostic features require no purchase.
+                            </span>
+                          </label>
+                        )}
                       </div>
 
                       {error && (
@@ -892,6 +948,18 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
                     </div>
                   </form>
                 )}
+
+                <p className="text-[11px] text-center text-muted-foreground mt-5 leading-relaxed">
+                  By continuing, you acknowledge our{' '}
+                  <Link href="/terms" className="font-semibold text-foreground hover:text-primary underline">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="font-semibold text-foreground hover:text-primary underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </div>
             ) : (
               /* ── Step 2: OTP Verification ──────────────────────── */
@@ -1009,7 +1077,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
               <div className="border-t border-border/50 pt-2">
                 <p className="font-extrabold text-foreground">Technical Support:</p>
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Reach out at <span className="font-bold text-primary">support@samyakcee.com</span> for 24/7 student account assistance.
+                  Reach out at <span className="font-bold text-primary">{SUPPORT_CONFIG.email}</span> for student account assistance.
                 </p>
               </div>
             </div>

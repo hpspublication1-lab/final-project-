@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isSuperAdmin } from '@/lib/config/superAdmin';
+import { normalizeRoleType, isStaffRole, isTeacher, isAdmin } from '@/lib/auth/rbac';
 
 function getProjectRef(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -57,6 +58,7 @@ export async function middleware(request: NextRequest) {
     '/my-courses',
     '/onboarding',
     '/dashboard',
+    '/profile',
     '/account',
     '/checkout',
     '/payment-success',
@@ -88,18 +90,31 @@ export async function middleware(request: NextRequest) {
       url.search = '?error=account_suspended';
       return NextResponse.redirect(url);
     }
+  }
 
-    // 2. Teacher Area Access Control (/teacher and /teacher/*)
-    if (pathname === '/teacher' || pathname.startsWith('/teacher/')) {
-      const role = (profile?.role_name || profile?.role || '').toLowerCase();
-      const isAuthorizedTeacher = role === 'teacher' || profile?.is_admin || isSuperAdmin(user.email);
-      if (!isAuthorizedTeacher) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/student-dashboard';
-        url.search = '?error=teacher_required';
-        return NextResponse.redirect(url);
-      }
+  const effectiveRole = isAuthenticated && user
+    ? (isSuperAdmin(user.email)
+        ? 'super_admin'
+        : normalizeRoleType(userProfile?.role || userProfile?.role_name, userProfile?.is_admin))
+    : 'visitor';
+
+  // 2. Teacher Area Access Control (/teacher and /teacher/*)
+  if (pathname === '/teacher' || pathname.startsWith('/teacher/')) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/login';
+      url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+      return NextResponse.redirect(url);
     }
+
+    if (!isTeacher(effectiveRole)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/student-dashboard';
+      url.search = '?error=teacher_required';
+      return NextResponse.redirect(url);
+    }
+
+    supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
   }
 
   // 3. Admin Area Access Control (/admin and /admin/*)
@@ -139,11 +154,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const role = (userProfile?.role_name || userProfile?.role || '').toLowerCase();
-    const isFullAdmin = isSuperAdmin(user.email) || !!userProfile?.is_admin || role === 'admin' || role === 'super_admin';
-    const isPayStaff = role === 'payment_staff';
+    const isFullAdmin = isAdmin(effectiveRole);
+    const isPayStaff = effectiveRole === 'payment_staff';
+    const isSupport = effectiveRole === 'support_staff';
+    const isContentOrTeacher = effectiveRole === 'content_manager' || effectiveRole === 'teacher';
 
-    if (!isFullAdmin && !isPayStaff) {
+    if (!isFullAdmin && !isPayStaff && !isSupport && !isContentOrTeacher) {
       const url = request.nextUrl.clone();
       url.pathname = '/student-dashboard';
       url.search = '?error=unauthorized_admin';
@@ -158,6 +174,7 @@ export async function middleware(request: NextRequest) {
         '/admin/enrollments',
         '/admin/coupons',
         '/admin/activation-codes',
+        '/admin/prebookings',
         '/admin/users',
       ];
       const isAllowed = allowedFinancePaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
@@ -165,6 +182,46 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.pathname = '/admin';
         url.search = '?error=finance_role_restricted';
+        return NextResponse.redirect(url);
+      }
+    }
+
+    // Restrict support staff strictly to student support, doubts, leads, and announcements
+    if (isSupport && !isFullAdmin) {
+      const allowedSupportPaths = [
+        '/admin/doubts',
+        '/admin/leads',
+        '/admin/users',
+        '/admin/announcements',
+      ];
+      const isAllowed = allowedSupportPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+      if (!isAllowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/staff';
+        url.search = '?error=support_role_restricted';
+        return NextResponse.redirect(url);
+      }
+    }
+
+    // Restrict content managers & teachers to academic content modules within /admin
+    if (isContentOrTeacher && !isFullAdmin) {
+      const allowedContentPaths = [
+        '/admin/doubts',
+        '/admin/ai-review',
+        '/admin/uploads',
+        '/admin/questions',
+        '/admin/lessons',
+        '/admin/chapters',
+        '/admin/subjects',
+        '/admin/resources',
+        '/admin/flashcards',
+        '/admin/exams',
+      ];
+      const isAllowed = allowedContentPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+      if (!isAllowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = effectiveRole === 'teacher' ? '/teacher' : '/staff';
+        url.search = '?error=academic_role_restricted';
         return NextResponse.redirect(url);
       }
     }
@@ -181,13 +238,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single();
-
-    if (!profile?.is_admin && !isSuperAdmin(user.email)) {
+    if (!isStaffRole(effectiveRole)) {
       const url = request.nextUrl.clone();
       url.pathname = '/student-dashboard';
       url.search = '?error=staff_access_required';

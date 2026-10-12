@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '../supabase/route-auth';
 import { createAdminClient } from '../supabase/admin';
 import { isSuperAdmin } from '../config/superAdmin';
-import { hasPermission } from './rbac';
+import { hasPermission, normalizeRoleType } from './rbac';
 import { UserRoleType, PermissionCode } from '@/types/lms';
 
 export interface GuardSuccess {
@@ -83,7 +83,7 @@ export async function verifyServerPermission(
   const userAgent = req.headers.get('user-agent') || 'api-client';
 
   // 2. Resolve Role
-  let role: UserRoleType = 'visitor';
+  let role: UserRoleType = 'student_free';
 
   // Super Admin Check via email allowlist
   if (isSuperAdmin(email)) {
@@ -95,22 +95,27 @@ export async function verifyServerPermission(
       if (admin) {
         const { data: profile } = await admin
           .from('user_profiles')
-          .select('role, is_admin')
+          .select('role, role_name, is_admin, is_banned')
           .eq('id', user.id)
           .single();
 
+        if (profile?.is_banned) {
+          return {
+            authorized: false,
+            response: NextResponse.json(
+              { success: false, error: 'Forbidden: Your account has been suspended.' },
+              { status: 403 }
+            ),
+          };
+        }
+
         if (profile) {
-          if (profile.role) {
-            role = profile.role as UserRoleType;
-          } else if (profile.is_admin) {
-            role = 'admin';
-          } else {
-            role = 'student_free';
-          }
+          const normalized = normalizeRoleType(profile.role || (profile as any).role_name, profile.is_admin);
+          role = normalized === 'visitor' ? 'student_free' : normalized;
         }
       }
     } catch (err) {
-      console.warn('[ServerGuard] Failed to fetch user profile role, defaulting to visitor:', err);
+      console.warn('[ServerGuard] Failed to fetch user profile role, defaulting to student_free:', err);
     }
   }
 

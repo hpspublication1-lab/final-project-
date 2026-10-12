@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { isSuperAdmin } from '@/lib/config/superAdmin';
+import { verifyServerPermission } from '@/lib/auth/serverGuard';
 
 /**
- * Super-admin live-class management (Bunny Stream / HLS).
+ * Admin & Faculty live-class management (Bunny Stream / HLS).
  *   GET   — list all classes
  *   POST  — create a class { title, description?, subjectId?, scheduledAt, durationMin?, streamUrl, isPremium? }
  *   PATCH — update a class  { id, ...fields } (e.g. status: 'live' | 'ended')
@@ -12,18 +11,16 @@ import { isSuperAdmin } from '@/lib/config/superAdmin';
  * The Bunny HLS playback URL (.m3u8) is stored in `meeting_url`; the students'
  * live-classes page derives the in-app HLS player from it. Service-role writes.
  */
-async function requireSuperAdmin() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: NextResponse.json({ error: 'Not signed in' }, { status: 401 }) };
-  if (!isSuperAdmin(user.email)) return { error: NextResponse.json({ error: 'Super admins only' }, { status: 403 }) };
+async function requireLiveClassHost(req: NextRequest) {
+  const guard = await verifyServerPermission(req, 'live:host');
+  if (!guard.authorized) return { error: guard.response };
   const admin = createAdminClient();
   if (!admin) return { error: NextResponse.json({ error: 'Server not configured' }, { status: 503 }) };
   return { admin };
 }
 
-export async function GET() {
-  const gate = await requireSuperAdmin();
+export async function GET(req: NextRequest) {
+  const gate = await requireLiveClassHost(req);
   if (gate.error) return gate.error;
   const { data, error } = await gate.admin
     .from('live_classes')
@@ -34,7 +31,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const gate = await requireSuperAdmin();
+  const gate = await requireLiveClassHost(request);
   if (gate.error) return gate.error;
   try {
     const b = await request.json();
@@ -66,7 +63,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const gate = await requireSuperAdmin();
+  const gate = await requireLiveClassHost(request);
   if (gate.error) return gate.error;
   try {
     const b = await request.json();
@@ -91,7 +88,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const gate = await requireSuperAdmin();
+  const gate = await requireLiveClassHost(request);
   if (gate.error) return gate.error;
   const id = new URL(request.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing class id.' }, { status: 400 });

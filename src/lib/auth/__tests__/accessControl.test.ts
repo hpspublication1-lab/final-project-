@@ -6,6 +6,20 @@ import {
   canAccessRoute,
   normalizeCourseSlug,
 } from '../accessControl';
+import {
+  normalizeRoleType,
+  hasPermission,
+  isAdmin,
+  isTeacher,
+  isSupportStaff,
+  isStaffRole,
+} from '../rbac';
+import {
+  PREP_STAGES_BY_TRACK,
+  STUDY_TIME_OPTIONS,
+  LANGUAGE_OPTIONS,
+  resolveNextDestination,
+} from '@/app/onboarding/components/OnboardingClient';
 
 describe('Samyak LMS Access Control Service', () => {
   describe('normalizeCourseSlug', () => {
@@ -17,6 +31,63 @@ describe('Samyak LMS Access Control Service', () => {
       expect(normalizeCourseSlug('english')).toBe('ielts');
       expect(normalizeCourseSlug('ai')).toBe('artificial_intelligence');
       expect(normalizeCourseSlug('unknown')).toBe(null);
+    });
+  });
+
+  describe('RBAC Role Normalization & Permissions (Prompt 6)', () => {
+    it('normalizes database role strings and aliases deterministically', () => {
+      expect(normalizeRoleType('super_admin')).toBe('super_admin');
+      expect(normalizeRoleType('super_administrator')).toBe('super_admin');
+      expect(normalizeRoleType('admin')).toBe('admin');
+      expect(normalizeRoleType('administrator')).toBe('admin');
+      expect(normalizeRoleType('student', true)).toBe('admin');
+      expect(normalizeRoleType('teacher')).toBe('teacher');
+      expect(normalizeRoleType('faculty')).toBe('teacher');
+      expect(normalizeRoleType('instructor')).toBe('teacher');
+      expect(normalizeRoleType('content_manager')).toBe('content_manager');
+      expect(normalizeRoleType('content_reviewer')).toBe('content_manager');
+      expect(normalizeRoleType('payment_staff')).toBe('payment_staff');
+      expect(normalizeRoleType('finance_staff')).toBe('payment_staff');
+      expect(normalizeRoleType('support')).toBe('support_staff');
+      expect(normalizeRoleType('support_agent')).toBe('support_staff');
+      expect(normalizeRoleType('support_staff')).toBe('support_staff');
+      expect(normalizeRoleType('student')).toBe('student_free');
+      expect(normalizeRoleType('student_free')).toBe('student_free');
+      expect(normalizeRoleType(null)).toBe('visitor');
+    });
+
+    it('enforces student, teacher, support, and admin permissions correctly', () => {
+      expect(isAdmin('super_admin')).toBe(true);
+      expect(isAdmin('admin')).toBe(true);
+      expect(isAdmin('teacher')).toBe(false);
+      expect(isAdmin('support_staff')).toBe(false);
+      expect(isAdmin('student_free')).toBe(false);
+
+      expect(isTeacher('teacher')).toBe(true);
+      expect(isTeacher('admin')).toBe(true);
+      expect(isTeacher('support_staff')).toBe(false);
+      expect(isTeacher('student_free')).toBe(false);
+
+      expect(isSupportStaff('support_staff')).toBe(true);
+      expect(isSupportStaff('admin')).toBe(true);
+      expect(isSupportStaff('student_free')).toBe(false);
+
+      expect(isStaffRole('support_staff')).toBe(true);
+      expect(isStaffRole('payment_staff')).toBe(true);
+      expect(isStaffRole('content_manager')).toBe(true);
+      expect(isStaffRole('teacher')).toBe(true);
+      expect(isStaffRole('admin')).toBe(true);
+      expect(isStaffRole('student_free')).toBe(false);
+
+      // Granular permission matrix
+      expect(hasPermission('support_staff', 'doubts:answer')).toBe(true);
+      expect(hasPermission('support_staff', 'users:view')).toBe(true);
+      expect(hasPermission('support_staff', 'orders:verify')).toBe(false);
+      expect(hasPermission('teacher', 'live:host')).toBe(true);
+      expect(hasPermission('teacher', 'content:edit')).toBe(true);
+      expect(hasPermission('teacher', 'orders:verify')).toBe(false);
+      expect(hasPermission('student_free', 'admin:access')).toBe(false);
+      expect(hasPermission('student_free', 'live:host')).toBe(false);
     });
   });
 
@@ -33,8 +104,19 @@ describe('Samyak LMS Access Control Service', () => {
       expect(resolveUserRole('teacher@samyak.edu.np', { is_admin: true })).toBe('administrator');
     });
 
-    it('returns teacher when profile role is teacher', () => {
+    it('returns teacher when profile role is teacher or faculty', () => {
       expect(resolveUserRole('teacher@samyak.edu.np', { role_name: 'teacher' })).toBe('teacher');
+      expect(resolveUserRole('faculty@samyak.edu.np', { role_name: 'faculty' })).toBe('teacher');
+    });
+
+    it('returns support_agent when profile role is support or support_staff', () => {
+      expect(resolveUserRole('support@samyak.edu.np', { role_name: 'support' })).toBe('support_agent');
+      expect(resolveUserRole('support@samyak.edu.np', { role_name: 'support_staff' })).toBe('support_agent');
+    });
+
+    it('returns content_manager and payment_staff for operational staff roles', () => {
+      expect(resolveUserRole('content@samyak.edu.np', { role_name: 'content_reviewer' })).toBe('content_manager');
+      expect(resolveUserRole('finance@samyak.edu.np', { role_name: 'payment_staff' })).toBe('payment_staff');
     });
 
     it('returns student_paid_see when only SEE course is active', () => {
@@ -152,22 +234,44 @@ describe('Samyak LMS Access Control Service', () => {
   });
 
   describe('canAccessRoute: Route Isolation & Protection', () => {
-    it('blocks visitor from student-dashboard and redirects to login', () => {
+    it('blocks visitor from student-dashboard, teacher, staff, and admin routes', () => {
       const ctx = evaluateAccessContext(null);
-      const res = canAccessRoute(ctx, '/student-dashboard');
-      expect(res.allowed).toBe(false);
-      expect(res.redirectUrl).toContain('/login');
+      expect(canAccessRoute(ctx, '/student-dashboard').allowed).toBe(false);
+      expect(canAccessRoute(ctx, '/student-dashboard').redirectUrl).toContain('/login');
+      expect(canAccessRoute(ctx, '/teacher').allowed).toBe(false);
+      expect(canAccessRoute(ctx, '/staff').allowed).toBe(false);
+      expect(canAccessRoute(ctx, '/admin').allowed).toBe(false);
     });
 
-    it('blocks student from admin routes', () => {
+    it('allows free students to access free features and dashboard without requiring purchase', () => {
+      const freeCtx = evaluateAccessContext(
+        { id: 'free-1', email: 'free_student@samyak.np' },
+        null,
+        []
+      );
+      expect(freeCtx.role).toBe('student_free');
+      expect(canAccessRoute(freeCtx, '/student-dashboard').allowed).toBe(true);
+      expect(canAccessRoute(freeCtx, '/onboarding').allowed).toBe(true);
+      expect(canAccessRoute(freeCtx, '/profile').allowed).toBe(true);
+      expect(canAccessRoute(freeCtx, '/mock-tests').allowed).toBe(true);
+      expect(canAccessRoute(freeCtx, '/practice').allowed).toBe(true);
+      expect(canAccessRoute(freeCtx, '/flashcards').allowed).toBe(true);
+      expect(canAccessRoute(freeCtx, '/study-planner').allowed).toBe(true);
+    });
+
+    it('blocks student from admin and staff routes', () => {
       const ctx = evaluateAccessContext(
         { id: 'user-1', email: 'student@samyak.np' },
         null,
         [{ course_id: 'see_class_10', status: 'active' }]
       );
-      const res = canAccessRoute(ctx, '/admin');
-      expect(res.allowed).toBe(false);
-      expect(res.reason).toBe('admin_permission_required');
+      const adminRes = canAccessRoute(ctx, '/admin');
+      expect(adminRes.allowed).toBe(false);
+      expect(adminRes.reason).toBe('admin_permission_required');
+
+      const staffRes = canAccessRoute(ctx, '/staff');
+      expect(staffRes.allowed).toBe(false);
+      expect(staffRes.reason).toBe('staff_permission_required');
     });
 
     it('blocks student from teacher tools', () => {
@@ -181,14 +285,32 @@ describe('Samyak LMS Access Control Service', () => {
       expect(res.reason).toBe('teacher_permission_required');
     });
 
-    it('allows teacher on teacher tools', () => {
+    it('allows teacher on teacher tools, staff workspace, and scoped content admin routes, but blocks finance admin routes', () => {
       const ctx = evaluateAccessContext(
         { id: 'teacher-1', email: 'dr_shrestha@samyak.np' },
         { role_name: 'teacher' },
         []
       );
-      const res = canAccessRoute(ctx, '/teacher/live-classes');
-      expect(res.allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/teacher/live-classes').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/staff').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/questions').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/doubts').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/orders').allowed).toBe(false);
+    });
+
+    it('allows support_agent on /staff and scoped support admin routes, but blocks /teacher and /admin/orders', () => {
+      const ctx = evaluateAccessContext(
+        { id: 'support-1', email: 'support_agent@samyak.np' },
+        { role_name: 'support_staff' },
+        []
+      );
+      expect(ctx.role).toBe('support_agent');
+      expect(canAccessRoute(ctx, '/staff').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/doubts').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/leads').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/users').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/admin/orders').allowed).toBe(false);
+      expect(canAccessRoute(ctx, '/teacher').allowed).toBe(false);
     });
 
     it('blocks SEE student from CEE-exclusive mock tests', () => {
@@ -221,6 +343,7 @@ describe('Samyak LMS Access Control Service', () => {
       );
       expect(canAccessRoute(ctx, '/admin').allowed).toBe(true);
       expect(canAccessRoute(ctx, '/teacher/batches').allowed).toBe(true);
+      expect(canAccessRoute(ctx, '/staff').allowed).toBe(true);
       expect(canAccessRoute(ctx, '/student-dashboard').allowed).toBe(true);
       expect(canAccessRoute(ctx, '/vision-marker').allowed).toBe(true);
       expect(canAccessRoute(ctx, '/mock-tests/exam/cee-1').allowed).toBe(true);
@@ -291,4 +414,26 @@ describe('Samyak LMS Access Control Service', () => {
       expect(calculateProgress(1000, 1000)).toEqual({ percentage: 100, isCompleted: true });
     });
   });
+
+  describe('Onboarding Flow & Open-Redirect Sanitization (Prompt 6)', () => {
+    it('defines preparation stages, daily study time options, and language preferences for all tracks', () => {
+      expect(PREP_STAGES_BY_TRACK.cee_medical.length).toBeGreaterThanOrEqual(3);
+      expect(PREP_STAGES_BY_TRACK.see_class_10.length).toBeGreaterThanOrEqual(2);
+      expect(STUDY_TIME_OPTIONS.map((o) => o.hours)).toEqual([2, 4, 6]);
+      expect(LANGUAGE_OPTIONS.map((o) => o.id)).toEqual(['english', 'bilingual', 'nepali']);
+    });
+
+    it('prevents onboarding redirect loops and blocks external open redirects', () => {
+      expect(resolveNextDestination(null)).toBe('/student-dashboard');
+      expect(resolveNextDestination('/onboarding')).toBe('/student-dashboard');
+      expect(resolveNextDestination('?redirect=/onboarding')).toBe('/student-dashboard');
+      expect(resolveNextDestination('https://evil.example.com')).toBe('/student-dashboard');
+      expect(resolveNextDestination('//evil.example.com')).toBe('/student-dashboard');
+      expect(resolveNextDestination('/mock-tests?program=cee_medical&diagnostic=1')).toBe(
+        '/mock-tests?program=cee_medical&diagnostic=1'
+      );
+      expect(resolveNextDestination('?redirect=%2Fcheckout')).toBe('/checkout');
+    });
+  });
 });
+

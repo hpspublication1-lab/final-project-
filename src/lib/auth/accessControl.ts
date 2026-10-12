@@ -268,13 +268,13 @@ export function resolveUserRole(
   if (isSuperAdmin(userEmail)) return 'super_administrator';
 
   // 2. Profile role attribute checks
-  const rawRole = (profile?.role_name || profile?.role || '').toLowerCase();
+  const rawRole = (profile?.role_name || profile?.role || '').toLowerCase().trim();
   if (rawRole === 'super_admin' || rawRole === 'super_administrator') return 'super_administrator';
   if (profile?.is_admin || rawRole === 'admin' || rawRole === 'administrator') return 'administrator';
-  if (rawRole === 'teacher') return 'teacher';
-  if (rawRole === 'content_manager') return 'content_manager';
-  if (rawRole === 'payment_staff') return 'payment_staff';
-  if (rawRole === 'support_agent' || rawRole === 'support_staff') return 'support_agent';
+  if (rawRole === 'teacher' || rawRole === 'faculty' || rawRole === 'instructor') return 'teacher';
+  if (rawRole === 'content_manager' || rawRole === 'content_reviewer') return 'content_manager';
+  if (rawRole === 'payment_staff' || rawRole === 'finance_staff') return 'payment_staff';
+  if (rawRole === 'support_agent' || rawRole === 'support_staff' || rawRole === 'support') return 'support_agent';
 
   // 3. Student role determination based on active course enrollments
   const hasSee = activeCourses.includes('see_class_10');
@@ -388,11 +388,44 @@ export function canAccessRoute(
         '/admin/enrollments',
         '/admin/coupons',
         '/admin/activation-codes',
+        '/admin/prebookings',
         '/admin/users',
       ];
       const isAllowed = allowedPaymentStaffPaths.some((p) => path === p || path.startsWith(p + '/'));
       if (isAllowed) return { allowed: true };
       return { allowed: false, reason: 'admin_permission_required', redirectUrl: '/admin?error=forbidden_academic_module' };
+    }
+    if (ctx.role === 'support_agent') {
+      const allowedSupportPaths = [
+        '/admin/doubts',
+        '/admin/leads',
+        '/admin/users',
+        '/admin/announcements',
+      ];
+      const isAllowed = allowedSupportPaths.some((p) => path === p || path.startsWith(p + '/'));
+      if (isAllowed) return { allowed: true };
+      return { allowed: false, reason: 'admin_permission_required', redirectUrl: '/staff?error=support_role_restricted' };
+    }
+    if (ctx.role === 'content_manager' || ctx.role === 'teacher') {
+      const allowedContentPaths = [
+        '/admin/doubts',
+        '/admin/ai-review',
+        '/admin/uploads',
+        '/admin/questions',
+        '/admin/lessons',
+        '/admin/chapters',
+        '/admin/subjects',
+        '/admin/resources',
+        '/admin/flashcards',
+        '/admin/exams',
+      ];
+      const isAllowed = allowedContentPaths.some((p) => path === p || path.startsWith(p + '/'));
+      if (isAllowed) return { allowed: true };
+      return {
+        allowed: false,
+        reason: 'admin_permission_required',
+        redirectUrl: ctx.role === 'teacher' ? '/teacher?error=admin_permission_required' : '/staff?error=content_role_restricted',
+      };
     }
     if (ctx.role === 'visitor') {
       return { allowed: false, reason: 'authentication_required', redirectUrl: `/login?redirect=${encodeURIComponent(pathname)}` };
@@ -411,14 +444,35 @@ export function canAccessRoute(
     return { allowed: false, reason: 'teacher_permission_required', redirectUrl: '/student-dashboard?error=teacher_required' };
   }
 
-  // 4. Student Protected Routes
+  // 4. Staff routes: /staff and /staff/*
+  if (path === '/staff' || path.startsWith('/staff/')) {
+    const allowedStaffRoles: UserRole[] = [
+      'super_administrator',
+      'administrator',
+      'teacher',
+      'content_manager',
+      'payment_staff',
+      'support_agent',
+    ];
+    if (allowedStaffRoles.includes(ctx.role)) {
+      return { allowed: true };
+    }
+    if (ctx.role === 'visitor') {
+      return { allowed: false, reason: 'authentication_required', redirectUrl: `/login?redirect=${encodeURIComponent(pathname)}` };
+    }
+    return { allowed: false, reason: 'staff_permission_required', redirectUrl: '/student-dashboard?error=staff_access_required' };
+  }
+
+  // 5. Student Protected Routes
   const studentProtectedPaths = [
     '/student-dashboard',
     '/my-courses',
     '/onboarding',
     '/profile',
+    '/account',
     '/checkout',
     '/payment-success',
+    '/activate-plan',
   ];
 
   if (studentProtectedPaths.some((p) => path === p || path.startsWith(p + '/'))) {

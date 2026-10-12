@@ -68,8 +68,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();
   const lastFetchedUserId = React.useRef<string | null>(null);
 
-  const fetchProfile = async (userId: string) => {
-    if (lastFetchedUserId.current === userId) return;
+  const fetchProfile = async (userId: string, force = false) => {
+    if (!force && lastFetchedUserId.current === userId) return;
     lastFetchedUserId.current = userId;
     try {
       const { data, error } = await supabase
@@ -259,9 +259,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch {
       // Ignore if no session existed
     }
+    lastFetchedUserId.current = null;
     setUser(null);
     setSession(null);
     setProfile(null);
+    resetUser();
   };
 
   const getCurrentUser = async () => {
@@ -289,14 +291,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const refreshProfile = async () => {
-    if (user) {
-      await fetchProfile(user.id);
+    if (user?.id) {
+      await fetchProfile(user.id, true);
     }
   };
 
   const resetPasswordForEmail = async (email: string, redirectTo?: string) => {
+    const origin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL || 'https://samyakcee.com';
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectTo || `${process.env.NEXT_PUBLIC_SITE_URL || ''}/reset-password`,
+      redirectTo: redirectTo || `${origin}/auth/callback?next=/reset-password`,
     });
     if (error) throw error;
   };

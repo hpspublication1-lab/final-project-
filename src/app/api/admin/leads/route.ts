@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { isSuperAdmin } from '@/lib/config/superAdmin';
+import { verifyServerPermission } from '@/lib/auth/serverGuard';
 
 export async function GET(req: NextRequest) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
-    if (!isSuperAdmin(user.email)) return NextResponse.json({ error: 'Super admins only' }, { status: 403 });
+    const guard = await verifyServerPermission(req, 'users:view');
+    if (!guard.authorized) return guard.response;
 
     const admin = createAdminClient();
     if (!admin) {
