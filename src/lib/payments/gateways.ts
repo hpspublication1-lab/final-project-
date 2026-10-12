@@ -28,6 +28,7 @@ export const PLAN_PRICES: Record<string, PlanSku> = {
   'cee-crash-course-deposit': { npr: 300, days: 90, plan: 'pro', label: 'CEE 45-Day Crash Course · Seat Reservation Deposit (NPR 300)' },
   'cee-crash-course-balance': { npr: 1999, days: 45, plan: 'pro', label: 'CEE 45-Day Crash Course · Remaining Balance (NPR 1,999)' },
   'cee-mbbs-mastery-2026': { npr: 7990, days: 180, plan: 'pro', label: 'CEE Medical Entrance Super Target Batch 2026' },
+  'cee-physics-chemistry-booster': { npr: 3990, days: 90, plan: 'pro', label: 'CEE Physics & Chemistry Booster' },
   'see-class-10-board-topper-batch': { npr: 4990, days: 365, plan: 'pro', label: 'SEE Class 10 Board Topper Batch 2082/2083' },
   'see-opt-math-science-mastery': { npr: 2990, days: 120, plan: 'pro', label: 'SEE Optional Math & Science Score Booster' },
   'english-spoken-fluency-pro': { npr: 1990, days: 60, plan: 'pro', label: 'Spoken English & Professional Confidence Masterclass' },

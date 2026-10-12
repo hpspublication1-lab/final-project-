@@ -125,8 +125,8 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { name: 'Er. Bishal Adhikari', title: 'Physics Entrance Specialist', credentials: 'M.Sc. Physics (TU), 10+ Yrs Entrance Training', bio: 'Pioneer of shortcut derivation techniques and rapid numerical solving formulas for CEE.', avatar: '/images/instructors/bishal.jpg' },
     ],
     testimonials: [
-      { name: 'Aarav K. Sharma', role: 'CEE 2025 Top 50 Ranker', score: '168 / 200 in CEE', text: 'The CEE mock exam simulator on Samyak helped me conquer time panic. The AI doubt solver explained Physics numericals late at night when no teacher was available!', avatar: '👨‍⚕️' },
-      { name: 'Priya Thapa', role: 'MBBS Scholarship Recipient', score: '154 / 200 in CEE', text: 'Samyak’s chapterwise MCQ bank with instant explanation notes changed my revision strategy completely. Highly recommended for every CEE aspirant in Nepal.', avatar: '👩‍⚕️' },
+      { name: '200-Q Timed Mock Simulator', role: 'Verified Platform Feature', score: '-0.25 Marking', text: 'Full-length 3-hour MECEE simulations with +1.0 correct scoring, -0.25 negative marking, and chapter-by-chapter accuracy breakdowns.', avatar: '🩺' },
+      { name: '15,000+ Topicwise Question Bank', role: 'Verified Platform Feature', score: 'PCB + MAT', text: 'Organized across Zoology, Botany, Chemistry, Physics, and MAT with step-by-step rationales and spaced-repetition bookmarks.', avatar: '🧬' },
     ],
     faqs: [
       { question: 'Is this aligned with the latest MEC CEE 2026 syllabus?', answer: 'Yes! All MCQs, mock tests, and weightages strictly follow the official Medical Education Commission (MEC) Nepal syllabus.' },
@@ -194,8 +194,8 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { name: 'Er. Ramesh Karki', title: 'Senior Mathematics Lead', credentials: 'B.E. (IOE Pulchowk), Author of SEE Topper Series', bio: 'Master of shortcut geometry proofs and numerical problem solving.', avatar: '/images/instructors/ramesh.jpg' },
     ],
     testimonials: [
-      { name: 'Samyak Giri', role: 'SEE 2025 Student', score: 'GPA 3.95 in SEE', text: 'The AI Handwritten Answer Checker showed me exactly where I was losing marks in Science long questions. Samyak made SEE revision effortless!', avatar: '🎓' },
-      { name: 'Anjali Rayamajhi', role: 'SEE Topper Student', score: 'GPA 4.0 in SEE', text: 'The 10-year solved model paper bank helped me practice actual board questions under time pressure. The best platform for Class 10 in Nepal!', avatar: '🌟' },
+      { name: 'Dual-Medium HD Video Library', role: 'Verified Platform Feature', score: 'EN & NP Medium', text: 'Complete Class 10 video playlists available in both English Medium (ID 379737) and Nepali Medium (ID 367785) for flexible board revision.', avatar: '🎓' },
+      { name: 'AI Handwritten Rubric Marker', role: 'Verified Platform Feature', score: '1–4 Marks Scheme', text: 'Upload photos of handwritten Science or Math solutions to receive step-by-step NEB marking scheme feedback and teacher escalation.', avatar: '📝' },
     ],
     faqs: [
       { question: 'Is this content aligned with the new NEB SEE Class 10 curriculum?', answer: 'Yes! Content is updated for the latest CDC & NEB Nepal Class 10 curriculum and question specification grid.' },
@@ -263,12 +263,12 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { name: 'Coach Aria (AI Assessor)', title: 'AI Speech & Rubric Evaluator', credentials: 'Cambridge IELTS Band Descriptors Calibration', bio: 'Interactive voice persona delivering real-time acoustic and rubric feedback across Fluency, Vocabulary, Grammar, and Pronunciation.', avatar: '/images/instructors/aria.jpg' },
     ],
     testimonials: [
-      { name: 'Prashant Adhikari', role: 'Student at University of Sydney', score: 'Overall Band 8.0', text: 'The AI Writing Evaluator pinpointed my coherence errors in Task 2 essays immediately. Raised my score from 6.0 to 7.5 in just 3 weeks!', avatar: '✈️' },
-      { name: 'Sneha Gurung', role: 'Master Student in Canada', score: 'Overall Band 7.5', text: 'The Speaking Simulator helped me overcome my nervousness on Cue Card topics. Highly effective for self-preparation!', avatar: '🇨🇦' },
+      { name: 'Coach Aria Speaking Engine', role: 'Verified Platform Feature', score: 'Part 1, 2 & 3', text: 'Practice IELTS Speaking cue cards with live voice transcription and rubric feedback calibrated to public Band Descriptors.', avatar: '🎙️' },
+      { name: 'Writing Task 1 & 2 Evaluator', role: 'Verified Platform Feature', score: '4-Criterion Rubric', text: 'Instant diagnostic breakdown across Task Response, Coherence & Cohesion, Lexical Resource, and Grammatical Range.', avatar: '✍️' },
     ],
     faqs: [
       { question: 'Does this cover both IELTS Academic and General Training?', answer: 'Yes! Both Academic and General Training modules for Reading, Writing, Listening & Speaking are included.' },
-      { question: 'How accurate is the AI Essay & Band Predictor?', answer: 'Our evaluation engine is calibrated strictly against official IELTS 9-band descriptors for Task Response, Coherence, Vocabulary & Grammar.' },
+      { question: 'How accurate is the AI Essay & Band Predictor?', answer: 'Our evaluation engine is calibrated against public IELTS 9-band descriptors for Task Response, Coherence, Vocabulary & Grammar as an estimated practice score.' },
       { question: 'Can I practice Speaking tests on my smartphone?', answer: 'Yes! You can record your voice directly in the browser or phone for evaluation.' },
     ],
   },
@@ -328,12 +328,11 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { title: 'Google Ads & GA4 Analytics', desc: 'PPC search campaigns, bidding models & Google Analytics 4.', lessonsCount: 14, topics: ['Google Search Ads Setup', 'Keyword Match Types & Bidding', 'GA4 Dashboard & Event Tracking', 'Client Growth Reporting'] },
     ],
     instructors: [
-      { name: 'Kiran Shrestha', title: 'Digital Growth Lead', credentials: 'Ex-Agency Director, $500K+ Ad Spend Managed', bio: 'Has scaled over 40 e-commerce and SaaS brands in Nepal and internationally.', avatar: '/images/instructors/kiran.jpg' },
-      { name: 'Rupak Thapa', title: 'SEO & Performance Strategist', credentials: 'Certified Google & Meta Specialist', bio: 'Expert in organic search ranking, content architecture, and conversion optimization.', avatar: '/images/instructors/rupak.jpg' },
+      { name: 'Nabin KC', title: 'AI & Digital Tech Educator', credentials: 'Software Engineer & Digital Growth Specialist', bio: 'Leads practical training in digital marketing funnels, SEO architecture, and AI-assisted campaign workflows.', avatar: '/images/instructors/nabin.jpg' },
     ],
     testimonials: [
-      { name: 'Deepak Tamang', role: 'Freelance Marketer', score: 'NPR 150K/mo Earnings', text: 'The Meta Ads pixel setup and audience targeting modules enabled me to land 3 monthly retainer clients right after completing the course!', avatar: '📈' },
-      { name: 'Pooja Karki', role: 'E-commerce Store Owner', score: '3.8x ROI on Ads', text: 'Samyak showed me how to stop wasting money on boosted posts and start running real Ads Manager campaigns.', avatar: '💼' },
+      { name: 'Meta & Search Campaign Checklists', role: 'Verified Platform Feature', score: '12 Modules', text: 'Structured walkthroughs for audience targeting, conversion tracking, on-page SEO audits, and GA4 reporting templates.', avatar: '📈' },
+      { name: 'AI Copywriting & Prompt Sandbox', role: 'Verified Platform Feature', score: 'Interactive Tool', text: 'Test ad copy hooks, landing page headlines, and SEO outlines inside the Samyak Digital AI Studio.', avatar: '💼' },
     ],
     faqs: [
       { question: 'Do I need prior coding or marketing experience?', answer: 'No prior experience is needed! We start from basic marketing principles up to advanced campaign setup.' },
@@ -397,12 +396,11 @@ export const COURSE_LANDING_DATA: Record<string, CourseLandingConfig> = {
       { title: 'AI Project Building & Deployment', desc: 'Building chatbots, web scrapers & automated tools.', lessonsCount: 12, topics: ['Building a Custom AI Chatbot', 'Automated Web Scraper', 'Document Summarizer Tool', 'Project Deployment Basics'] },
     ],
     instructors: [
-      { name: 'Er. Sujan Maharjan', title: 'Lead AI Engineer', credentials: 'B.E. Computer Engineering, 6+ Yrs AI Dev', bio: 'Specialist in Python backend development, LLM fine-tuning, and automation.', avatar: '/images/instructors/sujan.jpg' },
-      { name: 'Aayush Joshy', title: 'Senior Software Engineer', credentials: 'Full Stack & AI Developer', bio: 'Passionate about teaching practical Python development and modern tech stacks.', avatar: '/images/instructors/aayush.jpg' },
+      { name: 'Nabin KC', title: 'Software Engineer, AI & Tech Educator', credentials: 'Full-Stack & AI Application Developer', bio: 'Guides beginners from core Python syntax and REST APIs to practical LLM integrations and automation scripts.', avatar: '/images/instructors/nabin.jpg' },
     ],
     testimonials: [
-      { name: 'Nabin Basnet', role: 'Computer Science Student', score: 'Built 4 AI Apps', text: 'This course made Python so easy to understand. Connecting Python to the Gemini API and building my own AI summarizer was super exciting!', avatar: '💻' },
-      { name: 'Riya Karki', role: 'Junior Developer', score: 'Landed Internship', text: 'The automation and API integration modules helped me build a solid GitHub portfolio that got me hired!', avatar: '🚀' },
+      { name: '6 Guided Python + AI Projects', role: 'Verified Platform Feature', score: 'Hands-On Code', text: 'Build practical scripts including JSON data parsers, REST API clients, and Gemini/OpenAI document summarizers.', avatar: '💻' },
+      { name: 'Interactive Prompt & Code Sandbox', role: 'Verified Platform Feature', score: '60 Days Access', text: 'Experiment with structured prompts and rubric-graded outputs directly in the browser.', avatar: '🚀' },
     ],
     faqs: [
       { question: 'Is this suitable for complete beginners in coding?', answer: 'Yes! We start from absolute scratch with Python variables and build up to AI API integrations.' },

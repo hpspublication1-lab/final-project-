@@ -143,8 +143,8 @@ flowchart TD
 | **Prompt 4** | **Coherent Visual System & Homepage** | Refine UI typography, contrast, mobile responsiveness, prioritize CEE flagship flow | Prompt 3 | ✅ **COMPLETED** | Refactored Hero, mounted faculty, clear CEE offer |
 | **Prompt 5** | **Fix Navigation & Course Discovery** | Organize Learn/Practice/Mocks/Revise/Progress, eliminate 404s/blank states | Prompt 4 | ✅ **COMPLETED** | Verified 6 pillars, canonical redirects, 404 recovery |
 | **Prompt 6** | **Repair Signup, Login, Roles & Onboarding** | Enforce server-side role validation, fix session expiry, streamline onboarding | Prompt 5 | ✅ **COMPLETED** | Server RBAC guards, recovery flow, 4-step onboarding |
-| **Prompt 7** | **Course Catalog & Complete Enrollment** | Detail pages with syllabus, real faculty, sample preview, link directly to checkout | Prompt 2, 6 | 🟡 **IN PROGRESS** | Connect catalog detail pages, syllabus, sample preview, checkout |
-| **Prompt 8** | **Reliable Nepal Payments & Access Activation** | Server-verified Fonepay dynamic QR, idempotent activation, prevent double access | Prompt 7 | ⚠️ BLOCKED (Live Keys) | Verify UAT sandbox flow; document live key blocker |
+| **Prompt 7** | **Course Catalog & Complete Enrollment** | Detail pages with syllabus, real faculty, sample preview, link directly to checkout | Prompt 2, 6 | ✅ **COMPLETED** | 8 approved courses, 4 formats, sample preview, 100% SKU parity |
+| **Prompt 8** | **Reliable Nepal Payments & Access Activation** | Server-verified Fonepay dynamic QR, idempotent activation, prevent double access | Prompt 7 | 🟡 **IN PROGRESS** | Verify UAT sandbox flow; document live key blocker |
 | **Prompt 9** | **Actionable Student Dashboard** | Real progress, upcoming classes, due revisions, resume learning, empty states | Prompt 6, 7 | ⚪ PENDING | Audit `StudentDashboardClient.tsx`, topic mastery |
 | **Prompt 10** | **Video Player & Live-Class Experience** | Bunny Stream signed URLs, playback resume, notes attachment, 100ms class schedule | Prompt 9 | ⚠️ BLOCKED (Bunny Keys) | Implement resilient playback + mock/test fallbacks |
 | **Prompt 11** | **Reviewed Curriculum & Notes System** | Official CEE syllabus alignment, MathJax/KaTeX formula rendering, downloadable notes | Prompt 10 | ⚪ PENDING | Verify chapter taxonomy, KaTeX equations, PDFs |
@@ -382,4 +382,38 @@ Based on actual inspection of the current code and configuration:
   - Full Vitest suite: **231 / 231 tests passing** across 19 test suites.
   - Zero TypeScript compilation errors (`npx tsc --noEmit`).
 - [x] Completed **Prompt 6: Repair signup, login, roles, and onboarding**.
-- [x] Ready to proceed to **Prompt 7: Make the course catalog and enrollment experience complete**.
+- [x] Completed **Prompt 7: Make the course catalog and enrollment experience complete**.
+
+---
+
+## 11. Acceptance Criteria Checklist for Prompt 7
+
+- [x] **Expanded Authoritative Course Catalog (`src/lib/courses/catalog.ts`)**:
+  - Defined all 8 approved course offerings across all 4 delivery formats (`live_batch`, `crash_course`, `subject_course`, `self_paced_pass`):
+    1. `see-class-10-board-topper-batch` (`live_batch`, NPR 4,990, 365 Days)
+    2. `cee-mbbs-mastery-2026` (`live_batch`, NPR 7,990, 180 Days)
+    3. `cee-45-day-crash-course` (`crash_course`, NPR 2,299, 45 Days, optional NPR 300 prebook deposit + NPR 1,999 balance)
+    4. `cee-ai-pro-yearly` (`self_paced_pass`, NPR 5,400, 365 Days)
+    5. `see-opt-math-science-mastery` (`subject_course`, NPR 2,990, 120 Days)
+    6. `english-ielts-target-8-mastery` (`self_paced_pass`, NPR 3,490, 60 Days)
+    7. `digital-marketing-canva-freelancing` (`self_paced_pass`, NPR 1,990, 45 Days)
+    8. `digital-python-programming-zero-to-hero` (`self_paced_pass`, NPR 2,490, 60 Days)
+  - Added `formatLabel`, `aliases`, `prerequisites`, `featureLimits`, `teachingAssetStatus` (honestly reporting `partial_blocker` where live-room 100ms or Bunny DRM tokens are pending), and interactive `demoLesson.sampleQuestion` to every course record.
+- [x] **Course Detail Pages (`src/app/courses/[slug]/page.tsx`)**:
+  - Connected to `getCourseBySlug` (supporting both canonical slugs and legacy landing slugs).
+  - Displays delivery format badge, total chapter coverage count, interactive sample question widget with instant rationale feedback, prerequisites, feature limits, teaching asset readiness status, verified human faculty vs AI coaching personas, payable-now vs payable-later breakdown (including the NPR 300 prebook seat deposit option), and `/refund` link.
+- [x] **Course Catalogue & Offer Comparison (`src/app/courses/page.tsx`)**:
+  - Added Delivery Format filter pills (`All Formats`, `Live Batches`, `Crash Courses`, `Subject Courses`, `Self-Paced Passes`) alongside Track filters and search.
+  - Added Side-by-Side Approved Program & Format Comparison Table.
+- [x] **Reconciled Course Landing Pages (`src/lib/courses/landingData.ts`, `src/components/courses/CourseLandingPageClient.tsx`, `src/app/see/page.tsx`, `src/app/english/page.tsx`, `src/app/digital/page.tsx`)**:
+  - Replaced unverified instructors and student income/score testimonials with verified Samyak faculty (`Nabin KC`, `Subash Bhattarai`, `Dr. Samyak Shrestha`, `Er. Bishal Adhikari`, `Pradeep Poudel Sir`, `Er. Ramesh Karki`) and verified platform deliverable walkthroughs.
+  - Removed unverified `aggregateRating` from `/see` JSON-LD and `"9,000+ students"` from `/english`.
+  - Connected category tabs on `/english` and track cards on `/digital` to real course detail and checkout links.
+- [x] **100% Checkout SKU Parity & Preserved User Selection (`src/app/checkout/page.tsx`, `src/app/checkout/components/FonepayCheckout.tsx`, `src/lib/payments/gateways.ts`, `src/app/onboarding/components/OnboardingClient.tsx`)**:
+  - Synchronized `PLAN_PRICES` and `PLAN_DETAILS` across all 20 SKUs.
+  - Preserved selected offer identity on the unauthenticated checkout prompt and inferred the matching onboarding program track (`inferTrackFromRedirect`) when a user registers via `/login?redirect=/checkout?plan=...`.
+- [x] **Verification & Test Coverage**:
+  - Added 5 new Prompt 7 unit tests in `src/lib/courses/__tests__/courseOffers.test.ts` (14 total in file; **236 / 236 tests passing** across 19 suites).
+  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
+- [x] Ready to proceed to **Prompt 8: Implement reliable Nepal payments and access activation**.
+

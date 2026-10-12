@@ -17,7 +17,10 @@ interface QrResponse {
   qrDataUrl: string;
 }
 
-const PLAN_DETAILS: Record<string, { title: string; price: number; originalPrice?: number; validity: string; desc: string }> = {
+export const PLAN_DETAILS: Record<
+  string,
+  { title: string; price: number; originalPrice?: number; validity: string; desc: string; balanceLaterNpr?: number }
+> = {
   // New Unified CEE Monthly Tiers
   'cee-premium-monthly': { title: 'CEE Premium · Monthly Plan', price: 350, validity: '30 Days', desc: 'Complete Notes, 15K MCQs, Verified PYQs & 4 Grand Mocks' },
   'cee-ai-pro-monthly': { title: 'CEE AI Pro · Monthly Plan', price: 600, validity: '30 Days', desc: 'Everything in Premium + Unlimited Mocks, AI Mistake Diagnosis & 75 AI Requests/Day' },
@@ -25,11 +28,12 @@ const PLAN_DETAILS: Record<string, { title: string; price: number; originalPrice
   'cee-ai-pro-yearly': { title: 'CEE AI Pro · Annual Intensive', price: 5400, originalPrice: 7200, validity: '365 Days (1 Year)', desc: '1-Year Unlimited CEE Mocks, 75 AI Requests/Day, AI Flashcard Generator & Weak-Topic Reports' },
 
   // CEE Medical Entrance Flagships & Crash Courses
-  'cee-mbbs-mastery-2026': { title: 'CEE MBBS Super Target Batch 2026', price: 7990, originalPrice: 14990, validity: '180 Days (Full Cycle)', desc: 'Nepal\'s premier MECEE MBBS/BDS Entrance Batch with daily live masterclasses, 15K MCQs & -0.25 mock tests' },
+  'cee-mbbs-mastery-2026': { title: 'CEE MBBS Super Target Batch 2026', price: 7990, originalPrice: 14990, validity: '180 Days (Full Cycle)', desc: "Nepal's premier MECEE MBBS/BDS Entrance Batch with daily live masterclasses, 15K MCQs & -0.25 mock tests" },
   'cee-45-day-crash-course': { title: 'CEE 45-Day Ultimate Crash Course 2026', price: 2299, originalPrice: 4990, validity: '45 Days Intensive', desc: 'Complete Fast-Track Revision, 500 Formulae, and 20 Full-Length Timed Mocks' },
-  'cee-crash-course-deposit': { title: 'CEE 45-Day Crash Course · Seat Reservation Deposit', price: 300, validity: '90 Days AI Pro Access', desc: 'NPR 300 refundable reservation deposit. 100% credited toward course fee. Remaining balance NPR 1,999 due at launch.' },
+  'cee-crash-course-deposit': { title: 'CEE 45-Day Crash Course · Seat Reservation Deposit', price: 300, validity: '90 Days AI Pro Access', desc: 'NPR 300 refundable reservation deposit. 100% credited toward course fee. Remaining balance NPR 1,999 due within 7 days of batch launch.', balanceLaterNpr: 1999 },
   'cee-crash-course-balance': { title: 'CEE 45-Day Crash Course · Remaining Balance', price: 1999, originalPrice: 2299, validity: '45 Days Intensive', desc: 'Remaining balance after NPR 300 seat reservation deposit. Grants full access to live crash course batch.' },
   'crash-course': { title: 'CEE 45-Day Crash Course', price: 2299, originalPrice: 4990, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
+  pro: { title: 'CEE 45-Day Crash Course', price: 2299, originalPrice: 4990, validity: '45 Days', desc: 'Complete Revision Bootcamp & 100 High-Yield Derivations' },
   'cee-physics-chemistry-booster': { title: 'CEE Physics & Chemistry Booster', price: 3990, originalPrice: 5990, validity: '90 Days', desc: 'High-Yield Formula Batch and Calculation Shortcuts' },
 
   // Preserved Legacy SKUs
@@ -44,6 +48,7 @@ const PLAN_DETAILS: Record<string, { title: string; price: number; originalPrice
 
   // Secondary Tracks
   'english-ielts-target-8-mastery': { title: 'IELTS Target Band 8.0+ Mastery', price: 3490, originalPrice: 5990, validity: '60 Days', desc: 'AI Speaking simulator, Writing Task 1 & 2 evaluation, full Cambridge tests' },
+  'english-pte-academic-express': { title: 'PTE Academic 79+ Express Preparation', price: 2990, validity: '30 Days', desc: 'Intensive PTE Academic templates, pronunciation drills, and timed mock evaluations' },
   'english-spoken-fluency-pro': { title: 'Spoken English & Fluency Masterclass', price: 1990, validity: '60 Days', desc: 'Daily speaking practice and professional pronunciation drills' },
   'digital-ai-prompt-engineering': { title: 'AI Tools & Prompt Engineering', price: 1490, validity: '30 Days', desc: 'ChatGPT, Midjourney, Claude & Automation for Beginners' },
   'digital-python-programming-zero-to-hero': { title: 'Python Programming Zero to Hero', price: 2490, validity: '60 Days', desc: 'Hands-on Python coding, automation scripts and AI API integrations' },
@@ -65,7 +70,7 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number>(0);
 
-  const selectedPlanInfo = PLAN_DETAILS[plan] || PLAN_DETAILS['student-yearly'];
+  const selectedPlanInfo = PLAN_DETAILS[plan] || PLAN_DETAILS['cee-mbbs-mastery-2026'];
 
   useEffect(() => {
     const supabase = createClient();
@@ -164,20 +169,43 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
   if (!isAuthenticated) {
     return (
       <PageTransitionWrapper>
-        <div className="min-h-screen flex items-center justify-center bg-background px-4">
-          <div className="card-base max-w-md w-full text-center p-8 space-y-4">
+        <div className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+          <div className="card-base max-w-md w-full text-center p-8 space-y-5">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto text-primary">
               <ShieldCheck size={32} />
             </div>
-            <h2 className="text-xl font-extrabold text-foreground">Sign in to Complete Checkout</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Please sign in or create an account so your course activation and receipts are saved to your student profile.
-            </p>
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-extrabold text-foreground">Sign in to Complete Checkout</h2>
+              <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
+                Your selected program is saved below. Sign in or create a student account to continue directly to payment for this offer.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-muted/50 border border-border/80 text-left space-y-1.5 text-xs">
+              <span className="text-[10px] font-mono font-bold uppercase text-primary block">
+                Selected Offer Preserved
+              </span>
+              <p className="font-bold text-foreground text-sm">{selectedPlanInfo.title}</p>
+              <div className="flex items-center justify-between text-muted-foreground pt-1 border-t border-border/60">
+                <span>Validity: {selectedPlanInfo.validity}</span>
+                <span className="font-black text-foreground font-mono">
+                  NPR {selectedPlanInfo.price.toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+
             <Link
               href={`/login?redirect=${encodeURIComponent(`/checkout?plan=${plan}`)}`}
-              className="btn-primary w-full justify-center py-3 text-sm font-bold shadow-md"
+              className="btn-primary w-full justify-center py-3.5 text-sm font-bold shadow-md"
             >
               Sign In / Register to Continue
+            </Link>
+
+            <Link
+              href="/courses"
+              className="block text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              ← Return to Course Catalogue
             </Link>
           </div>
         </div>
@@ -189,13 +217,21 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
     <PageTransitionWrapper>
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-10">
         <div className="w-full max-w-2xl space-y-6">
-          <Link
-            href="/#pricing"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
-          >
-            <ArrowLeft size={15} />
-            Back to Pricing
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/courses"
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
+              <ArrowLeft size={15} />
+              Back to Course Catalogue
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-xs font-bold text-primary hover:underline"
+            >
+              Compare All Plans →
+            </Link>
+          </div>
 
           <div className="grid md:grid-cols-12 gap-6 items-start">
             {/* Left: Order Summary & Trust Badges */}
@@ -218,7 +254,7 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
                   <span className="text-muted-foreground flex items-center gap-1">
                     <Zap size={13} className="text-amber-500" /> Access Activation
                   </span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Instant Automatic</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">Instant Upon Verification</span>
                 </div>
 
                 <div className="flex justify-between items-center py-1">
@@ -228,9 +264,17 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
                   <span className="font-bold text-foreground">Fonepay Dynamic QR</span>
                 </div>
 
-                <div className="pt-3 border-t border-border/60 flex justify-between items-center text-base font-black text-foreground">
-                  <span>Total Amount</span>
-                  <span className="text-primary font-mono">NPR {selectedPlanInfo.price.toLocaleString('en-IN')}</span>
+                <div className="pt-3 border-t border-border/60 space-y-1.5">
+                  <div className="flex justify-between items-center text-base font-black text-foreground">
+                    <span>Payable Now</span>
+                    <span className="text-primary font-mono">NPR {selectedPlanInfo.price.toLocaleString('en-IN')}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[11px] text-muted-foreground">
+                    <span>Balance Payable Later</span>
+                    <span className="font-bold text-foreground">
+                      NPR {(selectedPlanInfo.balanceLaterNpr ?? 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -247,7 +291,7 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
                 </div>
               </div>
 
-              {/* Compact Security List */}
+              {/* Compact Security & Refund Policy List */}
               <div className="space-y-1.5 text-[11px] text-muted-foreground pt-1">
                 <div className="flex items-center gap-1.5">
                   <Lock size={12} className="text-emerald-500 shrink-0" />
@@ -255,7 +299,12 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck size={12} className="text-primary shrink-0" />
-                  <span>Server-Verified Idempotent Payment System</span>
+                  <span>
+                    7-Day Refund Policy ·{' '}
+                    <Link href="/refund" className="underline hover:text-foreground">
+                      Read Refund Terms
+                    </Link>
+                  </span>
                 </div>
               </div>
             </div>

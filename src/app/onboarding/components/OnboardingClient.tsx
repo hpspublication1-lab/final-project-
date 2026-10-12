@@ -136,11 +136,34 @@ export function resolveNextDestination(searchStr?: string | null): string {
     : '/student-dashboard';
 }
 
+/** Infers the canonical onboarding track from a preserved ?redirect=/checkout?plan=... URL. */
+export function inferTrackFromRedirect(redirectPath: string): CanonicalCourseId | null {
+  if (!redirectPath.startsWith('/checkout')) return null;
+  const qIndex = redirectPath.indexOf('?');
+  if (qIndex === -1) return null;
+  const plan = (new URLSearchParams(redirectPath.slice(qIndex)).get('plan') || '').toLowerCase();
+  if (!plan) return null;
+  if (plan.startsWith('see-')) return 'see_class_10';
+  if (plan.startsWith('english-') || plan.includes('ielts')) return 'ielts';
+  if (plan.includes('python') || plan.includes('ai-prompt')) return 'artificial_intelligence';
+  if (plan.startsWith('digital-')) return 'digital_marketing';
+  if (plan.startsWith('cee-') || plan.includes('crash') || plan.startsWith('pro') || plan.startsWith('student')) {
+    return 'cee_medical';
+  }
+  return null;
+}
+
 export default function OnboardingClient() {
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
   const { program, setProgram } = useProgram();
-  const [selectedTrack, setSelectedTrack] = useState<CanonicalCourseId>(program || 'cee_medical');
+  const [selectedTrack, setSelectedTrack] = useState<CanonicalCourseId>(() => {
+    if (typeof window !== 'undefined') {
+      const inferred = inferTrackFromRedirect(resolveNextDestination(window.location.search));
+      if (inferred) return inferred;
+    }
+    return program || 'cee_medical';
+  });
   const [prepStage, setPrepStage] = useState<string>('class_12_fresh');
   const [dailyStudyHours, setDailyStudyHours] = useState<number>(4);
   const [languagePreference, setLanguagePreference] = useState<string>('english');
@@ -189,7 +212,13 @@ export default function OnboardingClient() {
 
       if (!active) return;
       const emailPrefix = (me?.email ?? '').split('@')[0];
-      if (me?.target_exam) {
+      const redirectTrack =
+        typeof window !== 'undefined'
+          ? inferTrackFromRedirect(resolveNextDestination(window.location.search))
+          : null;
+      if (redirectTrack) {
+        setSelectedTrack(redirectTrack);
+      } else if (me?.target_exam) {
         setSelectedTrack(me.target_exam as CanonicalCourseId);
       }
       if (me?.prep_stage) {

@@ -152,6 +152,57 @@ export default function EnglishLearningPage() {
           </button>
         </div>
 
+        {/* Active Tab Course Offer & Preview Card */}
+        <div className="mb-10 bg-card border-2 border-amber-500/30 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-mono font-black uppercase px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                {activeTab === 'pte' ? 'PTE EXPRESS PASS · 45 DAYS' : 'SELF-PACED AI PASS · 60 DAYS'}
+              </span>
+              <span className="text-xs font-bold text-muted-foreground">
+                {activeTab === 'pte' ? 'NPR 2,990 One-Time' : 'NPR 3,490 One-Time'}
+              </span>
+            </div>
+            <h3 className="text-xl font-black text-foreground">
+              {activeTab === 'spoken' && 'Spoken English & Fluency Coaching (Included in IELTS Mastery Pass)'}
+              {activeTab === 'ielts' && 'IELTS Academic & General Target Band 8.0+ Mastery'}
+              {activeTab === 'pte' && 'PTE Academic Target 79+ Express Course'}
+              {activeTab === 'grammar' && 'Academic Grammar, Lexical Resource & Band 9 Essay Structure'}
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              {activeTab === 'spoken' &&
+                'Practice Part 1, Part 2 Cue Cards, and Part 3 abstract discussions with real-time pronunciation and fluency scoring.'}
+              {activeTab === 'ielts' &&
+                'Complete 4-module Academic & General preparation with Cambridge Reading vaults, AI Writing Task 1 & 2 evaluator, and Speaking simulator.'}
+              {activeTab === 'pte' &&
+                'Intensive PTE Academic templates, Read Aloud / Repeat Sentence pronunciation drills, and timed mock evaluations.'}
+              {activeTab === 'grammar' &&
+                'Master complex sentence structures, C1/C2 academic collocations, and cohesive devices required for Band 8.0+.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link
+              href="/courses/english-ielts-target-8-mastery"
+              className="px-5 py-3 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs transition-all"
+            >
+              Course Details &amp; Sample
+            </Link>
+            <Link
+              href={
+                activeTab === 'pte'
+                  ? '/checkout?plan=english-pte-academic-express'
+                  : '/checkout?plan=english-ielts-target-8-mastery'
+              }
+              className="px-6 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all"
+            >
+              <span>
+                Enroll Now (NPR {activeTab === 'pte' ? '2,990' : '3,490'})
+              </span>
+              <ArrowRight size={14} />
+            </Link>
+          </div>
+        </div>
+
         {/* Interactive Specialization Modules Grid */}
         <div className="grid md:grid-cols-3 gap-6">
           {/* Card 1: Duolingo DET IT Engine */}
@@ -242,16 +293,26 @@ export default function EnglishLearningPage() {
         {/* CTA Banner */}
         <div className="mt-14 rounded-3xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 p-8 sm:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
           <div className="space-y-2 max-w-xl">
-            <h3 className="text-2xl sm:text-3xl font-black">Ready to Speak English with Confidence?</h3>
-            <p className="text-xs sm:text-sm text-amber-100">Join over 9,000+ students across Nepal who transformed their English skills with Samyak.</p>
+            <h3 className="text-2xl sm:text-3xl font-black">Ready to Build Your Band 8.0+ Score?</h3>
+            <p className="text-xs sm:text-sm text-amber-100">
+              Enroll in the 60-Day IELTS Academic &amp; General Mastery Pass (NPR 3,490) with 24/7 AI Writing &amp; Speaking evaluations and a 7-day refund policy.
+            </p>
           </div>
-          <Link
-            href="/courses?sector=english"
-            onClick={() => setProgram('english')}
-            className="px-8 py-4 rounded-2xl bg-white text-amber-900 font-black text-sm hover:bg-amber-50 transition-colors shadow-lg shrink-0"
-          >
-            Enroll in English Batch Now
-          </Link>
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Link
+              href="/courses/english-ielts-target-8-mastery"
+              className="px-6 py-4 rounded-2xl bg-amber-900/40 border border-amber-300/30 text-white font-bold text-sm hover:bg-amber-900/60 transition-colors"
+            >
+              View Syllabus &amp; Terms
+            </Link>
+            <Link
+              href="/checkout?plan=english-ielts-target-8-mastery"
+              onClick={() => setProgram('english')}
+              className="px-8 py-4 rounded-2xl bg-white text-amber-900 font-black text-sm hover:bg-amber-50 transition-colors shadow-lg"
+            >
+              Enroll in IELTS Mastery (NPR 3,490)
+            </Link>
+          </div>
         </div>
       </section>
     </div>

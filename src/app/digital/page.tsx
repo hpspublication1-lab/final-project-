@@ -140,67 +140,127 @@ export default function DigitalAiPage() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Track 1 */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
-              🤖
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
+                  🤖
+                </div>
+                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-600">
+                  NPR 2,490 · 60D
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-foreground">AI &amp; Prompt Engineering</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Master ChatGPT, Claude, and AI workflow automation inside the Python &amp; AI Pass.
+              </p>
+              <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Prompt Frameworks</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> AI API Integration</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Workflow Automation</li>
+              </ul>
             </div>
-            <h3 className="text-base font-bold text-foreground">AI &amp; Prompt Engineering</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Master ChatGPT, Midjourney, Claude, and AI automation to save 10+ hours every week.
-            </p>
-            <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Prompt Frameworks</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> AI Image Generation</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Workflow Automation</li>
-            </ul>
+            <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 text-xs">
+              <Link href="/courses/digital-python-programming-zero-to-hero" className="font-bold text-muted-foreground hover:text-foreground underline">
+                Details
+              </Link>
+              <Link href="/checkout?plan=digital-python-programming-zero-to-hero" className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold">
+                Enroll (NPR 2,490)
+              </Link>
+            </div>
           </div>
 
           {/* Track 2 */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
-              🐍
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
+                  🐍
+                </div>
+                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-600">
+                  NPR 2,490 · 60D
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-foreground">Python Coding for Beginners</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Start your coding journey with beginner-friendly Python syntax, logic, and mini-projects.
+              </p>
+              <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Variables &amp; Loops</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Web Scraping Bot</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> GitHub &amp; Portfolio</li>
+              </ul>
             </div>
-            <h3 className="text-base font-bold text-foreground">Python Coding for Beginners</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Start your coding journey with beginner-friendly Python syntax, logic, and mini-projects.
-            </p>
-            <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Variables &amp; Loops</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Web Scraping Bot</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> GitHub &amp; Portfolio</li>
-            </ul>
+            <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 text-xs">
+              <Link href="/courses/digital-python-programming-zero-to-hero" className="font-bold text-muted-foreground hover:text-foreground underline">
+                Details
+              </Link>
+              <Link href="/checkout?plan=digital-python-programming-zero-to-hero" className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold">
+                Enroll (NPR 2,490)
+              </Link>
+            </div>
           </div>
 
           {/* Track 3 */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
-              📈
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
+                  📈
+                </div>
+                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-600">
+                  NPR 1,990 · 45D
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-foreground">Digital Marketing &amp; Ads</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Learn Facebook Ads, TikTok Marketing, SEO, and social media content creation strategies.
+              </p>
+              <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Meta Ads Manager</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Content Funnels</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Brand Growth Strategy</li>
+              </ul>
             </div>
-            <h3 className="text-base font-bold text-foreground">Digital Marketing &amp; Ads</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Learn Facebook Ads, TikTok Marketing, SEO, and social media content creation strategies.
-            </p>
-            <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Meta Ads Manager</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Content Funnels</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Brand Growth Tricks</li>
-            </ul>
+            <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 text-xs">
+              <Link href="/courses/digital-marketing-canva-freelancing" className="font-bold text-muted-foreground hover:text-foreground underline">
+                Details
+              </Link>
+              <Link href="/checkout?plan=digital-marketing-canva-freelancing" className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold">
+                Enroll (NPR 1,990)
+              </Link>
+            </div>
           </div>
 
           {/* Track 4 */}
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
-              🎨
+          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:border-purple-500/40 transition-all space-y-4 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-xl">
+                  🎨
+                </div>
+                <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-600">
+                  NPR 1,990 · 45D
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-foreground">Canva Design &amp; Freelancing</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Create professional graphics, brand kits, presentation decks, and freelance portfolios.
+              </p>
+              <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Brand Identity Design</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Freelance Profile Setup</li>
+                <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Client Pitching Templates</li>
+              </ul>
             </div>
-            <h3 className="text-base font-bold text-foreground">Canva Design &amp; Freelancing</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Create professional graphics, logos, presentation decks, and start earning on Upwork/Fiverr.
-            </p>
-            <ul className="space-y-1.5 text-xs font-medium text-foreground pt-1">
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Brand Identity Design</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Upwork Gig Optimization</li>
-              <li className="flex items-center gap-1.5"><CheckCircle size={13} className="text-purple-600" /> Client Pitching Templates</li>
-            </ul>
+            <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 text-xs">
+              <Link href="/courses/digital-marketing-canva-freelancing" className="font-bold text-muted-foreground hover:text-foreground underline">
+                Details
+              </Link>
+              <Link href="/checkout?plan=digital-marketing-canva-freelancing" className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold">
+                Enroll (NPR 1,990)
+              </Link>
+            </div>
           </div>
         </div>
 

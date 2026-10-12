@@ -61,13 +61,6 @@ export default function DedicatedSeeLandingPage() {
       url: 'https://samyakcee.com/checkout?plan=see-class-10-board-topper-batch',
       validFrom: '2026-01-01',
     },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '120',
-      bestRating: '5',
-      worstRating: '1',
-    },
   };
 
   const seeSubjects = [
@@ -348,36 +341,52 @@ export default function DedicatedSeeLandingPage() {
             {/* SEE Score Booster (Math + Science) */}
             <div className="p-6 rounded-3xl bg-card border border-emerald-500/30 space-y-5 flex flex-col justify-between shadow-md">
               <div className="space-y-3">
-                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">SCORE BOOSTER</span>
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">SUBJECT COURSE · 120 DAYS</span>
                 <h3 className="text-lg font-black text-foreground">Opt Math &amp; Science Booster</h3>
                 <div className="text-3xl font-black text-emerald-600">NPR 2,990</div>
                 <p className="text-xs text-muted-foreground leading-relaxed">120 days access to intensive derivations, numerical drills, and board model sets.</p>
               </div>
 
-              <Link
-                href="/checkout?plan=see-opt-math-science-mastery"
-                className="w-full py-3 rounded-xl bg-card border border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 font-black text-xs text-center transition-colors block"
-              >
-                Enroll in Booster (NPR 2,990)
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href="/checkout?plan=see-opt-math-science-mastery"
+                  className="w-full py-3 rounded-xl bg-card border border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 font-black text-xs text-center transition-colors block"
+                >
+                  Enroll in Booster (NPR 2,990)
+                </Link>
+                <Link
+                  href="/courses/see-opt-math-science-mastery"
+                  className="w-full py-2 text-[11px] font-bold text-muted-foreground hover:text-foreground text-center block underline"
+                >
+                  View Syllabus, Faculty &amp; Refund Terms
+                </Link>
+              </div>
             </div>
 
             {/* SEE Board Topper Batch */}
             <div className="p-6 rounded-3xl bg-gradient-to-b from-emerald-600 to-teal-700 text-white space-y-5 flex flex-col justify-between shadow-xl relative overflow-hidden">
               <div className="absolute top-3 right-3 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white text-emerald-950">RECOMMENDED</div>
               <div className="space-y-3">
-                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-white/20 text-white">COMPLETE BATCH · 365 DAYS</span>
+                <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-lg bg-white/20 text-white">LIVE BATCH · 365 DAYS</span>
                 <h3 className="text-lg font-black text-white">SEE Board Topper Batch</h3>
                 <div className="text-3xl font-black text-white">NPR 4,990</div>
-                <p className="text-xs text-emerald-100 leading-relaxed">Full 147 HD video chapters, 10-year question bank, and 24/7 AI Tutor access for all 5 subjects.</p>
+                <p className="text-xs text-emerald-100 leading-relaxed">Full 80+ chapter coverage, 10-year question bank, and 24/7 AI Tutor access across core subjects.</p>
               </div>
 
-              <Link
-                href="/checkout?plan=see-class-10-board-topper-batch"
-                className="w-full py-3 rounded-xl bg-white text-emerald-950 hover:bg-emerald-50 font-black text-xs text-center shadow-lg transition-colors block"
-              >
-                Enroll Full Batch (NPR 4,990)
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href="/checkout?plan=see-class-10-board-topper-batch"
+                  className="w-full py-3 rounded-xl bg-white text-emerald-950 hover:bg-emerald-50 font-black text-xs text-center shadow-lg transition-colors block"
+                >
+                  Enroll Full Batch (NPR 4,990)
+                </Link>
+                <Link
+                  href="/courses/see-class-10-board-topper-batch"
+                  className="w-full py-2 text-[11px] font-bold text-emerald-100 hover:text-white text-center block underline"
+                >
+                  View Syllabus, Faculty &amp; Refund Terms
+                </Link>
+              </div>
             </div>
 
           </div>
