@@ -1,55 +1,35 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import PublicNav from '@/components/PublicNav';
 import HomepageFooter from '@/app/components/HomepageFooter';
-import { BookOpen, FileText, Download, CheckCircle2, ArrowRight, Zap, GraduationCap, Stethoscope } from 'lucide-react';
-
-const FREE_RESOURCES = [
-  {
-    title: 'Grade 10 Science: Force & Gravitation Revision PDF',
-    track: 'SEE Class 10',
-    icon: GraduationCap,
-    badgeBg: 'bg-emerald-500/10 text-emerald-600',
-    type: 'Subchapter Notes',
-    description: 'Concise summary of Newton\'s Gravitation Law, acceleration due to gravity (g), free fall formulas, and 4-mark derivation steps.',
-    actionText: 'View Free Note',
-    actionHref: '/see',
-  },
-  {
-    title: 'Grade 10 Opt Math: Vector Geometry Theorem Compendium',
-    track: 'SEE Class 10',
-    icon: GraduationCap,
-    badgeBg: 'bg-emerald-500/10 text-emerald-600',
-    type: 'Theorem Guide',
-    description: 'Step-by-step vector proofs for midpoint theorem, Apollonius theorem, and parallelogram diagonals with examiner rubrics.',
-    actionText: 'Explore Questions',
-    actionHref: '/see',
-  },
-  {
-    title: 'CEE Biology: High-Yield C4 Photosynthesis Cheat Sheet',
-    track: 'CEE Medical',
-    icon: Stethoscope,
-    badgeBg: 'bg-indigo-500/10 text-indigo-600',
-    type: 'High-Yield Sheet',
-    description: 'Kranz anatomy, mesophyll vs bundle sheath reactions, PEPcase mechanics, and 25 most repeated MEC entrance questions.',
-    actionText: 'Practice Sample MCQs',
-    actionHref: '/cee-medical-entrance',
-  },
-  {
-    title: 'CEE 50-Question Diagnostic Entrance Mock Exam',
-    track: 'CEE Medical',
-    icon: Stethoscope,
-    badgeBg: 'bg-indigo-500/10 text-indigo-600',
-    type: 'Diagnostic Test',
-    description: 'Evaluate your baseline preparation level across Zoology, Botany, Chemistry, and Physics with instant accuracy reports.',
-    actionText: 'Take Free Diagnostic',
-    actionHref: '/cee-medical-entrance',
-  },
-];
+import StudentGroupOfferCard from '@/components/courses/StudentGroupOfferCard';
+import {
+  STUDENT_GROUPS_LIST,
+  StudentGroupId,
+  getStudentGroupOffer,
+} from '@/lib/courses/studentGroupOffers';
+import {
+  BookOpen,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
+  GraduationCap,
+  Stethoscope,
+  Zap,
+  ArrowRight,
+  Filter,
+  AlertTriangle,
+  Lock,
+} from 'lucide-react';
 
 export default function FreeResourcesPage() {
+  const [activeGroupId, setActiveGroupId] = useState<StudentGroupId>('class_10_see');
+  const [filterMode, setFilterMode] = useState<'all' | 'single'>('single');
+
+  const activeOffer = getStudentGroupOffer(activeGroupId) || STUDENT_GROUPS_LIST[0];
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-between">
       <PublicNav />
@@ -57,51 +37,99 @@ export default function FreeResourcesPage() {
       <main className="flex-1 pt-28 sm:pt-36 pb-20">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 space-y-12">
           
-          {/* Header */}
+          {/* ── Page Header ─────────────────────────────────────────────── */}
           <div className="text-center max-w-3xl mx-auto space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">
               <BookOpen size={14} />
-              <span>Free Academic Resources</span>
+              <span>Reviewed Academic Resources</span>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-              Free Revision Notes &amp; Diagnostic Sets
+            <h1 className="text-3xl sm:text-5xl font-black text-foreground tracking-tight">
+              Free Offer Menu by Student Group
             </h1>
             <p className="text-base text-muted-foreground leading-relaxed">
-              Sample our high-yield chapter notes, past year model question breakdowns, and diagnostic tests with no credit card required.
+              Every free resource is aligned to your specific curriculum, reviewed by a responsible subject teacher,
+              and crafted without generic question banks.
             </p>
           </div>
 
-          {/* Resources Grid */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {FREE_RESOURCES.map((res, idx) => {
-              const Icon = res.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-5"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${res.badgeBg}`}>
-                        {res.track}
-                      </span>
-                      <span className="text-[11px] font-mono text-muted-foreground">{res.type}</span>
-                    </div>
+          {/* ── Pedagogical Standard Notice ─────────────────────────────── */}
+          <div className="max-w-4xl mx-auto p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <div className="flex items-start gap-2.5">
+              <ShieldCheck size={18} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Content Integrity Guarantee:</span> Resources are launched only for subjects with reviewed content and a responsible teacher. A single generic question bank is never presented as suitable across different streams, entrance exams, or Lok Sewa posts.
+              </div>
+            </div>
+            <span className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-500/20 font-mono text-[10px] uppercase font-bold">
+              Stream-Isolated
+            </span>
+          </div>
 
-                    <h2 className="text-lg font-bold text-foreground leading-snug">{res.title}</h2>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{res.description}</p>
-                  </div>
+          {/* ── Student Group Filter Tabs ────────────────────────────────── */}
+          <div className="max-w-4xl mx-auto space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Filter size={13} />
+                <span>Select Your Student Group</span>
+              </span>
+              <button
+                onClick={() => setFilterMode(filterMode === 'single' ? 'all' : 'single')}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                {filterMode === 'single' ? 'View All Groups at Once' : 'Switch to Focused View'}
+              </button>
+            </div>
 
-                  <Link
-                    href={res.actionHref}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline pt-2"
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+              {STUDENT_GROUPS_LIST.map((group) => {
+                const isActive = activeGroupId === group.id && filterMode === 'single';
+                return (
+                  <button
+                    key={group.id}
+                    onClick={() => {
+                      setActiveGroupId(group.id);
+                      setFilterMode('single');
+                    }}
+                    className={`px-3 py-3 rounded-2xl border text-xs font-bold transition-all text-center flex flex-col items-center justify-center gap-1 ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-card text-muted-foreground border-border/80 hover:text-foreground hover:bg-muted/70'
+                    }`}
                   >
-                    <span>{res.actionText}</span>
-                    <ArrowRight size={13} />
-                  </Link>
-                </div>
-              );
-            })}
+                    <span>{group.shortName}</span>
+                    <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-sm ${isActive ? 'bg-black/20 text-white' : 'text-muted-foreground'}`}>
+                      {group.targetExam.includes('MEC') ? 'MECEE' : group.targetExam.includes('IOE') ? 'IOE CBT' : group.targetExam.includes('PSC') ? 'PSC Nepal' : 'NEB Board'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Main Offer Display ───────────────────────────────────────── */}
+          <div className="max-w-4xl mx-auto space-y-8">
+            {filterMode === 'single' ? (
+              <StudentGroupOfferCard offer={activeOffer} />
+            ) : (
+              STUDENT_GROUPS_LIST.map((offer) => (
+                <StudentGroupOfferCard key={offer.id} offer={offer} />
+              ))
+            )}
+          </div>
+
+          {/* ── Direct Gate Shortcut ─────────────────────────────────────── */}
+          <div className="max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-muted/40 border border-border/80 text-center space-y-4">
+            <h3 className="text-xl font-bold text-foreground">Want to configure your student dashboard track?</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
+              You can jump to the Learning Track Gate anytime to switch between CEE, IOE, Lok Sewa, Class 11, Class 12, or SEE.
+            </p>
+            <Link
+              href="/gate"
+              className="btn-primary text-xs font-bold py-3 px-6 rounded-xl inline-flex items-center gap-2 shadow-sm"
+            >
+              <span>Open Learning Track Gate</span>
+              <ArrowRight size={14} />
+            </Link>
           </div>
 
         </div>
