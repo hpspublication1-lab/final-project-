@@ -9,6 +9,9 @@ import {
 } from '@/lib/auth/accessControl';
 import { CanonicalCourseSlug } from '@/types/lms';
 
+const dashboardCache = new Map<string, { payload: Record<string, unknown>; ts: number }>();
+const DASHBOARD_CACHE_TTL_MS = 15_000;
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -19,7 +22,17 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
+    const rawCourseParam = searchParams.get('course') || 'default';
     const requestedCourse = normalizeCourseSlug(searchParams.get('course'));
+    const cacheKey = `${user.id}:${rawCourseParam}`;
+    const forceRefresh = searchParams.get('refresh') === '1';
+
+    if (!forceRefresh) {
+      const cached = dashboardCache.get(cacheKey);
+      if (cached && Date.now() - cached.ts < DASHBOARD_CACHE_TTL_MS) {
+        return NextResponse.json(cached.payload);
+      }
+    }
 
     const admin = createAdminClient() || supabase;
 
@@ -448,7 +461,7 @@ export async function GET(request: NextRequest) {
       super_administrator: 'Super Administrator',
     };
 
-    return NextResponse.json({
+    const responsePayload = {
       user: {
         id: user.id,
         email: user.email || '',
@@ -483,7 +496,10 @@ export async function GET(request: NextRequest) {
       },
       unreadNotificationsCount: (notificationsRes.data || []).length,
       notifications: notificationsRes.data || [],
-    });
+    };
+
+    dashboardCache.set(cacheKey, { payload: responsePayload, ts: Date.now() });
+    return NextResponse.json(responsePayload);
   } catch (err: any) {
     console.error('Student Dashboard API error:', err);
     return NextResponse.json(

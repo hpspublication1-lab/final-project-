@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+
+// 15-second in-memory cache for daily championship & top-20 leaderboard
+let cachedChampionshipBoard: {
+  dateStr: string;
+  championship: any;
+  leaderboard: any[];
+  ts: number;
+} | null = null;
+const CHAMPIONSHIP_CACHE_TTL_MS = 15_000;
 
 /**
  * Helper to get current date string in Asia/Kathmandu (Nepal Time)
@@ -33,12 +43,16 @@ export async function GET(request: NextRequest) {
     const admin = createAdminClient();
     const { dateStr, secondsRemainingToday } = getNepalCurrentDate();
 
-    // Authenticated user (if logged in)
+    // Authenticated user (only call getUser if auth cookie exists)
     let currentUserId: string | null = null;
     try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      currentUserId = user?.id ?? null;
+      const cookieStore = await cookies();
+      const hasAuthCookie = cookieStore.getAll().some((c) => c.name.startsWith('sb-') || c.name.includes('auth-token'));
+      if (hasAuthCookie) {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        currentUserId = user?.id ?? null;
+      }
     } catch {}
 
     if (!admin) {
@@ -54,66 +68,85 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 1. Ensure today's championship row exists
-    let { data: championship } = await admin
-      .from('daily_championships')
-      .select('*')
-      .eq('competition_date', dateStr)
-      .maybeSingle();
-
-    if (!championship) {
-      const { data: created } = await admin
-        .from('daily_championships')
-        .insert({
-          competition_date: dateStr,
-          status: 'active',
-          prize_amount_npr: 1000,
-        })
-        .select('*')
-        .single();
-      championship = created;
-    }
-
-    // 2. Fetch top 20 daily leaderboard entries
+    let championship: any = null;
     let leaderboard: any[] = [];
-    if (championship?.id) {
-      const { data: entries } = await admin
-        .from('championship_entries')
-        .select(`
-          id,
-          user_id,
-          match_count,
-          total_score,
-          accuracy_percentage,
-          total_time_seconds,
-          correct_count,
-          incorrect_count,
-          disqualified,
-          user_profiles:user_id (
-            full_name,
-            username,
-            battle_rating,
-            school_or_college
-          )
-        `)
-        .eq('championship_id', championship.id)
-        .eq('disqualified', false)
-        .order('total_score', { ascending: false })
-        .order('accuracy_percentage', { ascending: false })
-        .order('total_time_seconds', { ascending: true })
-        .limit(20);
 
-      leaderboard = (entries || []).map((e: any, index: number) => ({
-        rank: index + 1,
-        userId: e.user_id,
-        name: e.user_profiles?.full_name || e.user_profiles?.username || 'Championship Aspirant',
-        college: e.user_profiles?.school_or_college || 'CEE Ranker',
-        eloRating: e.user_profiles?.battle_rating || 1200,
-        matchesPlayed: e.match_count,
-        totalScore: Number(e.total_score),
-        accuracy: Number(e.accuracy_percentage),
-        totalTimeSeconds: e.total_time_seconds,
-      }));
+    if (
+      cachedChampionshipBoard &&
+      cachedChampionshipBoard.dateStr === dateStr &&
+      Date.now() - cachedChampionshipBoard.ts < CHAMPIONSHIP_CACHE_TTL_MS
+    ) {
+      championship = cachedChampionshipBoard.championship;
+      leaderboard = cachedChampionshipBoard.leaderboard;
+    } else {
+      // 1. Ensure today's championship row exists
+      const { data: existingChamp } = await admin
+        .from('daily_championships')
+        .select('*')
+        .eq('competition_date', dateStr)
+        .maybeSingle();
+
+      championship = existingChamp;
+      if (!championship) {
+        const { data: created } = await admin
+          .from('daily_championships')
+          .insert({
+            competition_date: dateStr,
+            status: 'active',
+            prize_amount_npr: 1000,
+          })
+          .select('*')
+          .single();
+        championship = created;
+      }
+
+      // 2. Fetch top 20 daily leaderboard entries
+      if (championship?.id) {
+        const { data: entries } = await admin
+          .from('championship_entries')
+          .select(`
+            id,
+            user_id,
+            match_count,
+            total_score,
+            accuracy_percentage,
+            total_time_seconds,
+            correct_count,
+            incorrect_count,
+            disqualified,
+            user_profiles:user_id (
+              full_name,
+              username,
+              battle_rating,
+              school_or_college
+            )
+          `)
+          .eq('championship_id', championship.id)
+          .eq('disqualified', false)
+          .order('total_score', { ascending: false })
+          .order('accuracy_percentage', { ascending: false })
+          .order('total_time_seconds', { ascending: true })
+          .limit(20);
+
+        leaderboard = (entries || []).map((e: any, index: number) => ({
+          rank: index + 1,
+          userId: e.user_id,
+          name: e.user_profiles?.full_name || e.user_profiles?.username || 'Championship Aspirant',
+          college: e.user_profiles?.school_or_college || 'CEE Ranker',
+          eloRating: e.user_profiles?.battle_rating || 1200,
+          matchesPlayed: e.match_count,
+          totalScore: Number(e.total_score),
+          accuracy: Number(e.accuracy_percentage),
+          totalTimeSeconds: e.total_time_seconds,
+        }));
+      }
+
+      cachedChampionshipBoard = {
+        dateStr,
+        championship,
+        leaderboard,
+        ts: Date.now(),
+      };
     }
 
     // 3. Fetch student's own entry if logged in

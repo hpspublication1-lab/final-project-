@@ -3,10 +3,18 @@ import { verifyServerPermission } from '@/lib/auth/serverGuard';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AuditService } from '@/lib/services/auditService';
 
+let cachedOverview: { data: any; ts: number } | null = null;
+const OVERVIEW_CACHE_TTL_MS = 20_000;
+
 export async function GET(req: NextRequest) {
   const guard = await verifyServerPermission(req, 'admin:access');
   if (!guard.authorized) {
     return guard.response;
+  }
+
+  const forceRefresh = req.nextUrl.searchParams.get('refresh') === '1';
+  if (!forceRefresh && cachedOverview && Date.now() - cachedOverview.ts < OVERVIEW_CACHE_TTL_MS) {
+    return NextResponse.json({ success: true, data: cachedOverview.data });
   }
 
   const admin = createAdminClient();
@@ -15,8 +23,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
-
     const [
       studentsCountRes,
       subscribersCountRes,
@@ -41,7 +47,6 @@ export async function GET(req: NextRequest) {
     const totalRevenueNpr = completedOrders.reduce((sum: number, o: any) => sum + Number(o.net_amount_npr || 0), 0);
     const pendingOrdersCount = allOrders.filter((o: any) => o.status === 'pending').length;
 
-    // Authentic metrics payload - NO decorative fake curves
     const overview = {
       totalStudents: studentsCountRes.count ?? 0,
       subscribers: subscribersCountRes.count ?? 0,
@@ -57,6 +62,7 @@ export async function GET(req: NextRequest) {
       lastRefreshedAt: new Date().toISOString(),
     };
 
+    cachedOverview = { data: overview, ts: Date.now() };
     return NextResponse.json({ success: true, data: overview });
   } catch (err: any) {
     console.error('admin/overview error:', err);

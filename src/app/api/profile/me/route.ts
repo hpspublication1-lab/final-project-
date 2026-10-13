@@ -1,21 +1,37 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperAdmin } from '@/lib/config/superAdmin';
+
+// 15-second server memory cache per user ID to prevent duplicate DB hits across components
+const profileCache = new Map<string, { payload: Record<string, unknown>; ts: number }>();
+const PROFILE_CACHE_TTL_MS = 15_000;
 
 /**
  * GET /api/profile/me
  *
  * Returns the signed-in user's own profile fields. Reads with the service-role
- * client so it works even while the user_profiles RLS policy is recursive
- * (FIX-AUTH-RLS.sql pending). Only ever returns the caller's OWN row.
+ * client so it works even while the user_profiles RLS policy is recursive.
  */
 export async function GET() {
   try {
+    // FAST PATH: If no Supabase auth cookie exists, return unauthenticated in 0ms without network I/O
+    const cookieStore = await cookies();
+    const hasAuthCookie = cookieStore.getAll().some((c) => c.name.startsWith('sb-') || c.name.includes('auth-token'));
+    if (!hasAuthCookie) {
+      return NextResponse.json({ authenticated: false, user: null }, { status: 200 });
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 200 });
+    }
+
+    const cached = profileCache.get(user.id);
+    if (cached && Date.now() - cached.ts < PROFILE_CACHE_TTL_MS) {
+      return NextResponse.json(cached.payload);
     }
 
     const admin = createAdminClient();
@@ -50,7 +66,7 @@ export async function GET() {
       (fullName && fullName !== emailPrefix && (profile?.phone || meta.prep_stage || meta.target_exam))
     );
 
-    return NextResponse.json({
+    const payload = {
       id: user.id,
       email: user.email ?? '',
       full_name: fullName,
@@ -74,7 +90,10 @@ export async function GET() {
       daily_study_hours: meta.daily_study_hours ?? 3,
       language_preference: meta.language_preference ?? 'english',
       consent_accepted_at: meta.consent_accepted_at ?? null,
-    });
+    };
+
+    profileCache.set(user.id, { payload, ts: Date.now() });
+    return NextResponse.json(payload);
   } catch (err) {
     console.error('profile/me error:', err);
     return NextResponse.json({ error: 'Could not load profile' }, { status: 500 });

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isSuperAdmin } from '@/lib/config/superAdmin';
 import {
   checkLoginLockout,
   recordLoginFailure,
   recordLoginSuccess,
   sanitizeEmail,
-  validatePassword,
   enforceAuthRateLimit,
   logSecurityEvent,
 } from '@/lib/security/authSecurity';
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Authenticate with Supabase
+    // 4. Authenticate with Supabase (sets SSR auth cookies directly on response)
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -95,14 +95,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Success
+    // 5. Success — resolve role immediately without extra round-trips
     recordLoginSuccess(email, ip);
+    const superAdmin = isSuperAdmin(email);
+    const meta = data.user?.user_metadata || {};
+    const resolvedRole = superAdmin ? 'super_admin' : String(meta.role || 'student').toLowerCase();
+    const onboardingCompleted = Boolean(
+      superAdmin ||
+      meta.onboarding_completed === true ||
+      ['admin', 'super_admin', 'teacher', 'support_staff', 'payment_staff', 'content_manager'].includes(resolvedRole)
+    );
+
     logSecurityEvent({
       type: 'login_success',
       email,
       ip,
       userAgent,
-      metadata: { userId: data.user?.id },
+      metadata: { userId: data.user?.id, role: resolvedRole },
     });
 
     return NextResponse.json({
@@ -111,6 +120,9 @@ export async function POST(req: NextRequest) {
         id: data.user?.id,
         email: data.user?.email,
       },
+      role: resolvedRole,
+      isSuperAdmin: superAdmin,
+      onboardingCompleted,
     });
   } catch (err) {
     console.error('[auth/login] Unexpected error:', err);

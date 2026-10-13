@@ -16,11 +16,63 @@ function injectTokenFromHeader(request: NextRequest): void {
   request.cookies.set(`sb-${getProjectRef()}-auth-token`, token);
 }
 
+// Short-lived 30s role cache to avoid repetitive DB round-trips on rapid navigation
+const roleCache = new Map<string, { is_banned?: boolean; is_admin?: boolean; role?: string; ts: number }>();
+const ROLE_CACHE_TTL_MS = 30_000;
+
 export async function middleware(request: NextRequest) {
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname.startsWith('/api/')) {
     return NextResponse.next();
   }
+
+  // Classify route before doing any network I/O
+  const protectedPaths = [
+    '/student-dashboard',
+    '/my-courses',
+    '/onboarding',
+    '/dashboard',
+    '/profile',
+    '/account',
+    '/checkout',
+    '/payment-success',
+    '/activate-plan',
+  ];
+  const isProtected = protectedPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  const isTeacherArea = pathname === '/teacher' || pathname.startsWith('/teacher/');
+  const isStaffArea = pathname === '/staff' || pathname.startsWith('/staff/');
+  const isAdminLogin = pathname === '/admin/login' || pathname.startsWith('/admin/login/');
+  const isAdminArea = (pathname === '/admin' || pathname.startsWith('/admin/')) && !isAdminLogin;
+  const adminKey = process.env.ADMIN_ACCESS_KEY;
+  const secretEntrance = adminKey ? `/admin-${adminKey}` : null;
+  const isSecretEntrance = Boolean(secretEntrance && pathname === secretEntrance);
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || isAdminLogin || pathname.startsWith('/auth/');
+
+  const requiresAuthCheck = isProtected || isTeacherArea || isStaffArea || isAdminArea || isSecretEntrance;
+
+  // FAST PATH 1: Public pages & login pages do NOT need remote Supabase round-trips in middleware
+  if (!requiresAuthCheck) {
+    const res = NextResponse.next({ request });
+    if (isAuthPage) {
+      res.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+      res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.headers.set('Pragma', 'no-cache');
+    }
+    return res;
+  }
+
   injectTokenFromHeader(request);
+
+  // FAST PATH 2: If no Supabase auth cookie exists at all, redirect immediately in 0ms without network call
+  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.startsWith('sb-') || c.name.includes('auth-token'));
+  if (!hasAuthCookie) {
+    const url = request.nextUrl.clone();
+    url.pathname = isAdminArea || isSecretEntrance ? '/admin/login' : '/login';
+    url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
+    return NextResponse.redirect(url);
+  }
+
   const supabaseResponse = NextResponse.next({ request });
 
   const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -49,23 +101,9 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
   const isAuthenticated = !!user;
 
   // 1. General Student Protected Routes
-  const protectedPaths = [
-    '/student-dashboard',
-    '/my-courses',
-    '/onboarding',
-    '/dashboard',
-    '/profile',
-    '/account',
-    '/checkout',
-    '/payment-success',
-    '/activate-plan',
-  ];
-  const isProtected = protectedPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
-
   if (!isAuthenticated && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
@@ -73,18 +111,33 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If logged in, verify account is not suspended and fetch role
+  // FAST PATH 3: Super-Admin email allowlist short-circuit + 30s cached profile lookup
   let userProfile: { is_banned?: boolean; is_admin?: boolean; role_name?: string; role?: string } | null = null;
-  if (isAuthenticated && user) {
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('is_banned, is_admin, role_name, role')
-      .eq('id', user.id)
-      .maybeSingle();
+  const userIsSuperAdmin = isAuthenticated && user ? isSuperAdmin(user.email) : false;
 
-    userProfile = profile;
+  if (isAuthenticated && user && !userIsSuperAdmin) {
+    const cached = roleCache.get(user.id);
+    if (cached && Date.now() - cached.ts < ROLE_CACHE_TTL_MS) {
+      userProfile = cached;
+    } else {
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('is_banned, is_admin, role_name, role')
+        .eq('id', user.id)
+        .maybeSingle();
 
-    if (profile?.is_banned) {
+      userProfile = profile;
+      if (profile) {
+        roleCache.set(user.id, {
+          is_banned: profile.is_banned,
+          is_admin: profile.is_admin,
+          role: profile.role || profile.role_name,
+          ts: Date.now(),
+        });
+      }
+    }
+
+    if (userProfile?.is_banned) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
       url.search = '?error=account_suspended';
@@ -93,13 +146,13 @@ export async function middleware(request: NextRequest) {
   }
 
   const effectiveRole = isAuthenticated && user
-    ? (isSuperAdmin(user.email)
+    ? (userIsSuperAdmin
         ? 'super_admin'
         : normalizeRoleType(userProfile?.role || userProfile?.role_name, userProfile?.is_admin))
     : 'visitor';
 
   // 2. Teacher Area Access Control (/teacher and /teacher/*)
-  if (pathname === '/teacher' || pathname.startsWith('/teacher/')) {
+  if (isTeacherArea) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = '/login';
@@ -118,13 +171,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // 3. Admin Area Access Control (/admin and /admin/*)
-  const adminKey = process.env.ADMIN_ACCESS_KEY;
-  const secretEntrance = adminKey ? `/admin-${adminKey}` : null;
-  const isAdminLogin = pathname === '/admin/login' || pathname.startsWith('/admin/login/');
-  const isAdminArea = (pathname === '/admin' || pathname.startsWith('/admin/')) && !isAdminLogin;
-
   // Secret entrance handling
-  if (secretEntrance && pathname === secretEntrance) {
+  if (isSecretEntrance && secretEntrance) {
     if (!user) {
       return NextResponse.redirect(
         new URL(`/admin/login?redirect=${encodeURIComponent(secretEntrance)}`, request.url)

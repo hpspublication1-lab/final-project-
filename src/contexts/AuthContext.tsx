@@ -71,6 +71,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const fetchProfile = async (userId: string, force = false) => {
     if (!force && lastFetchedUserId.current === userId) return;
     lastFetchedUserId.current = userId;
+
+    try {
+      const res = await fetch('/api/profile/me');
+      if (res.ok) {
+        const me = await res.json();
+        if (me && !me.error && me.id) {
+          setProfile(me as UserProfile);
+          return;
+        }
+      }
+    } catch {
+      // Fallback below if /api/profile/me is unreachable
+    }
+
     try {
       const { data, error } = await supabase
         .from('user_profiles')
@@ -79,22 +93,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
       if (!error && data) {
         setProfile(data as UserProfile);
-        return;
       }
     } catch {
-      // Direct supabase fetch failed, fallback below
-    }
-
-    try {
-      const res = await fetch('/api/profile/me');
-      if (res.ok) {
-        const me = await res.json();
-        if (me && !me.error) {
-          setProfile(me as UserProfile);
-        }
-      }
-    } catch {
-      // Profile fetch failed silently
+      // Ignore silent fallback error
     }
   };
 

@@ -373,10 +373,29 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
         if (!res.ok) {
           throw new Error(data.error || 'Incorrect email or password. Please check your credentials.');
         }
-        // Sync browser client session
-        await signIn(email.trim(), password).catch(() => null);
         Analytics.loggedIn('password');
-        toast.success('Signed in securely! Redirecting…');
+        toast.success('Signed in! Redirecting…');
+
+        // Fast-path redirect directly from login response (0 extra round-trips)
+        const searchStr = typeof window !== 'undefined' ? window.location.search : '';
+        const params = new URLSearchParams(searchStr);
+        const raw = params.get('redirect') || params.get('returnUrl') || params.get('redirectTo') || params.get('next');
+        const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
+        const role = String(data.role || '').toLowerCase();
+        const isFullAdmin = Boolean(data.isSuperAdmin || role === 'admin' || role === 'super_admin');
+
+        if (isFullAdmin) {
+          window.location.href = safeRedirect && safeRedirect.startsWith('/admin') ? safeRedirect : '/admin';
+          return;
+        }
+        if (role === 'teacher' && !safeRedirect) {
+          window.location.href = '/teacher';
+          return;
+        }
+        if (data.onboardingCompleted) {
+          window.location.href = safeRedirect ?? '/student-dashboard';
+          return;
+        }
         await routeAfterLogin();
       } else {
         const res = await fetch('/api/auth/signup', {
@@ -393,11 +412,9 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
         if (!res.ok) {
           throw new Error(data.error || 'Could not create account. Please verify your details.');
         }
-        // Establish browser session immediately
-        await signIn(email.trim(), password).catch(() => null);
         Analytics.signedUp('password');
-        toast.success('Account created securely! Redirecting…');
-        await routeAfterLogin();
+        toast.success('Account created! Redirecting…');
+        window.location.href = '/onboarding';
       }
     } catch (err) {
       setError(friendlyError(err));
