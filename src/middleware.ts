@@ -298,7 +298,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // 5. Auth Page Security Headers (prevent caching login pages)
-  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname.startsWith('/auth/');
   if (isAuthPage) {
     supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
     supabaseResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
