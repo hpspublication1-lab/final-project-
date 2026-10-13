@@ -166,16 +166,26 @@ describe('Trust Claims, Support Details & Policy Integrity (Prompt 3 Verificatio
 import { resolveCheckoutPlanSku } from '@/lib/courses/catalog';
 import { PLAN_DETAILS } from '@/app/checkout/components/FonepayCheckout';
 import { inferTrackFromRedirect } from '@/app/onboarding/components/OnboardingClient';
+import { COURSE_GATE_OPTIONS } from '@/components/courses/CourseSelectionGate';
 
-describe('Complete Course Catalog & Enrollment Experience (Prompt 7)', () => {
-  it('covers all 4 delivery formats (live_batch, crash_course, subject_course, self_paced_pass) across the 8 approved courses', () => {
-    expect(COURSES.length).toBe(8);
+describe('Complete Course Catalog, Selection Gate & Enrollment Experience (Prompt 7)', () => {
+  it('covers all 4 delivery formats (live_batch, crash_course, subject_course, self_paced_pass) across the 12 approved courses', () => {
+    expect(COURSES.length).toBe(12);
 
     const formats = new Set(COURSES.map((c) => c.courseFormat));
     expect(formats.has('live_batch')).toBe(true);
     expect(formats.has('crash_course')).toBe(true);
     expect(formats.has('subject_course')).toBe(true);
     expect(formats.has('self_paced_pass')).toBe(true);
+  });
+
+  it('verifies every Course Selection Gate option maps to an approved canonical course record', () => {
+    expect(COURSE_GATE_OPTIONS.length).toBe(8);
+    for (const opt of COURSE_GATE_OPTIONS) {
+      const course = getCourseBySlug(opt.courseSlug);
+      expect(course, `Gate option ${opt.title} missing course ${opt.courseSlug}`).toBeDefined();
+      expect(course!.track).toBe(opt.catalogTrack);
+    }
   });
 
   it('includes prerequisites, featureLimits, teachingAssetStatus, and interactive sampleQuestion on every canonical course', () => {
@@ -194,17 +204,24 @@ describe('Complete Course Catalog & Enrollment Experience (Prompt 7)', () => {
     }
   });
 
-  it('resolves legacy course slugs and aliases cleanly via getCourseBySlug and resolveCheckoutPlanSku', () => {
+  it('resolves legacy course slugs and new track aliases (Class 11, Class 12, IOE Engineering, Lok Sewa) cleanly', () => {
     expect(getCourseBySlug('cee-medical-entrance')?.slug).toBe('cee-mbbs-mastery-2026');
     expect(getCourseBySlug('see-class-10')?.slug).toBe('see-class-10-board-topper-batch');
+    expect(getCourseBySlug('class-11')?.slug).toBe('neb-class-11-science-mastery');
+    expect(getCourseBySlug('class-12')?.slug).toBe('neb-class-12-board-topper-batch');
+    expect(getCourseBySlug('ioe')?.slug).toBe('ioe-engineering-entrance-2026');
+    expect(getCourseBySlug('engineering')?.slug).toBe('ioe-engineering-entrance-2026');
+    expect(getCourseBySlug('lok-sewa')?.slug).toBe('lok-sewa-aayog-preparation-2082');
     expect(getCourseBySlug('ielts-preparation')?.slug).toBe('english-ielts-target-8-mastery');
     expect(getCourseBySlug('digital-marketing')?.slug).toBe('digital-marketing-canva-freelancing');
     expect(getCourseBySlug('ai-python-course')?.slug).toBe('digital-python-programming-zero-to-hero');
     expect(getCourseBySlug('crash-course')?.slug).toBe('cee-45-day-crash-course');
 
     expect(resolveCheckoutPlanSku('cee-medical-entrance')).toBe('cee-mbbs-mastery-2026');
-    expect(resolveCheckoutPlanSku('see-class-10')).toBe('see-class-10-board-topper-batch');
-    expect(resolveCheckoutPlanSku('ielts-preparation')).toBe('english-ielts-target-8-mastery');
+    expect(resolveCheckoutPlanSku('class-11')).toBe('neb-class-11-science-mastery');
+    expect(resolveCheckoutPlanSku('class-12')).toBe('neb-class-12-board-topper-batch');
+    expect(resolveCheckoutPlanSku('ioe')).toBe('ioe-engineering-entrance-2026');
+    expect(resolveCheckoutPlanSku('lok-sewa')).toBe('lok-sewa-aayog-preparation-2082');
     expect(resolveCheckoutPlanSku('cee-crash-course-deposit')).toBe('cee-crash-course-deposit');
     expect(resolveCheckoutPlanSku(null)).toBe('cee-mbbs-mastery-2026');
   });
@@ -225,6 +242,10 @@ describe('Complete Course Catalog & Enrollment Experience (Prompt 7)', () => {
 
   it('infers the matching onboarding track when a user signs up from a checkout redirect URL', () => {
     expect(inferTrackFromRedirect('/checkout?plan=see-class-10-board-topper-batch')).toBe('see_class_10');
+    expect(inferTrackFromRedirect('/checkout?plan=neb-class-11-science-mastery')).toBe('neb_class_11');
+    expect(inferTrackFromRedirect('/checkout?plan=neb-class-12-board-topper-batch')).toBe('neb_class_12');
+    expect(inferTrackFromRedirect('/checkout?plan=ioe-engineering-entrance-2026')).toBe('ioe_engineering');
+    expect(inferTrackFromRedirect('/checkout?plan=lok-sewa-aayog-preparation-2082')).toBe('lok_sewa');
     expect(inferTrackFromRedirect('/checkout?plan=english-ielts-target-8-mastery')).toBe('ielts');
     expect(inferTrackFromRedirect('/checkout?plan=digital-python-programming-zero-to-hero')).toBe('artificial_intelligence');
     expect(inferTrackFromRedirect('/checkout?plan=digital-marketing-canva-freelancing')).toBe('digital_marketing');

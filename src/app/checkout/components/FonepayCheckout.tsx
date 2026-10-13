@@ -42,9 +42,15 @@ export const PLAN_DETAILS: Record<
   'student-monthly': { title: 'CEE Student · Monthly Plan', price: 799, validity: '30 Days', desc: 'Monthly CEE Question Bank, Flashcards & Chapter Mocks' },
   'student-yearly': { title: 'CEE Student · Yearly Plan', price: 7190, validity: '365 Days (1 Year)', desc: 'Full-Year Access to CEE Question Bank & Chapter Tests' },
 
-  // SEE Class 10 Board
+  // SEE Class 10 & NEB Class 11/12 Board
   'see-class-10-board-topper-batch': { title: 'SEE Class 10 Board Topper Batch 2082/2083', price: 4990, originalPrice: 7990, validity: '365 Days (Full Academic Year)', desc: 'Full Class 10 video curriculum, 10-year model paper bank, AI Vision Marker & Live Classes' },
   'see-opt-math-science-mastery': { title: 'SEE Optional Math & Science Score Booster', price: 2990, originalPrice: 4990, validity: '120 Days', desc: 'Targeted score booster for Class 10 Science & Optional Math' },
+  'neb-class-11-science-mastery': { title: 'NEB Class 11 Science & Mathematics Foundation Batch', price: 3990, originalPrice: 5990, validity: '365 Days (Full Academic Year)', desc: 'Complete Class 11 Physics, Chemistry, Math & Biology with derivations and entrance bridge MCQs' },
+  'neb-class-12-board-topper-batch': { title: 'NEB Class 12 Board Topper & Entrance Bridge Batch', price: 4490, originalPrice: 6990, validity: '365 Days (Full Academic Year)', desc: 'Complete Class 12 NEB Board derivations, solved Old-is-Gold vault & CEE/IOE entrance bridge' },
+
+  // IOE Engineering & Lok Sewa Aayog
+  'ioe-engineering-entrance-2026': { title: 'IOE / BE Engineering Entrance Super Target Batch 2026', price: 6990, originalPrice: 11990, validity: '180 Days (Full Entrance Cycle)', desc: 'TU IOE Pulchowk 140-Mark CBT Mocks, Calculus & Physics Shortcuts, and 10,000+ Engineering MCQs' },
+  'lok-sewa-aayog-preparation-2082': { title: 'Lok Sewa Aayog (Kharidar / Nasu / Officer) GK & IQ Mastery', price: 3490, originalPrice: 5500, validity: '180 Days (6 Months)', desc: 'Complete PSC Nepal First Paper (GK + IQ) & Paper II Governance with -20% negative-marking mocks' },
 
   // Secondary Tracks
   'english-ielts-target-8-mastery': { title: 'IELTS Target Band 8.0+ Mastery', price: 3490, originalPrice: 5990, validity: '60 Days', desc: 'AI Speaking simulator, Writing Task 1 & 2 evaluation, full Cambridge tests' },

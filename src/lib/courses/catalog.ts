@@ -5,7 +5,13 @@
  * All prices strictly match PLAN_PRICES in src/lib/payments/gateways.ts.
  */
 
-export type CourseTrack = 'see_class_10' | 'cee_medical' | 'skills_languages';
+export type CourseTrack =
+  | 'see_class_10'
+  | 'neb_11_12'
+  | 'cee_medical'
+  | 'ioe_engineering'
+  | 'lok_sewa'
+  | 'skills_languages';
 
 export type CourseDeliveryFormat =
   | 'live_batch'
@@ -1140,6 +1146,539 @@ export const CANONICAL_CATALOG: CourseData[] = [
     ],
     primaryCtaText: 'Enroll in Python & AI Pass (NPR 2,490)',
     enrollPath: '/checkout?plan=digital-python-programming-zero-to-hero',
+  },
+
+  // ---------------------------------------------------------------------------
+  // 9. NEB CLASS 11 SCIENCE & MATHEMATICS FOUNDATION BATCH
+  // ---------------------------------------------------------------------------
+  {
+    slug: 'neb-class-11-science-mastery',
+    aliases: ['class-11', 'neb-class-11', 'class11'],
+    planSku: 'neb-class-11-science-mastery',
+    track: 'neb_11_12',
+    courseFormat: 'live_batch',
+    formatLabel: 'Live Academic Batch + Recorded Library',
+    currency: 'NPR',
+    title: 'NEB Class 11 Science & Mathematics Foundation Batch 2082/2083',
+    badge: 'GRADE 11 · NEB SCIENCE & MATH',
+    targetStudent: 'Grade 11 NEB Science students building board & early CEE/IOE foundation',
+    examOutcome: 'Target Grade A+ in Class 11 Board Exams & early entrance readiness',
+    headline: 'Master Class 11 Physics, Chemistry, Mathematics & Biology from Day One',
+    description:
+      'Complete NEB Grade 11 Science & Mathematics curriculum with live conceptual classes, step-by-step theorem and physics derivations, numerical problem-solving workshops, and early CEE Medical / IOE Engineering bridge MCQs.',
+    priceNpr: 3990,
+    originalPriceNpr: 5990,
+    payableNowNpr: 3990,
+    payableLaterNpr: 0,
+    validityDays: 365,
+    validityText: '365 Days (Full Grade 11 Academic Year)',
+    languageMedium: 'English & Nepali Bilingual Explanation',
+    subjects: [
+      { name: 'Class 11 Physics', chaptersCount: 22, icon: '⚡' },
+      { name: 'Class 11 Chemistry', chaptersCount: 20, icon: '🧪' },
+      { name: 'Class 11 Mathematics', chaptersCount: 18, icon: '📐' },
+      { name: 'Class 11 Biology (Botany & Zoology)', chaptersCount: 20, icon: '🌿' },
+    ],
+    faculty: [
+      {
+        name: 'Pradeep Poudel Sir',
+        role: 'Lead Physics & Mathematics Faculty',
+        qualification: 'M.Sc. Physics (TU) · 10+ Years NEB Grade 11/12 Teaching Experience',
+        verified: true,
+      },
+      {
+        name: 'Dr. Samyak Shrestha',
+        role: 'Biology & Chemistry Mentor',
+        qualification: 'MBBS (TU IOM) · NEB & Pre-Medical Foundation Specialist',
+        verified: true,
+      },
+    ],
+    batchSchedule: {
+      batchName: 'NEB Grade 11 Foundation Cohort 2082/2083',
+      startDate: 'Rolling Admissions — Instant LMS & Replay Access',
+      liveSchedule: 'Sun – Fri · 5:30 PM – 7:00 PM NPT (Evening Live Sessions)',
+      replayAvailable: true,
+    },
+    curriculum: [
+      {
+        moduleTitle: 'Module 1: Class 11 Mechanics, Heat, Thermodynamics & Electrostatics',
+        topicsCount: 22,
+        topics: [
+          'Vectors, Kinematics & Projectile Motion',
+          'Laws of Motion, Work, Energy & Rotational Dynamics',
+          'Thermal Expansion, Calorimetry & Laws of Thermodynamics',
+          'Coulomb Law, Electric Field & Capacitors',
+        ],
+        isDemoAvailable: true,
+      },
+      {
+        moduleTitle: 'Module 2: Stoichiometry, Atomic Structure, Inorganic & Basic Organic Chemistry',
+        topicsCount: 20,
+        topics: [
+          'Mole Concept, Limiting Reagents & Redox Reactions',
+          'Bohr Model, Quantum Numbers & Periodic Table Trends',
+          'Chemical Bonding, VSEPR Theory & States of Matter',
+          'IUPAC Nomenclature, Isomerism & Hydrocarbons',
+        ],
+        isDemoAvailable: false,
+      },
+      {
+        moduleTitle: 'Module 3: Calculus Foundations, Algebra, Trigonometry & Cell Biology',
+        topicsCount: 38,
+        topics: [
+          'Limits, Continuity & Derivatives from First Principles',
+          'Complex Numbers, Quadratic Equations & Matrices',
+          'Cell Biology, Biomolecules & Mitosis/Meiosis',
+          'Plant Kingdom, Animal Taxonomy & Environmental Biology',
+        ],
+        isDemoAvailable: false,
+      },
+    ],
+    includedFeatures: [
+      'Complete 80-Chapter NEB Class 11 Science & Math Syllabus Coverage',
+      'Step-by-Step Physics & Mathematics Derivation Guides',
+      'Chapter-wise Bridge MCQs for Early CEE / IOE Preparation',
+      '24/7 AI Doubt Solver & Weekly Subjective Model Tests',
+    ],
+    prerequisites: [
+      'SEE (Class 10) graduate enrolled in or preparing for NEB Grade 11 Science',
+      'Smartphone, tablet, or laptop with internet access',
+    ],
+    featureLimits: [
+      '365 days access covering the full Grade 11 academic session',
+      'Single-student account license',
+    ],
+    teachingAssetStatus: {
+      status: 'partial_blocker',
+      summary:
+        'Chapter notes, derivation guides, and practice MCQs are active on the LMS. Evening live sessions and DRM video replays activate per cohort schedule.',
+      blockerNote:
+        'Live room streaming requires active 100ms room provisioning for scheduled evening sessions.',
+    },
+    demoLesson: {
+      title: 'Class 11 Physics: Projectile Motion Maximum Range Derivation',
+      subject: 'Class 11 Physics · Mechanics',
+      previewType: 'question_rubric',
+      summary:
+        'Understand how horizontal and vertical velocity components combine to determine time of flight, maximum height, and horizontal range.',
+      demoUrl: '/practice',
+      sampleQuestion: {
+        stem: 'For a projectile launched with initial speed u at angle θ to the horizontal (neglecting air resistance), at what launch angle is the horizontal range R equal to 4 times the maximum height H?',
+        options: ['30°', '45°', '60°', '75°'],
+        answerIndex: 1,
+        explanation:
+          'Since R = (u² sin 2θ)/g = (2u² sin θ cos θ)/g and H = (u² sin² θ)/(2g), setting R = 4H gives 2 sin θ cos θ = 4(sin² θ / 2) => tan θ = 1, so θ = 45°.',
+      },
+    },
+    refundRules: '7-Day Full Money-Back Guarantee before 15% course consumption.',
+    faqs: [
+      {
+        q: 'Does this course cover both NEB Board subjective derivations and entrance MCQs?',
+        a: 'Yes! Each chapter includes full NEB 3-mark and 5-mark subjective derivations alongside objective entrance foundation MCQs.',
+      },
+    ],
+    primaryCtaText: 'Enroll in Class 11 Batch (NPR 3,990)',
+    enrollPath: '/checkout?plan=neb-class-11-science-mastery',
+  },
+
+  // ---------------------------------------------------------------------------
+  // 10. NEB CLASS 12 BOARD TOPPER & ENTRANCE BRIDGE BATCH
+  // ---------------------------------------------------------------------------
+  {
+    slug: 'neb-class-12-board-topper-batch',
+    aliases: ['class-12', 'neb-class-12', 'class12'],
+    planSku: 'neb-class-12-board-topper-batch',
+    track: 'neb_11_12',
+    courseFormat: 'live_batch',
+    formatLabel: 'Live Academic Batch + Entrance Bridge',
+    currency: 'NPR',
+    title: 'NEB Class 12 Board Topper & Entrance Bridge Batch 2082/2083',
+    badge: 'GRADE 12 · NEB BOARD + BRIDGE',
+    targetStudent: 'Grade 12 NEB students targeting GPA 3.8–4.0 & CEE/IOE readiness',
+    examOutcome: 'Target Grade A+ in NEB Class 12 Boards + Pre-Medical/Engineering edge',
+    headline: 'Ace Class 12 NEB Board Exams While Preparing for CEE Medical & IOE Entrance',
+    description:
+      'Dual-focused Grade 12 program covering 100% of the NEB Class 12 Physics, Chemistry, Mathematics, and Biology syllabus with solved Old-is-Gold board questions, long-answer derivation blueprints, and high-yield entrance MCQs.',
+    priceNpr: 4490,
+    originalPriceNpr: 6990,
+    payableNowNpr: 4490,
+    payableLaterNpr: 0,
+    validityDays: 365,
+    validityText: '365 Days (Full Grade 12 Academic Year)',
+    languageMedium: 'English & Nepali Bilingual Explanation',
+    subjects: [
+      { name: 'Class 12 Physics', chaptersCount: 24, icon: '🧲' },
+      { name: 'Class 12 Chemistry', chaptersCount: 22, icon: '⚗️' },
+      { name: 'Class 12 Mathematics', chaptersCount: 18, icon: '∫' },
+      { name: 'Class 12 Biology', chaptersCount: 20, icon: '🧬' },
+    ],
+    faculty: [
+      {
+        name: 'Er. Bishal Adhikari',
+        role: 'Senior Physics & Calculus Faculty',
+        qualification: 'M.Sc. Physics / IOE Pulchowk Alumnus · 10+ Years Teaching Experience',
+        verified: true,
+      },
+      {
+        name: 'Dr. Samyak Shrestha',
+        role: 'Class 12 Biology & Organic Chemistry Mentor',
+        qualification: 'MBBS (TU IOM) · NEB Grade 12 & CEE Specialist',
+        verified: true,
+      },
+    ],
+    batchSchedule: {
+      batchName: 'NEB Grade 12 Board Topper Cohort 2082/2083',
+      startDate: 'Rolling Admissions — Instant LMS & Past Paper Vault Access',
+      liveSchedule: 'Sun – Fri · 6:30 PM – 8:00 PM NPT (Live Evening Classes)',
+      replayAvailable: true,
+    },
+    curriculum: [
+      {
+        moduleTitle: 'Module 1: Class 12 Electromagnetism, Alternating Current & Modern Physics',
+        topicsCount: 24,
+        topics: [
+          'Biot-Savart Law, Ampere Law & Electromagnetic Induction',
+          'LCR Alternating Current Circuits, Resonance & Transformers',
+          'Photoelectric Effect, Bohr Hydrogen Spectrum, X-Rays & Radioactivity',
+          'Wave Optics: Interference, Diffraction & Polarization',
+        ],
+        isDemoAvailable: true,
+      },
+      {
+        moduleTitle: 'Module 2: Volumetric Analysis, Chemical Kinetics, Electrochemistry & Organic',
+        topicsCount: 22,
+        topics: [
+          'Acid-Base & Redox Titrations, Normality & Molarity Calculations',
+          'First & Second Order Reaction Kinetics, Arrhenius Equation',
+          'Nernst Equation, Galvanic Cells & Thermodynamics (Gibbs Free Energy)',
+          'Haloalkanes, Alcohols, Phenols, Aldehydes, Ketones & Carboxylic Acids',
+        ],
+        isDemoAvailable: false,
+      },
+      {
+        moduleTitle: 'Module 3: Integration, Differential Equations, Genetics & Human Physiology',
+        topicsCount: 38,
+        topics: [
+          'Definite & Indefinite Integration, Differential Equations & Vectors',
+          'Mendelian & Molecular Genetics, DNA Replication & Protein Synthesis',
+          'Human Circulatory, Nervous, Endocrine & Excretory Systems',
+          'NEB 10-Year Solved Board Papers & Pre-Board Model Sets',
+        ],
+        isDemoAvailable: false,
+      },
+    ],
+    includedFeatures: [
+      'Complete 84-Chapter NEB Class 12 Syllabus & Derivation Vault',
+      'Solved 10-Year NEB Old-is-Gold Question Bank',
+      'AI Subjective Answer Grader (/vision-marker) for Long Questions',
+      'Integrated CEE / IOE Chapter-wise Entrance MCQ Drills',
+    ],
+    prerequisites: [
+      'Completion of Class 11 or current enrollment in NEB Grade 12',
+      'Smartphone or computer for live classes and practice sets',
+    ],
+    featureLimits: [
+      '365 days access from enrollment date',
+      'Includes 30 AI Vision Marker subjective paper evaluations per month',
+    ],
+    teachingAssetStatus: {
+      status: 'partial_blocker',
+      summary:
+        'Class 12 study notes, AI Vision Marker, and MCQ banks are live. Evening live classes and Bunny VOD streams follow cohort schedule.',
+      blockerNote:
+        'Live room streaming depends on active 100ms cohort scheduling.',
+    },
+    demoLesson: {
+      title: 'Class 12 Physics: LCR Series Resonance & Quality Factor',
+      subject: 'Class 12 Physics · Alternating Current',
+      previewType: 'question_rubric',
+      summary:
+        'Learn how inductive reactance (XL) and capacitive reactance (XC) cancel at resonance to maximize current in an AC circuit.',
+      demoUrl: '/practice',
+      sampleQuestion: {
+        stem: 'In a series LCR circuit with L = 0.5 H, C = 8 μF, and R = 10 Ω, what is the resonant angular frequency ω₀?',
+        options: ['250 rad/s', '500 rad/s', '1000 rad/s', '125 rad/s'],
+        answerIndex: 1,
+        explanation:
+          'At series resonance, ω₀ = 1 / √(LC) = 1 / √(0.5 × 8 × 10⁻⁶) = 1 / √(4 × 10⁻⁶) = 1 / (2 × 10⁻³) = 500 rad/s.',
+      },
+    },
+    refundRules: '7-Day Full Money-Back Guarantee before 15% course consumption.',
+    faqs: [
+      {
+        q: 'Can I prepare for Class 12 Boards and CEE/IOE at the same time with this batch?',
+        a: 'Yes! Every chapter first builds your NEB board derivation & numerical score, then transitions into high-yield entrance MCQs from that exact chapter.',
+      },
+    ],
+    primaryCtaText: 'Enroll in Class 12 Batch (NPR 4,490)',
+    enrollPath: '/checkout?plan=neb-class-12-board-topper-batch',
+  },
+
+  // ---------------------------------------------------------------------------
+  // 11. IOE / BE ENGINEERING ENTRANCE SUPER TARGET BATCH 2026
+  // ---------------------------------------------------------------------------
+  {
+    slug: 'ioe-engineering-entrance-2026',
+    aliases: ['ioe', 'engineering', 'ioe-engineering', 'be-entrance'],
+    planSku: 'ioe-engineering-entrance-2026',
+    track: 'ioe_engineering',
+    courseFormat: 'live_batch',
+    formatLabel: 'Live Entrance Batch + CBT Simulator',
+    currency: 'NPR',
+    title: 'IOE / BE Engineering Entrance Super Target Batch 2026 (Pulchowk Target)',
+    badge: 'ENGINEERING FLAGSHIP · IOE PULCHOWK TARGET',
+    targetStudent: 'Grade 12 & Dropper students targeting TU IOE Pulchowk, KU & PU BE Scholarships',
+    examOutcome: 'Target Top Rank in 140-Mark IOE Computer-Based Entrance Test (CBT)',
+    headline: 'Crack TU IOE Pulchowk Engineering Entrance with 140-Mark CBT Mocks & Calculus Shortcuts',
+    description:
+      'Intensive BE Engineering Entrance preparation engineered for TU IOE (Pulchowk, Thapathali, WRC, ERC), Kathmandu University (KU), and Pokhara University scholarships. Covers Mathematics (50 marks), Physics (45 marks), Chemistry (25 marks), and English/Aptitude (20 marks).',
+    priceNpr: 6990,
+    originalPriceNpr: 11990,
+    payableNowNpr: 6990,
+    payableLaterNpr: 0,
+    validityDays: 180,
+    validityText: '180 Days (Full IOE Entrance Cycle)',
+    languageMedium: 'English (With Nepali Shortcut Explanations)',
+    subjects: [
+      { name: 'Engineering Mathematics (50 Marks)', chaptersCount: 28, icon: '📐' },
+      { name: 'Engineering Physics (45 Marks)', chaptersCount: 26, icon: '⚙️' },
+      { name: 'Engineering Chemistry (25 Marks)', chaptersCount: 22, icon: '🧪' },
+      { name: 'English & Engineering Aptitude (20 Marks)', chaptersCount: 14, icon: '📚' },
+    ],
+    faculty: [
+      {
+        name: 'Er. Bishal Adhikari',
+        role: 'Lead IOE Physics & Higher Mathematics Mentor',
+        qualification: 'B.E. / M.Sc. (IOE Pulchowk Alumnus) · 10+ Years Entrance Coaching',
+        verified: true,
+      },
+      {
+        name: 'Er. Ramesh Karki',
+        role: 'Engineering Mathematics & Analytical Aptitude Faculty',
+        qualification: 'B.E. Civil (IOE) · 9+ Years Competitive Math Coaching',
+        verified: true,
+      },
+    ],
+    batchSchedule: {
+      batchName: 'IOE Pulchowk Super Target Cohort 2026',
+      startDate: 'Admissions Open — Instant CBT Practice & Formula Vault',
+      liveSchedule: 'Sun – Fri · 7:00 AM – 9:00 AM & 6:00 PM – 8:00 PM NPT',
+      replayAvailable: true,
+    },
+    curriculum: [
+      {
+        moduleTitle: 'Module 1: High-Weightage Engineering Mathematics (50 Marks)',
+        topicsCount: 28,
+        topics: [
+          'Limits, Continuity, Derivatives, Application of Derivatives & Definite Integrals',
+          '2D Conic Sections (Parabola, Ellipse, Hyperbola) & 3D Coordinate Geometry',
+          'Vectors, Matrices, Determinants, Complex Numbers & Probability',
+          'Scientific Calculator Tricks for 30-Second CBT Solving',
+        ],
+        isDemoAvailable: true,
+      },
+      {
+        moduleTitle: 'Module 2: Engineering Physics (45 Marks)',
+        topicsCount: 26,
+        topics: [
+          'Rotational Mechanics, SHM, Fluid Mechanics & Elasticity',
+          'Electrostatics, Current Electricity, Magnetic Effects & EMI',
+          'Thermodynamics, Acoustic Waves, Optics & Semiconductor Electronics',
+        ],
+        isDemoAvailable: false,
+      },
+      {
+        moduleTitle: 'Module 3: Engineering Chemistry (25 Marks) & English/Aptitude (20 Marks)',
+        topicsCount: 36,
+        topics: [
+          'Electrochemistry, Chemical Equilibrium, Volumetric & Thermodynamics',
+          'Inorganic Metallurgy, Coordination Compounds & Core Organic Reactions',
+          'Technical English Grammar, Phonetics, Stress Patterns & Reading Passages',
+          '25 Full-Length 140-Mark Timed IOE CBT Mock Examinations (-10% Penalty)',
+        ],
+        isDemoAvailable: false,
+      },
+    ],
+    includedFeatures: [
+      '10,000+ IOE & KU Engineering Entrance MCQs with Step-by-Step Solutions',
+      '25 Full-Length 2-Hour (140 Marks / 100 Questions) CBT Mock Tests',
+      'Scientific Calculator Shortcut Workshops for Math & Physics',
+      '24/7 AI Doubt Solver & Weak-Topic Mistake Analyser',
+    ],
+    prerequisites: [
+      'NEB Grade 12 Science (Physical or Bio with Extra Math) appearing or passed',
+      'Non-programmable scientific calculator (fx-991EX / fx-991CW recommended)',
+    ],
+    featureLimits: [
+      '180 days access covering the 2026 IOE & KU entrance cycle',
+      'Single-student login session enforcement during timed CBT mocks',
+    ],
+    teachingAssetStatus: {
+      status: 'partial_blocker',
+      summary:
+        'Physics, Chemistry, and Math MCQ banks, formula revision cards, and AI Tutor are active. Live CBT classes follow the cohort timetable.',
+      blockerNote:
+        'Live video broadcast streams require active 100ms room tokens at class start.',
+    },
+    demoLesson: {
+      title: 'IOE Mathematics Shortcut: Definite Integral Symmetry Trick',
+      subject: 'Engineering Mathematics · Calculus (2 Marks CBT)',
+      previewType: 'question_rubric',
+      summary:
+        'Solve classic IOE Pulchowk definite integrals in under 10 seconds using King Property ∫₀ᵃ f(x)dx = ∫₀ᵃ f(a-x)dx.',
+      demoUrl: '/practice',
+      sampleQuestion: {
+        stem: 'Evaluate the definite integral I = ∫₀^(π/2) [ √(sin x) / (√(sin x) + √(cos x)) ] dx :',
+        options: ['π / 2', 'π / 4', 'π / 3', '1'],
+        answerIndex: 1,
+        explanation:
+          'Using ∫₀ᵃ f(x)dx = ∫₀ᵃ f(a-x)dx with a = π/2, √(sin(π/2 - x)) = √(cos x). Adding the two integrals gives 2I = ∫₀^(π/2) 1 dx = π/2, hence I = π/4.',
+      },
+    },
+    refundRules: '7-Day Full Money-Back Guarantee before 15% course consumption.',
+    faqs: [
+      {
+        q: 'Does the mock engine match IOE Pulchowk 1-mark and 2-mark question weights?',
+        a: 'Yes! Our IOE CBT mock blueprint follows the exact 100-question (60 × 1 mark + 40 × 2 marks = 140 marks) structure with 10% negative marking.',
+      },
+    ],
+    primaryCtaText: 'Enroll in IOE Engineering Batch (NPR 6,990)',
+    enrollPath: '/checkout?plan=ioe-engineering-entrance-2026',
+  },
+
+  // ---------------------------------------------------------------------------
+  // 12. LOK SEWA AAYOG (KHARIDAR / NAYAB SUBBA / OFFICER) GK & IQ MASTERY
+  // ---------------------------------------------------------------------------
+  {
+    slug: 'lok-sewa-aayog-preparation-2082',
+    aliases: ['lok-sewa', 'loksewa', 'psc-nepal', 'nayab-subba', 'kharidar', 'section-officer'],
+    planSku: 'lok-sewa-aayog-preparation-2082',
+    track: 'lok_sewa',
+    courseFormat: 'live_batch',
+    formatLabel: 'Live Civil Service Batch + GK/IQ Test Bank',
+    currency: 'NPR',
+    title: 'Lok Sewa Aayog (Kharidar / Nayab Subba / Officer) GK & IQ Mastery 2082/2083',
+    badge: 'LOK SEWA AAYOG · GK, IQ & GOVERNANCE',
+    targetStudent: 'Civil service aspirants preparing for Federal & Provincial PSC (Kharidar, Nasu, Adhikrit)',
+    examOutcome: 'Master First Paper (GK + IQ) & Paper II Governance with high-accuracy negative-marking control',
+    headline: 'Complete Nepal Public Service Commission (Lok Sewa) GK, IQ & Governance Preparation',
+    description:
+      'Structured Lok Sewa Aayog preparation aligned with the official Public Service Commission (PSC) Nepal syllabus for Section Officer (Adhikrit), Nayab Subba (Nasu), and Kharidar. Features Nepal Geography, History, Constitution 2072, 16th Periodic Plan, Quantitative/Verbal IQ tricks, and Paper II Governance notes.',
+    priceNpr: 3490,
+    originalPriceNpr: 5500,
+    payableNowNpr: 3490,
+    payableLaterNpr: 0,
+    validityDays: 180,
+    validityText: '180 Days (6 Months Full Access)',
+    languageMedium: 'Nepali & English Bilingual (नेपाली र अंग्रेजी माध्यम)',
+    subjects: [
+      { name: 'General Knowledge (GK — सामान्य ज्ञान)', chaptersCount: 24, icon: '🇳🇵' },
+      { name: 'General Mental Ability (IQ — बौद्धिक परीक्षण)', chaptersCount: 20, icon: '🧠' },
+      { name: 'Public Administration & Governance (Paper II)', chaptersCount: 18, icon: '🏛️' },
+      { name: 'Current Affairs & Official Drafting (समसामयिक)', chaptersCount: 14, icon: '📰' },
+    ],
+    faculty: [
+      {
+        name: 'Subash Bhattarai',
+        role: 'Public Administration, Governance & Verbal IQ Mentor',
+        qualification: 'M.A. / Public Policy & Analytical Reasoning Specialist · 8+ Years Experience',
+        verified: true,
+      },
+      {
+        name: 'Pradeep Poudel Sir',
+        role: 'Quantitative IQ, Data Matrix & Numerical Reasoning Faculty',
+        qualification: 'M.Sc. · 10+ Years Competitive Quantitative Coaching',
+        verified: true,
+      },
+    ],
+    batchSchedule: {
+      batchName: 'Lok Sewa First & Second Paper Target Batch 2082/2083',
+      startDate: 'Admissions Open — Instant GK/IQ Question Bank Access',
+      liveSchedule: 'Sun – Fri · 6:30 AM – 8:00 AM & 7:00 PM – 8:30 PM NPT',
+      replayAvailable: true,
+    },
+    curriculum: [
+      {
+        moduleTitle: 'Module 1: Nepal & World General Knowledge (सामान्य ज्ञान — GK)',
+        topicsCount: 24,
+        topics: [
+          'Physical, Administrative & Socio-Economic Geography of Nepal',
+          'Ancient, Medieval (Kirat, Lichhavi, Malla) & Modern History of Nepal',
+          'Constitution of Nepal 2072, Fundamental Rights & Federal Structure',
+          '16th Periodic Plan, Economic Survey, UNO, SAARC, BIMSTEC & Current Affairs',
+        ],
+        isDemoAvailable: true,
+      },
+      {
+        moduleTitle: 'Module 2: General Mental Ability Test (बौद्धिक परीक्षण — IQ)',
+        topicsCount: 20,
+        topics: [
+          'Verbal Reasoning: Series, Analogy, Classification, Coding-Decoding & Direction',
+          'Numerical Reasoning: Percentage, Ratio, Profit/Loss, Time & Work, Data Matrix',
+          'Non-Verbal / Figural Reasoning: Figure Series, Mirror/Water Images, Paper Folding',
+        ],
+        isDemoAvailable: false,
+      },
+      {
+        moduleTitle: 'Module 3: Governance, Public Service Act & Paper II Answer Writing',
+        topicsCount: 32,
+        topics: [
+          'Civil Service Act & Regulation, Good Governance Act & Right to Information',
+          'Public Financial Management, Auditing, Budgeting & E-Governance in Nepal',
+          'Official Drafting: Tippani, Patra, Pratiwedan & Structured 5/10-Mark Answers',
+          '30 Full-Length Timed First Paper (GK + IQ) Mock Exams (-20% Negative Marking)',
+        ],
+        isDemoAvailable: false,
+      },
+    ],
+    includedFeatures: [
+      'Complete PSC GK, IQ & Paper II Syllabus Notes (Nepali & English)',
+      '30 Timed First Paper Mock Tests with PSC -20% Negative Marking Rules',
+      'Weekly Gorkhapatra Wednesday GK Summary & Current Affairs Digest',
+      'AI Tutor for Instant Constitution, GK & IQ Explanations',
+    ],
+    prerequisites: [
+      'SEE pass for Kharidar, +2 pass for Nayab Subba, or Bachelor degree for Section Officer',
+      'No prior civil service coaching required',
+    ],
+    featureLimits: [
+      '180 days access from enrollment date',
+      'Single-user access for timed PSC mock exams and downloadable digests',
+    ],
+    teachingAssetStatus: {
+      status: 'ready',
+      summary:
+        'Structured GK/IQ syllabus modules, interactive practice drills, and AI Tutor explanations are active and ready upon enrollment.',
+    },
+    demoLesson: {
+      title: 'Lok Sewa GK & Constitution 2072: Schedules & Fundamental Rights',
+      subject: 'Lok Sewa GK · Constitution of Nepal',
+      previewType: 'question_rubric',
+      summary:
+        'High-frequency Lok Sewa First Paper question pattern on the Parts, Articles, and Schedules of the Constitution of Nepal 2072.',
+      demoUrl: '/practice',
+      sampleQuestion: {
+        stem: 'Which Schedule (अनुसूची) of the Constitution of Nepal 2072 enumerates the list of Exclusive Powers of the Local Level (स्थानीय तहको एकल अधिकारको सूची)?',
+        options: [
+          'Schedule 5 (अनुसूची-५)',
+          'Schedule 6 (अनुसूची-६)',
+          'Schedule 8 (अनुसूची-८)',
+          'Schedule 9 (अनुसूची-९)',
+        ],
+        answerIndex: 2,
+        explanation:
+          'In the Constitution of Nepal 2072: Schedule 5 lists Federal powers, Schedule 6 lists Provincial powers, Schedule 7 lists Concurrent (Federal + Provincial) powers, Schedule 8 lists Local Level exclusive powers (22 powers), and Schedule 9 lists Concurrent (Federal, Provincial & Local) powers.',
+      },
+    },
+    refundRules: '7-Day Full Money-Back Guarantee before 15% course consumption.',
+    faqs: [
+      {
+        q: 'Is the Lok Sewa study material available in both Nepali and English?',
+        a: 'Yes! GK, Constitution notes, and IQ questions are provided in bilingual (Nepali + English) format to support both Nepali and English medium candidates.',
+      },
+    ],
+    primaryCtaText: 'Enroll in Lok Sewa Batch (NPR 3,490)',
+    enrollPath: '/checkout?plan=lok-sewa-aayog-preparation-2082',
   },
 ];
 

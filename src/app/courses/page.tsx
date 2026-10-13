@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import PublicNav from '@/components/PublicNav';
 import HomepageFooter from '@/app/components/HomepageFooter';
+import CourseSelectionGate from '@/components/courses/CourseSelectionGate';
 import {
   getAllCourses,
   CourseTrack,
@@ -25,6 +26,16 @@ import {
   Layers,
 } from 'lucide-react';
 
+const VALID_TRACKS: Array<'all' | CourseTrack> = [
+  'all',
+  'cee_medical',
+  'ioe_engineering',
+  'lok_sewa',
+  'neb_11_12',
+  'see_class_10',
+  'skills_languages',
+];
+
 function CourseCatalogueContent() {
   const searchParams = useSearchParams();
   const initialTrackParam = searchParams.get('track') as CourseTrack | 'all' | null;
@@ -33,16 +44,20 @@ function CourseCatalogueContent() {
   const initialQuery = searchParams.get('q') || '';
 
   const resolveInitialTrack = (): 'all' | CourseTrack => {
-    if (
-      initialTrackParam === 'all' ||
-      initialTrackParam === 'see_class_10' ||
-      initialTrackParam === 'cee_medical' ||
-      initialTrackParam === 'skills_languages'
-    ) {
+    if (initialTrackParam && VALID_TRACKS.includes(initialTrackParam)) {
       return initialTrackParam;
     }
     if (sectorParam === 'english' || sectorParam === 'digital') {
       return 'skills_languages';
+    }
+    if (sectorParam === 'engineering' || sectorParam === 'ioe') {
+      return 'ioe_engineering';
+    }
+    if (sectorParam === 'loksewa' || sectorParam === 'lok_sewa') {
+      return 'lok_sewa';
+    }
+    if (sectorParam === 'class11' || sectorParam === 'class12' || sectorParam === 'neb') {
+      return 'neb_11_12';
     }
     return 'all';
   };
@@ -72,16 +87,16 @@ function CourseCatalogueContent() {
     const fmtParam = searchParams.get('format') as CourseDeliveryFormat | 'all' | null;
     const qParam = searchParams.get('q');
 
-    if (
-      trackParam &&
-      (trackParam === 'all' ||
-        trackParam === 'see_class_10' ||
-        trackParam === 'cee_medical' ||
-        trackParam === 'skills_languages')
-    ) {
+    if (trackParam && VALID_TRACKS.includes(trackParam)) {
       setSelectedTrack(trackParam);
     } else if (secParam === 'english' || secParam === 'digital') {
       setSelectedTrack('skills_languages');
+    } else if (secParam === 'engineering' || secParam === 'ioe') {
+      setSelectedTrack('ioe_engineering');
+    } else if (secParam === 'loksewa' || secParam === 'lok_sewa') {
+      setSelectedTrack('lok_sewa');
+    } else if (secParam === 'class11' || secParam === 'class12' || secParam === 'neb') {
+      setSelectedTrack('neb_11_12');
     }
 
     if (
@@ -103,6 +118,9 @@ function CourseCatalogueContent() {
   const allCourses = getAllCourses();
 
   const ceeCount = allCourses.filter((c) => c.track === 'cee_medical').length;
+  const ioeCount = allCourses.filter((c) => c.track === 'ioe_engineering').length;
+  const lokSewaCount = allCourses.filter((c) => c.track === 'lok_sewa').length;
+  const nebCount = allCourses.filter((c) => c.track === 'neb_11_12').length;
   const seeCount = allCourses.filter((c) => c.track === 'see_class_10').length;
   const skillsCount = allCourses.filter((c) => c.track === 'skills_languages').length;
 
@@ -127,33 +145,42 @@ function CourseCatalogueContent() {
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">
           <Sparkles size={14} />
-          <span>Verified Academic Batches &amp; Self-Paced Passes · 2082 / 2026</span>
+          <span>Verified Academic, Entrance &amp; Civil Service Batches · 2082 / 2026</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight">
-          Course Catalogue &amp; Enrollment
+          Course Catalogue &amp; Learning Gate
         </h1>
         <p className="text-base text-muted-foreground leading-relaxed">
-          Compare live faculty batches, 45-day crash sprints, subject boosters, and self-paced AI passes across CEE Medical Entrance, SEE Class 10, and Skills tracks.
+          Choose your primary learning goal below or compare live faculty batches across CEE Medical, IOE Engineering, Lok Sewa Aayog, NEB Class 11 &amp; 12, SEE Class 10, and Skills tracks.
         </p>
       </div>
 
+      {/* Interactive Course Selection Gate */}
+      <CourseSelectionGate
+        autoOpenOnFirstVisit={true}
+        onSelectTrack={(track) => {
+          setSelectedTrack(track);
+          setSelectedFormat('all');
+        }}
+      />
+
       {/* Track Filter Tabs & Search */}
-      <div className="space-y-4 max-w-5xl mx-auto">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="space-y-4 max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
           <div className="flex flex-wrap items-center justify-center p-1.5 bg-muted/60 border border-border rounded-2xl gap-1">
             <button
               onClick={() => setSelectedTrack('all')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedTrack === 'all'
                   ? 'bg-card text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              All Programs ({allCourses.length})
+              All ({allCourses.length})
             </button>
             <button
               onClick={() => setSelectedTrack('cee_medical')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedTrack === 'cee_medical'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -162,8 +189,38 @@ function CourseCatalogueContent() {
               🩺 CEE Medical ({ceeCount})
             </button>
             <button
+              onClick={() => setSelectedTrack('ioe_engineering')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                selectedTrack === 'ioe_engineering'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              ⚙️ IOE Engineering ({ioeCount})
+            </button>
+            <button
+              onClick={() => setSelectedTrack('lok_sewa')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                selectedTrack === 'lok_sewa'
+                  ? 'bg-orange-600 text-white shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              🏛️ Lok Sewa ({lokSewaCount})
+            </button>
+            <button
+              onClick={() => setSelectedTrack('neb_11_12')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                selectedTrack === 'neb_11_12'
+                  ? 'bg-teal-600 text-white shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              📘 Class 11 &amp; 12 ({nebCount})
+            </button>
+            <button
               onClick={() => setSelectedTrack('see_class_10')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedTrack === 'see_class_10'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
@@ -173,17 +230,17 @@ function CourseCatalogueContent() {
             </button>
             <button
               onClick={() => setSelectedTrack('skills_languages')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedTrack === 'skills_languages'
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🌐 Skills &amp; Languages ({skillsCount})
+              🌐 Skills &amp; IELTS ({skillsCount})
             </button>
           </div>
 
-          <div className="relative w-full md:w-72">
+          <div className="relative w-full lg:w-72">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
@@ -278,15 +335,32 @@ function CourseCatalogueContent() {
           {filteredCourses.map((course) => {
             const isSee = course.track === 'see_class_10';
             const isCee = course.track === 'cee_medical';
+            const isIoe = course.track === 'ioe_engineering';
+            const isLokSewa = course.track === 'lok_sewa';
+            const isNeb = course.track === 'neb_11_12';
+
             const accentBorder = isSee
               ? 'hover:border-emerald-500/60'
               : isCee
               ? 'hover:border-indigo-500/60'
+              : isIoe
+              ? 'hover:border-blue-500/60'
+              : isLokSewa
+              ? 'hover:border-orange-500/60'
+              : isNeb
+              ? 'hover:border-teal-500/60'
               : 'hover:border-primary/60';
+
             const badgeBg = isSee
               ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
               : isCee
               ? 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20'
+              : isIoe
+              ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+              : isLokSewa
+              ? 'bg-orange-500/10 text-orange-600 border-orange-500/20'
+              : isNeb
+              ? 'bg-teal-500/10 text-teal-600 border-teal-500/20'
               : 'bg-primary/10 text-primary border-primary/20';
 
             const formatPillBg =
@@ -432,7 +506,7 @@ function CourseCatalogueContent() {
       <section className="pt-8 space-y-5">
         <div className="text-center max-w-2xl mx-auto space-y-2">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-            Compare All Approved Programs &amp; Formats
+            Compare All 12 Approved Programs &amp; Formats
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Transparent side-by-side breakdown of delivery format, chapter coverage, access duration, full pricing, and refund eligibility.

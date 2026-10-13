@@ -52,6 +52,42 @@ const PROGRAM_TRACKS: {
     bgActive: 'bg-indigo-500/10 dark:bg-indigo-500/20 border-indigo-500',
   },
   {
+    id: 'ioe_engineering',
+    name: 'Samyak IOE',
+    subtitle: 'BE Engineering Entrance (Pulchowk / KU / PU)',
+    icon: Zap,
+    color: 'text-blue-600 dark:text-blue-400',
+    borderColor: 'border-blue-500',
+    bgActive: 'bg-blue-500/10 dark:bg-blue-500/20 border-blue-500',
+  },
+  {
+    id: 'lok_sewa',
+    name: 'Samyak Lok Sewa',
+    subtitle: 'PSC Civil Service (Kharidar / Nasu / Officer)',
+    icon: ShieldCheck,
+    color: 'text-orange-600 dark:text-orange-400',
+    borderColor: 'border-orange-500',
+    bgActive: 'bg-orange-500/10 dark:bg-orange-500/20 border-orange-500',
+  },
+  {
+    id: 'neb_class_12',
+    name: 'NEB Class 12',
+    subtitle: 'Grade 12 Board Topper & Entrance Bridge',
+    icon: GraduationCap,
+    color: 'text-cyan-600 dark:text-cyan-400',
+    borderColor: 'border-cyan-500',
+    bgActive: 'bg-cyan-500/10 dark:bg-cyan-500/20 border-cyan-500',
+  },
+  {
+    id: 'neb_class_11',
+    name: 'NEB Class 11',
+    subtitle: 'Grade 11 Science & Math Foundation',
+    icon: GraduationCap,
+    color: 'text-teal-600 dark:text-teal-400',
+    borderColor: 'border-teal-500',
+    bgActive: 'bg-teal-500/10 dark:bg-teal-500/20 border-teal-500',
+  },
+  {
     id: 'see_class_10',
     name: 'Samyak SEE',
     subtitle: 'Class 10 NEB Board Exam',
@@ -97,6 +133,20 @@ export const PREP_STAGES_BY_TRACK: Record<
     { id: 'class_12_fresh', label: 'Grade 12 / Fresh', desc: 'Preparing alongside Class 12 or first CEE attempt' },
     { id: 'dropper_1st', label: 'Repeater / Dropper', desc: 'Full-time dedicated preparation for scholarship rank' },
     { id: 'class_11_foundation', label: 'Grade 11 Foundation', desc: 'Building early conceptual base for future CEE' },
+  ],
+  ioe_engineering: [
+    { id: 'ioe_fresh', label: 'Grade 12 / Fresh', desc: 'Targeting Pulchowk / KU / PU right after Class 12' },
+    { id: 'ioe_dropper', label: 'Full-Time IOE Target', desc: 'Intensive 140-mark CBT & shortcut drill' },
+  ],
+  lok_sewa: [
+    { id: 'psc_first_paper', label: 'First Paper (GK + IQ)', desc: 'Focusing on objective GK & IQ screening test' },
+    { id: 'psc_full_cycle', label: 'Full Cycle (Paper I + II)', desc: 'Preparing GK, IQ, and Paper II Governance writing' },
+  ],
+  neb_class_12: [
+    { id: 'class_12_board', label: 'Class 12 Board + Entrance Bridge', desc: 'Targeting Grade A+ in NEB Boards & CEE/IOE readiness' },
+  ],
+  neb_class_11: [
+    { id: 'class_11_regular', label: 'Class 11 Science Foundation', desc: 'Mastering Grade 11 Physics, Chem, Math & Biology' },
   ],
   see_class_10: [
     { id: 'class_10_regular', label: 'Class 10 Regular', desc: 'Full-year preparation targeting GPA 3.8 – 4.0' },
@@ -144,6 +194,10 @@ export function inferTrackFromRedirect(redirectPath: string): CanonicalCourseId 
   const plan = (new URLSearchParams(redirectPath.slice(qIndex)).get('plan') || '').toLowerCase();
   if (!plan) return null;
   if (plan.startsWith('see-')) return 'see_class_10';
+  if (plan.includes('class-11')) return 'neb_class_11';
+  if (plan.includes('class-12')) return 'neb_class_12';
+  if (plan.startsWith('ioe-') || plan.includes('engineering')) return 'ioe_engineering';
+  if (plan.startsWith('lok-sewa') || plan.includes('loksewa')) return 'lok_sewa';
   if (plan.startsWith('english-') || plan.includes('ielts')) return 'ielts';
   if (plan.includes('python') || plan.includes('ai-prompt')) return 'artificial_intelligence';
   if (plan.startsWith('digital-')) return 'digital_marketing';

@@ -8,6 +8,7 @@ import FlagshipPillarsSection from './FlagshipPillarsSection';
 import FlagshipDemoSection from './FlagshipDemoSection';
 import AnnouncementBar from './AnnouncementBar';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
+import CourseSelectionGate from '@/components/courses/CourseSelectionGate';
 
 const FeaturedInstructors = dynamic(() => import('./FeaturedInstructors'), {
   loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
@@ -70,9 +71,12 @@ export default function HomepageClient() {
         {/* Global Navigation */}
         <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} announcementHeight={announceOpen ? 40 : 0} />
 
-        {/* Main Flagship Hero (SEE Class 10 & CEE Medical) */}
+        {/* Main Flagship Hero & Course Selection Gate */}
         <main id="main-content" className="flex-1">
           <HeroSection />
+          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-10">
+            <CourseSelectionGate autoOpenOnFirstVisit={true} />
+          </div>
           <FlagshipPillarsSection />
           <FlagshipDemoSection />
           <FeaturedInstructors />
