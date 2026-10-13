@@ -154,7 +154,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
   const [error, setError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const [redirectInfo, setRedirectInfo] = useState<{ redirectUrl: string | null; reasonText: string | null }>({
-    redirectUrl: isAdminPortal ? '/admin/dashboard' : null,
+    redirectUrl: isAdminPortal ? '/admin' : null,
     reasonText: isAdminPortal ? 'Sign in with your Super Admin or Faculty credentials to access the Samyak Control Center.' : null,
   });
 
@@ -184,7 +184,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
     if (isAdminPortal || path.startsWith('/admin') || redirectParam.startsWith('/admin')) {
       setPortalTarget('admin');
       setRedirectInfo({
-        redirectUrl: info.redirectUrl || '/admin/dashboard',
+        redirectUrl: info.redirectUrl || '/admin',
         reasonText: info.reasonText || 'Sign in with your Super Admin or Faculty credentials to access the Samyak Control Center.',
       });
     } else {
@@ -219,7 +219,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
     const searchStr = typeof window !== 'undefined' ? window.location.search : '';
     const params = new URLSearchParams(searchStr);
     const raw = params.get('redirect') || params.get('returnUrl') || params.get('redirectTo') || params.get('next');
-    const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : (portalTarget === 'admin' ? '/admin/dashboard' : null);
+    const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : (portalTarget === 'admin' ? '/admin' : null);
 
     let destination = safeRedirect ?? '/student-dashboard';
     try {
@@ -232,7 +232,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
         const isStaffRole = ['support_staff', 'support_agent', 'content_manager', 'content_reviewer', 'payment_staff'].includes(role);
 
         if (isFullAdmin && (portalTarget === 'admin' || !safeRedirect)) {
-          destination = safeRedirect && safeRedirect.startsWith('/admin') ? safeRedirect : '/admin/dashboard';
+          destination = safeRedirect && safeRedirect.startsWith('/admin') ? safeRedirect : '/admin';
         } else if (!safeRedirect) {
           if (isTeacherRole) {
             destination = '/teacher';
@@ -580,7 +580,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
                         setAuthMode('password');
                         setPasswordAction('signin');
                         setRedirectInfo({
-                          redirectUrl: '/admin/dashboard',
+                          redirectUrl: '/admin',
                           reasonText: 'Sign in with Super Admin or Faculty credentials to open the Samyak Control Center.',
                         });
                         setError(null);
