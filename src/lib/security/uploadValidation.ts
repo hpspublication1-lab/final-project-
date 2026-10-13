@@ -18,7 +18,12 @@ export const MAX_DOCUMENT_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
 
 const DANGEROUS_EXTENSIONS = new Set([
   'exe', 'bat', 'cmd', 'sh', 'php', 'phtml', 'js', 'jsx', 'ts', 'tsx',
-  'html', 'htm', 'svg', 'vbs', 'scr', 'dll', 'com', 'msi', 'jar'
+  'html', 'htm', 'svg', 'vbs', 'scr', 'dll', 'com', 'msi', 'jar',
+  'py', 'ps1', 'psm1', 'cgi', 'pl', 'jsp', 'asp', 'aspx', 'war',
+  'apk', 'app', 'bin', 'deb', 'rpm', 'elf', 'dmg', 'iso', 'img',
+  'reg', 'wsf', 'hta', 'cpl', 'gadget', 'inf', 'ins', 'isu',
+  'job', 'jse', 'lnk', 'msc', 'msp', 'mst', 'pif', 'sct', 'shb',
+  'shs', 'u3p', 'vb', 'vbe'
 ]);
 
 export interface UploadValidationResult {
@@ -38,7 +43,17 @@ export function sanitizeFilename(filename: string): string {
   // Replace spaces and special characters with underscore, keeping only safe alphanumeric, dots, hyphens
   const sanitized = clean.replace(/[^a-zA-Z0-9._-]/g, '_');
   // Avoid leading dots (hidden files) or double dots
-  return sanitized.replace(/^\.+/, '').replace(/\.{2,}/g, '.');
+  const stripped = sanitized.replace(/^\.+/, '').replace(/\.{2,}/g, '.');
+  // Limit length while preserving file extension
+  if (stripped.length > 200) {
+    const parts = stripped.split('.');
+    if (parts.length > 1) {
+      const ext = parts.pop()!;
+      return `${parts.join('.').slice(0, 195 - ext.length)}.${ext}`;
+    }
+    return stripped.slice(0, 200);
+  }
+  return stripped;
 }
 
 /**
@@ -128,4 +143,70 @@ export function validateBase64Upload(
   }
 
   return { valid: true, mimeType, byteLength };
+}
+
+/**
+ * Validates binary buffer magic bytes against expected MIME types
+ * to prevent MIME-type spoofing when binary buffers are inspected.
+ */
+export function validateMagicBytes(buffer: Uint8Array, mimeType: string): boolean {
+  if (!buffer || buffer.length < 4) return false;
+
+  const normalizedMime = mimeType.toLowerCase().trim();
+
+  // JPEG: FF D8 FF
+  if (normalizedMime === 'image/jpeg') {
+    return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (normalizedMime === 'image/png') {
+    return (
+      buffer.length >= 8 &&
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4e &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0d &&
+      buffer[5] === 0x0a &&
+      buffer[6] === 0x1a &&
+      buffer[7] === 0x0a
+    );
+  }
+
+  // WebP: RIFF....WEBP (52 49 46 46 .... 57 45 42 50)
+  if (normalizedMime === 'image/webp') {
+    return (
+      buffer.length >= 12 &&
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46 &&
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50
+    );
+  }
+
+  // PDF: %PDF (25 50 44 46)
+  if (normalizedMime === 'application/pdf') {
+    return (
+      buffer[0] === 0x25 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x44 &&
+      buffer[3] === 0x46
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Generates RFC 6266 Content-Disposition header for safe downloads.
+ */
+export function getSecureContentDisposition(filename: string, inline: boolean = false): string {
+  const sanitized = sanitizeFilename(filename);
+  const type = inline ? 'inline' : 'attachment';
+  return `${type}; filename="${sanitized}"; filename*=UTF-8''${encodeURIComponent(sanitized)}`;
 }

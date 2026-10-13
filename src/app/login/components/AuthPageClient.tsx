@@ -36,9 +36,25 @@ const RESEND_SECONDS = 30;
 const OTP_LENGTH = 6;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Maps raw Supabase errors to calm, human copy. */
+/** Maps raw Supabase / security errors to calm, human copy. */
 function friendlyError(err: unknown): string {
-  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  const rawMsg = err instanceof Error ? err.message : String(err);
+  const msg = rawMsg.toLowerCase();
+  if (msg.includes('temporarily locked') || msg.includes('failed attempts')) {
+    return rawMsg;
+  }
+  if (
+    msg.includes('uppercase') ||
+    msg.includes('lowercase') ||
+    msg.includes('one number') ||
+    msg.includes('too common') ||
+    msg.includes('minimum 2 characters')
+  ) {
+    return rawMsg;
+  }
+  if (msg.includes('account_suspended') || msg.includes('suspended')) {
+    return 'Your account has been suspended for security reasons. Please contact support.';
+  }
   if (
     msg.includes('missing oauth secret') ||
     msg.includes('unsupported provider') ||
@@ -58,11 +74,11 @@ function friendlyError(err: unknown): string {
   ) {
     return 'Google Sign-In session could not be verified. You can log in instantly using Email & Password or Instant OTP Code below.';
   }
+  if (msg.includes('invalid login credentials') || msg.includes('invalid email or password')) {
+    return 'Incorrect email or password. Please check your credentials and try again.';
+  }
   if (msg.includes('expired') || msg.includes('invalid') || msg.includes('token')) {
     return 'That code or password is invalid or expired. Please try again.';
-  }
-  if (msg.includes('invalid login credentials')) {
-    return 'Incorrect email or password. Please check your credentials.';
   }
   if (msg.includes('already registered') || msg.includes('user_already_exists')) {
     return 'An account with this email already exists. Try signing in with OTP or password.';
@@ -310,7 +326,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
     [email, verifyEmailOtp, routeAfterLogin]
   );
 
-  // Handle Password Submit (SignIn or SignUp)
+  // Handle Password Submit (SignIn or SignUp) via Hardened Server Security Endpoints
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordAction === 'signup' && !fullName.trim()) {
@@ -339,18 +355,39 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
 
     try {
       if (passwordAction === 'signin') {
-        await signIn(email.trim(), password);
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), password }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Incorrect email or password. Please check your credentials.');
+        }
+        // Sync browser client session
+        await signIn(email.trim(), password).catch(() => null);
         Analytics.loggedIn('password');
-        toast.success('Signed in! Redirecting…');
+        toast.success('Signed in securely! Redirecting…');
         await routeAfterLogin();
       } else {
-        await signUp(email.trim(), password, {
-          fullName: fullName.trim(),
-          phone: phone.trim() || undefined,
-          consentAcceptedAt: new Date().toISOString(),
+        const res = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            password,
+            fullName: fullName.trim(),
+            phone: phone.trim() || undefined,
+          }),
         });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Could not create account. Please verify your details.');
+        }
+        // Establish browser session immediately
+        await signIn(email.trim(), password).catch(() => null);
         Analytics.signedUp('password');
-        toast.success('Account created! Redirecting…');
+        toast.success('Account created securely! Redirecting…');
         await routeAfterLogin();
       }
     } catch (err) {

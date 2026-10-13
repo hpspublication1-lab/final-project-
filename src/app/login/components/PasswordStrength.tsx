@@ -9,10 +9,10 @@ interface PasswordStrengthProps {
 
 export default function PasswordStrength({ password }: PasswordStrengthProps) {
   const checks = [
-    { key: 'ps-len', label: '8+ characters', pass: password.length >= 8 },
-    { key: 'ps-upper', label: 'Uppercase', pass: /[A-Z]/.test(password) },
-    { key: 'ps-num', label: 'Number', pass: /\d/.test(password) },
-    { key: 'ps-special', label: 'Special char', pass: /[!@#$%^&*]/.test(password) },
+    { key: 'ps-len', label: '8+ chars', pass: password.length >= 8 },
+    { key: 'ps-upper', label: 'A-Z & a-z', pass: /[A-Z]/.test(password) && /[a-z]/.test(password) },
+    { key: 'ps-num', label: 'Number (0-9)', pass: /\d/.test(password) },
+    { key: 'ps-special', label: 'Symbol (@#$!)', pass: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) },
   ];
   const score = checks.filter((c) => c.pass).length;
   const levels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
