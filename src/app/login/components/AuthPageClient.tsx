@@ -499,10 +499,44 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
                 )}
 
                 <div className="mb-5">
-                  <p className="text-xs font-extrabold uppercase tracking-widest text-primary mb-1">Welcome to Samyak Guru</p>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-xs font-extrabold uppercase tracking-widest text-primary">
+                      {redirectInfo.redirectUrl?.startsWith('/admin')
+                        ? 'Samyak Admin & Faculty Security Gate'
+                        : 'Welcome to Samyak Guru'}
+                    </p>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                      <ShieldCheck size={11} /> RLS + Lockout Protected
+                    </span>
+                  </div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                    Log in or sign up
+                    {redirectInfo.redirectUrl?.startsWith('/admin')
+                      ? 'Admin Portal Sign In'
+                      : 'Log in or sign up'}
                   </h1>
+                  {/* Simple Portal Destination Switcher */}
+                  <div className="mt-3 flex items-center gap-2 text-[11px] font-bold">
+                    <Link
+                      href="/login"
+                      className={`px-3 py-1.5 rounded-lg border transition-all ${
+                        !redirectInfo.redirectUrl?.startsWith('/admin')
+                          ? 'bg-primary/10 border-primary/30 text-primary font-extrabold'
+                          : 'bg-muted/50 border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      🎓 Student Portal
+                    </Link>
+                    <Link
+                      href="/login?redirect=/admin"
+                      className={`px-3 py-1.5 rounded-lg border transition-all ${
+                        redirectInfo.redirectUrl?.startsWith('/admin')
+                          ? 'bg-primary/10 border-primary/30 text-primary font-extrabold'
+                          : 'bg-muted/50 border-border text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      🛡️ Admin &amp; Faculty Portal
+                    </Link>
+                  </div>
                 </div>
 
                 {/* Preferred Hero Action: Google Sign In Button */}
@@ -1079,16 +1113,16 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
             )}
           </div>
 
-          {/* Trust & Social Proof Bar */}
+          {/* Security & Multi-Stream Architecture Bar */}
           <div className="mt-6 p-4 rounded-2xl bg-card border border-border text-center shadow-sm">
-            <div className="flex items-center justify-center gap-1 text-amber-400 mb-1 text-sm font-black">
-              ★ ★ ★ ★ ★
+            <div className="flex items-center justify-center gap-1.5 text-emerald-500 mb-1 text-xs font-extrabold uppercase tracking-wider">
+              <ShieldCheck size={15} /> Verified Single Sign-On Across All 8 Streams
             </div>
             <p className="text-xs font-extrabold text-foreground">
-              Trusted by 15,000+ CEE &amp; SEE Medical Aspirants
+              CEE Medical · IOE Engineering · Lok Sewa · NEB Class 11 &amp; 12 · SEE · IELTS &amp; AI
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-              Instant sync with Samyak AI Tutor, Live Mock Tests &amp; Battle Arena
+              Protected by Row-Level Security (RLS), Progressive Brute-Force Lockout &amp; Encrypted Sessions
             </p>
           </div>
 

@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PLAN_PRICES, fonepayConfigured, generateFonepayQr } from '@/lib/payments/gateways';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 /**
  * POST /api/payments/fonepay/qr   { plan: 'pro' }
@@ -21,6 +22,14 @@ import { PLAN_PRICES, fonepayConfigured, generateFonepayQr } from '@/lib/payment
  */
 export async function POST(request: NextRequest) {
   try {
+    const rl = enforceRateLimit(request, 'payment');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many QR generation requests. Please wait a moment and try again.' },
+        { status: 429, headers: { 'Retry-After': String(rl.resetSeconds) } }
+      );
+    }
+
     const { plan } = await request.json();
 
     const price = PLAN_PRICES[plan];

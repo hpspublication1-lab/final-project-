@@ -7,11 +7,17 @@ import {
   RawUserProfile,
   RawEnrollment,
 } from '@/lib/auth/accessControl';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    const rl = enforceRateLimit(request, 'general', 'video-sign');
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many video stream requests. Please wait.' }, { status: 429 });
+    }
+
     const videoId = request.nextUrl.searchParams.get('video');
     if (!videoId) return NextResponse.json({ error: 'Missing video id' }, { status: 400 });
 
@@ -60,15 +66,19 @@ export async function GET(request: NextRequest) {
 
       const accessContext = evaluateAccessContext(user, profile, rawEnrollments);
 
-      // Check if user is super_admin, admin, teacher, or has active course access
+      // Check if user is super_admin, admin, teacher, or has active course/batch access
       const isPrivileged =
         accessContext.role === 'super_administrator' ||
         accessContext.role === 'administrator' ||
-        accessContext.role === 'teacher';
+        accessContext.role === 'teacher' ||
+        accessContext.role === 'student_all_access';
 
-      const hasPaidAccess =
-        isPrivileged ||
-        Object.values(accessContext.courses).some((c) => c.canAccessFullCourse);
+      const hasBatchOrCourseAccess = video.batch_id
+        ? accessContext.enrolledBatchIds.includes(video.batch_id) ||
+          Object.values(accessContext.courses).some((c) => c.canAccessFullCourse && (!c.batchId || c.batchId === video.batch_id))
+        : Object.values(accessContext.courses).some((c) => c.canAccessFullCourse);
+
+      const hasPaidAccess = isPrivileged || hasBatchOrCourseAccess;
 
       if (!hasPaidAccess) {
         return NextResponse.json(

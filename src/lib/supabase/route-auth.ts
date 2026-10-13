@@ -16,7 +16,21 @@ export async function getSessionUser(req?: Request) {
     {
       cookies: {
         getAll: () => (cookieStore ? cookieStore.getAll() : []),
-        setAll: () => {},
+        setAll: (cookiesToSet) => {
+          if (!cookieStore) return;
+          try {
+            const isProd = process.env.NODE_ENV === 'production';
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, {
+                ...options,
+                sameSite: 'lax',
+                secure: isProd,
+              });
+            });
+          } catch {
+            // Read-only context — safe to ignore
+          }
+        },
       },
     }
   );
@@ -69,9 +83,14 @@ export async function requireUser(req?: Request) {
 }
 
 export function createAdminClient(): SupabaseClient {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey && process.env.NODE_ENV === 'production') {
+    console.error('[SECURITY] SUPABASE_SERVICE_ROLE_KEY is missing in production environment!');
+  }
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
-    { auth: { persistSession: false } }
+    serviceKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key',
+    { auth: { autoRefreshToken: false, persistSession: false } }
   );
 }
+
