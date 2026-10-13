@@ -58,6 +58,105 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
     ];
   }
 
+  if (canonicalId === 'ioe_engineering') {
+    return [
+      { label: 'Dashboard',     href: '/student-dashboard',                icon: Home,          key: 'd-home' },
+      // Learn
+      { label: 'IOE Subjects',  href: '/subjects?program=ioe_engineering', icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: 'Live Classes',  href: '/live-classes',                     icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+      // Practice
+      { label: 'CBT Practice',  href: '/practice?program=ioe_engineering', icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',                     icon: Swords,        key: 'd-arena', badge: '1v1', section: 'PRACTICE' },
+      { label: 'AI Engineering Tutor', href: '/ai-tutor',                  icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+      // Mock Tests
+      { label: '140M CBT Mocks',href: '/mock-tests?program=ioe_engineering', icon: ClipboardList, key: 'd-tests', badge: 'IOE', section: 'MOCK TESTS' },
+      // Revise
+      { label: 'Mistakes Log',  href: '/mistake-analyser',                 icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Study Plan',    href: '/study-plan',                       icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+      // Support
+      { label: 'Help & Support',href: '/contact',                          icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
+    ];
+  }
+
+  if (canonicalId === 'lok_sewa') {
+    return [
+      { label: 'Dashboard',     href: '/student-dashboard',          icon: Home,          key: 'd-home' },
+      // Learn
+      { label: 'GK & IQ Syllabus', href: '/subjects?program=lok_sewa', icon: BookOpen,    key: 'd-subjects', section: 'LEARN' },
+      { label: 'Live Classes',  href: '/live-classes',               icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+      // Practice
+      { label: 'First Paper Practice', href: '/practice?program=lok_sewa', icon: Zap,    key: 'd-practice', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',               icon: Swords,        key: 'd-arena', badge: '1v1', section: 'PRACTICE' },
+      { label: 'AI Lok Sewa Tutor', href: '/ai-tutor',               icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+      // Mock Tests
+      { label: 'PSC Model Exams', href: '/mock-tests?program=lok_sewa', icon: ClipboardList, key: 'd-tests', badge: 'PSC', section: 'MOCK TESTS' },
+      // Revise
+      { label: 'Mistakes Log',  href: '/mistake-analyser',           icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Study Plan',    href: '/study-plan',                 icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+      // Support
+      { label: 'Help & Support',href: '/contact',                    icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
+    ];
+  }
+
+  if (canonicalId === 'neb_class_11' || canonicalId === 'neb_class_12') {
+    const gradeLabel = canonicalId === 'neb_class_11' ? 'Class 11' : 'Class 12';
+    return [
+      { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
+      // Learn
+      { label: `${gradeLabel} Subjects`, href: `/subjects?program=${canonicalId}`, icon: BookOpen, key: 'd-subjects', section: 'LEARN' },
+      { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+      // Practice
+      { label: 'Derivations & MCQs', href: `/practice?program=${canonicalId}`, icon: Zap,    key: 'd-practice', section: 'PRACTICE' },
+      { label: 'AI Answer Marker', href: '/vision-marker',               icon: Sparkles,      key: 'd-vision', badge: 'AI', section: 'PRACTICE' },
+      { label: 'AI Tutor',      href: '/ai-tutor',                       icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+      // Mock Tests
+      { label: 'NEB Board Pre-Mocks', href: '/mock-tests?program=neb',   icon: ClipboardList, key: 'd-tests', badge: 'NEB', section: 'MOCK TESTS' },
+      // Revise
+      { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+      // Support
+      { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
+    ];
+  }
+
+  if (canonicalId === 'ielts') {
+    return [
+      { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
+      // Learn
+      { label: '4 Modules (L/R/W/S)', href: '/subjects?program=ielts',   icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: 'Live Masterclasses', href: '/live-classes',              icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+      // Practice
+      { label: 'Module Drills', href: '/practice?program=ielts',         icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
+      { label: 'AI Speaking & Essay', href: '/ai-tutor',                 icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+      // Mock Tests
+      { label: 'Band 9 Simulators', href: '/mock-tests?program=ielts',   icon: ClipboardList, key: 'd-tests', badge: 'IELTS', section: 'MOCK TESTS' },
+      // Revise
+      { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+      // Support
+      { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
+    ];
+  }
+
+  if (canonicalId === 'digital_marketing' || canonicalId === 'artificial_intelligence') {
+    const isTech = canonicalId === 'artificial_intelligence';
+    return [
+      { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
+      // Learn
+      { label: isTech ? 'AI Modules' : 'Marketing Modules', href: `/subjects?program=${canonicalId}`, icon: BookOpen, key: 'd-subjects', section: 'LEARN' },
+      { label: 'Live Workshops',href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
+      // Practice
+      { label: 'Hands-on Projects', href: `/practice?program=${canonicalId}`, icon: Zap,      key: 'd-practice', section: 'PRACTICE' },
+      { label: isTech ? 'AI Coding Assistant' : 'AI Copy & Ad Tutor', href: '/ai-tutor', icon: Bot, key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+      // Mock Tests
+      { label: 'Skill Assessments', href: `/mock-tests?program=${canonicalId}`, icon: ClipboardList, key: 'd-tests', badge: 'CERT', section: 'MOCK TESTS' },
+      // Revise
+      { label: 'Project Milestones', href: '/study-plan',                icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
+      // Support
+      { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
+    ];
+  }
+
   // Default / CEE Medical Entrance
   return [
     { label: 'Dashboard',     href: '/student-dashboard', icon: Home,          key: 'd-home' },
@@ -171,14 +270,24 @@ export default function DashboardLayout({
   const roleName = profile?.role_name || (profile?.subscription_plan && profile.subscription_plan !== 'free' ? 'Paid Student' : 'Free Student');
 
   const searchableLinks = [
+    { title: 'Learning Track Gate (Switch Program / Course Stream)', href: '/gate', category: 'Global Navigation' },
     { title: 'CEE Medical Entrance Super Target Batch 2026', href: '/courses/cee-mbbs-mastery-2026', category: 'Flagship Course' },
-    { title: 'SEE Class 10 Board Topper Batch 2082/2083', href: '/courses/see-class-10-board-topper-batch', category: 'Flagship Course' },
+    { title: 'IOE Engineering Entrance Preparation Batch 2026', href: '/courses/ioe-engineering-entrance-2026', category: 'Engineering Entrance' },
+    { title: 'Lok Sewa Aayog Preparation Batch 2082 (GK & IQ)', href: '/courses/lok-sewa-aayog-preparation-2082', category: 'Civil Service' },
+    { title: 'SEE Class 10 Board Topper Batch 2082/2083', href: '/courses/see-class-10-board-topper-batch', category: 'Class 10 Board' },
+    { title: 'NEB Class 11 Science Mastery & Foundation', href: '/courses/neb-class-11-science-mastery', category: 'Class 11 Board' },
+    { title: 'NEB Class 12 Board Topper & Entrance Bridge', href: '/courses/neb-class-12-board-topper-batch', category: 'Class 12 Board' },
+    { title: 'IELTS Target Band 8.0+ Academic & General', href: '/courses/english-ielts-target-8-mastery', category: 'Global English' },
+    { title: 'Digital Marketing, Canva & Freelancing Masterclass', href: '/courses/digital-marketing-canva-freelancing', category: 'Digital Career' },
+    { title: 'AI Prompt Engineering & Python Academy', href: '/courses/digital-python-programming-zero-to-hero', category: 'Tech & AI' },
     { title: 'CEE 45-Day Ultimate Crash Course 2026', href: '/courses/cee-45-day-crash-course', category: 'Crash Course' },
-    { title: 'SEE Optional Math & Science Score Booster', href: '/courses/see-opt-math-science-mastery', category: 'Booster Batch' },
     { title: 'All Courses & Admissions Catalogue', href: '/courses', category: 'Directory' },
     { title: 'Medical Biology (Zoology & Botany 80 Marks)', href: '/subjects?subject=biology', category: 'CEE Subject' },
     { title: 'Medical Physics (Mechanics, Optics 50 Marks)', href: '/subjects?subject=physics', category: 'CEE Subject' },
     { title: 'Medical Chemistry (Organic & Physical 50 Marks)', href: '/subjects?subject=chemistry', category: 'CEE Subject' },
+    { title: 'Engineering Mathematics (IOE 140M CBT)', href: '/subjects?subject=engineering_math', category: 'IOE Subject' },
+    { title: 'Lok Sewa General Knowledge (GK / सामान्य ज्ञान)', href: '/subjects?subject=loksewa_gk', category: 'Lok Sewa' },
+    { title: 'Lok Sewa General Mental Ability (IQ / बौद्धिक परीक्षण)', href: '/subjects?subject=loksewa_iq', category: 'Lok Sewa' },
     { title: 'Compulsory Science (Physics, Chemistry, Biology)', href: '/subjects?subject=science', category: 'SEE Subject' },
     { title: 'Compulsory Mathematics (Algebra, Geometry)', href: '/subjects?subject=mathematics', category: 'SEE Subject' },
     { title: 'Optional Mathematics (Vectors, Trigonometry)', href: '/subjects?subject=opt_math', category: 'SEE Subject' },

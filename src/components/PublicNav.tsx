@@ -54,6 +54,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
   // Courses | CEE Medical | SEE Class 10 | Practice | Mock Tests | Free Resources | Support
   const navLinks = [
     { label: 'Courses', href: '/courses' },
+    { label: 'Programs Gate', href: '/gate', badge: 'All Tracks' },
     { label: 'CEE Medical', href: '/cee-medical-entrance', badge: 'Flagship' },
     { label: 'SEE Class 10', href: '/see', badge: 'Class 10' },
     { label: 'Practice', href: '/practice', badge: '15K+' },
