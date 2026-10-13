@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { Analytics } from '@/lib/analytics/mixpanel';
 import { SUPPORT_CONFIG } from '@/lib/config/support';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
@@ -372,6 +373,12 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           throw new Error(data.error || 'Incorrect email or password. Please check your credentials.');
+        }
+        if (data.session?.access_token && data.session?.refresh_token) {
+          await createClient().auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          }).catch(() => null);
         }
         Analytics.loggedIn('password');
         toast.success('Signed in! Redirecting…');

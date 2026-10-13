@@ -31,31 +31,39 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // List users with staff roles or query profiles
-    const { data: staffProfiles, error } = await admin
-      .from('user_profiles')
-      .select('id, full_name, phone, role, is_admin, created_at')
-      .in('role', ['teacher', 'admin', 'super_admin', 'payment_staff', 'content_manager', 'support_staff'])
-      .order('created_at', { ascending: false });
+    const [{ data: allProfiles, error }, { data: authData }] = await Promise.all([
+      admin.from('user_profiles').select('*').order('created_at', { ascending: false }),
+      admin.auth.admin.listUsers({ perPage: 1000 }),
+    ]);
 
     if (error) throw error;
 
-    // Get auth email for staff
-    const { data: authData } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    const authMap = new Map((authData?.users || []).map((u) => [u.id, u.email]));
+    const authMap = new Map((authData?.users || []).map((u) => [u.id, u]));
+    const staffRoleSet = new Set(['teacher', 'admin', 'super_admin', 'payment_staff', 'content_manager', 'support_staff']);
 
-    const staffWithEmails = (staffProfiles || []).map((p: any) => ({
-      ...p,
-      email: authMap.get(p.id) || '',
-      role: p.role || (p.is_admin ? 'admin' : 'student_free'),
-    }));
+    const staffWithEmails = (allProfiles || [])
+      .map((p: any) => {
+        const au = authMap.get(p.id);
+        const metaRole = au?.app_metadata?.role || au?.user_metadata?.role;
+        const resolvedRole = p.role || p.role_name || metaRole || (p.is_admin ? 'admin' : 'student_free');
+        return {
+          id: p.id,
+          full_name: p.full_name || au?.user_metadata?.full_name || 'Staff Member',
+          phone: p.phone || au?.user_metadata?.phone || '',
+          email: au?.email || '',
+          role: resolvedRole,
+          is_admin: !!p.is_admin,
+          created_at: p.created_at,
+        };
+      })
+      .filter((u: any) => u.is_admin || staffRoleSet.has(String(u.role).toLowerCase()));
 
     // Construct role matrix for UI
     const rolesMetadata = Object.entries(ROLE_HIERARCHY).map(([name, level]) => ({
       name,
       level,
       permissions: Array.from(ROLE_PERMISSIONS[name as UserRoleType] || []),
-      isStaffRole: ['teacher', 'admin', 'super_admin', 'payment_staff', 'content_manager', 'support_staff'].includes(name),
+      isStaffRole: staffRoleSet.has(name),
     }));
 
     return NextResponse.json({
@@ -93,8 +101,8 @@ export async function POST(req: NextRequest) {
     }
 
     let userId = targetUserId;
+    const { data: userList } = await admin.auth.admin.listUsers({ perPage: 1000 });
     if (!userId && targetEmail) {
-      const { data: userList } = await admin.auth.admin.listUsers();
       const match = (userList?.users || []).find((u) => u.email?.toLowerCase() === targetEmail.toLowerCase().trim());
       if (match) userId = match.id;
     }
@@ -112,11 +120,15 @@ export async function POST(req: NextRequest) {
     // Fetch existing profile
     const { data: existingProfile } = await admin
       .from('user_profiles')
-      .select('id, role, is_admin, full_name')
+      .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
-    const previousRole = existingProfile?.role || (existingProfile?.is_admin ? 'admin' : 'student_free');
+    const targetAuthUser = (userList?.users || []).find((u) => u.id === userId);
+    const previousRole =
+      (existingProfile as any)?.role ||
+      targetAuthUser?.user_metadata?.role ||
+      (existingProfile?.is_admin ? 'admin' : 'student_free');
 
     if (previousRole === newRole) {
       return NextResponse.json({
@@ -125,12 +137,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Apply update
+    // Apply update to Auth metadata + user_profiles.is_admin
     const isAdminRole = newRole === 'admin' || newRole === 'super_admin';
+    await admin.auth.admin.updateUserById(userId, {
+      app_metadata: { ...(targetAuthUser?.app_metadata || {}), role: newRole },
+      user_metadata: { ...(targetAuthUser?.user_metadata || {}), role: newRole, is_admin: isAdminRole },
+    });
+
     const { error: updateErr } = await admin
       .from('user_profiles')
       .update({
-        role: newRole,
         is_admin: isAdminRole,
         updated_at: new Date().toISOString(),
       })

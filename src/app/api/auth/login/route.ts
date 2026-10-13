@@ -120,6 +120,12 @@ export async function POST(req: NextRequest) {
         id: data.user?.id,
         email: data.user?.email,
       },
+      session: data.session
+        ? {
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          }
+        : null,
       role: resolvedRole,
       isSuperAdmin: superAdmin,
       onboardingCompleted,

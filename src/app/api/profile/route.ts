@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const [profileRes, enrollmentsRes] = await Promise.all([
       admin
         .from('user_profiles')
-        .select('id, full_name, phone, college, cee_year, is_admin, role, subscription_plan, subscription_expires_at, battle_rating, total_points, avatar_url, created_at')
+        .select('*')
         .eq('id', user.id)
         .maybeSingle(),
       admin

@@ -20,37 +20,51 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status');
-    const search = searchParams.get('search')?.toLowerCase();
     const page = Math.max(1, Number(searchParams.get('page')) || 1);
-    const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 25));
+    const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit')) || 50));
     const offset = (page - 1) * limit;
 
     let query = admin
-      .from('orders')
+      .from('payment_transactions')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
     if (status && status !== 'all') {
-      query = query.eq('status', status);
+      if (status === 'pending') {
+        query = query.in('status', ['pending', 'initiated']);
+      } else {
+        query = query.eq('status', status);
+      }
     }
 
-    const { data: orders, count, error } = await query.range(offset, offset + limit - 1);
+    const { data: txRows, count, error } = await query.range(offset, offset + limit - 1);
     if (error) throw error;
 
     // Fetch user details for these orders
-    const userIds = Array.from(new Set((orders || []).map((o: any) => o.user_id).filter(Boolean)));
-    const { data: profiles } = await admin
-      .from('user_profiles')
-      .select('id, full_name, phone')
-      .in('id', userIds);
+    const userIds = Array.from(new Set((txRows || []).map((o: any) => o.user_id).filter(Boolean)));
+    const { data: profiles } = userIds.length > 0
+      ? await admin.from('user_profiles').select('id, full_name, phone').in('id', userIds)
+      : { data: [] };
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
-    const enrichedOrders = (orders || []).map((o: any) => {
+    const enrichedOrders = (txRows || []).map((o: any) => {
       const p = profileMap.get(o.user_id);
+      const amountNpr = Math.round(Number(o.amount_paisa || 0) / 100) || Number(o.net_amount_npr || 0);
+      const normalizedStatus =
+        o.status === 'initiated' ? 'pending' : o.status === 'verified' ? 'completed' : o.status || 'pending';
       return {
-        ...o,
+        id: o.id,
+        purchase_order_id: o.purchase_order_id || o.id,
+        user_id: o.user_id,
         customer_name: p?.full_name || 'Student',
         customer_phone: p?.phone || '',
+        plan_sku: o.plan || o.plan_sku || 'cee_premium',
+        gateway: o.gateway || 'fonepay',
+        gross_amount_npr: amountNpr,
+        discount_amount_npr: Number(o.discount_amount_npr || 0),
+        net_amount_npr: amountNpr,
+        status: normalizedStatus,
+        created_at: o.created_at,
       };
     });
 
@@ -91,9 +105,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'Verification already in progress.' });
       }
 
-      // Fetch order
       const { data: order, error: orderErr } = await admin
-        .from('orders')
+        .from('payment_transactions')
         .select('*')
         .eq('id', orderId)
         .single();
@@ -106,9 +119,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Order is already marked as completed.' }, { status: 400 });
       }
 
-      // Update order status
       const { error: updateErr } = await admin
-        .from('orders')
+        .from('payment_transactions')
         .update({
           status: 'completed',
           updated_at: new Date().toISOString(),
@@ -117,10 +129,10 @@ export async function POST(req: NextRequest) {
 
       if (updateErr) throw updateErr;
 
-      // Automatically grant enrollment to the student
+      const planSku = String(order.plan || order.plan_sku || '').toLowerCase();
       const grantResult = await EnrollmentService.grantEnrollment({
         userId: order.user_id,
-        courseSlug: (order.plan_sku?.includes('see') ? 'see_class_10' : 'cee_medical') as CanonicalCourseSlug,
+        courseSlug: (planSku.includes('see') ? 'see_class_10' : 'cee_medical') as CanonicalCourseSlug,
         batchId: order.batch_id,
         orderId: order.id,
         adminUserId: guard.user.id,
@@ -128,7 +140,7 @@ export async function POST(req: NextRequest) {
         notes: notes || 'Payment verified by staff',
       });
 
-      // Log audit event
+      const amountNpr = Math.round(Number(order.amount_paisa || 0) / 100);
       await AuditService.recordAuditEvent({
         actorId: guard.user.id,
         actorEmail: guard.email,
@@ -138,7 +150,7 @@ export async function POST(req: NextRequest) {
         changesDiff: {
           previousStatus: order.status,
           newStatus: 'completed',
-          amountNpr: order.net_amount_npr,
+          amountNpr,
           userId: order.user_id,
           enrollmentGranted: grantResult.success,
           notes,
@@ -166,7 +178,7 @@ export async function POST(req: NextRequest) {
       }
 
       const { data: order, error: orderErr } = await admin
-        .from('orders')
+        .from('payment_transactions')
         .select('*')
         .eq('id', orderId)
         .single();
@@ -180,7 +192,7 @@ export async function POST(req: NextRequest) {
       }
 
       const { error: updateErr } = await admin
-        .from('orders')
+        .from('payment_transactions')
         .update({
           status: 'refunded',
           updated_at: new Date().toISOString(),
@@ -189,7 +201,7 @@ export async function POST(req: NextRequest) {
 
       if (updateErr) throw updateErr;
 
-      // Log audit event
+      const amountNpr = Math.round(Number(order.amount_paisa || 0) / 100);
       await AuditService.recordAuditEvent({
         actorId: guard.user.id,
         actorEmail: guard.email,
@@ -199,7 +211,7 @@ export async function POST(req: NextRequest) {
         changesDiff: {
           previousStatus: order.status,
           newStatus: 'refunded',
-          amountNpr: order.net_amount_npr,
+          amountNpr,
           userId: order.user_id,
           reason: reason || 'Requested by customer',
         },

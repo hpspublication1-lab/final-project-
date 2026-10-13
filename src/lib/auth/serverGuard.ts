@@ -95,11 +95,12 @@ export async function verifyServerPermission(
       if (admin) {
         const { data: profile } = await admin
           .from('user_profiles')
-          .select('role, role_name, is_admin, is_banned')
+          .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
-        if (profile?.is_banned) {
+        const profAny = profile as any;
+        if (profAny?.is_banned || (user.user_metadata as any)?.is_banned) {
           return {
             authorized: false,
             response: NextResponse.json(
@@ -109,10 +110,14 @@ export async function verifyServerPermission(
           };
         }
 
-        if (profile) {
-          const normalized = normalizeRoleType(profile.role || (profile as any).role_name, profile.is_admin);
-          role = normalized === 'visitor' ? 'student_free' : normalized;
-        }
+        const rawRole =
+          profAny?.role ||
+          profAny?.role_name ||
+          (user.app_metadata as any)?.role ||
+          (user.user_metadata as any)?.role;
+        const isAdminFlag = Boolean(profAny?.is_admin || (user.user_metadata as any)?.is_admin);
+        const normalized = normalizeRoleType(rawRole, isAdminFlag);
+        role = normalized === 'visitor' ? 'student_free' : normalized;
       }
     } catch (err) {
       console.warn('[ServerGuard] Failed to fetch user profile role, defaulting to student_free:', err);

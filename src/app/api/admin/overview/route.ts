@@ -37,15 +37,15 @@ export async function GET(req: NextRequest) {
       admin.from('questions').select('id', { count: 'exact', head: true }).or('is_archived.is.null,is_archived.eq.false'),
       admin.from('exams').select('id', { count: 'exact', head: true }).or('is_archived.is.null,is_archived.eq.false'),
       admin.from('doubts').select('id', { count: 'exact', head: true }).eq('status', 'open'),
-      admin.from('orders').select('net_amount_npr, status'),
+      admin.from('payment_transactions').select('amount_paisa, status'),
       AuditService.queryAuditLogs({ limit: 10 }),
     ]);
 
-    // Compute real order revenue & completions
+    // Compute real order revenue & completions from payment_transactions
     const allOrders = ordersRes.data || [];
-    const completedOrders = allOrders.filter((o: any) => o.status === 'completed' || o.status === 'verified');
-    const totalRevenueNpr = completedOrders.reduce((sum: number, o: any) => sum + Number(o.net_amount_npr || 0), 0);
-    const pendingOrdersCount = allOrders.filter((o: any) => o.status === 'pending').length;
+    const completedOrders = allOrders.filter((o: any) => o.status === 'completed' || o.status === 'verified' || o.status === 'paid');
+    const totalRevenueNpr = completedOrders.reduce((sum: number, o: any) => sum + Math.round(Number(o.amount_paisa || 0) / 100), 0);
+    const pendingOrdersCount = allOrders.filter((o: any) => o.status === 'pending' || o.status === 'initiated').length;
 
     const overview = {
       totalStudents: studentsCountRes.count ?? 0,

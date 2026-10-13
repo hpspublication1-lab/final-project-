@@ -122,11 +122,11 @@ export async function middleware(request: NextRequest) {
     } else {
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('is_banned, is_admin, role_name, role')
+        .select('*')
         .eq('id', user.id)
         .maybeSingle();
 
-      userProfile = profile;
+      userProfile = profile as any;
       if (profile) {
         roleCache.set(user.id, {
           is_banned: profile.is_banned,
