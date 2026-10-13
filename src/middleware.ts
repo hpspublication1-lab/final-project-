@@ -120,19 +120,20 @@ export async function middleware(request: NextRequest) {
   // 3. Admin Area Access Control (/admin and /admin/*)
   const adminKey = process.env.ADMIN_ACCESS_KEY;
   const secretEntrance = adminKey ? `/admin-${adminKey}` : null;
-  const isAdminArea = pathname === '/admin' || pathname.startsWith('/admin/');
+  const isAdminLogin = pathname === '/admin/login' || pathname.startsWith('/admin/login/');
+  const isAdminArea = (pathname === '/admin' || pathname.startsWith('/admin/')) && !isAdminLogin;
 
   // Secret entrance handling
   if (secretEntrance && pathname === secretEntrance) {
     if (!user) {
       return NextResponse.redirect(
-        new URL(`/login?redirect=${encodeURIComponent(secretEntrance)}`, request.url)
+        new URL(`/admin/login?redirect=${encodeURIComponent(secretEntrance)}`, request.url)
       );
     }
     if (!isSuperAdmin(user.email)) {
       const url = request.nextUrl.clone();
-      url.pathname = '/student-dashboard';
-      url.search = '?error=unauthorized_admin';
+      url.pathname = '/admin/login';
+      url.search = '?error=unauthorized_admin&redirect=/admin/dashboard';
       return NextResponse.redirect(url);
     }
     const res = NextResponse.redirect(new URL('/admin', request.url));
@@ -149,7 +150,7 @@ export async function middleware(request: NextRequest) {
   if (isAdminArea) {
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
+      url.pathname = '/admin/login';
       url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}`;
       return NextResponse.redirect(url);
     }
@@ -161,8 +162,8 @@ export async function middleware(request: NextRequest) {
 
     if (!isFullAdmin && !isPayStaff && !isSupport && !isContentOrTeacher) {
       const url = request.nextUrl.clone();
-      url.pathname = '/student-dashboard';
-      url.search = '?error=unauthorized_admin';
+      url.pathname = '/admin/login';
+      url.search = `?redirect=${encodeURIComponent(pathname + request.nextUrl.search)}&reason=${encodeURIComponent('Please sign in with an Admin or Faculty account to access the Admin Portal.')}`;
       return NextResponse.redirect(url);
     }
 

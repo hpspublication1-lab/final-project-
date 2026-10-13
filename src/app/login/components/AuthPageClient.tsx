@@ -130,14 +130,16 @@ function getRedirectInfo(searchStr: string) {
 
 interface AuthPageClientProps {
   initialMode?: 'signin' | 'signup';
+  isAdminPortal?: boolean;
 }
 
-export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClientProps = {}) {
-  const { signInWithEmailOtp, verifyEmailOtp, signIn, signUp, signInWithOAuth, resetPasswordForEmail, user } = useAuth();
+export default function AuthPageClient({ initialMode = 'signin', isAdminPortal = false }: AuthPageClientProps = {}) {
+  const { signInWithEmailOtp, verifyEmailOtp, signIn, signOut, signInWithOAuth, resetPasswordForEmail, user } = useAuth();
 
   const [authMode, setAuthMode] = useState<AuthMode>('password');
   const [passwordAction, setPasswordAction] = useState<PasswordAction>(initialMode);
   const [step, setStep] = useState<Step>('email');
+  const [portalTarget, setPortalTarget] = useState<'student' | 'admin'>(isAdminPortal ? 'admin' : 'student');
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -152,8 +154,8 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
   const [error, setError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const [redirectInfo, setRedirectInfo] = useState<{ redirectUrl: string | null; reasonText: string | null }>({
-    redirectUrl: null,
-    reasonText: null,
+    redirectUrl: isAdminPortal ? '/admin/dashboard' : null,
+    reasonText: isAdminPortal ? 'Sign in with your Super Admin or Faculty credentials to access the Samyak Control Center.' : null,
   });
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
@@ -162,11 +164,13 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
 
   const emailValid = EMAIL_RE.test(email.trim());
 
-  // Auto-detect signup / register / forgot from URL path or query params & read redirect info
+  // Auto-detect signup / register / forgot / admin from URL path or query params & read redirect info
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname.toLowerCase();
-    const modeParam = new URLSearchParams(window.location.search).get('mode');
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get('mode');
+    const redirectParam = params.get('redirect') || params.get('returnUrl') || '';
 
     if (modeParam === 'forgot' || modeParam === 'reset') {
       setAuthMode('forgot_password');
@@ -176,8 +180,17 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
       setPasswordAction('signin');
     }
 
-    setRedirectInfo(getRedirectInfo(window.location.search));
-  }, []);
+    const info = getRedirectInfo(window.location.search);
+    if (isAdminPortal || path.startsWith('/admin') || redirectParam.startsWith('/admin')) {
+      setPortalTarget('admin');
+      setRedirectInfo({
+        redirectUrl: info.redirectUrl || '/admin/dashboard',
+        reasonText: info.reasonText || 'Sign in with your Super Admin or Faculty credentials to access the Samyak Control Center.',
+      });
+    } else {
+      setRedirectInfo(info);
+    }
+  }, [isAdminPortal]);
 
   useEffect(() => {
     if (step === 'email') {
@@ -206,7 +219,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
     const searchStr = typeof window !== 'undefined' ? window.location.search : '';
     const params = new URLSearchParams(searchStr);
     const raw = params.get('redirect') || params.get('returnUrl') || params.get('redirectTo') || params.get('next');
-    const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : null;
+    const safeRedirect = raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : (portalTarget === 'admin' ? '/admin/dashboard' : null);
 
     let destination = safeRedirect ?? '/student-dashboard';
     try {
@@ -218,10 +231,10 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
         const isTeacherRole = role === 'teacher';
         const isStaffRole = ['support_staff', 'support_agent', 'content_manager', 'content_reviewer', 'payment_staff'].includes(role);
 
-        if (!safeRedirect) {
-          if (isFullAdmin) {
-            destination = '/admin';
-          } else if (isTeacherRole) {
+        if (isFullAdmin && (portalTarget === 'admin' || !safeRedirect)) {
+          destination = safeRedirect && safeRedirect.startsWith('/admin') ? safeRedirect : '/admin/dashboard';
+        } else if (!safeRedirect) {
+          if (isTeacherRole) {
             destination = '/teacher';
           } else if (isStaffRole) {
             destination = '/staff';
@@ -244,14 +257,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
       // fall back to default
     }
     window.location.href = destination;
-  }, []);
-
-  // Auto-route to destination if already authenticated
-  useEffect(() => {
-    if (user?.id) {
-      routeAfterLogin();
-    }
-  }, [user?.id, routeAfterLogin]);
+  }, [portalTarget]);
 
   // Handle Google OAuth with dynamic redirect preservation and account picker
   const handleGoogleSignIn = async () => {
@@ -354,6 +360,9 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
     setError(null);
 
     try {
+      if (user?.id && user.email?.toLowerCase() !== email.trim().toLowerCase()) {
+        await signOut().catch(() => null);
+      }
       if (passwordAction === 'signin') {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -482,6 +491,39 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
           <div className="card-base p-6 sm:p-8">
             {step === 'email' ? (
               <div>
+                {/* Currently Signed-In Session Banner (allows continuing OR switching accounts) */}
+                {user?.email && (
+                  <div className="mb-5 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col gap-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 size={14} /> Active Session Detected
+                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await signOut();
+                          toast.success('Signed out. You can now sign in with another account.');
+                        }}
+                        className="text-[11px] font-bold text-error hover:underline"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                    <p className="text-muted-foreground">
+                      Signed in as <span className="font-bold text-foreground">{user.email}</span>. You can continue directly or sign in with a different account below.
+                    </p>
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => routeAfterLogin()}
+                        className="flex-1 py-2 px-3 rounded-xl bg-primary text-white font-extrabold text-xs text-center hover:opacity-95 transition-opacity"
+                      >
+                        Continue to {portalTarget === 'admin' ? 'Admin Portal' : 'Dashboard'} →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Account-Required Action Notice */}
                 {redirectInfo.reasonText && (
                   <div className="mb-5 p-3.5 rounded-2xl bg-primary/10 border border-primary/20 flex items-start gap-2.5 animate-fade-in text-xs text-foreground">
@@ -501,7 +543,7 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
                 <div className="mb-5">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <p className="text-xs font-extrabold uppercase tracking-widest text-primary">
-                      {redirectInfo.redirectUrl?.startsWith('/admin')
+                      {portalTarget === 'admin'
                         ? 'Samyak Admin & Faculty Security Gate'
                         : 'Welcome to Samyak Guru'}
                     </p>
@@ -510,33 +552,72 @@ export default function AuthPageClient({ initialMode = 'signin' }: AuthPageClien
                     </span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                    {redirectInfo.redirectUrl?.startsWith('/admin')
-                      ? 'Admin Portal Sign In'
+                    {portalTarget === 'admin'
+                      ? 'Admin & Faculty Sign In'
                       : 'Log in or sign up'}
                   </h1>
                   {/* Simple Portal Destination Switcher */}
-                  <div className="mt-3 flex items-center gap-2 text-[11px] font-bold">
-                    <Link
-                      href="/login"
-                      className={`px-3 py-1.5 rounded-lg border transition-all ${
-                        !redirectInfo.redirectUrl?.startsWith('/admin')
-                          ? 'bg-primary/10 border-primary/30 text-primary font-extrabold'
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-bold">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPortalTarget('student');
+                        setRedirectInfo({ redirectUrl: null, reasonText: null });
+                        setError(null);
+                      }}
+                      className={`py-2 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
+                        portalTarget === 'student'
+                          ? 'bg-primary/10 border-primary/40 text-primary font-extrabold shadow-sm'
                           : 'bg-muted/50 border-border text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       🎓 Student Portal
-                    </Link>
-                    <Link
-                      href="/login?redirect=/admin"
-                      className={`px-3 py-1.5 rounded-lg border transition-all ${
-                        redirectInfo.redirectUrl?.startsWith('/admin')
-                          ? 'bg-primary/10 border-primary/30 text-primary font-extrabold'
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPortalTarget('admin');
+                        setAuthMode('password');
+                        setPasswordAction('signin');
+                        setRedirectInfo({
+                          redirectUrl: '/admin/dashboard',
+                          reasonText: 'Sign in with Super Admin or Faculty credentials to open the Samyak Control Center.',
+                        });
+                        setError(null);
+                      }}
+                      className={`py-2 px-3 rounded-xl border transition-all flex items-center justify-center gap-1.5 ${
+                        portalTarget === 'admin'
+                          ? 'bg-primary/10 border-primary/40 text-primary font-extrabold shadow-sm'
                           : 'bg-muted/50 border-border text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      🛡️ Admin &amp; Faculty Portal
-                    </Link>
+                      🛡️ Admin &amp; Faculty
+                    </button>
                   </div>
+
+                  {/* Admin Quick-Fill Helper Box */}
+                  {portalTarget === 'admin' && (
+                    <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 text-xs">
+                      <div>
+                        <p className="font-extrabold text-foreground">Super Admin Access</p>
+                        <p className="text-[11px] text-muted-foreground font-mono">admin@samyakcee.com</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode('password');
+                          setPasswordAction('signin');
+                          setEmail('admin@samyakcee.com');
+                          setPassword('SamyakAdmin@2026');
+                          setError(null);
+                          toast.success('Admin credentials filled! Click Sign In below.');
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-primary text-white font-extrabold text-[11px] shadow-sm hover:opacity-95 transition-opacity shrink-0"
+                      >
+                        Auto-Fill Admin ID
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Preferred Hero Action: Google Sign In Button */}
