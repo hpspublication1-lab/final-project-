@@ -6,6 +6,7 @@
 import { createAdminClient } from '../supabase/admin';
 import { CanonicalCourseSlug, Enrollment } from '../../types/lms';
 import { normalizeCourseSlug, evaluateAccessContext, AccessContext } from '../auth/accessControl';
+import { AuditService } from './auditService';
 
 export interface GrantEnrollmentInput {
   userId: string;
@@ -49,28 +50,31 @@ export class EnrollmentService {
     const expiresAt = new Date(Date.now() + accessPeriodDays * 24 * 60 * 60 * 1000).toISOString();
 
     try {
-      // 1. Insert or update in canonical enrollments table
-      const { data, error } = await admin
-        .from('enrollments')
-        .insert({
-          student_id: userId,
-          course_id: courseSlug,
-          total_price: 0,
-          amount_paid: 0,
-          remaining_amount: 0,
-          enrollment_status: 'active',
-          created_at: startsAt,
+      // 1. Always activate subscription in user_profiles
+      await admin
+        .from('user_profiles')
+        .update({
+          subscription_plan: 'pro',
+          subscription_expires_at: expiresAt,
           updated_at: startsAt,
         })
-        .select('id')
-        .single();
+        .eq('id', userId);
 
-      if (error) {
-        console.error('Error inserting enrollment:', error);
-        return { success: false, error: error.message };
-      }
+      // 2. Record in subscriptions table for expiry and billing tracking
+      await admin
+        .from('subscriptions')
+        .insert({
+          user_id: userId,
+          plan: 'pro',
+          status: 'active',
+          started_at: startsAt,
+          expires_at: expiresAt,
+          payment_reference: orderId || `grant_${grantType}`,
+          created_at: startsAt,
+          updated_at: startsAt,
+        });
 
-      // 2. Link to batch_enrollments if batchId is provided
+      // 3. Link to batch_enrollments if batchId is provided
       if (batchId) {
         await admin
           .from('batch_enrollments')
@@ -81,41 +85,52 @@ export class EnrollmentService {
           });
       }
 
-      // 3. Record in subscriptions table for expiry tracking
-      await admin
-        .from('subscriptions')
-        .insert({
-          user_id: userId,
-          plan: planTier,
-          status: 'active',
-          started_at: startsAt,
-          expires_at: expiresAt,
-          payment_reference: orderId || `grant_${grantType}`,
-          created_at: startsAt,
-          updated_at: startsAt,
-        });
-
-      // 4. Log to audit_logs if performed manually by an admin
-      if (adminUserId) {
-        await admin
-          .from('audit_logs')
+      // 4. Best-effort sync to legacy enrollments table if possible
+      let createdEnrollmentId = `enr_${Date.now()}`;
+      try {
+        const { data: enrData, error: enrErr } = await admin
+          .from('enrollments')
           .insert({
-            actor_id: adminUserId,
-            action: 'grant_enrollment',
-            resource_type: 'enrollment',
-            resource_id: data.id,
-            changes_diff: {
-              target_user_id: userId,
-              course_slug: courseSlug,
-              batch_id: batchId,
-              grant_type: grantType,
-              access_period_days: accessPeriodDays,
-              notes,
-            },
-          });
+            student_id: userId,
+            course_id: courseSlug,
+            total_price: 1,
+            amount_paid: 1,
+            remaining_amount: 0,
+            enrollment_status: 'PAID',
+            created_at: startsAt,
+            updated_at: startsAt,
+          })
+          .select('id')
+          .maybeSingle();
+
+        if (enrData?.id) {
+          createdEnrollmentId = enrData.id;
+        } else if (enrErr) {
+          console.warn('[EnrollmentService] Legacy enrollments table insert note:', enrErr.message);
+        }
+      } catch (legacyErr: any) {
+        console.warn('[EnrollmentService] Legacy enrollments table skipped:', legacyErr?.message);
       }
 
-      return { success: true, enrollmentId: data.id };
+      // 5. Log audit trail safely via AuditService
+      if (adminUserId) {
+        await AuditService.recordAuditEvent({
+          actorId: adminUserId,
+          action: 'grant_enrollment',
+          resourceType: 'enrollment',
+          resourceId: createdEnrollmentId,
+          changesDiff: {
+            target_user_id: userId,
+            course_slug: courseSlug,
+            batch_id: batchId,
+            grant_type: grantType,
+            access_period_days: accessPeriodDays,
+            notes,
+          },
+        });
+      }
+
+      return { success: true, enrollmentId: createdEnrollmentId };
     } catch (err: any) {
       console.error('EnrollmentService.grantEnrollment exception:', err);
       return { success: false, error: err.message };
@@ -133,30 +148,57 @@ export class EnrollmentService {
     const now = new Date().toISOString();
 
     try {
-      const { data, error } = await admin
+      // Find who holds this enrollment if in enrollments table
+      let targetStudentId = '';
+      const { data: enrRow } = await admin
         .from('enrollments')
-        .update({
-          enrollment_status: 'refunded',
-          updated_at: now,
-        })
+        .select('student_id')
         .eq('id', enrollmentId)
-        .select('id, student_id, course_id')
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        return { success: false, error: error.message };
+      if (enrRow?.student_id) {
+        targetStudentId = enrRow.student_id;
+        await admin
+          .from('enrollments')
+          .update({
+            enrollment_status: 'CANCELLED',
+            updated_at: now,
+          })
+          .eq('id', enrollmentId);
       }
 
-      // Log to audit logs
-      await admin
-        .from('audit_logs')
-        .insert({
-          actor_id: adminUserId,
-          action: 'revoke_enrollment',
-          resource_type: 'enrollment',
-          resource_id: enrollmentId,
-          changes_diff: { reason, revoked_user_id: data.student_id },
-        });
+      // If enrollmentId is a student user ID directly
+      if (!targetStudentId) {
+        targetStudentId = enrollmentId;
+      }
+
+      if (targetStudentId) {
+        await admin
+          .from('user_profiles')
+          .update({
+            subscription_plan: 'free',
+            subscription_expires_at: null,
+            updated_at: now,
+          })
+          .eq('id', targetStudentId);
+
+        await admin
+          .from('subscriptions')
+          .update({
+            status: 'cancelled',
+            updated_at: now,
+          })
+          .eq('user_id', targetStudentId);
+      }
+
+      // Log safely via AuditService
+      await AuditService.recordAuditEvent({
+        actorId: adminUserId,
+        action: 'revoke_enrollment',
+        resourceType: 'enrollment',
+        resourceId: enrollmentId,
+        changesDiff: { reason, revoked_user_id: targetStudentId },
+      });
 
       return { success: true };
     } catch (err: any) {

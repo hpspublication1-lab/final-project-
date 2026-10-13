@@ -80,21 +80,18 @@ export async function GET(request: NextRequest) {
       };
 
     // 3. Fetch subjects for this course
-    const programFilter = courseSlug === 'see_class_10' ? 'see' : 'cee';
-    let { data: subjects } = await admin
+    const { data: allSubs } = await admin
       .from('subjects')
-      .select('id, name, display_name, program_type, sort_order, is_active')
+      .select('id, name, display_name, slug, sort_order, is_active')
       .eq('is_active', true)
-      .eq('program_type', programFilter)
       .order('sort_order', { ascending: true });
 
-    if (!subjects || subjects.length === 0) {
-      const { data: allSubs } = await admin
-        .from('subjects')
-        .select('id, name, display_name, program_type, sort_order, is_active')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-      subjects = allSubs || [];
+    let subjects = allSubs || [];
+    if (courseSlug === 'see_class_10') {
+      const seeFiltered = subjects.filter((s: any) =>
+        (s.slug || '').toLowerCase().includes('see') || (s.name || '').toLowerCase().includes('see')
+      );
+      if (seeFiltered.length > 0) subjects = seeFiltered;
     }
 
     // 4. Fetch chapters

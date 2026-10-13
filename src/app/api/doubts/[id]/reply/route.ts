@@ -43,11 +43,12 @@ export async function POST(
     // Check user role to see if this is a staff reply
     const { data: profile } = await admin
       .from('user_profiles')
-      .select('role, is_admin')
+      .select('*')
       .eq('id', user.id)
       .maybeSingle();
 
-    const isStaff = profile?.is_admin || ['teacher', 'admin', 'super_admin'].includes(profile?.role || '');
+    const userMetaRole = String((user as any).user_metadata?.role || (user as any).app_metadata?.role || '').toLowerCase();
+    const isStaff = profile?.is_admin || ['teacher', 'admin', 'super_admin'].includes(profile?.role || userMetaRole);
 
     const { data: reply, error: replyError } = await admin
       .from('doubt_replies')

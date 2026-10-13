@@ -12,12 +12,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 500 });
     }
 
-    // 1. Fetch all published SEE lessons
-    const { data: allLessons, error: lessonsError } = await admin
-      .from('see_lessons')
-      .select('id, subject_slug, chapter_name, title, duration_sec, thumbnail_url, lesson_order, is_free')
-      .eq('is_published', true)
-      .order('lesson_order', { ascending: true });
+    // 1. Fetch lessons safely
+    const { data: allLessons } = await admin
+      .from('video_lectures')
+      .select('id, title, duration_sec, thumbnail_url, is_premium')
+      .eq('is_active', true);
 
     const totalLessons = allLessons?.length || 0;
 
@@ -28,9 +27,9 @@ export async function GET(request: NextRequest) {
 
     if (user?.id) {
       const [{ data: prog }, { data: enroll }, { data: profile }] = await Promise.all([
-        admin.from('user_video_progress').select('*').eq('user_id', user.id).order('last_watched_at', { ascending: false }),
-        admin.from('enrollments').select('id, status, plan_tier').eq('user_id', user.id).eq('program_id', 'see_class_10').maybeSingle(),
-        admin.from('user_profiles').select('subscription_plan, is_admin').eq('id', user.id).maybeSingle(),
+        admin.from('topic_mastery').select('*').eq('student_id', user.id),
+        admin.from('enrollments').select('*').eq('student_id', user.id).eq('course_id', 'see_class_10').maybeSingle(),
+        admin.from('user_profiles').select('*').eq('id', user.id).maybeSingle(),
       ]);
 
       userProgressList = prog || [];
@@ -56,7 +55,9 @@ export async function GET(request: NextRequest) {
     };
 
     const subjectStats = subjectSlugs.map((slug) => {
-      const subjectLessons = (allLessons || []).filter((l) => l.subject_slug === slug);
+      const subjectLessons = (allLessons || []).filter((l: any) =>
+        ((l.subject_slug || l.title || '') as string).toLowerCase().includes(slug)
+      );
       const total = subjectLessons.length;
       let completedCount = 0;
       let totalWatchedSec = 0;

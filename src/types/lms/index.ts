@@ -105,6 +105,10 @@ export interface UserRole {
 export type CanonicalCourseSlug =
   | 'see_class_10'
   | 'cee_medical'
+  | 'neb_class_11'
+  | 'neb_class_12'
+  | 'ioe_engineering'
+  | 'lok_sewa'
   | 'ielts'
   | 'digital_marketing'
   | 'artificial_intelligence';

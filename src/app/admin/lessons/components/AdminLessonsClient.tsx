@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Video, BookOpen, Layers, CheckCircle2, Archive,
@@ -69,32 +69,73 @@ const INITIAL_LESSONS: LessonRecord[] = [
 
 export default function AdminLessonsClient() {
   const [lessons, setLessons] = useState<LessonRecord[]>(INITIAL_LESSONS);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleToggleArchive = (id: string) => {
+  useEffect(() => {
+    fetch('/api/admin/lessons')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.lessons && data.lessons.length > 0) {
+          setLessons(data.lessons);
+        }
+      })
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggleArchive = async (id: string) => {
+    const target = lessons.find((l) => l.id === id);
+    if (!target) return;
+    const newArchived = !target.is_archived;
+
     setLessons((prev) =>
       prev.map((l) => {
         if (l.id === id) {
-          const updated = !l.is_archived;
-          toast.success(`Lesson '${l.title}' ${updated ? 'archived' : 'restored'}.`);
-          return { ...l, is_archived: updated, is_published: updated ? false : l.is_published };
+          return { ...l, is_archived: newArchived, is_published: !newArchived };
         }
         return l;
       })
     );
+
+    try {
+      const res = await fetch('/api/admin/lessons', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_archived: newArchived }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      toast.success(`Lesson '${target.title}' ${newArchived ? 'archived' : 'restored'}.`);
+    } catch {
+      toast.error('Failed to update lesson status in database.');
+    }
   };
 
-  const handleTogglePreview = (id: string) => {
+  const handleTogglePreview = async (id: string) => {
+    const target = lessons.find((l) => l.id === id);
+    if (!target) return;
+    const newPreview = !target.is_free_preview;
+
     setLessons((prev) =>
       prev.map((l) => {
         if (l.id === id) {
-          const updated = !l.is_free_preview;
-          toast.success(`Free preview set to ${updated ? 'Active' : 'Pro Only'}.`);
-          return { ...l, is_free_preview: updated };
+          return { ...l, is_free_preview: newPreview };
         }
         return l;
       })
     );
+
+    try {
+      const res = await fetch('/api/admin/lessons', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_free_preview: newPreview }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      toast.success(`Free preview set to ${newPreview ? 'Active' : 'Pro Only'}.`);
+    } catch {
+      toast.error('Failed to update preview gate in database.');
+    }
   };
 
   const filtered = lessons.filter((l) => {

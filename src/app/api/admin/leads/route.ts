@@ -12,14 +12,40 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Server not configured' }, { status: 503 });
     }
 
-    // 1. Fetch leads
+    // 1. Fetch real leads from prebookings table
+    const { data: prebookingRows } = await admin
+      .from('prebookings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (prebookingRows && prebookingRows.length > 0) {
+      const realLeads = prebookingRows.map((p: any) => ({
+        id: p.id,
+        email: p.email,
+        name: p.full_name,
+        phone: p.phone,
+        college: p.college,
+        target_exam: p.cee_year ? `CEE ${p.cee_year}` : 'Medical Entrance',
+        lead_score: p.status === 'confirmed' ? 95 : 60,
+        status: p.status === 'confirmed' ? 'customer' : 'lead',
+        created_at: p.created_at,
+        last_active_at: p.updated_at || p.created_at,
+      }));
+      return NextResponse.json({
+        leads: realLeads,
+        events: [],
+        emailLogs: [],
+        emailQueue: [],
+      });
+    }
+
+    // Fallback if prebookings empty
     const { data: leads, error: leadsError } = await admin
       .from('leads')
       .select('*')
       .order('last_active_at', { ascending: false });
 
     if (leadsError) {
-      console.error('Error fetching leads:', leadsError);
       return NextResponse.json(getDemoCrmData());
     }
 

@@ -156,21 +156,33 @@ export async function GET(request: NextRequest) {
     // B. Course / User-Wide Progress Summary Request
     const courseSlug = searchParams.get('courseSlug') || 'cee_medical';
 
-    const [masteryRes, uvpRes, subjectsRes, chaptersRes] = await Promise.all([
+    let uvpList: any[] = [];
+    try {
+      const { data } = await admin
+        .from('user_video_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('last_watched_at', { ascending: false });
+      uvpList = data || [];
+    } catch {}
+
+    const [masteryRes, subjectsRes, chaptersRes] = await Promise.all([
       admin.from('topic_mastery').select('*').eq('student_id', user.id),
-      admin.from('user_video_progress').select('*').eq('user_id', user.id).order('last_watched_at', { ascending: false }),
-      admin.from('subjects').select('id, name, display_name, program_type').eq('is_active', true),
+      admin.from('subjects').select('id, name, display_name, slug').eq('is_active', true),
       admin.from('chapters').select('id, subject_id, title, sort_order').eq('is_active', true),
     ]);
 
     const masteryList = masteryRes.data || [];
-    const uvpList = uvpRes.data || [];
     const allSubjects = subjectsRes.data || [];
     const allChapters = chaptersRes.data || [];
 
     // Filter by program
-    const programType = courseSlug.includes('see') ? 'see' : 'cee';
-    const targetSubjects = allSubjects.filter((s: any) => s.program_type === programType);
+    const isSee = courseSlug.includes('see');
+    let targetSubjects = allSubjects;
+    if (isSee) {
+      const seeOnly = allSubjects.filter((s: any) => (s.slug || '').toLowerCase().includes('see') || (s.name || '').toLowerCase().includes('see'));
+      if (seeOnly.length > 0) targetSubjects = seeOnly;
+    }
     const targetSubjectIds = new Set(targetSubjects.map((s: any) => s.id));
     const targetChapters = allChapters.filter((c: any) => targetSubjectIds.has(c.subject_id));
 

@@ -17,21 +17,25 @@ export async function GET(req: Request) {
 
     const { data: prof } = await supabaseAdmin
       .from('user_profiles')
-      .select('battle_rating, bio_rating, chem_rating, phy_rating, ma_rating, streak_days, xp_points, level')
+      .select('battle_rating, total_points')
       .eq('id', userId)
       .maybeSingle();
 
+    const baseRating = prof?.battle_rating ?? 1000;
+    const points = prof?.total_points ?? 0;
+    const level = Math.max(1, Math.floor(points / 200) + 1);
+
     return NextResponse.json({
       ratings: {
-        overall: prof?.battle_rating ?? 1000,
-        biology: prof?.bio_rating ?? 1000,
-        chemistry: prof?.chem_rating ?? 1000,
-        physics: prof?.phy_rating ?? 1000,
-        mentalAgility: prof?.ma_rating ?? 1000,
+        overall: baseRating,
+        biology: baseRating,
+        chemistry: baseRating,
+        physics: baseRating,
+        mentalAgility: baseRating,
       },
-      streakDays: prof?.streak_days ?? 1,
-      xpPoints: prof?.xp_points ?? 0,
-      level: prof?.level ?? 1,
+      streakDays: 1,
+      xpPoints: points,
+      level,
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to fetch ratings' }, { status: 500 });
@@ -47,22 +51,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User ID and subject required' }, { status: 400 });
     }
 
-    // Call database function or manual column update
-    const { error } = await supabaseAdmin.rpc('update_battle_subject_rating', {
-      p_user_id: userId,
-      p_subject: subject.toLowerCase(),
-      p_rating_delta: ratingDelta ?? 15,
-    });
+    const delta = Number(ratingDelta) || 15;
+    const { data: current } = await supabaseAdmin
+      .from('user_profiles')
+      .select('battle_rating, total_points')
+      .eq('id', userId)
+      .maybeSingle();
 
-    if (error) {
-      // Fallback manual update
-      const col = subject === 'biology' ? 'bio_rating' : subject === 'chemistry' ? 'chem_rating' : subject === 'physics' ? 'phy_rating' : 'ma_rating';
-      const { data: current } = await supabaseAdmin.from('user_profiles').select(col).eq('id', userId).maybeSingle();
-      const currVal = (current as any)?.[col] ?? 1000;
-      await supabaseAdmin.from('user_profiles').update({ [col]: Math.max(100, currVal + ratingDelta) }).eq('id', userId);
-    }
+    const newRating = Math.max(800, (current?.battle_rating ?? 1000) + delta);
+    const newPoints = Math.max(0, (current?.total_points ?? 0) + Math.max(10, delta));
 
-    return NextResponse.json({ success: true });
+    await supabaseAdmin
+      .from('user_profiles')
+      .update({ battle_rating: newRating, total_points: newPoints })
+      .eq('id', userId);
+
+    return NextResponse.json({ success: true, newRating, newPoints });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to update subject rating' }, { status: 500 });
   }

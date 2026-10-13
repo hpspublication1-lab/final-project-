@@ -130,9 +130,18 @@ export async function POST(req: NextRequest) {
       if (updateErr) throw updateErr;
 
       const planSku = String(order.plan || order.plan_sku || '').toLowerCase();
+      let courseSlug: CanonicalCourseSlug = 'cee_medical';
+      if (planSku.includes('11')) courseSlug = 'neb_class_11';
+      else if (planSku.includes('12')) courseSlug = 'neb_class_12';
+      else if (planSku.includes('eng') || planSku.includes('ioe')) courseSlug = 'ioe_engineering';
+      else if (planSku.includes('lok') || planSku.includes('sewa')) courseSlug = 'lok_sewa';
+      else if (planSku.includes('see') || planSku.includes('10')) courseSlug = 'see_class_10';
+      else if (planSku.includes('ielts')) courseSlug = 'ielts';
+      else if (planSku.includes('market') || planSku.includes('digital')) courseSlug = 'digital_marketing';
+
       const grantResult = await EnrollmentService.grantEnrollment({
         userId: order.user_id,
-        courseSlug: (planSku.includes('see') ? 'see_class_10' : 'cee_medical') as CanonicalCourseSlug,
+        courseSlug,
         batchId: order.batch_id,
         orderId: order.id,
         adminUserId: guard.user.id,

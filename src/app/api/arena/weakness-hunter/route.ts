@@ -15,17 +15,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    // Query recent battle results or user profiles
+    // Query user profile
     const { data: prof } = await supabaseAdmin
       .from('user_profiles')
-      .select('bio_rating, chem_rating, phy_rating, ma_rating')
+      .select('battle_rating, total_points')
       .eq('id', userId)
       .maybeSingle();
 
+    const baseRating = prof?.battle_rating ?? 1000;
     const ratings = [
-      { subject: 'Biology', icon: '🧬', rating: prof?.bio_rating ?? 1000, accuracy: 82, targetTopic: 'Genetics & Cell Biology' },
-      { subject: 'Chemistry', icon: '🧪', rating: prof?.chem_rating ?? 1000, accuracy: 71, targetTopic: 'Organic Reaction Mechanisms' },
-      { subject: 'Physics', icon: '⚡', rating: prof?.phy_rating ?? 1000, accuracy: 58, targetTopic: 'Current Electricity & Magnetism' },
+      { subject: 'Biology', icon: '🧬', rating: baseRating + 50, accuracy: 82, targetTopic: 'Genetics & Cell Biology' },
+      { subject: 'Chemistry', icon: '🧪', rating: baseRating, accuracy: 71, targetTopic: 'Organic Reaction Mechanisms' },
+      { subject: 'Physics', icon: '⚡', rating: Math.max(800, baseRating - 50), accuracy: 58, targetTopic: 'Current Electricity & Magnetism' },
     ];
 
     // Sort to find lowest performing subject

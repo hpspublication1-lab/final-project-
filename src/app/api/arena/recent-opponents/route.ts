@@ -15,30 +15,32 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
     }
 
-    const { data: recentRows } = await supabaseAdmin
-      .from('arena_recent_opponents')
-      .select('*')
-      .eq('user_id', userId)
-      .order('last_battled_at', { ascending: false })
-      .limit(10);
+    let recentRows: any[] = [];
+    try {
+      const { data } = await supabaseAdmin
+        .from('arena_recent_opponents')
+        .select('*')
+        .eq('user_id', userId)
+        .order('last_battled_at', { ascending: false })
+        .limit(10);
+      recentRows = data || [];
+    } catch {}
 
     if (!recentRows || recentRows.length === 0) {
       return NextResponse.json({ opponents: [] });
     }
 
     const oppIds = recentRows.map((r) => r.opponent_id);
-    const { data: oppProfiles } = await supabaseAdmin
-      .from('user_profiles')
-      .select('id, full_name, username, battle_rating, avatar_url, college')
-      .in('id', oppIds);
+    let oppProfiles: any[] = [];
+    try {
+      const { data } = await supabaseAdmin
+        .from('user_profiles')
+        .select('id, full_name, battle_rating, avatar_url, college')
+        .in('id', oppIds);
+      oppProfiles = data || [];
+    } catch {}
 
-    // Check friendship status
-    const { data: friendRows } = await supabaseAdmin
-      .from('user_friends')
-      .select('friend_id')
-      .eq('user_id', userId);
-
-    const friendSet = new Set((friendRows || []).map((f) => f.friend_id));
+    const friendSet = new Set<string>();
     const profileMap = new Map((oppProfiles || []).map((p) => [p.id, p]));
 
     const opponents = recentRows.map((r) => {

@@ -382,28 +382,24 @@ export default function AiTutorClient() {
       });
 
     supabase
-      .from('practice_attempts')
+      .from('topic_mastery')
       .select(`
-        chapter_id,
+        topic_name,
+        mastery_score,
         chapters ( title ),
         subjects ( display_name )
       `)
       .eq('student_id', user.id)
-      .eq('is_correct', false)
-      .order('created_at', { ascending: false })
-      .limit(30)
+      .order('mastery_score', { ascending: true })
+      .limit(5)
       .then(({ data }) => {
         if (!data || data.length === 0) return;
-        const counts = new Map<string, { subject: string; count: number }>();
-        for (const row of data as any[]) {
-          const topic = row.chapters?.title || 'Core Concepts';
-          const subj = row.subjects?.display_name || 'CEE';
-          const existing = counts.get(topic) || { subject: subj, count: 0 };
-          counts.set(topic, { subject: subj, count: existing.count + 1 });
-        }
-        const sorted = Array.from(counts.entries())
-          .map(([name, val]) => ({ name, subject: val.subject, mistakes: val.count }))
-          .sort((a, b) => b.mistakes - a.mistakes)
+        const sorted = (data as any[])
+          .map((row) => ({
+            name: row.chapters?.title || row.topic_name || 'Core Concepts',
+            subject: row.subjects?.display_name || 'CEE',
+            mistakes: Math.max(1, 100 - (row.mastery_score || 50)),
+          }))
           .slice(0, 3);
         setWeakTopics(sorted);
       });

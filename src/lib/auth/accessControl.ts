@@ -83,6 +83,10 @@ export interface AccessContext {
 const CANONICAL_COURSES: CanonicalCourseSlug[] = [
   'see_class_10',
   'cee_medical',
+  'neb_class_11',
+  'neb_class_12',
+  'ioe_engineering',
+  'lok_sewa',
   'ielts',
   'digital_marketing',
   'artificial_intelligence',
@@ -96,6 +100,10 @@ export function normalizeCourseSlug(rawSlug?: string | null): CanonicalCourseSlu
   const s = rawSlug.toLowerCase().trim();
   if (s === 'see_class_10' || s === 'see' || s.includes('see-')) return 'see_class_10';
   if (s === 'cee_medical' || s === 'cee' || s.includes('cee-')) return 'cee_medical';
+  if (s === 'neb_class_11' || s === 'class_11' || s.includes('class-11')) return 'neb_class_11';
+  if (s === 'neb_class_12' || s === 'class_12' || s.includes('class-12')) return 'neb_class_12';
+  if (s === 'ioe_engineering' || s === 'ioe' || s.includes('engineering') || s.includes('pulchowk')) return 'ioe_engineering';
+  if (s === 'lok_sewa' || s === 'psc' || s.includes('lok-sewa') || s.includes('loksewa')) return 'lok_sewa';
   if (s === 'ielts' || s === 'english' || s.includes('ielts-') || s.includes('pte-')) return 'ielts';
   if (s === 'digital_marketing' || s === 'marketing' || s.includes('marketing-')) return 'digital_marketing';
   if (s === 'artificial_intelligence' || s === 'ai' || s === 'digital' || s.includes('ai-') || s.includes('python-')) return 'artificial_intelligence';

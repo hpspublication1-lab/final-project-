@@ -12,23 +12,37 @@ export async function GET(req: NextRequest) {
   if (!admin) return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
 
   try {
-    const { data: enrollments, error } = await admin
-      .from('enrollments')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const [{ data: enrollments }, { data: batchEnrs }, { data: batches }] = await Promise.all([
+      admin.from('enrollments').select('*').order('created_at', { ascending: false }).limit(100),
+      admin.from('batch_enrollments').select('*').order('enrolled_at', { ascending: false }).limit(100),
+      admin.from('batches').select('id, title, slug'),
+    ]);
 
-    if (error) throw error;
+    const batchMap = new Map((batches || []).map((b: any) => [b.id, b]));
+
+    // Normalize batch enrollments to Enrollment shape
+    const normalizedBatchEnrs = (batchEnrs || []).map((be: any) => {
+      const b = batchMap.get(be.batch_id);
+      return {
+        id: be.id,
+        student_id: be.student_id,
+        course_id: b?.title || 'cee_medical',
+        batch_id: be.batch_id,
+        enrollment_status: 'PAID',
+        created_at: be.enrolled_at || new Date().toISOString(),
+      };
+    });
+
+    const allList = [...(enrollments || []), ...normalizedBatchEnrs];
 
     // Fetch user details for these enrollments
-    const studentIds = Array.from(new Set((enrollments || []).map((e: any) => e.student_id).filter(Boolean)));
-    const { data: profiles } = await admin
-      .from('user_profiles')
-      .select('id, full_name, phone')
-      .in('id', studentIds);
+    const studentIds = Array.from(new Set(allList.map((e: any) => e.student_id).filter(Boolean)));
+    const { data: profiles } = studentIds.length > 0
+      ? await admin.from('user_profiles').select('id, full_name, phone').in('id', studentIds)
+      : { data: [] };
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
-    const enriched = (enrollments || []).map((e: any) => ({
+    const enriched = allList.map((e: any) => ({
       ...e,
       student_name: profileMap.get(e.student_id)?.full_name || 'Student',
       student_phone: profileMap.get(e.student_id)?.phone || '',
@@ -53,7 +67,7 @@ export async function POST(req: NextRequest) {
 
     let targetUserId = studentId;
     if (!targetUserId && studentEmail) {
-      const { data: targetUser } = await admin.auth.admin.listUsers();
+      const { data: targetUser } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
       const found = (targetUser?.users || []).find((u) => u.email?.toLowerCase() === studentEmail.toLowerCase().trim());
       if (found) targetUserId = found.id;
     }

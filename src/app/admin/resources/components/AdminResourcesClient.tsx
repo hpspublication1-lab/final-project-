@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, FileText, Download, Plus, Archive, RefreshCw,
@@ -69,20 +69,47 @@ const INITIAL_RESOURCES: ResourceItem[] = [
 
 export default function AdminResourcesClient() {
   const [resources, setResources] = useState<ResourceItem[]>(INITIAL_RESOURCES);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
 
-  const handleToggleArchive = (id: string) => {
+  useEffect(() => {
+    fetch('/api/admin/resources')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.resources && data.resources.length > 0) {
+          setResources(data.resources);
+        }
+      })
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleToggleArchive = async (id: string) => {
+    const target = resources.find((r) => r.id === id);
+    if (!target) return;
+    const newArchived = !target.is_archived;
+
     setResources((prev) =>
       prev.map((r) => {
         if (r.id === id) {
-          const updated = !r.is_archived;
-          toast.success(`Resource '${r.title}' ${updated ? 'archived' : 'restored'}.`);
-          return { ...r, is_archived: updated };
+          return { ...r, is_archived: newArchived };
         }
         return r;
       })
     );
+
+    try {
+      const res = await fetch('/api/admin/resources', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_archived: newArchived }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      toast.success(`Resource '${target.title}' ${newArchived ? 'archived' : 'restored'}.`);
+    } catch {
+      toast.error('Failed to update resource in database.');
+    }
   };
 
   const filtered = resources.filter((r) => {

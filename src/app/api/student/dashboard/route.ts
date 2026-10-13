@@ -156,6 +156,10 @@ export async function GET(request: NextRequest) {
     const COURSE_TITLES: Record<CanonicalCourseSlug, { title: string; shortName: string }> = {
       see_class_10: { title: 'SEE Class 10 Board Exam Batch', shortName: 'SEE Class 10' },
       cee_medical: { title: 'CEE Medical Entrance Super Target Batch', shortName: 'CEE Medical' },
+      neb_class_12: { title: 'NEB Class 12 Board & Entrance Foundation', shortName: 'Class 12' },
+      neb_class_11: { title: 'NEB Class 11 Core Concept Mastery', shortName: 'Class 11' },
+      ioe_engineering: { title: 'IOE Pulchowk Engineering Entrance Prep', shortName: 'IOE Pulchowk' },
+      lok_sewa: { title: 'Lok Sewa Aayog (PSC) Civil Service Prep', shortName: 'Lok Sewa' },
       ielts: { title: 'IELTS Academic & General Target Band 8.0+', shortName: 'IELTS English' },
       digital_marketing: { title: 'Digital Marketing & Freelancing 101', shortName: 'Digital Marketing' },
       artificial_intelligence: { title: 'Python Programming & AI Tools', shortName: 'AI & Python' },

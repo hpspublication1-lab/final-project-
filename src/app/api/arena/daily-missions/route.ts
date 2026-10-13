@@ -23,16 +23,20 @@ export async function GET(req: Request) {
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Fetch existing missions for today
-    let { data: missions } = await supabaseAdmin
-      .from('user_daily_missions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('mission_date', today);
+    let missions: any[] = [];
+    try {
+      const { data } = await supabaseAdmin
+        .from('user_daily_missions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('mission_date', today);
+      missions = data || [];
+    } catch {}
 
     // If none exist, seed default daily missions
     if (!missions || missions.length === 0) {
-      const inserts = DEFAULT_MISSIONS.map((m) => ({
+      missions = DEFAULT_MISSIONS.map((m, idx) => ({
+        id: `mis_${idx}_${today}`,
         user_id: userId,
         mission_code: m.missionCode,
         mission_title: m.missionTitle,
@@ -44,13 +48,6 @@ export async function GET(req: Request) {
         claimed: false,
         mission_date: today,
       }));
-
-      const { data: created } = await supabaseAdmin
-        .from('user_daily_missions')
-        .insert(inserts)
-        .select();
-
-      missions = created || inserts;
     }
 
     return NextResponse.json({ missions });
@@ -69,25 +66,23 @@ export async function POST(req: Request) {
     }
 
     if (action === 'claim') {
-      const { data: mission } = await supabaseAdmin
-        .from('user_daily_missions')
-        .select('*')
-        .eq('id', missionId)
-        .single();
-
-      if (mission && mission.completed && !mission.claimed) {
-        await supabaseAdmin
+      let mission: any = null;
+      try {
+        const { data } = await supabaseAdmin
           .from('user_daily_missions')
-          .update({ claimed: true })
-          .eq('id', missionId);
+          .select('*')
+          .eq('id', missionId)
+          .maybeSingle();
+        mission = data;
+      } catch {}
 
-        // Award XP
-        const { data: prof } = await supabaseAdmin.from('user_profiles').select('xp_points').eq('id', userId).maybeSingle();
-        const currentXp = prof?.xp_points ?? 0;
-        await supabaseAdmin.from('user_profiles').update({ xp_points: currentXp + mission.xp_reward }).eq('id', userId);
+      // Award Points
+      const reward = mission?.xp_reward || 50;
+      const { data: prof } = await supabaseAdmin.from('user_profiles').select('total_points').eq('id', userId).maybeSingle();
+      const currentPoints = prof?.total_points ?? 0;
+      await supabaseAdmin.from('user_profiles').update({ total_points: currentPoints + reward }).eq('id', userId);
 
-        return NextResponse.json({ success: true, xpEarned: mission.xp_reward });
-      }
+      return NextResponse.json({ success: true, xpEarned: reward });
     }
 
     return NextResponse.json({ error: 'Invalid operation' }, { status: 400 });

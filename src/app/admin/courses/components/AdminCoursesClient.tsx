@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, Layers, CheckCircle2, Archive,
@@ -104,6 +104,24 @@ const INITIAL_COURSES: CourseItem[] = [
 
 export default function AdminCoursesClient() {
   const [courses, setCourses] = useState<CourseItem[]>(INITIAL_COURSES);
+
+  useEffect(() => {
+    fetch('/api/admin/courses')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.courses && data.courses.length > 0) {
+          const map = new Map((data.courses as any[]).map((c: any) => [c.id, c]));
+          setCourses((prev) =>
+            prev.map((c) => {
+              const live = map.get(c.slug) as any;
+              if (live) return { ...c, title: live.title || c.title };
+              return c;
+            })
+          );
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   const handleToggleArchive = (slug: string) => {
     setCourses((prev) =>

@@ -23,9 +23,13 @@ interface EnrollmentRecord {
 
 const COURSES = [
   { slug: 'cee_medical', label: 'CEE Medical Entrance (MBBS/BDS)' },
-  { slug: 'see_class_10', label: 'SEE Class 10 Board' },
-  { slug: 'ielts', label: 'IELTS / Language Prep' },
-  { slug: 'digital_marketing', label: 'Digital Marketing & AI' },
+  { slug: 'neb_class_12', label: 'NEB Class 12 Board & Entrance Foundation' },
+  { slug: 'neb_class_11', label: 'NEB Class 11 Core Concept Mastery' },
+  { slug: 'ioe_engineering', label: 'IOE Pulchowk BE Entrance Mastery' },
+  { slug: 'lok_sewa', label: 'Lok Sewa Aayog (PSC) Civil Service' },
+  { slug: 'see_class_10', label: 'SEE Class 10 Board Excellence' },
+  { slug: 'ielts', label: 'IELTS Academic & General Prep' },
+  { slug: 'digital_marketing', label: 'Digital Marketing & AI Masterclass' },
 ];
 
 export default function AdminEnrollmentsClient() {

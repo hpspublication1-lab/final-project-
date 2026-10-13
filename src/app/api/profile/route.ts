@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Database unavailable' }, { status: 500 });
     }
 
-    const [profileRes, enrollmentsRes] = await Promise.all([
+    const [profileRes, enrollmentsRes, batchEnrRes] = await Promise.all([
       admin
         .from('user_profiles')
         .select('*')
@@ -26,12 +26,30 @@ export async function GET(req: NextRequest) {
         .maybeSingle(),
       admin
         .from('enrollments')
-        .select('id, course_id, batch_id, status, created_at')
+        .select('*')
+        .eq('student_id', user.id),
+      admin
+        .from('batch_enrollments')
+        .select('id, batch_id, enrolled_at')
         .eq('student_id', user.id),
     ]);
 
     const profile = profileRes.data;
-    const enrollments = enrollmentsRes.data || [];
+    const enrollments = [
+      ...(enrollmentsRes.data || []).map((e: any) => ({
+        id: e.id,
+        course_id: e.course_id,
+        status: e.enrollment_status || 'PAID',
+        created_at: e.created_at,
+      })),
+      ...(batchEnrRes.data || []).map((b: any) => ({
+        id: b.id,
+        course_id: 'cee_medical',
+        batch_id: b.batch_id,
+        status: 'PAID',
+        created_at: b.enrolled_at,
+      })),
+    ];
 
     return NextResponse.json({
       success: true,
