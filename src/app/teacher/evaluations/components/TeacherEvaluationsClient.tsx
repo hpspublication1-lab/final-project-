@@ -39,6 +39,13 @@ interface SubjectiveSubmission {
   isAiDraft: boolean;
   publishedAt?: string;
   createdAt: string;
+  hasPendingAppeal?: boolean;
+  appealDetails?: {
+    appealId: string;
+    category: string;
+    studentRationale: string;
+    createdAt: string;
+  };
 }
 
 export default function TeacherEvaluationsClient() {
@@ -283,6 +290,11 @@ export default function TeacherEvaluationsClient() {
                           <Check size={11} /> Verified &amp; Published
                         </span>
                       )}
+                      {item.hasPendingAppeal && (
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 flex items-center gap-1">
+                          <AlertTriangle size={11} /> Student Appeal: {item.appealDetails?.category || 'Dispute'}
+                        </span>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         Submitted by: <strong className="text-foreground">{item.studentName}</strong>
                       </span>
@@ -367,6 +379,31 @@ export default function TeacherEvaluationsClient() {
                   {selectedItem.studentAnswerText || 'No text submitted.'}
                 </p>
               </div>
+
+              {/* Student Appeal Notice & Dispute Details */}
+              {selectedItem.hasPendingAppeal && selectedItem.appealDetails && (
+                <div className="bg-red-500/10 border-2 border-red-500/40 rounded-2xl p-5 space-y-3">
+                  <div className="flex items-center justify-between text-red-700 dark:text-red-400">
+                    <span className="text-xs font-black tracking-wide uppercase flex items-center gap-1.5">
+                      <AlertTriangle size={15} /> Student Dispute / Appeal Details
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded bg-red-500/20 text-red-700 dark:text-red-300">
+                      Category: {selectedItem.appealDetails.category}
+                    </span>
+                  </div>
+                  <div className="p-3.5 rounded-xl bg-card border border-red-500/20 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block font-mono">
+                      Student Explanation:
+                    </span>
+                    <p className="text-xs font-medium text-foreground leading-relaxed">
+                      "{selectedItem.appealDetails.studentRationale}"
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Please verify the student's handwritten script against the CDC rubric steps below. Adjusting scores and publishing will resolve this appeal.
+                  </p>
+                </div>
+              )}
 
               {/* Mandatory AI Draft Label Banner */}
               <div className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 space-y-2">

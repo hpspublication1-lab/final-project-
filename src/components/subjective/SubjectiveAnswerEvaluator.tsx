@@ -5,6 +5,8 @@ import { SubjectiveQuestion, EvaluationResult } from './types';
 import { Upload, Camera, FileText, Sparkles, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCw, Award, BookOpen, Layers, Shield } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageProvider';
 import toast from 'react-hot-toast';
+import StudentAppealModal from './StudentAppealModal';
+import ConceptualRemediationModal from '../learning/ConceptualRemediationModal';
 
 interface SubjectiveAnswerEvaluatorProps {
   question: SubjectiveQuestion;
@@ -23,6 +25,9 @@ export default function SubjectiveAnswerEvaluator({
   const [writtenText, setWrittenText] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [evaluationResult, setEvaluationResult] = useState<EvaluationResult | null>(null);
+  const [showAppealModal, setShowAppealModal] = useState<boolean>(false);
+  const [appealTicketId, setAppealTicketId] = useState<string | null>(null);
+  const [activeRemediation, setActiveRemediation] = useState<{ concept: string; misconception: string } | null>(null);
 
   // File upload handler
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -361,18 +366,32 @@ export default function SubjectiveAnswerEvaluator({
             {/* Personalized Student Misconception Diagnosis */}
             {evaluationResult.detected_misconceptions && evaluationResult.detected_misconceptions.length > 0 && (
               <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3">
-                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-black text-xs uppercase tracking-wider font-mono">
-                  <AlertTriangle size={15} />
-                  <span>Personalized Misconception Diagnosis</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-black text-xs uppercase tracking-wider font-mono">
+                    <AlertTriangle size={15} />
+                    <span>Personalized Misconception Diagnosis</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-700 dark:text-red-400 font-bold uppercase">
+                    Cognitive Action Required
+                  </span>
                 </div>
                 <div className="space-y-2">
                   {evaluationResult.detected_misconceptions.map((misc, mIdx) => (
-                    <div key={mIdx} className="p-3 rounded-xl bg-card border border-red-500/20 space-y-1 text-xs">
+                    <div key={mIdx} className="p-4 rounded-xl bg-card border border-red-500/20 space-y-2 text-xs">
                       <div className="font-bold text-red-600 dark:text-red-400">
                         {misc.concept}: {misc.misconception}
                       </div>
                       <div className="text-foreground font-medium">
                         <strong>Correction:</strong> {misc.correction}
+                      </div>
+                      <div className="pt-1">
+                        <button
+                          onClick={() => setActiveRemediation(misc)}
+                          className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+                        >
+                          <Sparkles size={14} />
+                          <span>Launch 5-Stage Cognitive Remediation Loop</span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -467,21 +486,39 @@ export default function SubjectiveAnswerEvaluator({
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setEvaluationResult(null);
-                  setImagePreview(null);
-                  setWrittenText('');
-                }}
-                className="w-full sm:w-auto px-5 py-3 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2"
-              >
-                <RefreshCw size={14} />
-                <span>Re-evaluate Another Answer</span>
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                <button
+                  onClick={() => {
+                    setEvaluationResult(null);
+                    setImagePreview(null);
+                    setWrittenText('');
+                    setAppealTicketId(null);
+                  }}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                  <span>Re-evaluate Another Answer</span>
+                </button>
+
+                {!appealTicketId ? (
+                  <button
+                    onClick={() => setShowAppealModal(true)}
+                    className="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Shield size={14} />
+                    <span>Dispute / Appeal Score</span>
+                  </button>
+                ) : (
+                  <div className="px-4 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-mono font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                    <CheckCircle2 size={14} className="text-amber-600" />
+                    <span>Appeal Queued: {appealTicketId}</span>
+                  </div>
+                )}
+              </div>
 
               <button
                 onClick={onBack}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
               >
                 <Sparkles size={16} />
                 <span>PRACTICE SIMILAR QUESTION</span>
@@ -491,6 +528,37 @@ export default function SubjectiveAnswerEvaluator({
           </div>
 
         </div>
+      )}
+
+      {/* Student Appeal Modal */}
+      {showAppealModal && evaluationResult && (
+        <StudentAppealModal
+          evaluationId={evaluationResult.evaluation_id || `eval-${question.id}`}
+          questionId={question.id}
+          questionText={question.question_text}
+          currentMarks={evaluationResult.obtained_marks}
+          totalMarks={evaluationResult.total_marks}
+          onClose={() => setShowAppealModal(false)}
+          onAppealSubmitted={(ticketId) => setAppealTicketId(ticketId)}
+        />
+      )}
+
+      {/* Conceptual Remediation Modal */}
+      {activeRemediation && (
+        <ConceptualRemediationModal
+          conceptName={activeRemediation.concept}
+          misconceptionId={
+            activeRemediation.concept.toLowerCase().includes('gravity') ||
+            activeRemediation.concept.toLowerCase().includes('mass')
+              ? 'misc-grav-mass-dependent'
+              : activeRemediation.concept.toLowerCase().includes('plant') ||
+                activeRemediation.concept.toLowerCase().includes('respiration') ||
+                activeRemediation.concept.toLowerCase().includes('photo')
+              ? 'misc-plant-respiration-co2'
+              : 'misc-series-current-consumed'
+          }
+          onClose={() => setActiveRemediation(null)}
+        />
       )}
     </div>
   );

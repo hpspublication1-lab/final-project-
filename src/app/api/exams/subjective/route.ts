@@ -24,6 +24,14 @@ export interface SubjectiveSubmission {
   isAiDraft: boolean;
   publishedAt?: string;
   createdAt: string;
+  hasPendingAppeal?: boolean;
+  appealDetails?: {
+    appealId: string;
+    category: string;
+    studentRationale: string;
+    createdAt: string;
+  };
+  differenceAwareRisk?: 'none' | 'low' | 'medium' | 'high';
 }
 
 // In-memory fallback evaluation queue if database table is not provisioned
@@ -54,6 +62,14 @@ function seedDemoQueue() {
         status: 'pending_review',
         isAiDraft: true,
         createdAt: new Date(Date.now() - 3600000).toISOString(),
+        hasPendingAppeal: true,
+        appealDetails: {
+          appealId: 'appeal-101-demo',
+          category: 'partial_credit_dispute',
+          studentRationale: 'In my handwritten answer, all symbols (G, M, m, d) are explicitly defined in the Given Data column on the left side of the page. The OCR crop missed that left column margin.',
+          createdAt: new Date(Date.now() - 1800000).toISOString(),
+        },
+        differenceAwareRisk: 'low',
       },
       {
         id: 'sub-eval-102',
