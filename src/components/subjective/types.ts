@@ -56,6 +56,26 @@ export interface TranscriptionVerification {
   notice: string;
 }
 
+export interface DifferenceAwareInspection {
+  meaningChangingUncertaintiesFound: boolean;
+  overallRisk: 'none' | 'low' | 'medium' | 'high';
+  uncertainTokens: Array<{
+    token: string;
+    category: string;
+    snippet: string;
+    confidence: number;
+    potentialAlternatives: string[];
+    reason: string;
+  }>;
+  requiresHumanReview: boolean;
+  routingDecision: string;
+  humanReviewTicket?: {
+    ticketId: string;
+    priority: string;
+    teacherInstruction: string;
+  };
+}
+
 export interface EvaluationResult {
   evaluation_id?: string;
   question_id: string;
@@ -73,6 +93,7 @@ export interface EvaluationResult {
   };
   detected_misconceptions?: StudentMisconception[];
   transcription_verification?: TranscriptionVerification;
+  difference_aware_inspection?: DifferenceAwareInspection;
   engineering_notice?: string;
   created_at?: string;
 }

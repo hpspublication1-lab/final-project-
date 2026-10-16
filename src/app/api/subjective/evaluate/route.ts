@@ -7,6 +7,7 @@ import {
   evaluateAnswerWithRubric,
   MultiDimensionalRubric,
 } from '@/lib/scoring/rubricEvaluator';
+import { executeDifferenceAwareWorkflow } from '@/lib/ocr/differenceAwareOcr';
 
 export async function POST(request: NextRequest) {
   try {
@@ -214,7 +215,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 6. Phase 2: Multi-Dimensional Rubric-Based Grading
+    // 6. Step 3, 4, 5: Difference-Aware OCR & Meaning-Changing Symbol Verification (SP-DocReader workflow)
+    const diffWorkflow = executeDifferenceAwareWorkflow({
+      answerId: question_id,
+      originalImageUrl: image_url,
+      originalImageBase64: image_url && image_url.startsWith('data:') ? image_url : undefined,
+      generatedTranscription: extractedText,
+      subjectCategory: activeRubric.subject,
+      questionContext: activeRubric.questionText,
+      rawConfidence: ocrLegibility,
+    });
+
+    // 7. Step 6: Multi-Dimensional Rubric-Based Grading
     const rubricEval = evaluateAnswerWithRubric(extractedText, activeRubric, {
       isHandwritten: Boolean(image_url),
       ocrLegibilityScore: ocrLegibility,
@@ -244,6 +256,21 @@ export async function POST(request: NextRequest) {
       dimensions: rubricEval.dimensions,
       detected_misconceptions: rubricEval.detectedMisconceptions,
       transcription_verification: rubricEval.transcriptionVerification,
+      difference_aware_inspection: {
+        meaningChangingUncertaintiesFound: diffWorkflow.analysis.hasMeaningChangingUncertainties,
+        overallRisk: diffWorkflow.analysis.overallRisk,
+        uncertainTokens: diffWorkflow.analysis.uncertainTokens.map((t) => ({
+          token: t.token,
+          category: t.category,
+          snippet: t.snippet,
+          confidence: t.confidence,
+          potentialAlternatives: t.potentialAlternatives,
+          reason: t.reason,
+        })),
+        requiresHumanReview: diffWorkflow.analysis.requiresHumanReview,
+        routingDecision: diffWorkflow.analysis.routingDecision,
+        humanReviewTicket: diffWorkflow.humanReviewTicket,
+      },
       engineering_notice: rubricEval.engineeringNotice,
     };
 

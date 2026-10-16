@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { SubjectiveQuestion, EvaluationResult } from './types';
-import { Upload, Camera, FileText, Sparkles, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCw, Award, BookOpen, Layers } from 'lucide-react';
+import { Upload, Camera, FileText, Sparkles, ArrowLeft, CheckCircle2, AlertTriangle, RefreshCw, Award, BookOpen, Layers, Shield } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageProvider';
 import toast from 'react-hot-toast';
 
@@ -317,9 +317,44 @@ export default function SubjectiveAnswerEvaluator({
                 <div className="p-3 rounded-xl bg-card border border-border text-xs text-foreground font-mono leading-relaxed max-h-32 overflow-y-auto">
                   {evaluationResult.transcription_verification.rawTranscription || evaluationResult.extracted_text || 'No transcription text.'}
                 </div>
-                <p className="text-[10px] text-muted-foreground italic">
-                  * Handwriting recognition and grading are treated as separate problems. Grading is evaluated on the transcription to ensure transcription artifacts do not silently penalize reasoning.
+              </div>
+            )}
+
+            {/* Phase 1.5: SP-DocReader Difference-Aware Meaning-Changing Symbols Inspection */}
+            {evaluationResult.difference_aware_inspection?.meaningChangingUncertaintiesFound && (
+              <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-black text-xs uppercase tracking-wider font-mono">
+                    <AlertTriangle size={15} />
+                    <span>Difference-Aware OCR Flag: Meaning-Changing Symbol(s)</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold uppercase">
+                    Risk: {evaluationResult.difference_aware_inspection.overallRisk}
+                  </span>
+                </div>
+                <p className="text-xs text-foreground leading-relaxed">
+                  Mathematical expressions like <code>x²</code>, <code>x² + 1</code>, and <code>x² − 1</code> are not interchangeable. A transcription error involving a minus sign, exponent, or decimal point alters the mathematical meaning.
                 </p>
+                <div className="space-y-2 pt-1">
+                  {evaluationResult.difference_aware_inspection.uncertainTokens.map((tok, tIdx) => (
+                    <div key={tIdx} className="p-3 rounded-xl bg-card border border-amber-500/20 space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                          Flagged Token: "{tok.token}" ({tok.category})
+                        </span>
+                        <span className="text-[10px] font-mono text-muted-foreground">Confidence: {tok.confidence}%</span>
+                      </div>
+                      <div className="text-muted-foreground font-mono text-[11px]">Context: "{tok.snippet}"</div>
+                      <div className="text-foreground">{tok.reason}</div>
+                    </div>
+                  ))}
+                </div>
+                {evaluationResult.difference_aware_inspection.requiresHumanReview && (
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-300 pt-1">
+                    <Shield size={14} />
+                    <span>Routed to teacher review queue for verification against original answer image.</span>
+                  </div>
+                )}
               </div>
             )}
 
