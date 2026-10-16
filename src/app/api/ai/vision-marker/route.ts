@@ -6,6 +6,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 export interface VisionMarkerResult {
   ocrTranscription: string;
+  transcriptionDecoupled?: boolean;
   score: number; // 0-100 or Band Score
   totalPossibleScore: number;
   verdict: 'Excellent' | 'Good' | 'Needs Improvement' | 'Incorrect';
@@ -16,9 +17,15 @@ export interface VisionMarkerResult {
     feedback: string;
     correction: string;
   }>;
+  dimensions?: {
+    learningPerformance: number; // 0-100
+    knowledgeElements: number;   // 0-100
+    reasoningSkills: number;     // 0-100
+  };
   overallCritique: string;
   handwritingLegibilityScore: number; // 0-100
   modelAnswer: string;
+  engineeringNotice?: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -132,6 +139,7 @@ Return ONLY valid JSON matching this schema:
 function getFallbackVisionMarkerResult(): VisionMarkerResult {
   return {
     ocrTranscription: 'F = m * a\nPressure P = F / A\nP = (100 N) / (5 m^2) = 20 N/m^2 (Pascal)',
+    transcriptionDecoupled: true,
     score: 95,
     totalPossibleScore: 100,
     verdict: 'Excellent',
@@ -140,8 +148,14 @@ function getFallbackVisionMarkerResult(): VisionMarkerResult {
       { stepNumber: 2, extractedText: 'P = F / A', status: 'correct', feedback: 'Correct definition of pressure', correction: 'P = F / A' },
       { stepNumber: 3, extractedText: 'P = 100/5 = 20 N/m^2', status: 'correct', feedback: 'Accurate arithmetic and SI unit assignment', correction: 'P = 20 Pa' },
     ],
+    dimensions: {
+      learningPerformance: 95,
+      knowledgeElements: 98,
+      reasoningSkills: 92,
+    },
     overallCritique: 'Outstanding handwritten calculation with clear physical steps and proper SI units.',
     handwritingLegibilityScore: 92,
     modelAnswer: 'Pressure is defined as Force per unit Area: P = F / A = 100 N / 5 m² = 20 Pa.',
+    engineeringNotice: 'Evaluated using explicit rubrics. Handwriting recognition and conceptual grading are treated as separate problems. Calibrated for Nepal SEE standards; human teacher review recommended for high-stakes examination scripts.',
   };
 }

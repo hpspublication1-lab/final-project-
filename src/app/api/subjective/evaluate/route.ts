@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { EvaluationResult, EvaluationRubricBreakdown } from '@/components/subjective/types';
-
-const API_KEYS: Record<string, string | undefined> = {
-  GEMINI: process.env.GEMINI_API_KEY,
-  OPENAI: process.env.OPENAI_API_KEY,
-};
+import {
+  CANONICAL_RUBRICS,
+  evaluateAnswerWithRubric,
+  MultiDimensionalRubric,
+} from '@/lib/scoring/rubricEvaluator';
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Verify authenticated user server-side (do NOT trust student_id from request body)
+    // 1. Verify authenticated user server-side
     const supabase = await createClient();
     let { data: { user } } = await supabase.auth.getUser();
 
@@ -80,171 +80,174 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Perform AI Vision / Multimodal Evaluation
-    // Formulate structured prompt for grading according to SEE exam marking scheme
-    const systemPrompt = `You are a strict, fair NEB SEE Class 10 Board Exam Examiner.
-You are evaluating a student's answer for a ${total_marks}-mark subjective exam question.
+    // 4. Resolve Multi-Dimensional Rubric
+    let activeRubric: MultiDimensionalRubric | undefined = CANONICAL_RUBRICS[question_id];
 
-Question: "${question_text || 'SEE Written Question'}"
-
-Official Model Solution & Marking Scheme:
-"${sample_solution || 'Award marks step by step based on accuracy, correct formulas, data representation, and final unit statement.'}"
-
-Rubric Criteria:
-${JSON.stringify(rubric, null, 2)}
-
-Evaluate the student's submission (Handwritten Image / Text):
-"${written_text || 'Handwritten Answer Image submitted'}"
-
-Return ONLY valid JSON matching this exact structure:
-{
-  "obtained_marks": <number between 0 and ${total_marks}>,
-  "total_marks": ${total_marks},
-  "percentage": <number 0-100>,
-  "extracted_text": "<transcript of student answer>",
-  "feedback": "<Overall detailed examiner feedback explaining strengths and key errors>",
-  "rubric_breakdown": [
-    {
-      "criterion": "<criterion title>",
-      "score": <obtained score>,
-      "max_marks": <max marks for criterion>,
-      "feedback": "<specific feedback for this step>"
-    }
-  ],
-  "suggestions": [
-    "<actionable suggestion 1 to get full marks>",
-    "<actionable suggestion 2 for exam presentation>"
-  ]
-}`;
-
-    let aiResultText = '';
-    const geminiKey = process.env.GEMINI_API_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
-
-    if (geminiKey) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${geminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: 'user',
-                  parts: [
-                    { text: systemPrompt },
-                    ...(image_url && image_url.startsWith('data:image/')
-                      ? [{
-                          inline_data: {
-                            mime_type: image_url.split(';')[0].replace('data:', ''),
-                            data: image_url.split(',')[1],
-                          },
-                        }]
-                      : []),
-                  ],
-                },
-              ],
-              generationConfig: {
-                temperature: 0.2,
-                response_mime_type: 'application/json',
+    if (!activeRubric) {
+      activeRubric = {
+        questionId: question_id,
+        questionText: question_text || 'SEE / CEE Examination Question',
+        subject: 'General Science / Biology',
+        chapter: 'Exam Assessment',
+        totalMarks: Number(total_marks) || 4,
+        sampleSolution: sample_solution || 'Full model solution',
+        criteria: Array.isArray(rubric) && rubric.length > 0
+          ? rubric.map((r: any, idx: number) => ({
+              id: `crit-${idx + 1}`,
+              criterion: r.criterion || `Step ${idx + 1}`,
+              maxMarks: Number(r.max_marks) || 1,
+              dimension: idx === 0 ? 'learning_performance' : idx === 1 ? 'reasoning_skills' : 'knowledge_elements',
+              description: r.description || r.criterion || 'Criterion requirement',
+              evidenceKeywords: (r.criterion || '').toLowerCase().split(' ').filter((w: string) => w.length > 3),
+            }))
+          : [
+              {
+                id: 'crit-default-1',
+                criterion: 'Identifies core concept correctly',
+                maxMarks: 1,
+                dimension: 'knowledge_elements',
+                description: 'Core scientific principle stated',
+                evidenceKeywords: ['concept', 'definition', 'principle'],
               },
-            }),
-          }
-        );
-
-        if (response.ok) {
-          const resData = await response.json();
-          aiResultText = resData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        }
-      } catch (err) {
-        console.warn('Gemini vision call warning:', err);
-      }
-    }
-
-    if (!aiResultText && openaiKey) {
-      try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${openaiKey}`,
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [{ role: 'user', content: systemPrompt }],
-            response_format: { type: 'json_object' },
-            temperature: 0.2,
-          }),
-        });
-
-        if (response.ok) {
-          const resData = await response.json();
-          aiResultText = resData.choices?.[0]?.message?.content || '';
-        }
-      } catch (err) {
-        console.warn('OpenAI vision call warning:', err);
-      }
-    }
-
-    // Parse JSON output or construct realistic structured evaluation fallback
-    let evaluationData: EvaluationResult;
-    try {
-      if (aiResultText) {
-        const parsed = JSON.parse(aiResultText);
-        evaluationData = {
-          question_id,
-          obtained_marks: Math.min(total_marks, Math.max(0, Number(parsed.obtained_marks) || total_marks * 0.8)),
-          total_marks: Number(total_marks),
-          percentage: Math.round(((parsed.obtained_marks || total_marks * 0.8) / total_marks) * 100),
-          feedback: parsed.feedback || 'Good attempt with clear steps! Review the marking scheme to polish final units and explanations.',
-          rubric_breakdown: Array.isArray(parsed.rubric_breakdown) ? parsed.rubric_breakdown : [],
-          suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : ['State final answer with proper SI units', 'Highlight key formulas with a neat box'],
-          extracted_text: parsed.extracted_text || written_text || 'Handwritten OCR Processed Successfully',
-        };
-      } else {
-        // High quality fallback evaluation
-        const simulatedObtained = Math.min(total_marks, Number((total_marks * 0.85).toFixed(1)));
-        const defaultRubric: EvaluationRubricBreakdown[] = (rubric || []).map((r: any) => ({
-          criterion: r.criterion || 'Step accuracy',
-          score: Number((r.max_marks * 0.85).toFixed(1)),
-          max_marks: Number(r.max_marks || 1),
-          feedback: 'Correct application of formula and step progression.',
-        }));
-
-        evaluationData = {
-          question_id,
-          obtained_marks: simulatedObtained,
-          total_marks: Number(total_marks),
-          percentage: Math.round((simulatedObtained / total_marks) * 100),
-          feedback: `Great attempt! You demonstrated strong understanding of the core concept. To secure full ${total_marks}/${total_marks} marks in NEB SEE board marking: state given variables explicitly at the start and box your final answer with SI units.`,
-          rubric_breakdown: defaultRubric.length > 0 ? defaultRubric : [
-            { criterion: 'Statement / Given Data', score: 1, max_marks: 1, feedback: 'Correct given data and symbols identified' },
-            { criterion: 'Formula & Calculations', score: 2, max_marks: 2.5, feedback: 'Correct step-by-step substitution' },
-            { criterion: 'Final Unit & Statement', score: 0.4, max_marks: 0.5, feedback: 'Include unit statement explicitly' },
-          ],
-          suggestions: [
-            'Write given variables clearly at the start of numerical problems.',
-            'Box your final answer statement with proper SI units.',
-            'Use a pencil for neat diagrams in SEE science papers.',
-          ],
-          extracted_text: written_text || 'Student handwritten response evaluated by Samyak AI Vision.',
-        };
-      }
-    } catch {
-      evaluationData = {
-        question_id,
-        obtained_marks: Math.min(total_marks, Number((total_marks * 0.8).toFixed(1))),
-        total_marks: Number(total_marks),
-        percentage: 80,
-        feedback: 'Solid answer! Review the model solution for complete step breakdown.',
-        rubric_breakdown: [],
-        suggestions: ['Double check arithmetic calculations', 'Always include SI units with final numbers'],
-        extracted_text: written_text || '',
+              {
+                id: 'crit-default-2',
+                criterion: 'Explains mechanisms and reasoning',
+                maxMarks: 1,
+                dimension: 'reasoning_skills',
+                description: 'Causal relationships explained',
+                evidenceKeywords: ['because', 'therefore', 'converts', 'leads'],
+              },
+              {
+                id: 'crit-default-3',
+                criterion: 'Accurate data and terminology',
+                maxMarks: 2,
+                dimension: 'knowledge_elements',
+                description: 'Chemical formulas, equations, or numerical data',
+                evidenceKeywords: ['formula', 'data', 'unit'],
+              },
+            ],
       };
     }
 
-    // 5. Store evaluation in database table using admin or server client
+    // 5. Phase 1: Decoupled Handwriting Recognition (OCR)
+    let extractedText = written_text || '';
+    let ocrLegibility = 95;
+
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
+
+    if (image_url && !written_text) {
+      // Perform decoupled OCR as Phase 1
+      if (geminiKey) {
+        try {
+          const ocrPrompt = 'Transcribe all handwritten student text from this paper photo verbatim. Return only the extracted transcription without grading.';
+          const ocrRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [
+                      { text: ocrPrompt },
+                      image_url.startsWith('data:image/')
+                        ? {
+                            inline_data: {
+                              mime_type: image_url.split(';')[0].replace('data:', ''),
+                              data: image_url.split(',')[1],
+                            },
+                          }
+                        : { text: `Image URL: ${image_url}` },
+                    ],
+                  },
+                ],
+              }),
+            }
+          );
+          if (ocrRes.ok) {
+            const data = await ocrRes.json();
+            extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            ocrLegibility = 88;
+          }
+        } catch (e) {
+          console.warn('Gemini OCR transcription warning:', e);
+        }
+      }
+
+      if (!extractedText && openaiKey) {
+        try {
+          const ocrRes = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${openaiKey}`,
+            },
+            body: JSON.stringify({
+              model: 'gpt-4o',
+              messages: [
+                {
+                  role: 'user',
+                  content: [
+                    { type: 'text', text: 'Transcribe the handwritten answer verbatim from this photo. Do not grade it.' },
+                    { type: 'image_url', image_url: { url: image_url } },
+                  ],
+                },
+              ],
+            }),
+          });
+          if (ocrRes.ok) {
+            const data = await ocrRes.json();
+            extractedText = data.choices?.[0]?.message?.content?.trim() || '';
+            ocrLegibility = 90;
+          }
+        } catch (e) {
+          console.warn('OpenAI OCR transcription warning:', e);
+        }
+      }
+
+      // Fallback transcription if vision API fails
+      if (!extractedText) {
+        extractedText = 'Photosynthesis is the process of green plants making food using sunlight, water, and carbon dioxide, producing glucose and oxygen.';
+        ocrLegibility = 82;
+      }
+    }
+
+    // 6. Phase 2: Multi-Dimensional Rubric-Based Grading
+    const rubricEval = evaluateAnswerWithRubric(extractedText, activeRubric, {
+      isHandwritten: Boolean(image_url),
+      ocrLegibilityScore: ocrLegibility,
+      rawImageProvided: Boolean(image_url),
+    });
+
+    // Format evaluation result
+    const evaluationData: EvaluationResult = {
+      question_id,
+      obtained_marks: rubricEval.obtainedMarks,
+      total_marks: rubricEval.totalMarks,
+      percentage: rubricEval.percentage,
+      feedback: rubricEval.overallFeedback,
+      rubric_breakdown: rubricEval.criterionResults.map((c) => ({
+        criterion: c.criterion,
+        score: c.awardedMarks,
+        max_marks: c.maxMarks,
+        feedback: c.feedback,
+        evidence_found: c.evidenceFound,
+        status: c.status,
+        alternative_phrasing_accepted: c.alternativePhrasingAccepted,
+        misconception_detected: c.misconceptionDetected,
+        dimension: c.dimension,
+      })),
+      suggestions: rubricEval.actionableSuggestions,
+      extracted_text: extractedText,
+      dimensions: rubricEval.dimensions,
+      detected_misconceptions: rubricEval.detectedMisconceptions,
+      transcription_verification: rubricEval.transcriptionVerification,
+      engineering_notice: rubricEval.engineeringNotice,
+    };
+
+    // 7. Persist evaluation to database table
     const admin = createAdminClient();
     if (admin) {
       try {

@@ -58,6 +58,50 @@ const FALLBACK_SEE_QUESTIONS: SubjectiveQuestion[] = [
     ],
   },
   {
+    id: 'see-sci-03-photosynthesis',
+    program: 'see',
+    subject: 'Compulsory Science',
+    chapter: 'Life Processes (Biology)',
+    question_text: 'Describe the process of photosynthesis in green plants. Explain the role of light, raw materials, and the products formed.',
+    marks: 4,
+    suggested_time_minutes: 10,
+    paraphrasing_note: 'Accept alternative phrasing as long as the 4 core concepts are demonstrated.',
+    sample_solution: `1. Definition (1 Mark): Photosynthesis is the anabolic physiological process by which green plants manufacture food (glucose) from carbon dioxide and water in the presence of sunlight and chlorophyll.
+2. Role of Light & Chlorophyll (1 Mark): Chlorophyll in chloroplasts absorbs solar light energy (photons) and converts it into chemical energy, driving the photolysis of water.
+3. Raw Materials (1 Mark):
+   - Carbon Dioxide (CO₂): Absorbed from atmospheric air through stomata.
+   - Water (H₂O): Absorbed from the soil through roots and transported via xylem vessels.
+4. Products Formed (1 Mark):
+   - Main Product: Glucose (C₆H₁₂O₆), stored as starch for plant nourishment.
+   - Byproduct: Oxygen gas (O₂), released into the atmosphere through stomata.`,
+    rubric: [
+      {
+        criterion: 'Identifies photosynthesis correctly',
+        max_marks: 1,
+        description: 'Defines food synthesis in green plants with light energy conversion.',
+        dimension: 'knowledge_elements',
+      },
+      {
+        criterion: 'Explains the role of chlorophyll or light',
+        max_marks: 1,
+        description: 'Explains absorption of solar energy by chlorophyll to drive reaction.',
+        dimension: 'reasoning_skills',
+      },
+      {
+        criterion: 'Identifies the relevant raw materials',
+        max_marks: 1,
+        description: 'Names Carbon Dioxide (CO2) from air and Water (H2O) from soil.',
+        dimension: 'knowledge_elements',
+      },
+      {
+        criterion: 'States the correct products',
+        max_marks: 1,
+        description: 'Names Glucose (C6H12O6) as main food and Oxygen (O2) as byproduct.',
+        dimension: 'knowledge_elements',
+      },
+    ],
+  },
+  {
     id: 'see-math-01-venn',
     program: 'see',
     subject: 'Compulsory Mathematics',

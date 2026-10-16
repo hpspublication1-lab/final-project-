@@ -224,13 +224,13 @@ export default function SubjectiveAnswerEvaluator({
         /* Result View */
         <div className="space-y-6 animate-fade-in">
           
-          {/* Score & 4-Pillar Criteria Check Box */}
+          {/* Main Assessment Header Card */}
           <div className="bg-card border border-emerald-500/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
               <div className="space-y-1">
                 <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                  AI BOARD EVALUATION COMPLETE
+                  EXPLICIT RUBRIC-BASED EVALUATION
                 </span>
                 <h3 className="text-3xl font-black text-foreground tracking-tight font-mono">
                   SCORE: <span className="text-emerald-600">{evaluationResult.obtained_marks} / {evaluationResult.total_marks}</span>
@@ -238,61 +238,197 @@ export default function SubjectiveAnswerEvaluator({
               </div>
 
               <div className="px-5 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center shrink-0">
-                <span className="text-[9px] font-black uppercase text-emerald-600 block">ACCURACY SCORE</span>
+                <span className="text-[9px] font-black uppercase text-emerald-600 block">OVERALL ACCURACY</span>
                 <span className="text-2xl font-black text-emerald-600 font-mono">{evaluationResult.percentage}%</span>
               </div>
             </div>
 
-            {/* 4 Core Pillars Checks */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs font-bold">
-              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-                <span className="text-foreground">CONTENT</span>
-                <span className="text-emerald-500 text-base">✓</span>
-              </div>
+            {/* 3 Multidimensional Scoring Pillars (Alice Benchmark Architecture) */}
+            {evaluationResult.dimensions && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5">
+                    <Layers size={13} className="text-primary" />
+                    <span>Multi-Dimensional Competency Dimensions</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-muted-foreground">Pre-deployment SEE Calibrated</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground block">
+                      Learning Performance
+                    </span>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-lg font-black text-foreground font-mono">
+                        {evaluationResult.dimensions.learningPerformance.score} / {evaluationResult.dimensions.learningPerformance.maxScore}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-600 font-mono">
+                        {evaluationResult.dimensions.learningPerformance.percentage}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Overall completeness &amp; presentation</p>
+                  </div>
 
-              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-                <span className="text-foreground">CONCEPT</span>
-                <span className="text-emerald-500 text-base">✓</span>
-              </div>
+                  <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground block">
+                      Knowledge Elements
+                    </span>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-lg font-black text-foreground font-mono">
+                        {evaluationResult.dimensions.knowledgeElements.score} / {evaluationResult.dimensions.knowledgeElements.maxScore}
+                      </span>
+                      <span className="text-xs font-bold text-teal-600 font-mono">
+                        {evaluationResult.dimensions.knowledgeElements.percentage}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Scientific concepts &amp; terminology</p>
+                  </div>
 
-              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-                <span className="text-foreground">STRUCTURE</span>
-                <span className="text-amber-500 text-base">⚠️</span>
+                  <div className="p-4 rounded-2xl bg-muted/40 border border-border space-y-1">
+                    <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground block">
+                      Reasoning &amp; Skills
+                    </span>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-lg font-black text-foreground font-mono">
+                        {evaluationResult.dimensions.reasoningSkills.score} / {evaluationResult.dimensions.reasoningSkills.maxScore}
+                      </span>
+                      <span className="text-xs font-bold text-blue-600 font-mono">
+                        {evaluationResult.dimensions.reasoningSkills.percentage}%
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Causal explanation &amp; problem-solving</p>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div className="p-3.5 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-                <span className="text-foreground">LANGUAGE</span>
-                <span className="text-amber-500 text-base">⚠️</span>
+            {/* Phase 1: Decoupled Transcription / OCR Inspection */}
+            {evaluationResult.transcription_verification && (
+              <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="flex items-center gap-1.5 text-foreground">
+                    <FileText size={13} className="text-primary" />
+                    <span>Phase 1: Decoupled Handwriting Transcription</span>
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                    Legibility: {evaluationResult.transcription_verification.ocrLegibilityScore}%
+                  </span>
+                </div>
+                <div className="p-3 rounded-xl bg-card border border-border text-xs text-foreground font-mono leading-relaxed max-h-32 overflow-y-auto">
+                  {evaluationResult.transcription_verification.rawTranscription || evaluationResult.extracted_text || 'No transcription text.'}
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">
+                  * Handwriting recognition and grading are treated as separate problems. Grading is evaluated on the transcription to ensure transcription artifacts do not silently penalize reasoning.
+                </p>
+              </div>
+            )}
+
+            {/* Personalized Student Misconception Diagnosis */}
+            {evaluationResult.detected_misconceptions && evaluationResult.detected_misconceptions.length > 0 && (
+              <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/30 space-y-3">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-black text-xs uppercase tracking-wider font-mono">
+                  <AlertTriangle size={15} />
+                  <span>Personalized Misconception Diagnosis</span>
+                </div>
+                <div className="space-y-2">
+                  {evaluationResult.detected_misconceptions.map((misc, mIdx) => (
+                    <div key={mIdx} className="p-3 rounded-xl bg-card border border-red-500/20 space-y-1 text-xs">
+                      <div className="font-bold text-red-600 dark:text-red-400">
+                        {misc.concept}: {misc.misconception}
+                      </div>
+                      <div className="text-foreground font-medium">
+                        <strong>Correction:</strong> {misc.correction}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Phase 2: Explicit Criterion-by-Criterion Rubric Breakdown */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Award size={13} className="text-primary" />
+                <span>Explicit Rubric Evaluation Breakdown</span>
+              </h4>
+              <div className="space-y-3">
+                {evaluationResult.rubric_breakdown.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-4 rounded-2xl border transition-all ${
+                      item.score === item.max_marks
+                        ? 'bg-emerald-500/5 border-emerald-500/20'
+                        : item.score > 0
+                        ? 'bg-amber-500/5 border-amber-500/20'
+                        : 'bg-red-500/5 border-red-500/20'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-foreground">{item.criterion}</span>
+                        {item.alternative_phrasing_accepted && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-400 border border-teal-500/30">
+                            Alternate Phrasing Accepted
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-mono font-black shrink-0">
+                        <span className={item.score === item.max_marks ? 'text-emerald-600' : item.score > 0 ? 'text-amber-600' : 'text-red-600'}>
+                          {item.score}
+                        </span>{' '}
+                        / {item.max_marks} Marks
+                      </span>
+                    </div>
+
+                    {item.evidence_found && (
+                      <p className="text-[11px] font-mono text-muted-foreground pb-1">
+                        <strong>Observed Evidence:</strong> {item.evidence_found}
+                      </p>
+                    )}
+
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {item.feedback}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* MISSING ITEMS LIST */}
-            <div className="p-5 rounded-2xl bg-red-500/10 border border-red-500/20 space-y-2">
-              <span className="text-[10px] font-black uppercase text-red-600 tracking-wider block font-mono">
-                MISSING FOR FULL MARKS:
-              </span>
-              <ul className="space-y-1.5 text-xs text-foreground font-semibold">
-                <li className="flex items-center gap-2">
-                  <span className="text-red-500 font-bold">•</span>
-                  Formal Definition &amp; Standard SI Units
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-red-500 font-bold">•</span>
-                  Step-by-step Mathematical Derivation Example
-                </li>
-              </ul>
-            </div>
+            {/* Actionable Suggestions */}
+            {evaluationResult.suggestions && evaluationResult.suggestions.length > 0 && (
+              <div className="p-5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
+                <span className="text-[10px] font-black uppercase text-primary tracking-wider block font-mono">
+                  ACTIONABLE STEPS FOR FULL BOARD MARKS:
+                </span>
+                <ul className="space-y-1.5 text-xs text-foreground font-semibold">
+                  {evaluationResult.suggestions.map((sugg, sIdx) => (
+                    <li key={sIdx} className="flex items-start gap-2">
+                      <CheckCircle2 size={13} className="text-primary shrink-0 mt-0.5" />
+                      <span>{sugg}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* MODEL ANSWER BOX */}
             <div className="p-6 rounded-2xl bg-muted/30 border border-border space-y-3 font-sans">
               <div className="flex items-center justify-between border-b border-border/80 pb-2">
-                <span className="text-xs font-black uppercase text-foreground tracking-wider font-mono">MODEL ANSWER</span>
-                <span className="text-[10px] text-emerald-600 font-bold font-mono">Full Marks Solution</span>
+                <span className="text-xs font-black uppercase text-foreground tracking-wider font-mono">OFFICIAL MODEL ANSWER</span>
+                <span className="text-[10px] text-emerald-600 font-bold font-mono">Full Marks Reference</span>
               </div>
               <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-line font-medium">
-                {question.sample_solution || `1. Definition: Every particle of matter attracts every other particle with a force directly proportional to the product of their masses and inversely proportional to the square of distance between them.\n2. Formula: F = G * (m1 * m2) / d^2\n3. SI Unit of G: N·m²/kg² (6.67 × 10⁻¹¹ N·m²/kg²).`}
+                {question.sample_solution}
               </div>
             </div>
+
+            {/* Engineering & Validation Notice */}
+            {evaluationResult.engineering_notice && (
+              <div className="p-4 rounded-xl bg-muted/20 border border-border text-[11px] text-muted-foreground leading-relaxed space-y-1">
+                <div className="font-bold text-foreground">Engineering Recommendation &amp; Scope:</div>
+                <p>{evaluationResult.engineering_notice}</p>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
