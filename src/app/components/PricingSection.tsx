@@ -9,7 +9,7 @@ const WHATSAPP_NUMBER = SUPPORT_CONFIG.whatsappNumber;
 
 export default function PricingSection() {
   const buildWhatsAppUrl = (planName: string, priceStr: string) => {
-    const message = `Hi! I need guidance with enrollment for *\${planName}* (\${priceStr}) on Samyak Guru. Please help me get started.`;
+    const message = `Hi! I need guidance with enrollment for *\${planName}* (\${priceStr}) on Samyak CEE. Please help me get started.`;
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   };
 

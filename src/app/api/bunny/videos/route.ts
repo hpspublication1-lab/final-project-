@@ -63,14 +63,13 @@ export async function GET(request: NextRequest) {
     const isNepaliRequested = mediumParam === 'nepali' || requestedLib === '367785';
     const libraryId = requestedLib || (isNepaliRequested ? '367785' : (process.env.BUNNY_LIBRARY_ID || '379737'));
     
-    const defaultEMKey = 'a4fd2aae-2b48-4322-8352f0d513c5-79b9-4d81';
     const libraryKeys: Record<string, string> = {
-      '379737': process.env.BUNNY_STREAM_API_KEY_379737 || process.env.BUNNY_STREAM_API_KEY_EM || process.env.BUNNY_STREAM_API_KEY || defaultEMKey,
+      '379737': process.env.BUNNY_STREAM_API_KEY_379737 || process.env.BUNNY_STREAM_API_KEY_EM || process.env.BUNNY_STREAM_API_KEY || '',
       '367785': process.env.BUNNY_STREAM_API_KEY_367785 || process.env.BUNNY_STREAM_API_KEY_NM || '',
     };
 
     let activeLibraryId = libraryId;
-    let apiKey = libraryKeys[libraryId] || process.env.BUNNY_STREAM_API_KEY || defaultEMKey;
+    let apiKey = libraryKeys[libraryId] || process.env.BUNNY_STREAM_API_KEY || '';
     const cdnHost = process.env.BUNNY_CDN_HOSTNAME || 'vz-11253e6e-275.b-cdn.net';
     const search = request.nextUrl.searchParams.get('search') || '';
     const collectionId = request.nextUrl.searchParams.get('collectionId') || '';

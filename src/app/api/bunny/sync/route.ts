@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     const libraryId = process.env.BUNNY_LIBRARY_ID || '379737';
-    const apiKey = process.env.BUNNY_STREAM_API_KEY || 'a4fd2aae-2b48-4322-8352f0d513c5-79b9-4d81';
+    const apiKey = process.env.BUNNY_STREAM_API_KEY;
     const cdnHost = process.env.BUNNY_CDN_HOSTNAME || 'vz-11253e6e-275.b-cdn.net';
 
     if (!libraryId || !apiKey) {

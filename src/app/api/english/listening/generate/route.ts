@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 export interface IELTSListeningTask {
   id: string;
@@ -16,77 +17,160 @@ export interface IELTSListeningTask {
   }>;
 }
 
+const mockTasks: Record<number, IELTSListeningTask> = {
+  1: {
+    id: 'list_sec1_01',
+    section: 1,
+    title: 'University Campus Accommodation Booking',
+    contextDescription: 'Conversation between an incoming international student and a housing officer.',
+    accent: 'British',
+    audioTranscript: `Housing Officer: Good morning! Welcome to the International Student Housing Office. How can I help you today?
+Student: Hello! I'm calling to check my reservation for the university hall of residence. My name is Alex Sanders.
+Housing Officer: Let me search the database... Ah yes, Alex Sanders. You have booked a single room in Westgate Hall for the autumn term starting September 15th.
+Student: Perfect! Could you confirm if electricity and internet are included in the weekly rent of £145?
+Housing Officer: Yes, all utility bills and high-speed Wi-Fi are fully included. However, there is a one-time security deposit of £200 payable before check-in.`,
+    questions: [
+      {
+        id: 1,
+        questionText: 'What date does the accommodation reservation start?',
+        options: ['September 1st', 'September 15th', 'October 1st', 'August 30th'],
+        correctAnswer: 'September 15th',
+        explanation: 'The housing officer states: "starting September 15th".',
+      },
+      {
+        id: 2,
+        questionText: 'How much is the weekly rent for Westgate Hall?',
+        options: ['£125', '£145', '£200', '£150'],
+        correctAnswer: '£145',
+        explanation: 'The student asks to confirm "weekly rent of £145".',
+      },
+      {
+        id: 3,
+        questionText: 'What is the amount of the security deposit required?',
+        options: ['£100', '£145', '£200', '£250'],
+        correctAnswer: '£200',
+        explanation: 'The officer confirms a "one-time security deposit of £200".',
+      },
+    ],
+  },
+  2: {
+    id: 'list_sec2_01',
+    section: 2,
+    title: 'National Maritime Museum Guided Tour',
+    contextDescription: 'Monologue by a museum tour guide explaining opening hours and key exhibits.',
+    accent: 'Australian',
+    audioTranscript: `Welcome everyone to the National Maritime Museum! My name is Sarah and I'll be your guide today. Before we begin, please note that the main gallery is open daily from 9:30 AM to 5:00 PM. Our most famous exhibit, the 18th-century Royal Clipper vessel, is located on Level 2 in the East Wing. Flash photography is strictly prohibited inside the historical archive room.`,
+    questions: [
+      {
+        id: 1,
+        questionText: 'Where is the Royal Clipper vessel exhibit located?',
+        options: ['Level 1 West Wing', 'Level 2 East Wing', 'Basement Gallery', 'Ground Floor'],
+        correctAnswer: 'Level 2 East Wing',
+        explanation: 'The guide mentions: "located on Level 2 in the East Wing".',
+      },
+      {
+        id: 2,
+        questionText: 'What is strictly prohibited inside the historical archive room?',
+        options: ['Mobile phones', 'Flash photography', 'Food and drinks', 'Backpacks'],
+        correctAnswer: 'Flash photography',
+        explanation: 'The guide states: "Flash photography is strictly prohibited".',
+      },
+    ],
+  },
+};
+
+/**
+ * GET /api/english/listening/generate
+ * Returns listening task metadata with answer keys and explanations strictly redacted
+ * to prevent students from inspecting correct answers via DevTools before taking the test.
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const section = parseInt(searchParams.get('section') || '1', 10) as 1 | 2 | 3 | 4;
 
-    const mockTasks: Record<number, IELTSListeningTask> = {
-      1: {
-        id: 'list_sec1_01',
-        section: 1,
-        title: 'University Campus Accommodation Booking',
-        contextDescription: 'Conversation between an incoming international student and a housing officer.',
-        accent: 'British',
-        audioTranscript: `Housing Officer: Good morning! Welcome to the International Student Housing Office. How can I help you today?
-Student: Hello! I'm calling to check my reservation for the university hall of residence. My name is Alex Sanders.
-Housing Officer: Let me search the database... Ah yes, Alex Sanders. You have booked a single room in Westgate Hall for the autumn term starting September 15th.
-Student: Perfect! Could you confirm if electricity and internet are included in the weekly rent of £145?
-Housing Officer: Yes, all utility bills and high-speed Wi-Fi are fully included. However, there is a one-time security deposit of £200 payable before check-in.`,
-        questions: [
-          {
-            id: 1,
-            questionText: 'What date does the accommodation reservation start?',
-            options: ['September 1st', 'September 15th', 'October 1st', 'August 30th'],
-            correctAnswer: 'September 15th',
-            explanation: 'The housing officer states: "starting September 15th".',
-          },
-          {
-            id: 2,
-            questionText: 'How much is the weekly rent for Westgate Hall?',
-            options: ['£125', '£145', '£200', '£150'],
-            correctAnswer: '£145',
-            explanation: 'The student asks to confirm "weekly rent of £145".',
-          },
-          {
-            id: 3,
-            questionText: 'What is the amount of the security deposit required?',
-            options: ['£100', '£145', '£200', '£250'],
-            correctAnswer: '£200',
-            explanation: 'The officer confirms a "one-time security deposit of £200".',
-          },
-        ],
-      },
-      2: {
-        id: 'list_sec2_01',
-        section: 2,
-        title: 'National Maritime Museum Guided Tour',
-        contextDescription: 'Monologue by a museum tour guide explaining opening hours and key exhibits.',
-        accent: 'Australian',
-        audioTranscript: `Welcome everyone to the National Maritime Museum! My name is Sarah and I'll be your guide today. Before we begin, please note that the main gallery is open daily from 9:30 AM to 5:00 PM. Our most famous exhibit, the 18th-century Royal Clipper vessel, is located on Level 2 in the East Wing. Flash photography is strictly prohibited inside the historical archive room.`,
-        questions: [
-          {
-            id: 1,
-            questionText: 'Where is the Royal Clipper vessel exhibit located?',
-            options: ['Level 1 West Wing', 'Level 2 East Wing', 'Basement Gallery', 'Ground Floor'],
-            correctAnswer: 'Level 2 East Wing',
-            explanation: 'The guide mentions: "located on Level 2 in the East Wing".',
-          },
-          {
-            id: 2,
-            questionText: 'What is strictly prohibited inside the historical archive room?',
-            options: ['Mobile phones', 'Flash photography', 'Food and drinks', 'Backpacks'],
-            correctAnswer: 'Flash photography',
-            explanation: 'The guide states: "Flash photography is strictly prohibited".',
-          },
-        ],
-      },
+    const task = mockTasks[section] || mockTasks[1];
+
+    // Redact answers and explanations from delivery payload
+    const redactedTask: IELTSListeningTask = {
+      ...task,
+      questions: task.questions.map((q) => ({
+        id: q.id,
+        questionText: q.questionText,
+        options: q.options,
+        correctAnswer: '',
+        explanation: '',
+      })),
     };
 
-    const task = mockTasks[section] || mockTasks[1];
-    return NextResponse.json(task);
+    return NextResponse.json(redactedTask);
   } catch (err: any) {
     console.error('Listening generate error:', err);
     return NextResponse.json({ error: 'Failed to load listening task', details: err?.message }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/english/listening/generate
+ * Server-authoritative grading for the listening test.
+ * Evaluates submitted answers and returns score, correct answers, and explanations.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // 1. Enforce submission rate limiting against brute-force guessing
+    const rl = enforceRateLimit(request, 'submission', 'listening-eval');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many evaluation requests. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': String(rl.resetSeconds) } }
+      );
+    }
+
+    // 2. Safe JSON parsing
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 });
+    }
+
+    const sectionNum = parseInt(String(body?.section || '1'), 10);
+    const validSection = (sectionNum >= 1 && sectionNum <= 4 ? sectionNum : 1) as 1 | 2 | 3 | 4;
+
+    // Validate userAnswers is a non-null object and not an array
+    const rawAnswers = body?.userAnswers;
+    const userAnswers: Record<string | number, string> =
+      rawAnswers && typeof rawAnswers === 'object' && !Array.isArray(rawAnswers)
+        ? rawAnswers
+        : {};
+
+    const task = mockTasks[validSection] || mockTasks[1];
+
+    let correctCount = 0;
+    const totalCount = task.questions.length;
+    const results: Record<number, { isCorrect: boolean; correctAnswer: string; explanation: string }> = {};
+
+    task.questions.forEach((q) => {
+      const submittedAnswer = typeof userAnswers[q.id] === 'string' ? userAnswers[q.id].trim() : '';
+      const isCorrect = submittedAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
+      if (isCorrect) correctCount += 1;
+      results[q.id] = {
+        isCorrect,
+        correctAnswer: q.correctAnswer,
+        explanation: q.explanation,
+      };
+    });
+
+    const score = Math.round((correctCount / totalCount) * 100);
+
+    return NextResponse.json({
+      score,
+      correctCount,
+      totalCount,
+      results,
+    });
+  } catch (err: any) {
+    console.error('Listening evaluation error:', err);
+    return NextResponse.json({ error: 'Failed to evaluate listening answers', details: err?.message }, { status: 500 });
   }
 }

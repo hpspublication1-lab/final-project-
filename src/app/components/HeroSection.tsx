@@ -2,47 +2,62 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Star, CheckCircle2, ShieldCheck, Zap, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Sparkles, BookOpen, GraduationCap, ShieldCheck } from 'lucide-react';
 
 export default function HeroSection() {
   return (
-    <section aria-label="Hero — Nepal's Premier Learning Platform" className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 gradient-hero pointer-events-none" />
-      <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-[-100px] left-[-100px] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+    <section aria-label="Hero — Nepal's Premier Learning Platform" className="relative pt-24 sm:pt-32 pb-16 sm:pb-20 overflow-hidden w-full max-w-full">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background pointer-events-none" />
+      <div className="absolute top-[-80px] right-[-80px] w-[450px] h-[450px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-[200px] left-[-80px] w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         
-        {/* Top Header */}
+        {/* Academic Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4 animate-fade-in">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider shadow-xs">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold tracking-wide shadow-xs">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>NEPAL&apos;S FOCUSED LEARNING PLATFORM · 2026 ADMISSIONS OPEN</span>
+            <span>NEPAL&apos;S PREMIER ACADEMIC &amp; ENTRANCE PLATFORM</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-foreground tracking-tight leading-[1.08]">
-            Learn Smarter.<br />
-            <span className="text-gradient-primary">Score Higher.</span>
+          <h1 className="text-4xl sm:text-6xl font-black text-foreground tracking-tight leading-[1.08]">
+            Master Entrance &amp; Board Exams<br />
+            <span className="text-gradient-primary">With Absolute Confidence.</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium">
-            Nepal&apos;s digital learning platform built for academic board and entrance exam success. Master the Medical Education Commission (MECEE) entrance with 15,000+ high-yield questions, or conquer Class 10 board exams with GPA 4.0 curriculum.
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium">
+            Personalized learning built around Nepal&apos;s CDC and MEC curricula. 15,000+ verified MCQs, timed computer-based mock exams, and structured board revision sheets.
           </p>
+
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/cee-medical-entrance"
+              className="px-6 py-3 rounded-full bg-primary hover:bg-primary-dark text-primary-foreground font-bold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2"
+            >
+              <span>Explore CEE Medical</span>
+              <ArrowRight size={14} />
+            </Link>
+            <Link
+              href="/gate"
+              className="px-6 py-3 rounded-full bg-card hover:bg-muted text-foreground border border-border font-bold text-xs sm:text-sm transition-all"
+            >
+              <span>Browse All 8 Programs</span>
+            </Link>
+          </div>
         </div>
 
-        {/* 2 Flagship Commercial Gateways (SEE vs CEE) */}
-        {/* 2 Flagship Commercial Gateways (CEE Medical vs SEE Class 10) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 max-w-5xl mx-auto items-stretch">
+        {/* 2 Flagship Academic Cards (CEE Medical vs SEE Class 10) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 pt-12 max-w-5xl mx-auto items-stretch">
           
-          {/* FLAGSHIP 1: CEE Medical Entrance (Primary Flagship) */}
-          <div className="bg-card border-2 border-primary/40 hover:border-primary rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+          {/* CARD 1: CEE Medical Entrance (Flagship) */}
+          <div className="bg-card border border-border/80 hover:border-primary/50 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="px-3.5 py-1 rounded-full bg-primary text-primary-foreground text-xs font-black uppercase tracking-wider shadow-xs">
-                  ★ FLAGSHIP CEE 2026 ENTRANCE
+                <span className="px-3.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider border border-primary/20">
+                  🩺 FLAGSHIP CEE 2026 ENTRANCE
                 </span>
-                <span className="text-2xl">🩺</span>
+                <span className="text-xs font-bold text-muted-foreground">MECEE Pattern</span>
               </div>
 
               <div>
@@ -50,31 +65,31 @@ export default function HeroSection() {
                   CEE Medical Entrance
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-                  MBBS / BDS / B.Sc Nursing · MEC Syllabus · Target Scholarship
+                  MBBS / BDS / B.Sc Nursing · MEC High-Yield Question Bank
                 </p>
               </div>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm text-foreground/85 pt-2 border-t border-border/60">
-                <li className="flex items-start gap-2 font-medium">
+              <ul className="space-y-3 text-xs sm:text-sm text-foreground/85 pt-2 border-t border-border/60">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-                  <span>15,000+ Topicwise High-Yield MCQs with step-by-step rationales</span>
+                  <span><strong>15,000+ MCQs</strong> with detailed step-by-step rationales</span>
                 </li>
-                <li className="flex items-start gap-2 font-medium">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-                  <span>200-Question Timed Mock Exams with -0.25 negative marking</span>
+                  <span><strong>200-Question CBT Mocks</strong> with -0.25 negative marking</span>
                 </li>
-                <li className="flex items-start gap-2 font-medium">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-                  <span>High-yield subchapter notes &amp; formula sheets (Bio, Chem, Phys)</span>
+                  <span>High-yield chapter notes &amp; formula cheat sheets</span>
                 </li>
-                <li className="flex items-start gap-2 font-medium">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-primary shrink-0 mt-0.5" />
-                  <span>Real-time 1v1 Battle Arena &amp; 24/7 AI Medical Doubt Solver</span>
+                  <span>Live 1v1 Battle Arena &amp; 24/7 AI Medical Doubt Solver</span>
                 </li>
               </ul>
             </div>
 
-            <div className="pt-8 space-y-3">
+            <div className="pt-8 space-y-3 border-t border-border/60 mt-6">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-muted-foreground font-semibold">MBBS Target Batch:</span>
                 <span className="text-lg font-black text-foreground">NPR 7,990 <span className="text-xs font-normal text-muted-foreground">/ 180 Days</span></span>
@@ -83,14 +98,14 @@ export default function HeroSection() {
               <div className="grid grid-cols-2 gap-3">
                 <Link
                   href="/cee-medical-entrance"
-                  className="w-full py-3 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs text-center border border-primary/30 transition-all flex items-center justify-center gap-1"
+                  className="w-full py-3 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs text-center border border-border transition-all flex items-center justify-center gap-1"
                 >
                   <span>Explore CEE</span>
                   <ArrowRight size={13} />
                 </Link>
                 <Link
                   href="/checkout?plan=cee-mbbs-mastery-2026"
-                  className="w-full py-3 rounded-2xl bg-primary hover:bg-primary-dark text-primary-foreground font-bold text-xs text-center shadow-sm transition-all"
+                  className="w-full py-3 rounded-2xl bg-primary hover:bg-primary-dark text-primary-foreground font-bold text-xs text-center shadow-xs transition-all"
                 >
                   Join Batch
                 </Link>
@@ -98,46 +113,46 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* FLAGSHIP 2: SEE Class 10 */}
-          <div className="bg-card border-2 border-emerald-500/30 hover:border-emerald-500/60 rounded-3xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all flex flex-col justify-between group relative overflow-hidden">
+          {/* CARD 2: SEE Class 10 (CDC Board Prep) */}
+          <div className="bg-card border border-border/80 hover:border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative">
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider border border-emerald-500/20">
-                  NEB CLASS 10 BOARD EXAM
+                <span className="px-3.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider border border-emerald-500/20">
+                  🎓 NEB CLASS 10 BOARD EXAM
                 </span>
-                <span className="text-2xl">🎓</span>
+                <span className="text-xs font-bold text-muted-foreground">CDC Curriculum</span>
               </div>
 
               <div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground group-hover:text-emerald-600 transition-colors">
-                  SEE Class 10 Preparation
+                  SEE Class 10 Board
                 </h2>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
-                  CDC Nepal Curriculum · English &amp; Nepali Medium · Target 4.0 GPA
+                  CDC Nepal Syllabus · English &amp; Nepali Medium · Target GPA 4.0
                 </p>
               </div>
 
-              <ul className="space-y-2.5 text-xs sm:text-sm text-foreground/85 pt-2 border-t border-border/60">
-                <li className="flex items-start gap-2 font-medium">
+              <ul className="space-y-3 text-xs sm:text-sm text-foreground/85 pt-2 border-t border-border/60">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>Science, Comp Math, Opt Math, English &amp; Social covered</span>
                 </li>
-                <li className="flex items-start gap-2 font-medium">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
-                  <span>10-Year Solved Past Board Questions (1, 2, 3, 4 marks)</span>
+                  <span><strong>10-Year Solved Board Papers</strong> (1, 2, 3, 4 mark rubrics)</span>
                 </li>
-                <li className="flex items-start gap-2 font-medium">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>Daily interactive live batches &amp; 200+ HD video replays</span>
                 </li>
-                <li className="flex items-start gap-2 font-medium">
+                <li className="flex items-start gap-2.5 font-medium">
                   <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
-                  <span>AI Handwritten Answer Sheet marker &amp; rubrics</span>
+                  <span>AI Handwritten Answer Evaluator &amp; rubric scoring</span>
                 </li>
               </ul>
             </div>
 
-            <div className="pt-8 space-y-3">
+            <div className="pt-8 space-y-3 border-t border-border/60 mt-6">
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-muted-foreground font-semibold">Board Topper Batch:</span>
                 <span className="text-lg font-black text-foreground">NPR 4,990 <span className="text-xs font-normal text-muted-foreground">/ Full Year</span></span>
@@ -146,14 +161,14 @@ export default function HeroSection() {
               <div className="grid grid-cols-2 gap-3">
                 <Link
                   href="/see"
-                  className="w-full py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs text-center border border-emerald-500/30 transition-all flex items-center justify-center gap-1"
+                  className="w-full py-3 rounded-2xl bg-muted hover:bg-muted/80 text-foreground font-bold text-xs text-center border border-border transition-all flex items-center justify-center gap-1"
                 >
                   <span>Explore SEE</span>
                   <ArrowRight size={13} />
                 </Link>
                 <Link
                   href="/checkout?plan=see-class-10-board-topper-batch"
-                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center shadow-sm transition-all"
+                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center shadow-xs transition-all"
                 >
                   Join Batch
                 </Link>
@@ -162,7 +177,7 @@ export default function HeroSection() {
           </div>
         </div>
 
-        {/* Verified Academic Platform Features Bar */}
+        {/* Academic Trust Metrics Bar */}
         <div aria-label="Platform deliverables" className="pt-12 max-w-4xl mx-auto flex flex-wrap items-center justify-around gap-6 border-t border-border/60 text-center">
           <div className="space-y-0.5">
             <div className="text-xl sm:text-2xl font-black text-foreground">15,000+</div>
@@ -183,8 +198,8 @@ export default function HeroSection() {
         </div>
 
         {/* Academic Affiliation Disclaimer */}
-        <p className="text-center text-[10px] text-muted-foreground/60 pt-3 max-w-2xl mx-auto leading-relaxed">
-          Samyak Guru is an independent digital learning platform. All examination curricula, subject weightages, and marking schemes are based on official guidelines published by CDC Nepal and the Medical Education Commission (MEC) Nepal. Samyak Guru is not affiliated with or endorsed by MEC Nepal or NEB.
+        <p className="text-center text-[10px] text-muted-foreground/70 pt-6 max-w-2xl mx-auto leading-relaxed">
+          SamyakCEE is an independent digital learning platform. All examination curricula, subject weightages, and marking schemes are based on official guidelines published by CDC Nepal and the Medical Education Commission (MEC) Nepal.
         </p>
 
       </div>

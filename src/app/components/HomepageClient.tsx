@@ -75,7 +75,7 @@ export default function HomepageClient() {
         <main id="main-content" className="flex-1">
           <HeroSection />
           <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-10">
-            <CourseSelectionGate autoOpenOnFirstVisit={true} />
+            <CourseSelectionGate autoOpenOnFirstVisit={false} />
           </div>
           <FlagshipPillarsSection />
           <FlagshipDemoSection />

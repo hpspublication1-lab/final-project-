@@ -23,6 +23,7 @@ export default function IELTSListeningPage() {
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState<number | null>(null);
+  const [evaluation, setEvaluation] = useState<Record<number, { isCorrect: boolean; correctAnswer: string; explanation: string }> | null>(null);
 
   useEffect(() => {
     fetchTask(activeSection);
@@ -33,6 +34,7 @@ export default function IELTSListeningPage() {
     setSubmitted(false);
     setUserAnswers({});
     setScore(null);
+    setEvaluation(null);
     try {
       const res = await fetch(`/api/english/listening/generate?section=${sec}`);
       if (res.ok) {
@@ -85,19 +87,26 @@ export default function IELTSListeningPage() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!task) return;
-    let correct = 0;
-    task.questions.forEach((q) => {
-      if (userAnswers[q.id] === q.correctAnswer) {
-        correct += 1;
+    try {
+      const res = await fetch('/api/english/listening/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ section: activeSection, userAnswers }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setScore(data.score);
+        setEvaluation(data.results);
+        setSubmitted(true);
+        toast.success(`Submitted! Score: ${data.correctCount}/${data.totalCount} (${data.score}%)`);
+      } else {
+        toast.error('Failed to submit listening answers.');
       }
-    });
-
-    const calculatedScore = Math.round((correct / task.questions.length) * 100);
-    setScore(calculatedScore);
-    setSubmitted(true);
-    toast.success(`Submitted! Score: ${correct}/${task.questions.length} (${calculatedScore}%)`);
+    } catch {
+      toast.error('Error submitting listening answers.');
+    }
   };
 
   return (
@@ -214,12 +223,12 @@ export default function IELTSListeningPage() {
                       ))}
                     </div>
 
-                    {submitted && (
+                    {submitted && evaluation && evaluation[q.id] && (
                       <div className={`p-3 rounded-xl text-xs space-y-1 ${
-                        userAnswers[q.id] === q.correctAnswer ? 'bg-success/10 border border-success/20 text-success' : 'bg-error/10 border border-error/20 text-error'
+                        evaluation[q.id].isCorrect ? 'bg-success/10 border border-success/20 text-success' : 'bg-error/10 border border-error/20 text-error'
                       }`}>
-                        <p className="font-bold">Correct Answer: {q.correctAnswer}</p>
-                        <p className="text-[11px] text-muted-foreground">{q.explanation}</p>
+                        <p className="font-bold">Correct Answer: {evaluation[q.id].correctAnswer}</p>
+                        <p className="text-[11px] text-muted-foreground">{evaluation[q.id].explanation}</p>
                       </div>
                     )}
                   </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
@@ -741,12 +742,12 @@ export default function AccountManagementClient() {
                       <Receipt size={36} className="text-muted-foreground mx-auto mb-3 opacity-40" />
                       <p className="text-sm font-medium text-foreground">No billing records yet</p>
                       <p className="text-xs text-muted-foreground mt-1">Your payment history will appear here after your first purchase</p>
-                      <a
+                      <Link
                         href="/#pricing"
                         className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
                       >
                         <ArrowUpCircle size={14} /> View Plans
-                      </a>
+                      </Link>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -1196,12 +1197,12 @@ export default function AccountManagementClient() {
                       <p className="text-sm font-semibold text-foreground">Unlock all materials</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Upgrade to Student or Pro plan to download all resources</p>
                     </div>
-                    <a
+                    <Link
                       href="/#pricing"
                       className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
                     >
                       Upgrade <ExternalLink size={12} />
-                    </a>
+                    </Link>
                   </div>
                 )}
               </div>

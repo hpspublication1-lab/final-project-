@@ -145,7 +145,7 @@ interface CourseSelectionGateProps {
 
 export default function CourseSelectionGate({
   onSelectTrack,
-  autoOpenOnFirstVisit = true,
+  autoOpenOnFirstVisit = false,
 }: CourseSelectionGateProps) {
   const { program, setProgram } = useProgram();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -200,7 +200,7 @@ export default function CourseSelectionGate({
       {/* Inline Interactive Course Gate Banner */}
       <section
         aria-label="Course Selection Gate"
-        className="bg-card border-2 border-primary/25 rounded-3xl p-5 sm:p-7 shadow-sm space-y-5"
+        className="bg-card/70 backdrop-blur-md border border-border/80 rounded-2xl p-6 sm:p-7 shadow-xs hover:shadow-sm transition-all space-y-5"
       >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-border/60 pb-4">
           <div className="space-y-1">
@@ -220,7 +220,7 @@ export default function CourseSelectionGate({
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2.5 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-black flex items-center gap-1.5 transition-all"
+              className="px-4 py-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 text-xs font-bold flex items-center gap-1.5 transition-all"
             >
               <Sparkles size={14} />
               <span>Open Full Course Gate</span>
@@ -229,7 +229,7 @@ export default function CourseSelectionGate({
               <button
                 type="button"
                 onClick={handleBrowseAll}
-                className="px-4 py-2.5 rounded-2xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold transition-all"
+                className="px-4 py-2.5 rounded-xl bg-muted hover:bg-muted/80 text-foreground text-xs font-bold transition-all"
               >
                 Show All 12 Courses
               </button>
@@ -246,9 +246,9 @@ export default function CourseSelectionGate({
                 key={opt.programId}
                 type="button"
                 onClick={() => handleConfirmSelection(opt, true)}
-                className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2 relative ${
+                className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 relative ${
                   isSelected
-                    ? `${opt.accentBg} ${opt.accentBorder} ring-2 ring-primary shadow-sm`
+                    ? `${opt.accentBg} ${opt.accentBorder} ring-2 ring-primary/40 shadow-xs font-semibold`
                     : 'bg-muted/30 border-border/70 hover:bg-muted/60 hover:border-border'
                 }`}
               >
@@ -328,7 +328,7 @@ export default function CourseSelectionGate({
           aria-label="Choose Your Course Gate"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto"
         >
-          <div className="bg-card border border-border rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 relative">
+          <div className="bg-card border border-border/80 rounded-2xl max-w-4xl w-full p-6 sm:p-8 shadow-xl space-y-6 my-8 relative">
             <button
               type="button"
               onClick={() => {
@@ -344,9 +344,9 @@ export default function CourseSelectionGate({
             </button>
 
             <div className="space-y-2 pr-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
                 <Compass size={14} />
-                <span>Welcome to Samyak Guru · Learning Gate</span>
+                <span>Samyak CEE · Programs &amp; Pathways</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
                 Which course do you want to continue learning first?

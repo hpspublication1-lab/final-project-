@@ -62,21 +62,41 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'pending' });
     }
 
-    await admin
+    const { data: updatedBooking } = await admin
       .from('prebookings')
       .update({ status: 'confirmed', payment_method: 'fonepay', updated_at: new Date().toISOString() })
-      .eq('id', booking.id);
+      .eq('id', booking.id)
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
+
+    if (!updatedBooking) {
+      return NextResponse.json({ status: 'completed' });
+    }
 
     // Grant the signed-in prebooker full Pro access while they wait for classes.
     const server = await createClient();
     const { data: { user } } = await server.auth.getUser();
     if (user) {
+      const { data: userProfile } = await admin
+        .from('user_profiles')
+        .select('subscription_expires_at')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const currentExpiresAtMs = userProfile?.subscription_expires_at
+        ? new Date(userProfile.subscription_expires_at).getTime()
+        : 0;
+
+      const baseTime = Math.max(Date.now(), currentExpiresAtMs);
+      const newExpiresAt = new Date(baseTime + PREBOOK_PRO_DAYS * 86400000).toISOString();
+
       await admin
         .from('user_profiles')
         .update({
           subscription_plan: 'pro',
           plan_tier: 'cee_ai_pro',
-          subscription_expires_at: new Date(Date.now() + PREBOOK_PRO_DAYS * 86400000).toISOString(),
+          subscription_expires_at: newExpiresAt,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);

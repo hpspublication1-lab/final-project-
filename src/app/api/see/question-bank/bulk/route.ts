@@ -23,7 +23,7 @@ interface QuestionImportRecord {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getSessionUser();
+    const user = await getSessionUser(request);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized. Admin access required.' }, { status: 401 });
     }
@@ -84,21 +84,33 @@ export async function POST(request: NextRequest) {
       });
     });
 
+    let importedCount = 0;
     if (validQuestions.length > 0) {
       const { error: insertError } = await admin
         .from('questions')
         .insert(validQuestions);
 
       if (insertError) {
-        console.warn('Database batch insert notice:', insertError.message);
+        console.error('Database batch insert error:', insertError.message);
+        return NextResponse.json({
+          success: false,
+          error: `Failed to insert questions into database: ${insertError.message}`,
+          report: {
+            totalRows: records.length,
+            importedCount: 0,
+            errorCount: errors.length + 1,
+            errors: [...errors, `Database error: ${insertError.message}`],
+          },
+        }, { status: 500 });
       }
+      importedCount = validQuestions.length;
     }
 
     return NextResponse.json({
       success: true,
       report: {
         totalRows: records.length,
-        importedCount: validQuestions.length,
+        importedCount,
         errorCount: errors.length,
         errors,
       },

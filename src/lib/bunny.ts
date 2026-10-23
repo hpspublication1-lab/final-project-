@@ -49,8 +49,7 @@ export async function uploadFile(path: string, buffer: Buffer | Uint8Array, mime
       AccessKey: env('BUNNY_STORAGE_API_KEY'),
       'Content-Type': mime,
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    body: buffer as any,
+    body: buffer as unknown as BodyInit,
   });
   if (!response.ok) {
     const txt = await response.text();

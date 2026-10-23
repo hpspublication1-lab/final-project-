@@ -1,18 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { VOICE_PERSONAS } from '@/lib/ai/voices';
+import { createClient } from '@/lib/supabase/server';
+import { checkRateLimit, enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, persona = 'coach_aria' } = await request.json();
+    // 1. Mandatory authentication check (fails safely)
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!text || typeof text !== 'string') {
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required to generate AI speech audio.' },
+        { status: 401 }
+      );
+    }
+
+    // 2. User-bound rate limiting (cannot be bypassed by spoofing IP/proxy headers)
+    const userRl = checkRateLimit(`ai-tts:user:${user.id}`, 20, 60 * 1000);
+    if (!userRl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many voice generation requests. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': String(userRl.resetSeconds) } }
+      );
+    }
+
+    // 3. IP-based rate limiting as defense-in-depth
+    const ipRl = enforceRateLimit(request, 'general', 'ai-tts');
+    if (!ipRl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many voice generation requests from this IP address.' },
+        { status: 429, headers: { 'Retry-After': String(ipRl.resetSeconds) } }
+      );
+    }
+
+    // 4. Safe body parsing and input validation
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 });
+    }
+
+    const { text, persona = 'coach_aria' } = body || {};
+
+    if (!text || typeof text !== 'string' || text.trim().length === 0) {
       return NextResponse.json({ error: 'Text required' }, { status: 400 });
     }
 
     if (!ELEVENLABS_API_KEY) {
-      return NextResponse.json({ error: 'ElevenLabs API key missing' }, { status: 500 });
+      return NextResponse.json({ error: 'ElevenLabs API key missing or unconfigured' }, { status: 503 });
     }
 
     const voiceId = VOICE_PERSONAS[persona as keyof typeof VOICE_PERSONAS] || VOICE_PERSONAS.coach_aria;

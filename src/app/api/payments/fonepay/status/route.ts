@@ -63,17 +63,38 @@ export async function POST(request: NextRequest) {
     }
 
     // ── success → mark paid + activate the plan ───────────────────────────
-    await admin.from('payment_transactions')
+    const { data: updatedTx } = await admin.from('payment_transactions')
       .update({ status: 'completed', gateway_ref: result.traceId, gateway_response: result.raw })
-      .eq('id', tx.id);
+      .eq('id', tx.id)
+      .eq('status', 'pending')
+      .select('id')
+      .maybeSingle();
+
+    if (!updatedTx) {
+      return NextResponse.json({ status: 'completed' });
+    }
 
     const resolvedTier = tx.plan === 'pro' ? 'cee_ai_pro' : 'cee_premium';
+
+    // Extend from existing expiration if student still has active subscription days remaining
+    const { data: userProfile } = await admin
+      .from('user_profiles')
+      .select('subscription_expires_at')
+      .eq('id', tx.user_id)
+      .maybeSingle();
+
+    const currentExpiresAtMs = userProfile?.subscription_expires_at
+      ? new Date(userProfile.subscription_expires_at).getTime()
+      : 0;
+
+    const baseTime = Math.max(Date.now(), currentExpiresAtMs);
+    const newExpiresAt = new Date(baseTime + tx.duration_days * 86400000).toISOString();
 
     await admin.from('user_profiles')
       .update({
         subscription_plan: tx.plan,
         plan_tier: resolvedTier,
-        subscription_expires_at: new Date(Date.now() + tx.duration_days * 86400000).toISOString(),
+        subscription_expires_at: newExpiresAt,
         updated_at: new Date().toISOString(),
       })
       .eq('id', tx.user_id);

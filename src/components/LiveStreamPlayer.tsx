@@ -42,17 +42,12 @@ function extractYouTubeId(input: string): string {
   return m ? m[1] : input;
 }
 
-export default function LiveStreamPlayer({ provider, src, poster, autoPlay = true, role }: LiveStreamPlayerProps) {
+function HlsOrYouTubePlayer({ provider, src, poster, autoPlay = true }: Omit<LiveStreamPlayerProps, 'role'>) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<any>(null);
   const [status, setStatus] = useState<'loading' | 'playing' | 'error'>('loading');
   const [levels, setLevels] = useState<{ index: number; label: string }[]>([]);
   const [selected, setSelected] = useState<number>(-1); // -1 = Auto (ABR)
-
-  // ── 100ms Interactive WebRTC ─────────────────────────────────────────────
-  if (provider === '100ms') {
-    return <HMSLiveRoom roomId={src} role={role} />;
-  }
 
   useEffect(() => {
     if (provider !== 'hls') return;
@@ -187,4 +182,13 @@ export default function LiveStreamPlayer({ provider, src, poster, autoPlay = tru
       )}
     </div>
   );
+}
+
+export default function LiveStreamPlayer({ provider, src, poster, autoPlay = true, role }: LiveStreamPlayerProps) {
+  // ── 100ms Interactive WebRTC ─────────────────────────────────────────────
+  if (provider === '100ms') {
+    return <HMSLiveRoom roomId={src} role={role} />;
+  }
+
+  return <HlsOrYouTubePlayer provider={provider} src={src} poster={poster} autoPlay={autoPlay} />;
 }

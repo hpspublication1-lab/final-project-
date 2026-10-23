@@ -7,10 +7,11 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram, normalizeCourseId, CanonicalCourseId } from '@/contexts/ProgramContext';
 import {
-  Loader2, Play, BookOpen, Sparkles, Zap, Target, Flame,
+  Loader2, Play, BookOpen, Sparkles, Flame,
   Clock, ArrowRight, CheckCircle2, ChevronRight, X, AlertTriangle,
-  Radio, FileText, Award, Calendar, HelpCircle, MessageCircle,
-  TrendingUp, BarChart2, ShieldCheck, RefreshCw, ExternalLink
+  Radio, FileText, Award, Calendar, MessageCircle,
+  TrendingUp, BarChart2, ShieldCheck, RefreshCw, ExternalLink,
+  Check
 } from 'lucide-react';
 import { SUPPORT_CONFIG } from '@/lib/config/support';
 import toast from 'react-hot-toast';
@@ -147,7 +148,7 @@ interface DashboardData {
 
 export default function DashboardPageClient() {
   const router = useRouter();
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { program, setProgram } = useProgram();
 
   const [data, setData] = useState<DashboardData | null>(null);
@@ -155,7 +156,10 @@ export default function DashboardPageClient() {
   const [isDark, setIsDark] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({});
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);
   const [switchingBatch, setSwitchingBatch] = useState(false);
+
+  const canonicalId = normalizeCourseId(program);
 
   const handleSwitchBatch = async (batchId: string) => {
     try {
@@ -175,14 +179,13 @@ export default function DashboardPageClient() {
         const refreshed = await refreshRes.json();
         setData(refreshed);
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Could not switch batch');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not switch batch';
+      toast.error(msg);
     } finally {
       setSwitchingBatch(false);
     }
   };
-
-  const canonicalId = normalizeCourseId(program);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -213,7 +216,7 @@ export default function DashboardPageClient() {
             setData(json);
             // Pre-seed completed tasks from API
             const initialTasks: Record<string, boolean> = {};
-            json.todayStudyPlan?.tasks?.forEach((t: any) => {
+            json.todayStudyPlan?.tasks?.forEach((t: { id: string; isCompleted: boolean }) => {
               initialTasks[t.id] = !!t.isCompleted;
             });
             setCompletedTasks(initialTasks);
@@ -245,7 +248,7 @@ export default function DashboardPageClient() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 size={36} className="animate-spin text-primary" />
           <p className="text-sm font-semibold text-muted-foreground animate-pulse">
-            Loading your Samyak Tutor learning workspace...
+            Loading your academic learning workspace...
           </p>
         </div>
       </div>
@@ -257,30 +260,87 @@ export default function DashboardPageClient() {
   const isSee = canonicalId === 'see_class_10';
   const isTrial = data.activeCourse.state === 'free_preview';
   const isExpired = data.activeCourse.state === 'expired';
-  const isExpiringSoon = data.activeCourse.state === 'expiring_soon';
-
   const checkoutPlanSku = isSee ? 'see-class-10-board-topper-batch' : 'cee-mbbs-mastery-2026';
 
-  // ── COMPACT CONTEXTUAL PANEL ──────────────────────────────────────────────
+  const completedCount = Object.values(completedTasks).filter(Boolean).length;
+  const totalTasksCount = data.todayStudyPlan.tasks.length;
+
+  // ── REFINED CONTEXTUAL PANEL (ACADEMIC PREMIUM SIDEBAR) ──────────────────
   const contextualPanel = (
     <div className="space-y-6">
       
-      {/* 1. Today's Quick Focus & Streak */}
-      <div className="bg-card border border-border/80 rounded-3xl p-5 shadow-xs space-y-4">
+      {/* 1. Live Class Module */}
+      {data.upcomingLiveClass ? (
+        <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-3.5 hover:shadow-sm transition-all">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-600 border border-red-500/20 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+              <span>{data.upcomingLiveClass.status === 'live' ? 'Live Now' : 'Next Live Session'}</span>
+            </span>
+            <span className="text-xs font-mono text-muted-foreground font-semibold">
+              {data.upcomingLiveClass.durationMins}m
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-foreground leading-snug">
+              {data.upcomingLiveClass.title}
+            </h4>
+            {data.upcomingLiveClass.instructorName && (
+              <p className="text-[11px] text-muted-foreground">
+                Faculty: <strong className="text-foreground">{data.upcomingLiveClass.instructorName}</strong>
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              Starts at: {new Date(data.upcomingLiveClass.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+
+          <Link
+            href="/live-classes"
+            className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-xs text-center flex items-center justify-center gap-1.5 transition-all shadow-xs"
+          >
+            <Radio size={13} />
+            <span>Join Live Classroom</span>
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-muted text-muted-foreground">
+              Live Classroom
+            </span>
+            <span className="text-xs text-muted-foreground font-medium">Daily Cohort</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            No live lectures scheduled today. Evening interactive doubt sessions resume tomorrow.
+          </p>
+          <Link
+            href="/live-classes"
+            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+          >
+            <span>Browse HD Recordings Vault</span>
+            <ArrowRight size={12} />
+          </Link>
+        </div>
+      )}
+
+      {/* 2. Consistency & Study Volume (Integrated Weekly Progress) */}
+      <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-4 hover:shadow-sm transition-all">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Flame size={15} className="text-amber-500" />
-            <span>Study Streak</span>
+            <span>Study Consistency</span>
           </span>
-          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600">
-            {data.weeklyProgress.currentStreak} Days Active
+          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
+            {data.weeklyProgress.currentStreak} Days Streak
           </span>
         </div>
 
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Weekly Solved Questions</span>
-            <span className="font-bold text-foreground">{data.weeklyProgress.totalQuestionsThisWeek} Qs</span>
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">Weekly Practice Goal</span>
+            <span className="font-bold text-foreground">{data.weeklyProgress.totalQuestionsThisWeek} / 150 Qs</span>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
             <div
@@ -290,41 +350,49 @@ export default function DashboardPageClient() {
           </div>
         </div>
 
-        <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
-          <span>Est. Study Time</span>
-          <span className="font-semibold text-foreground">{data.weeklyProgress.totalMinutesThisWeek} mins</span>
+        {/* 7-Day Mini Sparkline Bars */}
+        <div className="pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-2">
+            <span>Daily Activity (7 Days)</span>
+            <span className="font-semibold text-foreground">{data.weeklyProgress.totalMinutesThisWeek}m study time</span>
+          </div>
+          <div className="grid grid-cols-7 gap-1.5 items-end h-16 pt-1">
+            {data.weeklyProgress.days.map((day, dIdx) => {
+              const maxVal = Math.max(25, ...data.weeklyProgress.days.map((d) => d.questionsSolved));
+              const heightPct = Math.max(12, Math.round((day.questionsSolved / maxVal) * 100));
+
+              return (
+                <div key={dIdx} className="flex flex-col items-center gap-1 h-full justify-end group">
+                  <div
+                    className={`w-full rounded-md transition-all duration-300 ${
+                      day.isToday
+                        ? 'bg-primary'
+                        : day.questionsSolved > 0
+                        ? 'bg-primary/50 group-hover:bg-primary'
+                        : 'bg-muted'
+                    }`}
+                    style={{ height: `${heightPct}%` }}
+                    title={`${day.dayName}: ${day.questionsSolved} questions`}
+                  />
+                  <span className={`text-[9px] font-semibold ${day.isToday ? 'text-primary font-bold' : 'text-muted-foreground'}`}>
+                    {day.dayName.slice(0, 1)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* 2. Quick Live Class Reminder */}
-      {data.upcomingLiveClass && (
-        <div className="bg-card border-2 border-primary/20 rounded-3xl p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
-              {data.upcomingLiveClass.status === 'live' ? '🔴 LIVE NOW' : 'NEXT LIVE CLASS'}
-            </span>
-            <span className="text-xs font-mono text-muted-foreground">{data.upcomingLiveClass.durationMins}m</span>
-          </div>
-          <h4 className="text-sm font-bold text-foreground leading-snug">{data.upcomingLiveClass.title}</h4>
-          <Link
-            href="/live-classes"
-            className="w-full py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-white font-bold text-xs text-center flex items-center justify-center gap-1.5 transition-all block shadow-xs"
-          >
-            <Radio size={13} />
-            <span>Join Live Room</span>
-          </Link>
-        </div>
-      )}
-
       {/* 3. Academic Counselor WhatsApp Hotline */}
-      <div className="bg-card border border-border/80 rounded-3xl p-5 shadow-xs space-y-3">
-        <div className="flex items-center gap-2">
-          <span className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-            <MessageCircle size={16} />
+      <div className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs space-y-3 hover:shadow-sm transition-all">
+        <div className="flex items-center gap-3">
+          <span className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+            <MessageCircle size={18} />
           </span>
           <div>
-            <h4 className="text-xs font-bold text-foreground">Need Academic Guidance?</h4>
-            <p className="text-[11px] text-muted-foreground">Connect with faculty counselors</p>
+            <h4 className="text-xs font-bold text-foreground">Faculty Counseling Desk</h4>
+            <p className="text-[11px] text-muted-foreground">Study plan questions &amp; queries</p>
           </div>
         </div>
         <a
@@ -333,7 +401,7 @@ export default function DashboardPageClient() {
           rel="noopener noreferrer"
           className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs text-center border border-emerald-500/30 flex items-center justify-center gap-1.5 transition-all block"
         >
-          <span>Chat on WhatsApp</span>
+          <span>Chat with Academic Mentor</span>
           <ExternalLink size={12} />
         </a>
       </div>
@@ -346,23 +414,23 @@ export default function DashboardPageClient() {
       
       {/* ── 0. TRIAL OR EXPIRED STATE BANNER ───────────────────────────────── */}
       {isTrial && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
-              <ShieldCheck size={20} />
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+              <ShieldCheck size={18} />
             </span>
             <div>
               <p className="text-xs sm:text-sm font-bold text-foreground">
-                You are currently on the Free Starter Preview
+                Free Starter Preview Active
               </p>
               <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                Unlock full access to 15,000+ past questions, daily live classes, and AI subjective answer grading.
+                Upgrade to unlock 15,000+ past questions, daily interactive live batches, and AI grading.
               </p>
             </div>
           </div>
           <Link
             href={`/checkout?plan=${checkoutPlanSku}`}
-            className="btn-primary text-xs font-bold py-2.5 px-5 rounded-2xl shrink-0 flex items-center gap-1.5 shadow-sm"
+            className="btn-primary text-xs font-bold py-2.5 px-5 rounded-xl shrink-0 flex items-center gap-1.5 shadow-xs"
           >
             <span>Upgrade to Full Batch</span>
             <ArrowRight size={13} />
@@ -371,23 +439,23 @@ export default function DashboardPageClient() {
       )}
 
       {isExpired && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-red-500/10 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="w-10 h-10 rounded-2xl bg-red-500/20 text-red-600 flex items-center justify-center shrink-0">
-              <AlertTriangle size={20} />
+        <div className="p-4 sm:p-5 rounded-2xl bg-red-500/10 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <span className="w-9 h-9 rounded-xl bg-red-500/20 text-red-600 flex items-center justify-center shrink-0">
+              <AlertTriangle size={18} />
             </span>
             <div>
               <p className="text-xs sm:text-sm font-bold text-foreground">
-                Your batch access has expired
+                Batch Access Expired
               </p>
               <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
-                Renew your enrollment to continue taking timed mocks and attending live classes.
+                Renew your enrollment to continue taking timed mocks and attending live sessions.
               </p>
             </div>
           </div>
           <Link
             href={`/checkout?plan=${checkoutPlanSku}`}
-            className="btn-primary text-xs font-bold py-2.5 px-5 rounded-2xl shrink-0 flex items-center gap-1.5 shadow-sm"
+            className="btn-primary text-xs font-bold py-2.5 px-5 rounded-xl shrink-0 flex items-center gap-1.5 shadow-xs"
           >
             <span>Renew Access</span>
             <RefreshCw size={13} />
@@ -395,22 +463,20 @@ export default function DashboardPageClient() {
         </div>
       )}
 
-      {/* ── 1. WHAT SHOULD I STUDY NEXT? (HERO ACTION CARD) ───────────────── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-primary/95 text-white p-6 sm:p-8 shadow-xl">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-
+      {/* ── 1. WHAT SHOULD I STUDY NEXT? (HERO ACTION & FAST RESUME) ──────── */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/95 via-primary to-indigo-700 text-white p-6 sm:p-8 shadow-sm">
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-xs text-[10px] sm:text-xs font-black uppercase tracking-wider text-white">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-xs text-[10px] sm:text-xs font-bold uppercase tracking-wider text-white">
               <Sparkles size={13} />
               <span>{data.recommendation.badgeText}</span>
             </div>
 
-            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
               {data.recommendation.title}
             </h2>
 
-            <p className="text-xs sm:text-sm text-white/85 font-medium leading-relaxed max-w-xl">
+            <p className="text-xs sm:text-sm text-white/85 leading-relaxed max-w-xl">
               {data.recommendation.subtitle}
             </p>
           </div>
@@ -418,67 +484,60 @@ export default function DashboardPageClient() {
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
             <Link
               href={data.recommendation.actionHref}
-              className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 bg-white text-primary font-black text-sm rounded-2xl hover:bg-white/95 shadow-md transition-all active:scale-95"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-primary font-bold text-xs rounded-xl hover:bg-white/95 shadow-sm transition-all"
             >
-              <Play size={15} fill="currentColor" />
+              <Play size={14} fill="currentColor" />
               <span>{data.recommendation.actionText}</span>
-              <ArrowRight size={15} />
+              <ArrowRight size={14} />
             </Link>
 
             <Link
               href="/subjects"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-2xl border border-white/20 transition-all"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-medium text-xs rounded-xl border border-white/20 transition-all"
             >
-              <BookOpen size={14} />
+              <BookOpen size={13} />
               <span>Browse All Subjects</span>
             </Link>
           </div>
         </div>
-      </div>
 
-      {/* ── RESUME LAST LESSON BANNER (WHEN AVAILABLE) ────────────────────── */}
-      {data.lastLesson && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-card border border-border/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <BookOpen size={20} />
+        {/* Integrated Resume Lesson Pill if available */}
+        {data.lastLesson && (
+          <div className="relative z-10 mt-6 pt-5 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
+                <BookOpen size={14} />
+              </span>
+              <div>
+                <span className="text-white/70 text-[10px] uppercase font-bold tracking-wider">Previous Chapter:</span>{' '}
+                <strong className="text-white font-semibold">{data.lastLesson.chapterTitle}</strong>{' '}
+                <span className="text-white/75">({data.lastLesson.subjectDisplayName})</span>
+              </div>
+            </div>
+            <Link
+              href={data.lastLesson.resumeHref}
+              className="inline-flex items-center gap-1.5 text-white font-bold hover:underline self-start sm:self-auto"
+            >
+              <span>Resume ({data.lastLesson.masteryScore}% Mastered)</span>
+              <ChevronRight size={14} />
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* ── 2. TODAY'S STRUCTURED STUDY AGENDA ───────────────────────────── */}
+      <section className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <Calendar size={16} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-                  Resume Previous Chapter
-                </span>
-                <span className="text-[10px] font-extrabold text-primary px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                  {data.lastLesson.masteryScore}% Mastered
-                </span>
-              </div>
-              <h4 className="text-sm sm:text-base font-bold text-foreground">
-                {data.lastLesson.chapterTitle}{' '}
-                <span className="text-muted-foreground font-medium text-xs">({data.lastLesson.subjectDisplayName})</span>
-              </h4>
+              <h3 className="text-base font-bold text-foreground">{data.todayStudyPlan.planTitle}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Target: {data.todayStudyPlan.dailyHoursTarget} hours · {completedCount} of {totalTasksCount} completed today
+              </p>
             </div>
-          </div>
-          <Link
-            href={data.lastLesson.resumeHref}
-            className="btn-primary text-xs font-bold py-2.5 px-5 rounded-2xl shrink-0 flex items-center justify-center gap-2 shadow-xs"
-          >
-            <span>Resume Lesson</span>
-            <ArrowRight size={13} />
-          </Link>
-        </div>
-      )}
-
-      {/* ── 2. TODAY'S STUDY PLAN ──────────────────────────────────────────── */}
-      <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Calendar size={18} className="text-primary" />
-              <h3 className="text-lg font-bold text-foreground">{data.todayStudyPlan.planTitle}</h3>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Daily Target: {data.todayStudyPlan.dailyHoursTarget} hours · Check off tasks as you complete them
-            </p>
           </div>
 
           <Link
@@ -497,19 +556,19 @@ export default function DashboardPageClient() {
               <div
                 key={task.id}
                 onClick={() => toggleTask(task.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+                className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
                   isDone
                     ? 'bg-emerald-500/5 border-emerald-500/30 text-muted-foreground'
-                    : 'bg-muted/30 border-border/80 hover:border-primary/40 text-foreground'
+                    : 'bg-muted/20 border-border/80 hover:border-primary/40 text-foreground'
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                    className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                       isDone ? 'bg-emerald-500 text-white' : 'border-2 border-muted-foreground/40'
                     }`}
                   >
-                    {isDone && <CheckCircle2 size={14} />}
+                    {isDone && <Check size={12} strokeWidth={3} />}
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] font-mono font-bold uppercase text-primary px-2 py-0.5 rounded bg-primary/10">
@@ -541,153 +600,16 @@ export default function DashboardPageClient() {
         </div>
       </section>
 
-      {/* ── 3. UPCOMING LIVE CLASS ────────────────────────────────────────── */}
-      <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-border/60 pb-3">
-          <div className="flex items-center gap-2">
-            <Radio size={18} className="text-red-500" />
-            <h3 className="text-lg font-bold text-foreground">Interactive Live Classes</h3>
-          </div>
-          <Link href="/live-classes" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-            <span>Full Schedule</span>
-            <ChevronRight size={14} />
-          </Link>
-        </div>
-
-        {data.upcomingLiveClass ? (
-          <div className="p-5 rounded-2xl bg-gradient-to-r from-red-500/10 via-card to-card border border-red-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-red-500 text-white animate-pulse">
-                  {data.upcomingLiveClass.status === 'live' ? '🔴 LIVE STREAM' : 'UPCOMING CLASS'}
-                </span>
-                <span className="text-xs font-semibold text-muted-foreground">
-                  {new Date(data.upcomingLiveClass.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-              <h4 className="text-base font-extrabold text-foreground">{data.upcomingLiveClass.title}</h4>
-              <p className="text-xs text-muted-foreground">
-                Join live problem solving and ask faculty questions in real time.
-              </p>
-            </div>
-
-            <Link
-              href="/live-classes"
-              className="btn-primary text-xs font-bold py-3 px-6 rounded-2xl shrink-0 flex items-center gap-2 shadow-sm"
-            >
-              <Radio size={14} />
-              <span>Enter Classroom</span>
-            </Link>
-          </div>
-        ) : (
-          <div className="p-6 rounded-2xl bg-muted/20 border border-border/60 text-center space-y-2">
-            <Radio size={24} className="mx-auto text-muted-foreground/60" />
-            <p className="text-xs font-bold text-foreground">No live classes scheduled for today</p>
-            <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
-              Check back for tomorrow&apos;s evening problem-solving batch, or review previous HD recordings.
-            </p>
-            <div className="pt-2">
-              <Link href="/live-classes" className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline">
-                <span>Browse Class Recordings Vault</span>
-                <ArrowRight size={12} />
-              </Link>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* ── 4. ENROLLED COURSES & BATCH SWITCHER ───────────────────────────── */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <BookOpen size={18} className="text-primary" />
-            <div>
-              <h3 className="text-lg font-bold text-foreground">Your Academic Tracks & Cohort Batches</h3>
-              {data.batchManagement?.currentBatchTitle && (
-                <p className="text-xs text-muted-foreground">
-                  Active Cohort: <span className="font-semibold text-foreground">{data.batchManagement.currentBatchTitle}</span>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5">
-            {data.batchManagement?.canSwitchBatch && (data.batchManagement?.availableBatches?.length || 0) > 1 && (
-              <button
-                type="button"
-                onClick={() => setShowBatchModal(true)}
-                className="text-xs font-bold text-primary px-3 py-1.5 rounded-xl border border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer"
-              >
-                Switch Batch Cohort
-              </button>
-            )}
-            <span className="text-xs font-semibold text-muted-foreground">
-              {data.enrolledCourses.filter((c) => c.isEnrolled).length} Active Enrolled
-            </span>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {data.enrolledCourses.map((c) => {
-            const isCurrent = c.slug === canonicalId;
-            return (
-              <div
-                key={c.slug}
-                className={`p-5 rounded-3xl border transition-all flex flex-col justify-between space-y-4 ${
-                  isCurrent
-                    ? 'bg-card border-primary ring-2 ring-primary/20 shadow-md'
-                    : 'bg-card border-border/80 hover:border-border shadow-xs'
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-muted text-muted-foreground">
-                      {c.shortName}
-                    </span>
-                    {isCurrent && (
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                        ACTIVE
-                      </span>
-                    )}
-                  </div>
-                  <h4 className="text-sm font-bold text-foreground leading-snug">{c.title}</h4>
-                </div>
-
-                <div className="pt-3 border-t border-border/60 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-muted-foreground">
-                    {c.isEnrolled ? (c.daysRemaining ? `${c.daysRemaining} days left` : 'Active Access') : 'Free Starter'}
-                  </span>
-
-                  {isCurrent ? (
-                    <span className="text-xs font-bold text-primary flex items-center gap-1">
-                      <CheckCircle2 size={13} />
-                      <span>Current View</span>
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => setProgram(c.slug)}
-                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>Switch Track</span>
-                      <ArrowRight size={13} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* ── 5 & 6. RECENT TEST PERFORMANCE + WEAK TOPICS ───────────────────── */}
+      {/* ── 3 & 4. PERFORMANCE & DIAGNOSTICS (SIDE-BY-SIDE GRID) ─────────── */}
       <div className="grid lg:grid-cols-2 gap-6">
         
-        {/* 5. Recent Test Performance */}
-        <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4 flex flex-col justify-between">
+        {/* Recent Test Performance */}
+        <section className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-2">
-                <BarChart2 size={18} className="text-blue-500" />
-                <h3 className="text-base font-bold text-foreground">Recent Test Performance</h3>
+                <BarChart2 size={16} className="text-blue-500" />
+                <h3 className="text-sm font-bold text-foreground">Recent Test Performance</h3>
               </div>
               <Link href="/mock-tests" className="text-xs font-bold text-primary hover:underline">
                 Take Mock Test &rarr;
@@ -695,31 +617,31 @@ export default function DashboardPageClient() {
             </div>
 
             {data.recentTestPerformance.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {data.recentTestPerformance.map((test) => (
                   <div
                     key={test.id}
-                    className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3"
+                    className="p-3 rounded-xl bg-muted/20 border border-border/60 flex items-center justify-between gap-3"
                   >
                     <div>
                       <h5 className="text-xs font-bold text-foreground">{test.title}</h5>
                       <span className="text-[10px] text-muted-foreground">{test.date}</span>
                     </div>
                     <div className="text-right">
-                      <span className="text-sm font-black text-foreground">{test.score} / {test.totalMarks}</span>
-                      <span className="text-[10px] font-bold text-emerald-600 block">{test.percentage}% Accuracy</span>
+                      <span className="text-xs font-bold text-foreground">{test.score} / {test.totalMarks}</span>
+                      <span className="text-[10px] font-semibold text-emerald-600 block">{test.percentage}% Accuracy</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="p-6 rounded-2xl bg-muted/20 border border-border/60 text-center space-y-2">
-                <Award size={24} className="mx-auto text-muted-foreground/60" />
+              <div className="p-6 rounded-xl bg-muted/15 border border-border/50 text-center space-y-2">
+                <Award size={22} className="mx-auto text-muted-foreground/60" />
                 <p className="text-xs font-bold text-foreground">No mock tests attempted yet</p>
                 <p className="text-[11px] text-muted-foreground">
                   Take your first timed mock exam to see score percentiles and detailed error breakdowns.
                 </p>
-                <div className="pt-2">
+                <div className="pt-1">
                   <Link href="/mock-tests" className="btn-primary text-xs font-bold py-2 px-4 rounded-xl inline-flex">
                     Take First Mock Test
                   </Link>
@@ -729,13 +651,13 @@ export default function DashboardPageClient() {
           </div>
         </section>
 
-        {/* 6. Weak Topics (Focus Areas) */}
-        <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4 flex flex-col justify-between">
+        {/* Weak Topics Drill */}
+        <section className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs space-y-4 flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-border/60 pb-3">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={18} className="text-amber-500" />
-                <h3 className="text-base font-bold text-foreground">Target Weak Topics</h3>
+                <AlertTriangle size={16} className="text-amber-500" />
+                <h3 className="text-sm font-bold text-foreground">Target Weak Topics</h3>
               </div>
               <Link href="/mistake-analyser" className="text-xs font-bold text-primary hover:underline">
                 View Error Log &rarr;
@@ -743,11 +665,11 @@ export default function DashboardPageClient() {
             </div>
 
             {data.weakTopics.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {data.weakTopics.map((wt) => (
                   <div
                     key={wt.id}
-                    className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between gap-3"
+                    className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between gap-3"
                   >
                     <div>
                       <h5 className="text-xs font-bold text-foreground">{wt.title}</h5>
@@ -767,13 +689,13 @@ export default function DashboardPageClient() {
                 ))}
               </div>
             ) : (
-              <div className="p-6 rounded-2xl bg-muted/20 border border-border/60 text-center space-y-2">
-                <CheckCircle2 size={24} className="mx-auto text-emerald-500" />
+              <div className="p-6 rounded-xl bg-muted/15 border border-border/50 text-center space-y-2">
+                <CheckCircle2 size={22} className="mx-auto text-emerald-500" />
                 <p className="text-xs font-bold text-foreground">No critical weak topics detected</p>
                 <p className="text-[11px] text-muted-foreground">
-                  Keep solving chapter quizzes! As you practice, our diagnostic engine will identify specific sub-chapters to revise.
+                  Keep solving chapter quizzes! Our diagnostic engine will highlight sub-chapters needing review.
                 </p>
-                <div className="pt-2">
+                <div className="pt-1">
                   <Link href="/practice" className="btn-primary text-xs font-bold py-2 px-4 rounded-xl inline-flex">
                     Solve Practice MCQs
                   </Link>
@@ -785,15 +707,98 @@ export default function DashboardPageClient() {
 
       </div>
 
-      {/* ── 7 & 8. PENDING ASSIGNMENTS + ANNOUNCEMENTS ──────────────────────── */}
+      {/* ── 5. ACADEMIC TRACKS & COHORT SWITCHER ─────────────────────────── */}
+      <section className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Your Academic Tracks &amp; Cohort Batches</h3>
+            {data.batchManagement?.currentBatchTitle && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Current Cohort: <span className="font-semibold text-foreground">{data.batchManagement.currentBatchTitle}</span>
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2.5">
+            {data.batchManagement?.canSwitchBatch && (data.batchManagement?.availableBatches?.length || 0) > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBatchId(data.batchManagement?.currentBatchId || null);
+                  setShowBatchModal(true);
+                }}
+                className="text-xs font-bold text-primary px-3 py-1.5 rounded-xl border border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer"
+              >
+                Switch Batch Cohort
+              </button>
+            )}
+            <span className="text-xs font-medium text-muted-foreground">
+              {data.enrolledCourses.filter((c) => c.isEnrolled).length} Active Enrolled
+            </span>
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {data.enrolledCourses.map((c) => {
+            const isCurrent = c.slug === canonicalId;
+            return (
+              <div
+                key={c.slug}
+                className={`p-4 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
+                  isCurrent
+                    ? 'bg-primary/5 border-primary ring-1 ring-primary/30 shadow-xs'
+                    : 'bg-card border-border/70 hover:border-border'
+                }`}
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-muted text-muted-foreground">
+                      {c.shortName}
+                    </span>
+                    {isCurrent && (
+                      <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                        Current View
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-xs font-bold text-foreground leading-snug">{c.title}</h4>
+                </div>
+
+                <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
+                  <span className="text-[11px] text-muted-foreground">
+                    {c.isEnrolled ? (c.daysRemaining ? `${c.daysRemaining} days left` : 'Active Access') : 'Free Starter'}
+                  </span>
+
+                  {isCurrent ? (
+                    <span className="text-[11px] font-bold text-primary flex items-center gap-1">
+                      <CheckCircle2 size={12} />
+                      <span>Active</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setProgram(c.slug)}
+                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Switch</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── 6 & 7. SUBMISSIONS & ANNOUNCEMENTS (2-COLUMN GRID) ─────────────── */}
       <div className="grid lg:grid-cols-2 gap-6">
         
-        {/* 7. Pending Assignments */}
-        <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+        {/* Subjective Assignments */}
+        <section className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
             <div className="flex items-center gap-2">
-              <FileText size={18} className="text-emerald-600" />
-              <h3 className="text-base font-bold text-foreground">Subjective Assignments</h3>
+              <FileText size={16} className="text-emerald-600" />
+              <h3 className="text-sm font-bold text-foreground">Subjective Assignments</h3>
             </div>
             <Link href="/vision-marker" className="text-xs font-bold text-primary hover:underline">
               AI Vision Marker &rarr;
@@ -801,18 +806,18 @@ export default function DashboardPageClient() {
           </div>
 
           {data.pendingAssignments.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {data.pendingAssignments.map((ass) => (
                 <div
                   key={ass.id}
-                  className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3"
+                  className="p-3 rounded-xl bg-muted/20 border border-border/60 flex items-center justify-between gap-3"
                 >
                   <div className="space-y-0.5">
                     <h5 className="text-xs font-bold text-foreground">{ass.title}</h5>
                     <span className="text-[10px] text-muted-foreground">Submitted {ass.submittedAt}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-xs font-black text-foreground">
+                    <span className="text-xs font-bold text-foreground">
                       {ass.obtainedMarks !== undefined ? `${ass.obtainedMarks} / ${ass.totalMarks}` : 'Evaluating...'}
                     </span>
                     <Link href={ass.actionHref} className="text-[10px] font-bold text-primary hover:underline block">
@@ -823,13 +828,13 @@ export default function DashboardPageClient() {
               ))}
             </div>
           ) : (
-            <div className="p-6 rounded-2xl bg-muted/20 border border-border/60 text-center space-y-2">
-              <FileText size={24} className="mx-auto text-muted-foreground/60" />
+            <div className="p-6 rounded-xl bg-muted/15 border border-border/50 text-center space-y-2">
+              <FileText size={22} className="mx-auto text-muted-foreground/60" />
               <p className="text-xs font-bold text-foreground">All assignments up to date</p>
               <p className="text-[11px] text-muted-foreground">
                 Snap a photo of your handwritten math derivations or science answers to get instant CDC rubric feedback.
               </p>
-              <div className="pt-2">
+              <div className="pt-1">
                 <Link href="/vision-marker" className="btn-primary text-xs font-bold py-2 px-4 rounded-xl inline-flex">
                   Submit Handwritten Paper
                 </Link>
@@ -838,22 +843,22 @@ export default function DashboardPageClient() {
           )}
         </section>
 
-        {/* 8. Batch Announcements */}
-        <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+        {/* Batch Announcements */}
+        <section className="bg-card border border-border/80 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-border/60 pb-3">
             <div className="flex items-center gap-2">
-              <Sparkles size={18} className="text-primary" />
-              <h3 className="text-base font-bold text-foreground">Batch Announcements</h3>
+              <Sparkles size={16} className="text-primary" />
+              <h3 className="text-sm font-bold text-foreground">Batch Announcements</h3>
             </div>
             <span className="text-xs text-muted-foreground">Official Mentors</span>
           </div>
 
           {data.announcements.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {data.announcements.map((ann) => (
                 <div
                   key={ann.id}
-                  className="p-3.5 rounded-2xl bg-primary/5 border border-primary/15 space-y-1"
+                  className="p-3 rounded-xl bg-primary/5 border border-primary/15 space-y-1"
                 >
                   <div className="flex items-center justify-between">
                     <h5 className="text-xs font-bold text-foreground">{ann.title}</h5>
@@ -866,9 +871,9 @@ export default function DashboardPageClient() {
               ))}
             </div>
           ) : (
-            <div className="p-6 rounded-2xl bg-muted/20 border border-border/60 text-center space-y-2">
-              <Sparkles size={24} className="mx-auto text-muted-foreground/60" />
-              <p className="text-xs font-bold text-foreground">No new announcements for this batch</p>
+            <div className="p-6 rounded-xl bg-muted/15 border border-border/50 text-center space-y-2">
+              <Sparkles size={22} className="mx-auto text-muted-foreground/60" />
+              <p className="text-xs font-bold text-foreground">No new announcements</p>
               <p className="text-[11px] text-muted-foreground">
                 Important schedule updates, exam notices, and live batch reminders will be posted here.
               </p>
@@ -878,60 +883,92 @@ export default function DashboardPageClient() {
 
       </div>
 
-      {/* ── 9. WEEKLY PROGRESS BAR CHART ──────────────────────────────────── */}
-      <section className="bg-card border border-border/80 rounded-3xl p-6 sm:p-7 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <TrendingUp size={18} className="text-emerald-500" />
-              <h3 className="text-base font-bold text-foreground">Weekly Practice Volume</h3>
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Real questions practiced over the past 7 days (updated in real time)
-            </p>
-          </div>
+      {/* ── BATCH SWITCHER MODAL ─────────────────────────────────────────── */}
+      {showBatchModal && data.batchManagement?.availableBatches && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Switch Batch Cohort"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+        >
+          <div className="bg-card border border-border/80 rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5 relative">
+            <button
+              type="button"
+              onClick={() => setShowBatchModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
 
-          <div className="flex items-center gap-4 text-xs">
-            <div>
-              <span className="text-muted-foreground block text-[10px]">TOTAL THIS WEEK</span>
-              <span className="text-sm font-black text-foreground">{data.weeklyProgress.totalQuestionsThisWeek} Qs</span>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-foreground">Switch Cohort Batch</h3>
+              <p className="text-xs text-muted-foreground">
+                Choose the academic cohort that best matches your target exam timeline.
+              </p>
             </div>
-            <div>
-              <span className="text-muted-foreground block text-[10px]">TIME SPENT</span>
-              <span className="text-sm font-black text-foreground">{data.weeklyProgress.totalMinutesThisWeek}m</span>
+
+            <div className="space-y-2 max-h-72 overflow-y-auto">
+              {data.batchManagement.availableBatches.map((batch) => {
+                const isSelected = selectedBatchId === batch.id || (!selectedBatchId && batch.id === data.batchManagement?.currentBatchId);
+                const isCurrent = batch.id === data.batchManagement?.currentBatchId;
+
+                return (
+                  <button
+                    key={batch.id}
+                    type="button"
+                    onClick={() => setSelectedBatchId(batch.id)}
+                    className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                        : 'border-border/70 hover:bg-muted/40'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">{batch.title}</span>
+                        {isCurrent && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">
+                        NPR {batch.priceNpr.toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+                    }`}>
+                      {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowBatchModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={switchingBatch || !selectedBatchId || selectedBatchId === data.batchManagement?.currentBatchId}
+                onClick={() => selectedBatchId && handleSwitchBatch(selectedBatchId)}
+                className="btn-primary text-xs font-bold py-2 px-5 rounded-xl flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {switchingBatch ? <Loader2 size={14} className="animate-spin" /> : null}
+                <span>Confirm Switch</span>
+              </button>
             </div>
           </div>
         </div>
-
-        {/* 7-Day Bars */}
-        <div className="grid grid-cols-7 gap-2 sm:gap-4 items-end pt-4 h-40">
-          {data.weeklyProgress.days.map((day, dIdx) => {
-            const maxVal = Math.max(30, ...data.weeklyProgress.days.map((d) => d.questionsSolved));
-            const heightPct = Math.max(8, Math.round((day.questionsSolved / maxVal) * 100));
-
-            return (
-              <div key={dIdx} className="flex flex-col items-center gap-2 h-full justify-end group">
-                <span className="text-[10px] font-mono font-bold text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                  {day.questionsSolved}
-                </span>
-                <div
-                  className={`w-full rounded-2xl transition-all duration-500 ${
-                    day.isToday
-                      ? 'bg-primary shadow-sm'
-                      : day.questionsSolved > 0
-                      ? 'bg-primary/50 group-hover:bg-primary'
-                      : 'bg-muted/40'
-                  }`}
-                  style={{ height: `${heightPct}%` }}
-                />
-                <span className={`text-[10px] font-bold ${day.isToday ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {day.dayName}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      )}
 
     </DashboardLayout>
   );
