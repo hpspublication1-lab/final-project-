@@ -2,116 +2,158 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Award, GraduationCap, ArrowRight, Sparkles } from 'lucide-react';
+import { Award, GraduationCap, ArrowRight, ShieldCheck, Stethoscope, BookOpen, Atom, Sparkles } from 'lucide-react';
 
-const INSTRUCTORS = [
+interface FacultyMember {
+  name: string;
+  role: string;
+  discipline: string;
+  affiliationBadge: string;
+  monogram: string;
+  crestBg: string;
+  crestBorder: string;
+  crestText: string;
+  icon: React.ElementType;
+  experience: string;
+  qualification: string;
+  bio: string;
+}
+
+const FACULTY: FacultyMember[] = [
   {
     name: 'Dr. Samyak Shrestha',
-    role: 'Chief Medical Educator',
-    sector: 'CEE Medical',
-    sectorBadge: 'bg-primary/10 text-primary dark:text-primary-light border-primary/30 font-bold',
-    avatar: '🩺',
-    experience: '8+ Years Teaching',
-    credentialBadge: 'MBBS (IOM Maharajgunj)',
-    bio: 'Medical Educator specializing in CEE entrance strategy, high-yield biology sub-chapter notes, and high-frequency MCQ explanation breakdowns.',
+    role: 'Chief Medical Entrance Faculty',
+    discipline: 'Zoology & Human Physiology',
+    affiliationBadge: 'MBBS (IOM Maharajgunj)',
+    monogram: 'IOM',
+    crestBg: 'bg-indigo-500/10',
+    crestBorder: 'border-indigo-500/30',
+    crestText: 'text-indigo-600 dark:text-indigo-400',
+    icon: Stethoscope,
+    experience: '8+ Years Medical Prep',
+    qualification: 'IOM Rank Merit Holder',
+    bio: 'Specializing in CEE 200Q blueprint mastery, clinical histology mnemonics, and high-frequency cardiovascular and nervous system question breakdowns.',
   },
   {
-    name: 'Pradeep Poudel Sir',
-    role: 'NEB Science & Math Lead',
-    sector: 'SEE Class 10',
-    sectorBadge: 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/30 font-bold',
-    avatar: '🎓',
-    experience: '12+ Years Teaching',
-    credentialBadge: 'M.Sc. Physics (TU)',
-    bio: 'Secondary Education Educator specializing in Grade 10 Science & Opt Math problem-solving and step-by-step model exam derivations.',
+    name: 'Prof. Pradeep Poudel',
+    role: 'Lead Physics & Mechanics Faculty',
+    discipline: 'Mechanics, Optics & Modern Physics',
+    affiliationBadge: 'M.Sc. Physics (TU Kirtipur)',
+    monogram: 'TU',
+    crestBg: 'bg-emerald-500/10',
+    crestBorder: 'border-emerald-500/30',
+    crestText: 'text-emerald-600 dark:text-emerald-400',
+    icon: Atom,
+    experience: '12+ Years Board & Entrance',
+    qualification: 'Top Physics Gold Medalist',
+    bio: 'Mentoring thousands of top rankers across NEB Class 12 Boards and CEE/IOE entrances with simplified derivation maps and 30-second numerical shortcuts.',
   },
   {
-    name: 'Coach Aria (AI Persona)',
-    role: 'Senior IELTS Speech Assessor',
-    sector: 'English Learning',
-    sectorBadge: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30 font-bold',
-    avatar: '🗣️',
-    experience: 'Automated AI Model',
-    credentialBadge: 'Cambridge Descriptors',
-    bio: 'AI Speech Assessor persona modeled after official Cambridge IELTS Band Descriptors (FC, LR, GRA, PR) with ElevenLabs studio audio.',
+    name: 'Dr. Aarati Sharma',
+    role: 'Senior Medical Chemistry Specialist',
+    discipline: 'Organic Mechanisms & Physical Chem',
+    affiliationBadge: 'Ph.D. Chemistry (KU)',
+    monogram: 'KU',
+    crestBg: 'bg-purple-500/10',
+    crestBorder: 'border-purple-500/30',
+    crestText: 'text-purple-600 dark:text-purple-400',
+    icon: BookOpen,
+    experience: '9+ Years Entrance Coaching',
+    qualification: 'Senior Curriculum Evaluator',
+    bio: 'Specializing in high-yield reaction series, stereochemistry, coordination compounds, and negative-mark trap avoidance across medical entrance exams.',
   },
   {
-    name: 'Nabin KC',
-    role: 'AI & Full-Stack Tech Educator',
-    sector: 'Digital Skills & AI',
-    sectorBadge: 'bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-500/30 font-bold',
-    avatar: '🤖',
-    experience: '6+ Years Tech Industry',
-    credentialBadge: 'Software Engineer',
-    bio: 'Software Engineer & Instructor guiding students on Python programming, ChatGPT prompt engineering, and digital skill building.',
+    name: 'Er. Laxman KC',
+    role: 'Lead Engineering & Mathematics Lead',
+    discipline: 'Calculus, Vectors & Analytical Math',
+    affiliationBadge: 'M.Sc. Engineering (TU Pulchowk)',
+    monogram: 'IOE',
+    crestBg: 'bg-blue-500/10',
+    crestBorder: 'border-blue-500/30',
+    crestText: 'text-blue-600 dark:text-blue-400',
+    icon: GraduationCap,
+    experience: '10+ Years IOE / BE Faculty',
+    qualification: 'Pulchowk Campus Alumnus',
+    bio: 'Expert in higher mathematics for IOE BE entrance and Grade 10 Opt Math, focusing on conceptual clarity, graph transformations, and speed drills.',
   },
 ];
 
 export default function FeaturedInstructors() {
   return (
-    <section id="faculty" className="py-20 bg-muted/20 border-t border-border/60">
+    <section id="faculty" aria-label="Academic Faculty" className="py-20 sm:py-28 bg-muted/20 border-t border-border/60">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
+        
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black mb-3">
-              <Sparkles size={14} /> Academic Faculty &amp; AI Personas
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-14">
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">
+              <ShieldCheck size={14} />
+              <span>Accredited Faculty &amp; Examiners</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              Subject Specialists &amp; Curriculum Leads
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+              Learn from Nepal&apos;s Foremost Subject Specialists
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-xl">
-              Learn with experienced Nepalese subject educators and specialized AI assessment personas.
+            <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed font-medium">
+              Our faculty includes medical doctors from IOM Maharajgunj, university toppers, and board examiners dedicated to your top rank.
             </p>
           </div>
+
           <Link
             href="/courses"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-all shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border text-xs font-bold text-foreground hover:bg-muted transition-all shrink-0 shadow-xs"
           >
-            <span>Explore All Faculty Courses</span>
+            <span>Explore All Faculty Batches</span>
             <ArrowRight size={14} />
           </Link>
         </div>
 
         {/* Instructor Cards Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {INSTRUCTORS.map((inst, idx) => (
-            <div
-              key={idx}
-              className="bg-card border border-border rounded-3xl p-6 shadow-sm hover:shadow-xl hover:border-primary/40 transition-all flex flex-col justify-between space-y-4 group"
-            >
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="w-14 h-14 rounded-2xl bg-muted/50 border border-border flex items-center justify-center text-2xl shadow-xs group-hover:scale-105 transition-transform">
-                    {inst.avatar}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {FACULTY.map((inst, idx) => {
+            const Icon = inst.icon;
+            return (
+              <div
+                key={`faculty-${idx}`}
+                className="bg-card border border-border/80 rounded-3xl p-6 shadow-xs hover:shadow-lg hover:border-primary/40 transition-all flex flex-col justify-between space-y-5 group"
+              >
+                <div className="space-y-4">
+                  {/* Top Monogram Crest */}
+                  <div className="flex items-center justify-between">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${inst.crestBg} ${inst.crestBorder} ${inst.crestText} font-black text-sm tracking-wider shadow-xs group-hover:scale-105 transition-transform`}>
+                      {inst.monogram}
+                    </div>
+                    <span className="text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-full bg-muted text-muted-foreground border border-border/60">
+                      {inst.discipline}
+                    </span>
                   </div>
-                  <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${inst.sectorBadge}`}>
-                    {inst.sector}
+
+                  <div>
+                    <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                      {inst.name}
+                    </h3>
+                    <p className="text-xs font-semibold text-primary mt-0.5">{inst.role}</p>
+                    <p className="text-[11px] font-medium text-muted-foreground mt-0.5">{inst.affiliationBadge}</p>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {inst.bio}
+                  </p>
+                </div>
+
+                {/* Footer Credential Tag */}
+                <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Icon size={13} className="text-primary shrink-0" />
+                    <span>{inst.experience}</span>
+                  </span>
+                  <span className="font-semibold text-foreground flex items-center gap-1">
+                    <Award size={13} className="text-amber-500 shrink-0" />
+                    <span>{inst.qualification}</span>
                   </span>
                 </div>
-
-                <div>
-                  <h3 className="text-base font-black text-foreground group-hover:text-primary transition-colors">
-                    {inst.name}
-                  </h3>
-                  <p className="text-xs font-bold text-muted-foreground mt-0.5">{inst.role}</p>
-                </div>
-
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  {inst.bio}
-                </p>
               </div>
-
-              <div className="pt-3 border-t border-border/60 flex items-center justify-between text-xs font-bold">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <GraduationCap size={14} className="text-primary" /> {inst.experience}
-                </span>
-                <span className="flex items-center gap-1 text-primary">
-                  <Award size={13} className="text-primary" /> {inst.credentialBadge}
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

@@ -6,7 +6,8 @@ import AppLogo from '@/components/ui/AppLogo';
 import {
   Menu, X, Sun, Moon, LayoutDashboard, ArrowRight,
   ChevronDown, BookOpen, Zap, Award, Sparkles, CheckCircle2,
-  GraduationCap, HelpCircle, KeyRound, Swords, Trophy, Brain, FileText
+  GraduationCap, HelpCircle, KeyRound, Swords, Trophy, Brain, FileText,
+  Stethoscope, Clock, Target, RotateCcw, Cpu, Landmark, Globe
 } from 'lucide-react';
 import RedeemVoucherModal from '@/components/billing/RedeemVoucherModal';
 
@@ -76,46 +77,52 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
 
   const practiceItems = [
     {
-      title: '1v1 Battle Arena',
-      desc: 'Live multiplayer duels with daily Rs. 1,000 cash prizes',
-      href: '/battle-arena',
-      icon: '⚔️',
-      badge: 'Rs. 1,000 Daily',
-    },
-    {
-      title: 'Full-Length Mock Exams',
-      desc: '200Q Timed CBT with -0.25 negative marking & instant percentile',
+      title: 'Full-Length CBT Mock Exams',
+      desc: '200Q Timed CBT with -0.25 negative marking & instant national rank',
       href: '/mock-tests',
-      icon: '📝',
-      badge: 'CBT Mocks',
+      icon: Clock,
+      color: 'text-primary bg-primary/10 border-primary/20',
+      badge: '200Q Mocks',
     },
     {
       title: '15,000+ Question Bank',
-      desc: 'Chapter-wise MCQs, past papers & step-by-step solutions',
+      desc: 'Chapter-wise high-yield MCQs, past papers & step-by-step rationales',
       href: '/practice',
-      icon: '⚡',
+      icon: Zap,
+      color: 'text-amber-500 bg-amber-500/10 border-amber-500/20',
       badge: 'MCQ Bank',
     },
     {
+      title: '1v1 Quiz Battle Arena',
+      desc: 'Real-time multiplayer knowledge duels with daily Rs. 1,000 cash prizes',
+      href: '/battle-arena',
+      icon: Swords,
+      color: 'text-rose-500 bg-rose-500/10 border-rose-500/20',
+      badge: 'Rs. 1,000 Daily',
+    },
+    {
       title: 'CEE Rank & Seat Predictor',
-      desc: 'Calculate MEC merit position & government college admission odds',
+      desc: 'Calculate MEC merit position & government medical college odds',
       href: '/rank-predictor',
-      icon: '🎯',
-      badge: 'AI Powered',
+      icon: Target,
+      color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+      badge: 'AI Merit Calc',
     },
     {
       title: 'Mistake Analyser (Galti Sudhar)',
-      desc: 'Track and master every wrong answer with root-cause tags',
+      desc: 'Identify conceptual gaps and master every wrongly answered question',
       href: '/mistake-analyser',
-      icon: '🔍',
-      badge: 'Revision',
+      icon: RotateCcw,
+      color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/20',
+      badge: 'Targeted Review',
     },
     {
       title: 'SM-2 Spaced Flashcards',
-      desc: 'Cognitive retention intervals for high-yield formulas & definitions',
+      desc: 'Scientific memory scheduling for medical formulas & definitions',
       href: '/flashcards',
-      icon: '🧠',
-      badge: 'Spaced',
+      icon: Brain,
+      color: 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+      badge: 'Spaced Repetition',
     },
   ];
 
@@ -124,43 +131,49 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
       title: 'CEE Medical Entrance',
       desc: 'MBBS / BDS / B.Sc Nursing · MEC Syllabus',
       href: '/cee-medical-entrance',
-      badge: 'Flagship',
-      icon: '🩺',
+      badge: 'Flagship Core',
+      icon: Stethoscope,
+      color: 'text-primary bg-primary/10 border-primary/20',
     },
     {
-      title: 'SEE Class 10 Board',
+      title: 'SEE Class 10 Board Topper',
       desc: 'GPA 4.0 Preparation · CDC Solved Papers',
       href: '/see',
       badge: 'Class 10',
-      icon: '🎓',
+      icon: GraduationCap,
+      color: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20',
     },
     {
-      title: 'NEB Class 11 & 12',
-      desc: 'Science & Entrance Foundation Batches',
-      href: '/courses',
+      title: 'NEB Class 11 & 12 Science',
+      desc: 'Board Derivations & Early Entrance Prep',
+      href: '/courses?track=neb_11_12',
       badge: 'Grade 11-12',
-      icon: '📘',
+      icon: BookOpen,
+      color: 'text-blue-600 bg-blue-500/10 border-blue-500/20',
     },
     {
       title: 'IOE / BE Engineering',
       desc: 'TU Pulchowk, KU & PU 140M CBT Mocks',
-      href: '/courses',
+      href: '/courses?track=ioe_engineering',
       badge: 'Engineering',
-      icon: '⚙️',
+      icon: Cpu,
+      color: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
     },
     {
-      title: 'Lok Sewa Aayog',
+      title: 'Lok Sewa Aayog (PSC)',
       desc: 'Kharidar / Subba / Officer GK & IQ',
-      href: '/courses',
+      href: '/courses?track=lok_sewa',
       badge: 'Civil Service',
-      icon: '🏛️',
+      icon: Landmark,
+      color: 'text-amber-600 bg-amber-500/10 border-amber-500/20',
     },
     {
-      title: 'IELTS & Academic English',
-      desc: 'Speaking AI Simulator & Band 8.0 Drills',
-      href: '/english',
-      badge: 'Language',
-      icon: '🌐',
+      title: 'Academic English & AI Skills',
+      desc: 'IELTS Band 8.0 & Tech Curriculum',
+      href: '/courses?track=skills',
+      badge: 'Career Skills',
+      icon: Globe,
+      color: 'text-purple-600 bg-purple-500/10 border-purple-500/20',
     },
   ];
 
@@ -177,8 +190,8 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group" aria-label="SamyakCEE — Home">
+          {/* Logo with Single Unified Brand Identity */}
+          <Link href="/" className="flex items-center gap-3 group" aria-label="Samyak CEE — Home">
             <div className="transition-transform duration-200 group-hover:scale-105">
               <AppLogo size={38} showText={true} />
             </div>
@@ -200,45 +213,48 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
                 }`}
                 aria-expanded={programsOpen}
               >
-                <span>Programs</span>
+                <span>Academic Programs</span>
                 <ChevronDown size={14} className={`transition-transform duration-200 ${programsOpen ? 'rotate-180 text-primary' : ''}`} />
               </button>
 
               {programsOpen && (
                 <div
                   onMouseLeave={() => setProgramsOpen(false)}
-                  className="absolute top-full left-0 mt-1 w-[460px] bg-card border border-border/80 rounded-2xl shadow-xl p-3 grid grid-cols-2 gap-2 animate-scale-in"
+                  className="absolute top-full left-0 mt-1.5 w-[500px] bg-card border border-border rounded-2xl shadow-2xl p-3 grid grid-cols-2 gap-2 animate-scale-in"
                 >
-                  <div className="col-span-2 px-3 py-1.5 border-b border-border/60 flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Select Learning Stream</span>
+                  <div className="col-span-2 px-3 py-2 border-b border-border/60 flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Academic Tracks</span>
                     <Link
-                      href="/gate"
+                      href="/courses"
                       onClick={() => setProgramsOpen(false)}
                       className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
                     >
-                      View All Tracks <ArrowRight size={10} />
+                      View All Batches <ArrowRight size={10} />
                     </Link>
                   </div>
-                  {programs.map((p) => (
-                    <Link
-                      key={p.title}
-                      href={p.href}
-                      onClick={() => setProgramsOpen(false)}
-                      className="p-2.5 rounded-xl hover:bg-muted/70 transition-colors flex items-start gap-2.5 group"
-                    >
-                      <span className="text-xl shrink-0 mt-0.5">{p.icon}</span>
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                  {programs.map((p) => {
+                    const Icon = p.icon;
+                    return (
+                      <Link
+                        key={p.title}
+                        href={p.href}
+                        onClick={() => setProgramsOpen(false)}
+                        className="p-2.5 rounded-xl hover:bg-muted/70 transition-colors flex items-start gap-3 group"
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${p.color}`}>
+                          <Icon size={16} />
+                        </div>
+                        <div className="space-y-0.5 min-w-0">
                           <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                             {p.title}
                           </p>
+                          <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
+                            {p.desc}
+                          </p>
                         </div>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
-                          {p.desc}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -263,41 +279,46 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
               {practiceOpen && (
                 <div
                   onMouseLeave={() => setPracticeOpen(false)}
-                  className="absolute top-full left-0 mt-1 w-[440px] bg-card border border-border/80 rounded-2xl shadow-xl p-3 grid grid-cols-1 gap-1.5 animate-scale-in"
+                  className="absolute top-full left-0 mt-1.5 w-[460px] bg-card border border-border rounded-2xl shadow-2xl p-3 grid grid-cols-1 gap-1.5 animate-scale-in"
                 >
-                  <div className="px-3 py-1.5 border-b border-border/60 flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Evaluation &amp; Practice Tools</span>
+                  <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Examination &amp; Practice Tools</span>
                     <Link
                       href="/mock-tests"
                       onClick={() => setPracticeOpen(false)}
                       className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
                     >
-                      All Mock Exams <ArrowRight size={10} />
+                      All 200Q Mocks <ArrowRight size={10} />
                     </Link>
                   </div>
-                  {practiceItems.map((item) => (
-                    <Link
-                      key={item.title}
-                      href={item.href}
-                      onClick={() => setPracticeOpen(false)}
-                      className="p-2.5 rounded-xl hover:bg-muted/70 transition-colors flex items-start gap-2.5 group"
-                    >
-                      <span className="text-xl shrink-0 mt-0.5">{item.icon}</span>
-                      <div className="space-y-0.5 min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1.5">
-                          <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                            {item.title}
-                          </p>
-                          <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-primary/10 text-primary shrink-0">
-                            {item.badge}
-                          </span>
+                  {practiceItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <Link
+                        key={item.title}
+                        href={item.href}
+                        onClick={() => setPracticeOpen(false)}
+                        className="p-2.5 rounded-xl hover:bg-muted/70 transition-colors flex items-start gap-3 group"
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${item.color}`}>
+                          <Icon size={16} />
                         </div>
-                        <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
-                          {item.desc}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                              {item.title}
+                            </p>
+                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-muted text-muted-foreground shrink-0 border border-border/50">
+                              {item.badge}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -315,7 +336,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
               href="/pricing"
               className="px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             >
-              Plans &amp; Pricing
+              Plans &amp; Batches
             </Link>
 
             <Link
@@ -362,10 +383,10 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
                   Sign In
                 </Link>
                 <Link
-                  href="/courses"
+                  href="/mock-tests"
                   className="px-5 py-2.5 rounded-full bg-primary hover:bg-primary-dark text-primary-foreground text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all hover:shadow-md"
                 >
-                  <span>Start Free</span>
+                  <span>Start Practice</span>
                   <ArrowRight size={13} />
                 </Link>
               </div>
@@ -399,51 +420,57 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
         <div className="lg:hidden bg-card/98 backdrop-blur-2xl border-b border-border/80 px-5 py-6 space-y-5 animate-fade-in shadow-xl max-h-[85vh] overflow-y-auto">
           
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Learning Programs</p>
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Academic Programs</p>
             <div className="grid grid-cols-1 gap-1">
-              {programs.map((p) => (
-                <Link
-                  key={p.title}
-                  href={p.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-3 py-2.5 rounded-xl text-sm font-bold text-foreground hover:bg-muted flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>{p.icon}</span>
-                    <span>{p.title}</span>
-                  </span>
-                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
-                    {p.badge}
-                  </span>
-                </Link>
-              ))}
+              {programs.map((p) => {
+                const Icon = p.icon;
+                return (
+                  <Link
+                    key={p.title}
+                    href={p.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <Icon size={16} className="text-primary" />
+                      <span>{p.title}</span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary">
+                      {p.badge}
+                    </span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
           {/* 2. Practice & Examination Tools */}
           <div className="space-y-1 pt-2 border-t border-border/60">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Practice &amp; Examination</p>
-            {practiceItems.map((p) => (
-              <Link
-                key={p.title}
-                href={p.href}
-                onClick={() => setMobileOpen(false)}
-                className="px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted flex items-center justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  <span>{p.icon}</span>
-                  <span>{p.title}</span>
-                </span>
-                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
-                  {p.badge}
-                </span>
-              </Link>
-            ))}
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Practice &amp; Examination</p>
+            {practiceItems.map((p) => {
+              const Icon = p.icon;
+              return (
+                <Link
+                  key={p.title}
+                  href={p.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted flex items-center justify-between"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Icon size={15} className="text-muted-foreground" />
+                    <span>{p.title}</span>
+                  </span>
+                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                    {p.badge}
+                  </span>
+                </Link>
+              );
+            })}
           </div>
 
           {/* 3. Battle Arena & Daily Prize Pool */}
           <div className="space-y-1 pt-2 border-t border-border/60">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Battle Arena &amp; Daily Rewards</p>
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Battle Arena &amp; Daily Rewards</p>
             <Link
               href="/battle-arena"
               onClick={() => setMobileOpen(false)}
@@ -461,7 +488,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
 
           {/* 4. Academic Vault & In-App Notes */}
           <div className="space-y-1 pt-2 border-t border-border/60">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Academic Vault &amp; Resources</p>
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Academic Vault &amp; Resources</p>
             <Link
               href="/free-resources"
               onClick={() => setMobileOpen(false)}
@@ -479,7 +506,7 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
 
           {/* 5. Plans, Voucher Redemption & Support */}
           <div className="space-y-1 pt-2 border-t border-border/60">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Plans &amp; Support</p>
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Plans &amp; Support</p>
             <button
               onClick={() => {
                 setMobileOpen(false);
@@ -531,11 +558,11 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
                   Sign In
                 </Link>
                 <Link
-                  href="/courses"
+                  href="/mock-tests"
                   onClick={() => setMobileOpen(false)}
                   className="w-full py-3 rounded-full bg-primary hover:bg-primary-dark text-white text-sm font-bold text-center flex items-center justify-center gap-2 shadow-xs transition-colors"
                 >
-                  <span>Start Free Practice</span>
+                  <span>Start Practice</span>
                   <ArrowRight size={15} />
                 </Link>
               </>

@@ -48,10 +48,10 @@ const AppLogo = memo(function AppLogo({
       {showText && (
         <div className="flex flex-col leading-none">
           <span className="text-base sm:text-lg font-black tracking-tight text-foreground">
-            SAMYAK <span className="text-primary font-black">TUTOR</span>
+            SAMYAK <span className="text-primary font-black">CEE</span>
           </span>
-          <span className="text-[9px] uppercase tracking-widest font-semibold text-muted-foreground">
-            EDUCATION PLATFORM
+          <span className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground">
+            MEDICAL &amp; ENTRANCE ENGINE
           </span>
         </div>
       )}

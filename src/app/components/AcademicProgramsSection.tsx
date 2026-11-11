@@ -202,11 +202,11 @@ export default function AcademicProgramsSection() {
           <div className="pt-4 flex flex-wrap items-center justify-center gap-2">
             {[
               { id: 'all', label: 'All Programs' },
-              { id: 'medical', label: '🩺 Medical (CEE)' },
-              { id: 'board', label: '🎓 Board Exams (SEE & NEB)' },
-              { id: 'engineering', label: '⚙️ Engineering (IOE)' },
-              { id: 'civil_service', label: '🏛️ Civil Service (Lok Sewa)' },
-              { id: 'skills', label: '🌐 Language & Tech' },
+              { id: 'medical', label: 'Medical (CEE)' },
+              { id: 'board', label: 'Board Exams (SEE & NEB)' },
+              { id: 'engineering', label: 'Engineering (IOE)' },
+              { id: 'civil_service', label: 'Civil Service (Lok Sewa)' },
+              { id: 'skills', label: 'Career & Skills' },
             ].map((tab) => (
               <button
                 key={tab.id}

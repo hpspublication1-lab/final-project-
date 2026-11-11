@@ -19,7 +19,8 @@ import {
   RotateCcw,
   Trophy,
   Zap,
-  Play,
+  Building2,
+  Activity,
   Flame,
   Award,
 } from 'lucide-react';
@@ -59,8 +60,8 @@ export default function HeroSection() {
   };
 
   return (
-    <section aria-label="Hero — Nepal's Premier Learning Platform" className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
-      {/* Subtle Aurora Ambient Lighting */}
+    <section aria-label="Hero — Nepal's Premier Medical & Entrance Platform" className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-hidden w-full max-w-full">
+      {/* Subtle Ambient Lighting */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background pointer-events-none" />
       <div className="absolute top-[-100px] right-[-100px] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute top-[250px] left-[-120px] w-[450px] h-[450px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none" />
@@ -72,13 +73,13 @@ export default function HeroSection() {
         <div className="text-center max-w-4xl mx-auto space-y-6">
           
           {/* Status Chip */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold tracking-wide shadow-xs hover:border-primary/40 transition-colors">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold tracking-wide shadow-xs">
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span>NEPAL&apos;S PREMIER ACADEMIC &amp; ENTRANCE PLATFORM · 2026 ALIGNED</span>
+            <span>NEPAL&apos;S PREMIER MEDICAL &amp; ENTRANCE EXAMINATION PLATFORM · 2026 SESSION</span>
           </div>
 
           {/* Heading */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-foreground tracking-tight leading-[1.06]">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-foreground tracking-tight leading-[1.08]">
             Master Nepal&apos;s Toughest Exams.<br />
             <span className="bg-gradient-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent">
               Engineered for Top Ranks.
@@ -87,48 +88,42 @@ export default function HeroSection() {
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto font-medium">
-            The complete learning OS built strictly around Nepal&apos;s <strong>MEC and CDC syllabi</strong>. 15,000+ verified MCQs, full 200-question timed CBT simulation with -0.25 negative marking, and 24/7 AI-guided mastery.
+            The authentic examination engine built strictly around Nepal&apos;s <strong>Medical Education Commission (MEC)</strong> and <strong>CDC rubrics</strong>. 15,000+ verified MCQs, full 200-question timed CBT simulation with -0.25 negative marking, and 24/7 AI-guided mastery.
           </p>
 
           {/* Primary & Secondary CTA Buttons */}
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5">
             <Link
-              href="/practice"
+              href="/mock-tests"
               className="px-7 py-3.5 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold text-sm shadow-md hover:shadow-primary/25 hover:shadow-lg transition-all flex items-center gap-2.5 active:scale-[0.98]"
             >
-              <span>Start Free Practice</span>
+              <span>Launch 200Q Mock Exam</span>
               <ArrowRight size={16} />
             </Link>
             <Link
-              href="/mock-tests"
+              href="/practice"
               className="px-7 py-3.5 rounded-2xl bg-card hover:bg-muted text-foreground border border-border/90 font-bold text-sm shadow-xs hover:border-primary/40 transition-all flex items-center gap-2 active:scale-[0.98]"
             >
-              <Clock size={16} className="text-primary" />
-              <span>Launch 200Q Mock Exam</span>
+              <Zap size={16} className="text-primary" />
+              <span>Explore Question Bank</span>
             </Link>
           </div>
 
-          {/* Social Proof Strip */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground font-medium">
-            <div className="flex -space-x-2 overflow-hidden">
-              <span className="inline-block h-7 w-7 rounded-full ring-2 ring-background bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold text-[10px] flex items-center justify-center">S</span>
-              <span className="inline-block h-7 w-7 rounded-full ring-2 ring-background bg-gradient-to-tr from-emerald-500 to-teal-600 text-white font-bold text-[10px] flex items-center justify-center">A</span>
-              <span className="inline-block h-7 w-7 rounded-full ring-2 ring-background bg-gradient-to-tr from-amber-500 to-orange-600 text-white font-bold text-[10px] flex items-center justify-center">P</span>
-              <span className="inline-block h-7 w-7 rounded-full ring-2 ring-background bg-gradient-to-tr from-rose-500 to-pink-600 text-white font-bold text-[10px] flex items-center justify-center">R</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold text-foreground">14,000+</span>
-              <span>aspirants preparing</span>
+          {/* Verified Institutional Deliverables Strip */}
+          <div className="pt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground font-semibold">
+            <div className="flex items-center gap-1.5 text-foreground">
+              <ShieldCheck size={14} className="text-primary" />
+              <span>Exact 200-Question MEC Blueprint</span>
             </div>
             <span>•</span>
-            <div className="flex items-center gap-1 text-amber-500 font-bold">
-              <span>★ 4.9/5</span>
-              <span className="text-muted-foreground font-normal">Rating</span>
+            <div className="flex items-center gap-1.5 text-foreground">
+              <Clock size={14} className="text-amber-500" />
+              <span>-0.25 Server Negative Marking</span>
             </div>
             <span>•</span>
-            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              <span>1,420+ active now</span>
+            <div className="flex items-center gap-1.5 text-foreground">
+              <Activity size={14} className="text-emerald-500" />
+              <span>Instant National Merit Percentile</span>
             </div>
           </div>
         </div>
@@ -137,15 +132,13 @@ export default function HeroSection() {
         <div className="pt-12 max-w-5xl mx-auto">
           <div className="bg-card/90 backdrop-blur-xl border border-border/90 rounded-3xl shadow-xl overflow-hidden transition-all duration-300">
             
-            {/* macOS Chrome Header with Segmented Tabs */}
+            {/* Terminal Header with Segmented Tabs */}
             <div className="bg-muted/40 border-b border-border/70 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-              {/* Traffic Lights */}
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-400/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-amber-400/80 inline-block" />
-                <span className="w-3 h-3 rounded-full bg-emerald-400/80 inline-block" />
-                <span className="ml-2 text-[11px] font-mono text-muted-foreground font-semibold">
-                  samyakcee.com/demo
+              {/* Exam Terminal Status */}
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-mono font-semibold text-foreground">
+                  MEC CBT TERMINAL · EXAM MODE
                 </span>
               </div>
 
@@ -201,10 +194,10 @@ export default function HeroSection() {
                 </button>
               </div>
 
-              {/* Live Badge */}
+              {/* Live Status Tag */}
               <div className="hidden md:flex items-center gap-2">
                 <span className="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  Interactive Preview
+                  Interactive Simulator
                 </span>
               </div>
             </div>
@@ -245,8 +238,8 @@ export default function HeroSection() {
                     <h3 className="text-base sm:text-lg font-bold text-foreground leading-snug">
                       In the human cardiac cycle, what is the approximate duration of ventricular systole under normal resting heart rate (72 beats/min)?
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Click an option below to test instant evaluation and rationale.
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Select an option below to test instant server-side evaluation and clinical rationale.
                     </p>
                   </div>
 
@@ -330,7 +323,7 @@ export default function HeroSection() {
                       <span className="text-xs font-bold text-foreground">LIVE 1V1 MULTIPLAYER DUEL</span>
                     </div>
                     <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-mono font-bold">
-                      🏆 Rs. 1,000 Bounty Round
+                      Rs. 1,000 Daily Bounty
                     </span>
                   </div>
 
@@ -353,7 +346,7 @@ export default function HeroSection() {
                         <div className="bg-primary h-full rounded-full w-[85%]" />
                       </div>
                       <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                        ⚡ Answered in 2.1s (Streak: 4)
+                        Answered in 2.1s (Streak: 4)
                       </p>
                     </div>
 
@@ -375,7 +368,7 @@ export default function HeroSection() {
                         <div className="bg-rose-500 h-full rounded-full w-[72%]" />
                       </div>
                       <p className="text-[11px] text-muted-foreground font-semibold">
-                        ⏳ Deciding question 5 of 7...
+                        Deciding question 5 of 7...
                       </p>
                     </div>
                   </div>
@@ -383,7 +376,7 @@ export default function HeroSection() {
                   <div className="p-4 rounded-2xl bg-muted/40 border border-border/70 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Flame size={16} className="text-amber-500" />
-                      <span className="text-xs font-bold text-foreground">Next Live Matchmaking Wave: Continuous</span>
+                      <span className="text-xs font-bold text-foreground">Continuous Matchmaking Active</span>
                     </div>
                     <Link
                       href="/battle-arena"
@@ -428,7 +421,7 @@ export default function HeroSection() {
                         HbF consists of <strong>α₂γ₂</strong> chains, whereas adult HbA consists of <strong>α₂β₂</strong> chains. The γ-chain lacks certain positively charged amino acids found in the β-chain (specifically His143 substituted by Serine).
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        💡 <strong>High-Yield Takeaway:</strong> Because of this substitution, HbF binds <strong>2,3-BPG (2,3-bisphosphoglycerate)</strong> much less strongly. Less 2,3-BPG binding keeps HbF in the relaxed (R) high-affinity state, shifting its dissociation curve to the <strong>left</strong> and ensuring efficient oxygen transfer across the maternal placenta.
+                        <strong>High-Yield Takeaway:</strong> Because of this substitution, HbF binds <strong>2,3-BPG (2,3-bisphosphoglycerate)</strong> much less strongly. Less 2,3-BPG binding keeps HbF in the relaxed (R) high-affinity state, shifting its dissociation curve to the <strong>left</strong> and ensuring efficient oxygen transfer across the maternal placenta.
                       </p>
                     </div>
                     <span className="w-7 h-7 rounded-lg bg-primary text-white font-bold text-[10px] flex items-center justify-center shrink-0">
@@ -503,26 +496,26 @@ export default function HeroSection() {
         {/* ── INSTITUTIONAL ACCREDITATION & SYLLABUS ALIGNMENT ── */}
         <div className="pt-14 max-w-4xl mx-auto text-center space-y-4">
           <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
-            Syllabus Blueprint Strictly Formatted According To
+            Examination Blueprint &amp; Syllabus Strictly Formatted According To
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm font-bold text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs sm:text-sm font-semibold text-muted-foreground">
             <span className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <span>🩺</span>
+              <Stethoscope size={15} className="text-primary" />
               <span>MEC Nepal (MECEE-BL)</span>
             </span>
             <span className="text-border">•</span>
             <span className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <span>🏛️</span>
+              <Building2 size={15} className="text-primary" />
               <span>TU Institute of Medicine (IOM)</span>
             </span>
             <span className="text-border">•</span>
             <span className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <span>🏥</span>
+              <Activity size={15} className="text-primary" />
               <span>BPKIHS Dharan Pattern</span>
             </span>
             <span className="text-border">•</span>
             <span className="hover:text-foreground transition-colors flex items-center gap-1.5">
-              <span>🎓</span>
+              <GraduationCap size={15} className="text-primary" />
               <span>CDC Nepal Board Rubrics</span>
             </span>
           </div>
@@ -532,7 +525,7 @@ export default function HeroSection() {
         <div aria-label="Platform deliverables" className="pt-12 max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 text-center">
           <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xs">
             <div className="text-2xl sm:text-3xl font-black text-foreground">15,000+</div>
-            <div className="text-xs text-muted-foreground font-medium mt-1">High-Yield MCQs</div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">Verified MCQs</div>
           </div>
           <div className="p-4 rounded-2xl bg-card border border-border/80 shadow-xs">
             <div className="text-2xl sm:text-3xl font-black text-primary">200-Q</div>

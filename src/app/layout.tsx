@@ -49,22 +49,21 @@ function getMetadataBase(): URL {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://samyakcee.com'),
-  title: 'Samyak Tutor — Learn Smarter. Score Higher.',
+  title: 'Samyak CEE — Nepal\'s Premier Medical & Entrance Examination Platform',
   description:
-    'Samyak Tutor is a unified education platform. Courses, practice questions, mock tests, chapter notes, and 24/7 AI-powered learning — all in one place.',
+    'Master Nepal\'s CEE (MBBS/BDS), SEE Class 10, and Board Exams. Authentic 200-question timed CBT simulation with -0.25 negative marking, 15,000+ verified MCQs, and 24/7 AI-guided mastery.',
   keywords: [
-    'Samyak Tutor',
-    'Samyak Education',
+    'Samyak CEE',
     'CEE Medical Entrance Preparation Nepal',
+    'MECEE MBBS BDS Nursing',
     'SEE Class 10 Online Classes',
-    'IELTS Preparation Nepal',
-    'Digital Marketing Course Nepal',
-    'AI Education Platform Nepal',
-    'MEC Entrance Exam',
+    'IOE Engineering Entrance Nepal',
+    '200Q CBT Mock Exam Nepal',
+    'MEC Entrance Exam Nepal',
   ],
-  authors: [{ name: 'Samyak Tutor Team', url: 'https://samyakcee.com' }],
-  creator: 'Samyak Tutor',
-  publisher: 'Samyak Tutor',
+  authors: [{ name: 'Samyak CEE Team', url: 'https://samyakcee.com' }],
+  creator: 'Samyak CEE',
+  publisher: 'Samyak CEE',
   manifest: '/manifest.json',
   icons: {
     icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
@@ -77,24 +76,24 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://samyakcee.com',
-    siteName: 'Samyak Tutor — Education Platform',
-    title: 'Samyak Tutor — Learn Smarter. Score Higher.',
+    siteName: 'Samyak CEE — Medical & Entrance Examination Platform',
+    title: 'Samyak CEE — Nepal\'s Premier Medical & Entrance Examination Platform',
     description:
-      'Courses, practice, tests, notes, and AI-powered learning — all in one place.',
+      'Authentic 200-question timed CBT simulation with -0.25 negative marking, 15,000+ verified MCQs, and 24/7 AI-guided mastery.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'Samyak Tutor — One Unified Education Platform',
+        alt: 'Samyak CEE — Medical & Entrance Examination Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Samyak Tutor — Learn Smarter. Score Higher.',
+    title: 'Samyak CEE — Nepal\'s Premier Medical & Entrance Examination Platform',
     description:
-      'Courses, practice, tests, notes, and AI-powered learning — all in one place.',
+      'Authentic 200-question timed CBT simulation with -0.25 negative marking, 15,000+ verified MCQs, and 24/7 AI-guided mastery.',
     images: ['/og-image.png'],
   },
   robots: {

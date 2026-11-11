@@ -133,8 +133,8 @@ export default function PricingSection() {
                 <span>Enroll in SEE Batch (NPR 4,990)</span>
                 <ArrowRight size={14} />
               </Link>
-              <p className="text-[10px] text-muted-foreground text-center">
-                💳 Fonepay Dynamic QR · ⚡ Instant Activation
+              <p className="text-[10px] text-muted-foreground text-center font-medium">
+                Official Fonepay Dynamic QR · Instant Digital Activation
               </p>
             </div>
           </div>

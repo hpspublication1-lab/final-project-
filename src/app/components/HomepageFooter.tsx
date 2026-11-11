@@ -97,11 +97,11 @@ export default function HomepageFooter() {
               <AppLogo size={36} />
               <div className="flex flex-col leading-none">
                 <span className="font-extrabold text-base text-white tracking-tight">Samyak</span>
-                <span className="text-xs font-bold text-primary">Tutor</span>
+                <span className="text-xs font-bold text-primary">CEE</span>
               </div>
             </div>
             <p className="text-sm text-white/60 leading-relaxed max-w-xs">
-              Nepal&apos;s simple, premium education platform for SEE, CEE, IELTS, Digital Marketing &amp; AI.
+              Nepal&apos;s premier online entrance examination &amp; academic platform for CEE Medical, SEE Board &amp; Engineering.
             </p>
             <div className="space-y-2">
               <a href={`mailto:${SUPPORT_CONFIG.email}`} className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
@@ -165,13 +165,13 @@ export default function HomepageFooter() {
         {/* Exam Authority Disclaimer */}
         <div className="border-t border-white/10 pt-6 pb-4 text-[11px] text-white/50 leading-relaxed space-y-1">
           <p>
-            <strong className="text-white/70">Academic Disclaimer:</strong> Samyak Guru (Samyak CEE Mastery) is an independent online educational preparation platform. All curricula, question blueprints, and examination guidelines are aligned with publicly issued curricula from the Curriculum Development Centre (CDC) Nepal, National Examination Board (NEB), and Medical Education Commission (MEC) Nepal. Samyak Guru is not affiliated with, endorsed by, sponsored by, or officially associated with MEC Nepal, NEB, or the British Council.
+            <strong className="text-white/70">Academic Disclaimer:</strong> Samyak CEE is an independent online educational preparation platform. All curricula, question blueprints, and examination guidelines are aligned with publicly issued curricula from the Curriculum Development Centre (CDC) Nepal, National Examination Board (NEB), and Medical Education Commission (MEC) Nepal. Samyak CEE is not affiliated with, endorsed by, sponsored by, or officially associated with MEC Nepal, NEB, or the British Council.
           </p>
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/40">
-            © 2026 Samyak Guru. All rights reserved.
+            © 2026 Samyak CEE. All rights reserved.
           </p>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/40">Payments powered by</span>
