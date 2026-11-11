@@ -1,0 +1,97 @@
+/**
+ * Example for src/app/api/arena/auth/ticket/route.ts.
+ * Adapt the Supabase client construction and repository imports to Samyak's real project.
+ * This file is intentionally a template: assertPlayerCanJoinMatch() MUST be implemented
+ * against the real battle_rooms / room_members schema before enabling the endpoint.
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import jwt from "jsonwebtoken";
+import { randomBytes } from "node:crypto";
+import { z } from "zod";
+
+const BodySchema = z.object({
+  matchId: z.string().uuid(),
+}).strict();
+
+function env(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing environment variable ${name}`);
+  return value;
+}
+
+/** TODO: implement a rate limiter shared across all Vercel instances. */
+async function enforceTicketRateLimit(_userId: string): Promise<void> {
+  // Fail closed until a shared store (e.g. Redis) is wired.
+  throw new Error("Ticket rate limiter is not implemented");
+}
+
+/** TODO: query the real schema and verify match status + participant membership. */
+async function assertPlayerCanJoinMatch(_userId: string, _matchId: string): Promise<void> {
+  // Fail closed. Do not replace this with a client-provided userId or role.
+  throw new Error("Match authorization repository is not implemented");
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const authorization = request.headers.get("authorization") ?? "";
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    if (!match) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const accessToken = match[1];
+
+    const body = BodySchema.safeParse(await request.json());
+    if (!body.success) {
+      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    }
+
+    const supabase = createClient(env("SUPABASE_URL"), env("SUPABASE_ANON_KEY"), {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    // Supabase Auth validates the access token; do not trust user data decoded only in the browser.
+    const { data, error } = await supabase.auth.getUser(accessToken);
+    if (error || !data.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await enforceTicketRateLimit(data.user.id);
+    await assertPlayerCanJoinMatch(data.user.id, body.data.matchId);
+
+    const secret = env("ARENA_TICKET_SECRET");
+    if (Buffer.byteLength(secret, "utf8") < 32) {
+      throw new Error("ARENA_TICKET_SECRET must be at least 32 bytes");
+    }
+
+    const ttlSeconds = 60;
+    const ticket = jwt.sign(
+      {
+        matchId: body.data.matchId,
+        scope: "arena:join",
+        roomType: "quiz_battle",
+        nonce: randomBytes(24).toString("base64url"),
+      },
+      secret,
+      {
+        algorithm: "HS256",
+        subject: data.user.id,
+        issuer: env("ARENA_TICKET_ISSUER"),
+        audience: env("ARENA_TICKET_AUDIENCE"),
+        expiresIn: ttlSeconds,
+      },
+    );
+
+    return NextResponse.json({
+      ticket,
+      wsEndpoint: env("ARENA_PUBLIC_WS_URL"),
+      expiresInSeconds: ttlSeconds,
+    });
+  } catch (error) {
+    // Do not leak environment values, tokens, SQL, or internal stack traces.
+    const message = error instanceof Error ? error.message : "unknown";
+    if (message.includes("not implemented")) {
+      return NextResponse.json({ error: "Multiplayer authorization is not configured" }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Unable to issue multiplayer ticket" }, { status: 500 });
+  }
+}

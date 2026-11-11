@@ -309,7 +309,10 @@ export default function MatchLobbyClient() {
   useEffect(() => {
     if (userId) {
       refreshFriendsAndInvites();
-      const interval = setInterval(refreshFriendsAndInvites, 5000);
+      const interval = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        refreshFriendsAndInvites();
+      }, 20000); // 20s live refresh (avoids server saturation)
       return () => clearInterval(interval);
     }
   }, [userId, refreshFriendsAndInvites]);

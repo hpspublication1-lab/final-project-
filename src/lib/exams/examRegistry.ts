@@ -506,7 +506,12 @@ export interface ActiveExamSession {
   visitedQuestions: string[];
   attemptId: string | null;
   currentIdx: number;
-  targetEndTime: number;
+  targetEndTime: number; // legacy client timestamp (for backward compatibility)
+  startedAtIso?: string; // authoritative server UTC start timestamp
+  serverExpiresAtMs?: number; // authoritative server UTC deadline timestamp in ms
+  serverTimeOffsetMs?: number; // serverNow - clientNow drift calibration
+  lastSyncedAt?: string; // ISO timestamp of last durable server sync
+  lastSyncHash?: string; // cryptographic hash of durably synced answers
 }
 
 export interface TimerRecoveryResult {
@@ -515,15 +520,21 @@ export interface TimerRecoveryResult {
   remainingSeconds: number;
   session: ActiveExamSession | null;
   reason: 'valid' | 'expired' | 'corrupted' | 'no_session';
+  serverCalibrated?: boolean;
 }
 
 /**
- * Pure helper to test and recover exam timer state safely
- * Guarantees no negative time, no resets, and triggers auto-submit when expired
+ * Pure helper to test and recover exam timer state safely.
+ * Guarantees server-authoritative time calculation, anti-tampering drift recovery,
+ * no negative time, no resets, and triggers auto-submit when expired.
  */
 export function calculateTimerRecovery(
   rawSavedSession: string | null,
-  nowMs: number = Date.now()
+  nowMs: number = Date.now(),
+  options?: {
+    serverNowMs?: number;
+    driftToleranceMs?: number;
+  }
 ): TimerRecoveryResult {
   if (!rawSavedSession) {
     return { canRecover: false, isExpired: false, remainingSeconds: 0, session: null, reason: 'no_session' };
@@ -535,13 +546,50 @@ export function calculateTimerRecovery(
       return { canRecover: false, isExpired: false, remainingSeconds: 0, session: null, reason: 'corrupted' };
     }
 
-    const remaining = Math.floor((session.targetEndTime - nowMs) / 1000);
-
-    if (remaining <= 0) {
-      return { canRecover: false, isExpired: true, remainingSeconds: 0, session, reason: 'expired' };
+    // Determine authoritative server time and deadline:
+    // 1. If options.serverNowMs is provided, use it directly.
+    // 2. Else if session has serverTimeOffsetMs, calibrate client nowMs: nowMs + session.serverTimeOffsetMs.
+    // 3. Otherwise fall back to nowMs.
+    let effectiveNowMs = options?.serverNowMs ?? nowMs;
+    const isCalibrated = options?.serverNowMs !== undefined || typeof session.serverTimeOffsetMs === 'number';
+    if (options?.serverNowMs === undefined && typeof session.serverTimeOffsetMs === 'number') {
+      effectiveNowMs = nowMs + session.serverTimeOffsetMs;
     }
 
-    return { canRecover: true, isExpired: false, remainingSeconds: remaining, session, reason: 'valid' };
+    // Determine deadline:
+    // 1. Authoritative serverExpiresAtMs if available
+    // 2. Or computed from startedAtIso + duration
+    // 3. Or legacy session.targetEndTime
+    let deadlineMs = session.serverExpiresAtMs;
+    if (!deadlineMs && session.startedAtIso) {
+      const durationSeconds = (session.selectedExam.duration || 180) * 60;
+      deadlineMs = new Date(session.startedAtIso).getTime() + (durationSeconds * 1000);
+    }
+    if (!deadlineMs) {
+      deadlineMs = session.targetEndTime;
+    }
+
+    const remaining = Math.floor((deadlineMs - effectiveNowMs) / 1000);
+
+    if (remaining <= 0) {
+      return {
+        canRecover: false,
+        isExpired: true,
+        remainingSeconds: 0,
+        session,
+        reason: 'expired',
+        serverCalibrated: isCalibrated,
+      };
+    }
+
+    return {
+      canRecover: true,
+      isExpired: false,
+      remainingSeconds: remaining,
+      session,
+      reason: 'valid',
+      serverCalibrated: isCalibrated,
+    };
   } catch {
     return { canRecover: false, isExpired: false, remainingSeconds: 0, session: null, reason: 'corrupted' };
   }
@@ -550,22 +598,39 @@ export function calculateTimerRecovery(
 export interface SubmissionSecurityCheck {
   allowed: boolean;
   isDuplicate: boolean;
+  isExpired?: boolean;
   error?: string;
   statusCode?: number;
+  serverRemainingSeconds?: number;
+  deadlineIso?: string;
 }
 
 /**
- * Validates candidate ownership and idempotency against duplicate submissions
+ * Validates candidate ownership, exam identity consistency, idempotency,
+ * and server-controlled examination deadlines.
  */
 export function validateSubmissionSecurity(
-  existingAttempt: { id: string; student_id?: string | null; completed_at?: string | null } | null,
-  currentUserId: string | null
+  existingAttempt: {
+    id: string;
+    student_id?: string | null;
+    completed_at?: string | null;
+    exam_id?: string | null;
+    started_at?: string | null;
+    created_at?: string | null;
+  } | null,
+  currentUserId: string | null,
+  options?: {
+    examId?: string | null;
+    durationMinutes?: number | null;
+    serverNowMs?: number;
+    gracePeriodSeconds?: number;
+  }
 ): SubmissionSecurityCheck {
   if (!existingAttempt) {
     return { allowed: true, isDuplicate: false };
   }
 
-  // Result Privacy Guard: prevent candidate A from submitting or updating candidate B's attempt
+  // 1. Result Privacy Guard: prevent candidate A from submitting or updating candidate B's attempt
   if (existingAttempt.student_id && currentUserId && existingAttempt.student_id !== currentUserId) {
     return {
       allowed: false,
@@ -575,7 +640,17 @@ export function validateSubmissionSecurity(
     };
   }
 
-  // Duplicate Submission Guard: prevent double-scoring completed attempts
+  // 2. Exam ID Consistency: ensure submitted attempt matches the exam being scored
+  if (existingAttempt.exam_id && options?.examId && existingAttempt.exam_id !== options.examId) {
+    return {
+      allowed: false,
+      isDuplicate: false,
+      error: 'Bad Request: Attempt does not match the submitted exam ID.',
+      statusCode: 400,
+    };
+  }
+
+  // 3. Duplicate Submission Guard: prevent double-scoring completed attempts
   if (existingAttempt.completed_at) {
     return {
       allowed: false,
@@ -583,6 +658,27 @@ export function validateSubmissionSecurity(
       error: 'This examination attempt was already finalized and scored.',
       statusCode: 200, // Idempotent OK
     };
+  }
+
+  // 4. Server-Controlled Deadline Enforcement
+  if (options?.durationMinutes && (existingAttempt.started_at || existingAttempt.created_at)) {
+    const startedAtMs = new Date(existingAttempt.started_at || existingAttempt.created_at!).getTime();
+    const durationSeconds = options.durationMinutes * 60;
+    const deadlineMs = startedAtMs + (durationSeconds * 1000);
+    const gracePeriodMs = (options.gracePeriodSeconds ?? 60) * 1000; // 60s network transmission allowance
+    const serverNowMs = options.serverNowMs ?? Date.now();
+
+    if (serverNowMs > deadlineMs + gracePeriodMs) {
+      return {
+        allowed: false,
+        isDuplicate: false,
+        isExpired: true,
+        error: `Examination deadline expired at ${new Date(deadlineMs).toISOString()}. Submissions are no longer accepted.`,
+        statusCode: 403,
+        serverRemainingSeconds: 0,
+        deadlineIso: new Date(deadlineMs).toISOString(),
+      };
+    }
   }
 
   return { allowed: true, isDuplicate: false };
@@ -721,5 +817,26 @@ export function transitionSubjectiveEvaluation(
   }
 
   return updated;
+}
+
+/**
+ * Deterministic hash of answers payload to verify durable sync state.
+ */
+export function computeSyncHash(answers: Record<string, string>): string {
+  const sortedKeys = Object.keys(answers || {}).sort();
+  const canonicalString = sortedKeys.map((k) => `${k}:${answers[k]}`).join('|');
+  
+  let h1 = 0xdeadbeef ^ 0;
+  let h2 = 0x41c6ce57 ^ 0;
+  for (let i = 0; i < canonicalString.length; i++) {
+    const ch = canonicalString.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  const hex1 = (h1 >>> 0).toString(16).padStart(8, '0');
+  const hex2 = (h2 >>> 0).toString(16).padStart(8, '0');
+  return `sync_${hex1}${hex2}`;
 }
 

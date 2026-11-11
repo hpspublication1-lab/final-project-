@@ -6,8 +6,9 @@ import AppLogo from '@/components/ui/AppLogo';
 import {
   Menu, X, Sun, Moon, LayoutDashboard, ArrowRight,
   ChevronDown, BookOpen, Zap, Award, Sparkles, CheckCircle2,
-  GraduationCap, HelpCircle
+  GraduationCap, HelpCircle, KeyRound, Swords, Trophy, Brain, FileText
 } from 'lucide-react';
+import RedeemVoucherModal from '@/components/billing/RedeemVoucherModal';
 
 interface PublicNavProps {
   isDark?: boolean;
@@ -20,8 +21,11 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
   const [scrollY, setScrollY] = useState(0);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [programsOpen, setProgramsOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const [showRedeemModal, setShowRedeemModal] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const practiceDropdownRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -62,10 +66,58 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setProgramsOpen(false);
       }
+      if (practiceDropdownRef.current && !practiceDropdownRef.current.contains(e.target as Node)) {
+        setPracticeOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const practiceItems = [
+    {
+      title: '1v1 Battle Arena',
+      desc: 'Live multiplayer duels with daily Rs. 1,000 cash prizes',
+      href: '/battle-arena',
+      icon: '⚔️',
+      badge: 'Rs. 1,000 Daily',
+    },
+    {
+      title: 'Full-Length Mock Exams',
+      desc: '200Q Timed CBT with -0.25 negative marking & instant percentile',
+      href: '/mock-tests',
+      icon: '📝',
+      badge: 'CBT Mocks',
+    },
+    {
+      title: '15,000+ Question Bank',
+      desc: 'Chapter-wise MCQs, past papers & step-by-step solutions',
+      href: '/practice',
+      icon: '⚡',
+      badge: 'MCQ Bank',
+    },
+    {
+      title: 'CEE Rank & Seat Predictor',
+      desc: 'Calculate MEC merit position & government college admission odds',
+      href: '/rank-predictor',
+      icon: '🎯',
+      badge: 'AI Powered',
+    },
+    {
+      title: 'Mistake Analyser (Galti Sudhar)',
+      desc: 'Track and master every wrong answer with root-cause tags',
+      href: '/mistake-analyser',
+      icon: '🔍',
+      badge: 'Revision',
+    },
+    {
+      title: 'SM-2 Spaced Flashcards',
+      desc: 'Cognitive retention intervals for high-yield formulas & definitions',
+      href: '/flashcards',
+      icon: '🧠',
+      badge: 'Spaced',
+    },
+  ];
 
   const programs = [
     {
@@ -118,8 +170,8 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
       style={{ top: navTop }}
       className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
         scrolled || mobileOpen
-          ? 'bg-card/95 backdrop-blur-2xl border-b border-border/80 shadow-sm supports-[backdrop-filter]:bg-card/90'
-          : 'bg-transparent'
+          ? 'bg-card/95 backdrop-blur-2xl border-b border-border shadow-sm'
+          : 'bg-background/80 backdrop-blur-xl border-b border-border/50'
       }`}
     >
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
@@ -191,18 +243,72 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
               )}
             </div>
 
-            <Link
-              href="/practice"
-              className="px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-            >
-              Practice &amp; Q-Bank
-            </Link>
+            {/* Practice & Tests Dropdown */}
+            <div className="relative" ref={practiceDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setPracticeOpen(!practiceOpen)}
+                onMouseEnter={() => setPracticeOpen(true)}
+                className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
+                  practiceOpen
+                    ? 'text-primary bg-primary/10 font-bold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+                aria-expanded={practiceOpen}
+              >
+                <span>Practice &amp; Arena</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${practiceOpen ? 'rotate-180 text-primary' : ''}`} />
+              </button>
 
+              {practiceOpen && (
+                <div
+                  onMouseLeave={() => setPracticeOpen(false)}
+                  className="absolute top-full left-0 mt-1 w-[440px] bg-card border border-border/80 rounded-2xl shadow-xl p-3 grid grid-cols-1 gap-1.5 animate-scale-in"
+                >
+                  <div className="px-3 py-1.5 border-b border-border/60 flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Evaluation &amp; Practice Tools</span>
+                    <Link
+                      href="/mock-tests"
+                      onClick={() => setPracticeOpen(false)}
+                      className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                    >
+                      All Mock Exams <ArrowRight size={10} />
+                    </Link>
+                  </div>
+                  {practiceItems.map((item) => (
+                    <Link
+                      key={item.title}
+                      href={item.href}
+                      onClick={() => setPracticeOpen(false)}
+                      className="p-2.5 rounded-xl hover:bg-muted/70 transition-colors flex items-start gap-2.5 group"
+                    >
+                      <span className="text-xl shrink-0 mt-0.5">{item.icon}</span>
+                      <div className="space-y-0.5 min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                            {item.title}
+                          </p>
+                          <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-primary/10 text-primary shrink-0">
+                            {item.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1 leading-snug">
+                          {item.desc}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Academic Vault & Notes */}
             <Link
-              href="/mock-tests"
-              className="px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              href="/free-resources"
+              className="px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5"
             >
-              Mock Tests
+              <FileText size={14} className="text-primary" />
+              <span>Academic Vault</span>
             </Link>
 
             <Link
@@ -210,13 +316,6 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
               className="px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
             >
               Plans &amp; Pricing
-            </Link>
-
-            <Link
-              href="/free-resources"
-              className="px-3.5 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-            >
-              Free Resources
             </Link>
 
             <Link
@@ -236,6 +335,14 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
               title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
+            </button>
+            <button
+              onClick={() => setShowRedeemModal(true)}
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors flex items-center gap-1.5"
+              title="Redeem offline book activation key"
+            >
+              <KeyRound size={14} className="text-primary" />
+              <span>Redeem Voucher</span>
             </button>
 
             {authed ? (
@@ -313,42 +420,94 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
             </div>
           </div>
 
+          {/* 2. Practice & Examination Tools */}
           <div className="space-y-1 pt-2 border-t border-border/60">
-            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Study &amp; Tests</p>
+            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Practice &amp; Examination</p>
+            {practiceItems.map((p) => (
+              <Link
+                key={p.title}
+                href={p.href}
+                onClick={() => setMobileOpen(false)}
+                className="px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <span>{p.icon}</span>
+                  <span>{p.title}</span>
+                </span>
+                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                  {p.badge}
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          {/* 3. Battle Arena & Daily Prize Pool */}
+          <div className="space-y-1 pt-2 border-t border-border/60">
+            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Battle Arena &amp; Daily Rewards</p>
             <Link
-              href="/practice"
+              href="/battle-arena"
               onClick={() => setMobileOpen(false)}
-              className="px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted block"
+              className="px-3 py-2.5 rounded-xl text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-between"
             >
-              Practice &amp; Question Bank
+              <span className="flex items-center gap-2">
+                <Swords size={15} />
+                <span>1v1 Live Duels · Championship</span>
+              </span>
+              <span className="text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded bg-amber-500 text-white">
+                Rs. 1,000 Daily
+              </span>
             </Link>
-            <Link
-              href="/mock-tests"
-              onClick={() => setMobileOpen(false)}
-              className="px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted block"
-            >
-              Full-Length Mock Exams
-            </Link>
-            <Link
-              href="/pricing"
-              onClick={() => setMobileOpen(false)}
-              className="px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted block"
-            >
-              Subscription Plans
-            </Link>
+          </div>
+
+          {/* 4. Academic Vault & In-App Notes */}
+          <div className="space-y-1 pt-2 border-t border-border/60">
+            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Academic Vault &amp; Resources</p>
             <Link
               href="/free-resources"
               onClick={() => setMobileOpen(false)}
-              className="px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted block"
+              className="px-3 py-2 rounded-xl text-xs font-bold text-foreground hover:bg-muted flex items-center justify-between"
             >
-              Free Diagnostic Resources
+              <span className="flex items-center gap-2">
+                <FileText size={14} className="text-primary" />
+                <span>Free Notes, Formulas &amp; Past Papers</span>
+              </span>
+              <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-primary/10 text-primary">
+                Free Vault
+              </span>
+            </Link>
+          </div>
+
+          {/* 5. Plans, Voucher Redemption & Support */}
+          <div className="space-y-1 pt-2 border-t border-border/60">
+            <p className="px-3 text-[10px] font-black uppercase tracking-wider text-muted-foreground">Plans &amp; Support</p>
+            <button
+              onClick={() => {
+                setMobileOpen(false);
+                setShowRedeemModal(true);
+              }}
+              className="w-full px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted flex items-center justify-between text-left"
+            >
+              <span className="flex items-center gap-2">
+                <KeyRound size={14} className="text-primary" />
+                <span>Redeem Offline Book Voucher</span>
+              </span>
+              <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
+                16-Digit
+              </span>
+            </button>
+            <Link
+              href="/pricing"
+              onClick={() => setMobileOpen(false)}
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted block"
+            >
+              Subscription Plans &amp; Batches
             </Link>
             <Link
               href="/contact"
               onClick={() => setMobileOpen(false)}
-              className="px-3 py-2.5 rounded-xl text-sm font-semibold text-foreground hover:bg-muted block"
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted block"
             >
-              Help &amp; Support
+              Help Desk &amp; WhatsApp Support
             </Link>
           </div>
 
@@ -384,6 +543,11 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
           </div>
         </div>
       )}
+
+      <RedeemVoucherModal
+        isOpen={showRedeemModal}
+        onClose={() => setShowRedeemModal(false)}
+      />
     </nav>
   );
 }

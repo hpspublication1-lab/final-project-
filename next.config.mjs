@@ -96,7 +96,16 @@ const nextConfig = {
   compress: true,
 
   experimental: {
-    optimizePackageImports: ['lucide-react', 'date-fns', 'recharts'],
+    optimizePackageImports: [
+      'lucide-react',
+      'date-fns',
+      'recharts',
+      'framer-motion',
+      '@heroicons/react',
+      'katex',
+      'react-hot-toast',
+      'sonner',
+    ],
   },
 
   images: {
@@ -104,15 +113,6 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 86400,
     qualities: [75, 85, 100],
-  },
-
-  // Compress the webpack filesystem cache to reduce the "Serializing big
-  // strings" warnings and speed up cold starts.
-  webpack: (config) => {
-    if (config.cache && config.cache.type === 'filesystem') {
-      config.cache.compression = 'gzip';
-    }
-    return config;
   },
 
   async redirects() {

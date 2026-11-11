@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import {
   Search, Filter, BookOpen, Sparkles, CheckCircle2, XCircle, ArrowRight,
   Clock, Award, HelpCircle, Layers, Bookmark, BookmarkCheck, ChevronDown,
-  ChevronUp, RotateCcw, AlertCircle, ShieldCheck, Zap
+  ChevronUp, RotateCcw, AlertCircle, AlertTriangle, ShieldCheck, Zap
 } from 'lucide-react';
 import { CEE_VERIFIED_PYQ_DATA, type CeePYQuestion } from '@/lib/data/ceePastPapersData';
 import { MathText } from '@/components/MathText';
@@ -23,6 +23,8 @@ export default function CeeQuestionBankClient() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [flashcardSaved, setFlashcardSaved] = useState<Record<string, boolean>>({});
+  const [savingCardId, setSavingCardId] = useState<string | null>(null);
 
   // Filter questions
   const filteredQuestions = useMemo(() => {
@@ -59,6 +61,33 @@ export default function CeeQuestionBankClient() {
       }
       return next;
     });
+  };
+
+  const handleSaveToFlashcards = async (q: CeePYQuestion) => {
+    if (flashcardSaved[q.id]) return;
+    setSavingCardId(q.id);
+    try {
+      const res = await fetch('/api/flashcards/convert-mistake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          front: q.questionText,
+          back: `**Correct Option: (${q.correctOption.toUpperCase()})**\n\n${q.explanation}${q.formulaLatex ? `\n\n$$${q.formulaLatex}$$` : ''}`,
+          hint: `${q.subjectDisplayName} · ${q.chapterTitle} (${q.examName} ${q.examYear})`,
+          topic: q.topicTitle,
+        }),
+      });
+      if (res.ok) {
+        setFlashcardSaved((prev) => ({ ...prev, [q.id]: true }));
+        toast.success('Added to your SM-2 Flashcard Deck!');
+      } else {
+        toast.error('Could not add to flashcards');
+      }
+    } catch {
+      toast.error('Error saving flashcard');
+    } finally {
+      setSavingCardId(null);
+    }
   };
 
   return (
@@ -327,6 +356,26 @@ export default function CeeQuestionBankClient() {
                               <MathText text={q.formulaLatex} />
                             </div>
                           )}
+
+                          {/* Quick Cognitive Action Bar */}
+                          <div className="pt-2 border-t border-border/40 flex items-center justify-between flex-wrap gap-2">
+                            <button
+                              onClick={() => handleSaveToFlashcards(q)}
+                              disabled={savingCardId === q.id || flashcardSaved[q.id]}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs border border-primary/20 transition-all cursor-pointer disabled:opacity-60"
+                            >
+                              <Layers size={13} />
+                              <span>{flashcardSaved[q.id] ? '✓ In SM-2 Flashcard Deck' : savingCardId === q.id ? 'Saving…' : 'Add to SM-2 Flashcards'}</span>
+                            </button>
+
+                            <Link
+                              href="/mistake-analyser"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/20 transition-all"
+                            >
+                              <AlertTriangle size={13} />
+                              <span>Review in Galti Sudhar →</span>
+                            </Link>
+                          </div>
                         </div>
                       )}
                     </div>

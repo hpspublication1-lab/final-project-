@@ -1,0 +1,23 @@
+[Unit]
+Description=Samyak CEE Colyseus Real-Time Multiplayer Service
+After=network.target redis.service
+Wants=redis.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/samyak/services/multiplayer
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+EnvironmentFile=/var/www/samyak/services/multiplayer/.env
+
+# Security Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

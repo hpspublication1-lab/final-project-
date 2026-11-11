@@ -6,8 +6,9 @@ import {
   recordLoginFailure,
   recordLoginSuccess,
   sanitizeEmail,
-  enforceAuthRateLimit,
+  enforceLoginRateLimit,
   logSecurityEvent,
+  generateSessionFingerprint,
 } from '@/lib/security/authSecurity';
 
 /**
@@ -17,8 +18,8 @@ import {
  */
 export async function POST(req: NextRequest) {
   try {
-    // 1. Rate Limit
-    const rl = enforceAuthRateLimit(req);
+    // 1. Distributed Rate Limit (login preset: 5 req / 60s)
+    const rl = await enforceLoginRateLimit(req);
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Too many login attempts. Please wait and try again.', retryAfter: rl.resetSeconds },
@@ -106,12 +107,14 @@ export async function POST(req: NextRequest) {
       ['admin', 'super_admin', 'teacher', 'support_staff', 'payment_staff', 'content_manager'].includes(resolvedRole)
     );
 
+    const deviceFingerprint = generateSessionFingerprint(userAgent, ip);
+
     logSecurityEvent({
       type: 'login_success',
       email,
       ip,
       userAgent,
-      metadata: { userId: data.user?.id, role: resolvedRole },
+      metadata: { userId: data.user?.id, role: resolvedRole, deviceFingerprint },
     });
 
     return NextResponse.json({
@@ -126,6 +129,7 @@ export async function POST(req: NextRequest) {
             refresh_token: data.session.refresh_token,
           }
         : null,
+      deviceFingerprint,
       role: resolvedRole,
       isSuperAdmin: superAdmin,
       onboardingCompleted,

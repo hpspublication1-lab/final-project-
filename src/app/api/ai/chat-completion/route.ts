@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { completion } from '@rocketnew/llm-sdk';
 import { createClient } from '@/lib/supabase/server';
+import { enforceRateLimit as enforceSharedRateLimit } from '@/lib/security/rateLimiter';
 
 const API_KEYS: Record<string, string | undefined> = {
   OPEN_AI: process.env.OPENAI_API_KEY,
@@ -32,7 +33,25 @@ function resolveProvider(
   return null;
 }
 
-async function enforceRateLimit(): Promise<NextResponse | null> {
+async function enforceRateLimit(req: Request): Promise<NextResponse | null> {
+  // 1. Enforce atomic sliding-window burst rate limit (ai preset: 15 req / 60s)
+  const rl = await enforceSharedRateLimit(req, 'ai');
+  if (!rl.allowed) {
+    return NextResponse.json(
+      {
+        error: 'Too many AI requests. Please wait a moment before sending more queries.',
+        retryAfter: rl.resetSeconds,
+      },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(rl.resetSeconds),
+          'X-RateLimit-Remaining': '0',
+        },
+      }
+    );
+  }
+
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -125,8 +144,8 @@ export async function POST(request: NextRequest) {
     const resolvedModel = resolved?.model || 'gpt-4o';
     const resolvedProvider = resolved?.provider || 'OPEN_AI';
 
-    // Auth + per-user daily quota
-    const limited = await enforceRateLimit();
+    // Auth + per-user daily quota and sliding-window burst check
+    const limited = await enforceRateLimit(request);
     if (limited) return limited;
 
     const lastMsg = messages[messages.length - 1]?.content ?? 'question';

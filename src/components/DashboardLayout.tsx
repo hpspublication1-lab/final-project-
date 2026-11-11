@@ -17,6 +17,7 @@ import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import ProgramSelectorModal from '@/components/ProgramSelectorModal';
 import { useProgram, normalizeCourseId, CanonicalCourseId } from '@/contexts/ProgramContext';
+import MobileBottomNav from '@/components/navigation/MobileBottomNav';
 
 interface NavItem {
   label: string;
@@ -43,17 +44,22 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
       // Learn
       { label: 'All Subjects',  href: '/subjects?program=see_class_10',  icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: 'SEE 8-Tab Hub', href: '/see',                            icon: Layers,        key: 'd-see-hub', badge: 'CDC Hub', section: 'LEARN' },
+      { label: 'Academic Vault',href: '/free-resources?program=see',     icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
       { label: 'Question Bank', href: '/see/question-bank',              icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
       { label: 'Practice Drills',href: '/practice?program=see_class_10', icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',                   icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
       { label: 'AI Rubric Marker', href: '/vision-marker',               icon: Sparkles,      key: 'd-vision', badge: 'AI', section: 'PRACTICE' },
       // Mock Tests
-      { label: 'Model Tests',   href: '/mock-tests?program=see',         icon: ClipboardList, key: 'd-tests', badge: 'NEB', section: 'MOCK TESTS' },
+      { label: 'Model Tests',   href: '/mock-tests?program=see',         icon: ClipboardList, key: 'd-tests', badge: 'CDC', section: 'MOCK TESTS' },
       // Revise
       { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Flashcards',    href: '/flashcards',                     icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
       { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
       // Support
+      { label: 'Billing & Invoices', href: '/billing',                   icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
       { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
@@ -63,17 +69,21 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Dashboard',     href: '/student-dashboard',                icon: Home,          key: 'd-home' },
       // Learn
       { label: 'IOE Subjects',  href: '/subjects?program=ioe_engineering', icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: 'Academic Vault',href: '/free-resources?program=ioe',       icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',                     icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
       { label: 'CBT Practice',  href: '/practice?program=ioe_engineering', icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
-      { label: 'Battle Arena',  href: '/battle-arena',                     icon: Swords,        key: 'd-arena', badge: '1v1', section: 'PRACTICE' },
+      { label: 'Question Bank', href: '/question-bank',                    icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',                     icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
       { label: 'AI Engineering Tutor', href: '/ai-tutor',                  icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
       // Mock Tests
       { label: '140M CBT Mocks',href: '/mock-tests?program=ioe_engineering', icon: ClipboardList, key: 'd-tests', badge: 'IOE', section: 'MOCK TESTS' },
       // Revise
       { label: 'Mistakes Log',  href: '/mistake-analyser',                 icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Flashcards',    href: '/flashcards',                       icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
       { label: 'Study Plan',    href: '/study-plan',                       icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
       // Support
+      { label: 'Billing & Invoices', href: '/billing',                     icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
       { label: 'Help & Support',href: '/contact',                          icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
@@ -83,17 +93,21 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Dashboard',     href: '/student-dashboard',          icon: Home,          key: 'd-home' },
       // Learn
       { label: 'GK & IQ Syllabus', href: '/subjects?program=lok_sewa', icon: BookOpen,    key: 'd-subjects', section: 'LEARN' },
+      { label: 'Academic Vault',href: '/free-resources?program=lok_sewa', icon: FileText, key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',               icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
       { label: 'First Paper Practice', href: '/practice?program=lok_sewa', icon: Zap,    key: 'd-practice', section: 'PRACTICE' },
-      { label: 'Battle Arena',  href: '/battle-arena',               icon: Swords,        key: 'd-arena', badge: '1v1', section: 'PRACTICE' },
+      { label: 'Question Bank', href: '/question-bank',              icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',               icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
       { label: 'AI Lok Sewa Tutor', href: '/ai-tutor',               icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
       // Mock Tests
       { label: 'PSC Model Exams', href: '/mock-tests?program=lok_sewa', icon: ClipboardList, key: 'd-tests', badge: 'PSC', section: 'MOCK TESTS' },
       // Revise
       { label: 'Mistakes Log',  href: '/mistake-analyser',           icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Flashcards',    href: '/flashcards',                 icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
       { label: 'Study Plan',    href: '/study-plan',                 icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
       // Support
+      { label: 'Billing & Invoices', href: '/billing',               icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
       { label: 'Help & Support',href: '/contact',                    icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
@@ -104,17 +118,22 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
       // Learn
       { label: `${gradeLabel} Subjects`, href: `/subjects?program=${canonicalId}`, icon: BookOpen, key: 'd-subjects', section: 'LEARN' },
+      { label: 'Academic Vault',href: '/free-resources?program=neb',     icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
       { label: 'Derivations & MCQs', href: `/practice?program=${canonicalId}`, icon: Zap,    key: 'd-practice', section: 'PRACTICE' },
+      { label: 'Question Bank', href: '/question-bank',                  icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',                   icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
       { label: 'AI Answer Marker', href: '/vision-marker',               icon: Sparkles,      key: 'd-vision', badge: 'AI', section: 'PRACTICE' },
       { label: 'AI Tutor',      href: '/ai-tutor',                       icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
       // Mock Tests
       { label: 'NEB Board Pre-Mocks', href: '/mock-tests?program=neb',   icon: ClipboardList, key: 'd-tests', badge: 'NEB', section: 'MOCK TESTS' },
       // Revise
       { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Flashcards',    href: '/flashcards',                     icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
       { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
       // Support
+      { label: 'Billing & Invoices', href: '/billing',                   icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
       { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
@@ -123,17 +142,22 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
     return [
       { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
       // Learn
-      { label: '4 Modules (L/R/W/S)', href: '/subjects?program=ielts',   icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: '4 Modules (L/R/W/S)', href: '/english',                  icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+      { label: 'Academic Vault',href: '/free-resources?program=ielts',   icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Masterclasses', href: '/live-classes',              icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
       { label: 'Module Drills', href: '/practice?program=ielts',         icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
+      { label: 'Question Bank', href: '/question-bank',                  icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',                   icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
       { label: 'AI Speaking & Essay', href: '/ai-tutor',                 icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
       // Mock Tests
       { label: 'Band 9 Simulators', href: '/mock-tests?program=ielts',   icon: ClipboardList, key: 'd-tests', badge: 'IELTS', section: 'MOCK TESTS' },
       // Revise
       { label: 'Mistakes Log',  href: '/mistake-analyser',               icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+      { label: 'Flashcards',    href: '/flashcards',                     icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
       { label: 'Study Plan',    href: '/study-plan',                     icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
       // Support
+      { label: 'Billing & Invoices', href: '/billing',                   icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
       { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
@@ -144,15 +168,19 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Dashboard',     href: '/student-dashboard',              icon: Home,          key: 'd-home' },
       // Learn
       { label: isTech ? 'AI Modules' : 'Marketing Modules', href: `/subjects?program=${canonicalId}`, icon: BookOpen, key: 'd-subjects', section: 'LEARN' },
+      { label: 'Academic Vault',href: '/free-resources',                 icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Workshops',href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
       { label: 'Hands-on Projects', href: `/practice?program=${canonicalId}`, icon: Zap,      key: 'd-practice', section: 'PRACTICE' },
+      { label: 'Battle Arena',  href: '/battle-arena',                   icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
       { label: isTech ? 'AI Coding Assistant' : 'AI Copy & Ad Tutor', href: '/ai-tutor', icon: Bot, key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
       // Mock Tests
       { label: 'Skill Assessments', href: `/mock-tests?program=${canonicalId}`, icon: ClipboardList, key: 'd-tests', badge: 'CERT', section: 'MOCK TESTS' },
       // Revise
+      { label: 'Flashcards',    href: '/flashcards',                     icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
       { label: 'Project Milestones', href: '/study-plan',                icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
       // Support
+      { label: 'Billing & Invoices', href: '/billing',                   icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
       { label: 'Help & Support',href: '/contact',                        icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
     ];
   }
@@ -162,17 +190,23 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
     { label: 'Dashboard',     href: '/student-dashboard', icon: Home,          key: 'd-home' },
     // Learn
     { label: 'All Subjects',  href: '/subjects',          icon: BookOpen,      key: 'd-subjects', section: 'LEARN' },
+    { label: 'Academic Vault',href: '/free-resources',    icon: FileText,      key: 'd-vault', section: 'LEARN' },
     { label: 'Live Classes',  href: '/live-classes',      icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
     // Practice
     { label: 'Practice MCQs', href: '/practice',          icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
-    { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: '1v1', section: 'PRACTICE' },
-    { label: 'AI Tutor',      href: '/ai-tutor',          icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
+    { label: 'Question Bank', href: '/question-bank',     icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
+    { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
+    { label: 'AI Medical Tutor', href: '/ai-tutor',       icon: Bot,           key: 'd-ai', badge: 'AI', section: 'PRACTICE' },
     // Mock Tests
     { label: 'Grand Mocks',   href: '/mock-tests',        icon: ClipboardList, key: 'd-tests', badge: 'MEC', section: 'MOCK TESTS' },
+    { label: 'Rank Predictor',href: '/rank-predictor',    icon: Sparkles,      key: 'd-rank', badge: 'NEW', section: 'MOCK TESTS' },
     // Revise
     { label: 'Mistakes Log',  href: '/mistake-analyser',  icon: AlertTriangle, key: 'd-mistakes', section: 'REVISE' },
+    { label: 'Flashcards',    href: '/flashcards',        icon: Layers,        key: 'd-flashcards', badge: 'SM-2', section: 'REVISE' },
+    { label: 'My Progress',   href: '/progress',          icon: TrendingUp,    key: 'd-progress',   badge: 'AI',   section: 'REVISE' },
     { label: 'Study Plan',    href: '/study-plan',        icon: CalendarScheduleIcon, key: 'd-plan', section: 'REVISE' },
     // Support
+    { label: 'Billing & Invoices', href: '/billing',      icon: CreditCard,    key: 'd-billing', section: 'SUPPORT' },
     { label: 'Help & Support',href: '/contact',           icon: HelpCircle,    key: 'd-support', section: 'SUPPORT' },
   ];
 }
@@ -297,7 +331,12 @@ export default function DashboardLayout({
     { title: 'Daily Study Plan & Tasks', href: '/study-plan', category: 'Planning' },
     { title: 'Interactive Live Batch Classes', href: '/live-classes', category: 'Live Class' },
     { title: 'AI Handwritten Vision Marker', href: '/vision-marker', category: 'Subjective AI' },
-    { title: '1v1 Battle Arena Duels', href: '/battle-arena', category: 'Practice' },
+    { title: '1v1 Battle Arena Duels (Rs. 1,000 Daily Payout)', href: '/battle-arena', category: 'Practice & Arena' },
+    { title: 'Academic Vault — Free In-App Notes, Formulas & Model Papers', href: '/free-resources', category: 'Notes & Vault' },
+    { title: 'CEE Rank & Medical College Cutoff Predictor', href: '/rank-predictor', category: 'Assessment' },
+    { title: 'SM-2 Spaced Repetition Flashcards', href: '/flashcards', category: 'Revision' },
+    { title: 'Autonomous AI Operations & Daemons', href: '/admin/autonomous', category: 'System & Admin' },
+    { title: 'Redeem Offline Book Activation Voucher', href: '/free-resources', category: 'Voucher & Access' },
     { title: 'Help Center & WhatsApp Support', href: '/contact', category: 'Support' },
   ];
 
@@ -648,32 +687,8 @@ export default function DashboardLayout({
             </PageTransitionWrapper>
           </main>
 
-          {/* ── MOBILE BOTTOM NAVIGATION BAR (Home, Learn, Practice, Tests, Profile) ── */}
-          <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border z-40">
-            <div className="flex items-stretch justify-around px-2 py-1.5">
-              {MOBILE_FIVE_TABS.map((item) => {
-                const active =
-                  pathname === item.href ||
-                  (item.href !== '/student-dashboard' && pathname?.startsWith(item.href.split('?')[0]));
-                return (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={`flex flex-col items-center justify-center gap-1 flex-1 py-1 px-1 rounded-xl transition-colors ${
-                      active ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-                    }`}
-                  >
-                    <div className={`p-1 rounded-lg transition-colors ${active ? 'bg-primary/10' : ''}`}>
-                      <item.icon size={20} />
-                    </div>
-                    <span className={`text-[10px] ${active ? 'font-black text-primary' : 'font-semibold'}`}>
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
+          {/* ── MOBILE BOTTOM NAVIGATION BAR (Home, Learn, Practice, Exams, Compete) ── */}
+          <MobileBottomNav />
 
         </div>
       </div>

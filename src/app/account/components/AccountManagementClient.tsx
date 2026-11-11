@@ -8,13 +8,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { PAYMENT_METHODS as PAY_FLAGS } from '@/lib/config/payments';
 import { SUPPORT_CONFIG } from '@/lib/config/support';
+import OfficialReceiptModal from '@/components/billing/OfficialReceiptModal';
+import type { BillingInvoiceRecord } from '@/lib/billing/invoiceEngine';
 import {
   User, Lock, Shield, Download, KeyRound, CreditCard,
   Loader2, CheckCircle2, AlertCircle, Eye, EyeOff,
   Crown, Zap, Star, Calendar, Clock, FileText, BookOpen,
   ChevronRight, Edit3, Save, X, ExternalLink, MessageCircle,
   ArrowUpCircle, ArrowDownCircle, Receipt, Wallet, CheckCheck,
-  TrendingUp, Package, RefreshCw, Info, Smartphone
+  TrendingUp, Package, RefreshCw, Info, Smartphone, Printer, ShieldCheck
 } from 'lucide-react';
 
 
@@ -32,6 +34,10 @@ interface ActivationCodeRecord {
 interface BillingRecord {
   id: string;
   plan: string;
+  itemTitle?: string;
+  invoiceNumber?: string;
+  receiptNumber?: string | null;
+  verificationCode?: string;
   amount_npr: number;
   billing_period: string;
   payment_method: string;
@@ -39,6 +45,7 @@ interface BillingRecord {
   status: string;
   notes: string | null;
   created_at: string;
+  invoice?: BillingInvoiceRecord;
 }
 
 interface StudyMaterial {
@@ -171,6 +178,7 @@ export default function AccountManagementClient() {
   // Billing history state
   const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [selectedReceiptInvoice, setSelectedReceiptInvoice] = useState<BillingInvoiceRecord | null>(null);
 
   // Subscription plan toggle
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
@@ -235,6 +243,30 @@ export default function AccountManagementClient() {
     if (!user) return;
     setBillingLoading(true);
     try {
+      const res = await fetch('/api/billing/invoices');
+      if (res.ok) {
+        const json = await res.json();
+        const invoices: BillingInvoiceRecord[] = json.invoices || [];
+        const mapped: BillingRecord[] = invoices.map((inv) => ({
+          id: inv.id,
+          plan: inv.planTier || 'pro',
+          itemTitle: inv.itemTitle,
+          invoiceNumber: inv.invoiceNumber,
+          receiptNumber: inv.receiptNumber,
+          verificationCode: inv.verificationCode,
+          amount_npr: inv.netAmountNpr,
+          billing_period: inv.durationDays >= 300 ? 'yearly' : 'monthly',
+          payment_method: inv.gateway,
+          transaction_ref: inv.purchaseOrderId,
+          status: inv.status === 'paid' ? 'completed' : inv.status,
+          notes: inv.notes,
+          created_at: inv.issuedAt,
+          invoice: inv,
+        }));
+        setBillingHistory(mapped);
+        return;
+      }
+
       const { data } = await supabase
         .from('billing_history')
         .select('id, plan, amount_npr, billing_period, payment_method, transaction_ref, status, notes, created_at')
@@ -722,15 +754,28 @@ export default function AccountManagementClient() {
               <div className="space-y-4">
                 <div className="bg-card border border-border rounded-xl p-5">
                   <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-                    <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <Receipt size={18} className="text-primary" /> Billing History
-                    </h2>
-                    <button
-                      onClick={fetchBillingHistory}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:bg-muted transition-colors"
-                    >
-                      <RefreshCw size={13} /> Refresh
-                    </button>
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                        <Receipt size={18} className="text-primary" /> Invoices &amp; Billing History
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        All course enrollments and subscription payments with HMAC-SHA256 verified tax receipts
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href="/account/purchases"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+                      >
+                        <ShieldCheck size={13} /> Full Receipt Vault
+                      </Link>
+                      <button
+                        onClick={fetchBillingHistory}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+                      >
+                        <RefreshCw size={13} /> Refresh
+                      </button>
+                    </div>
                   </div>
 
                   {billingLoading ? (
@@ -741,7 +786,7 @@ export default function AccountManagementClient() {
                     <div className="text-center py-12">
                       <Receipt size={36} className="text-muted-foreground mx-auto mb-3 opacity-40" />
                       <p className="text-sm font-medium text-foreground">No billing records yet</p>
-                      <p className="text-xs text-muted-foreground mt-1">Your payment history will appear here after your first purchase</p>
+                      <p className="text-xs text-muted-foreground mt-1">Your payment history and official receipts will appear here after your first purchase</p>
                       <Link
                         href="/#pricing"
                         className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors"
@@ -752,41 +797,61 @@ export default function AccountManagementClient() {
                   ) : (
                     <div className="space-y-3">
                       {billingHistory.map((record) => {
-                        const cfg = PLAN_CONFIG[record.plan] || PLAN_CONFIG.free;
+                        const cfg = PLAN_CONFIG[record.plan] || PLAN_CONFIG.pro || PLAN_CONFIG.free;
                         const RecordIcon = cfg.icon;
                         const statusColors: Record<string, string> = {
                           completed: 'bg-success-light text-success',
+                          paid: 'bg-success-light text-success',
                           pending: 'bg-warning-light text-warning',
                           failed: 'bg-error-light text-error',
                           refunded: 'bg-muted text-muted-foreground',
                         };
-                        const pmLabel = PAYMENT_METHODS.find(p => p.key === record.payment_method)?.label || record.payment_method;
+                        const pmLabel = PAYMENT_METHODS.find(p => p.key === record.payment_method)?.label || record.payment_method?.toUpperCase();
                         return (
-                          <div key={record.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-background">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
-                              <RecordIcon size={18} className={cfg.color} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="text-sm font-semibold text-foreground">{cfg.label}</p>
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${statusColors[record.status] || 'bg-muted text-muted-foreground'}`}>
-                                  {record.status}
-                                </span>
+                          <div key={record.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-border bg-background justify-between">
+                            <div className="flex items-start gap-3.5 min-w-0">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
+                                <RecordIcon size={18} className={cfg.color} />
                               </div>
-                              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
-                                <span className="flex items-center gap-1"><Clock size={11} />{new Date(record.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                                <span>·</span>
-                                <span>{pmLabel}</span>
-                                {record.billing_period && <span>· {record.billing_period}</span>}
-                              </p>
-                              {record.transaction_ref && (
-                                <p className="text-xs text-muted-foreground mt-0.5 font-mono">Ref: {record.transaction_ref}</p>
-                              )}
+                              <div className="min-w-0 space-y-0.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-semibold text-foreground">{record.itemTitle || cfg.label}</p>
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full capitalize ${statusColors[record.status] || 'bg-muted text-muted-foreground'}`}>
+                                    {record.status}
+                                  </span>
+                                  {record.verificationCode && (
+                                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                                      <ShieldCheck size={11} />
+                                      <span>{record.verificationCode}</span>
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                                  <span className="flex items-center gap-1"><Clock size={11} />{new Date(record.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                                  <span>·</span>
+                                  <span>{pmLabel}</span>
+                                  {record.billing_period && <span>· {record.billing_period}</span>}
+                                </p>
+                                <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2 flex-wrap">
+                                  {record.invoiceNumber && <span>Invoice: <strong className="text-foreground">{record.invoiceNumber}</strong></span>}
+                                  {record.receiptNumber && <span>· Receipt: <strong className="text-emerald-600 dark:text-emerald-400">{record.receiptNumber}</strong></span>}
+                                  {record.transaction_ref && <span>· Order: {record.transaction_ref}</span>}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-right shrink-0">
+                            <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50">
                               <p className="text-sm font-bold text-foreground">
                                 {record.amount_npr === 0 ? 'Free' : `NPR ${record.amount_npr.toLocaleString()}`}
                               </p>
+                              {record.invoice && (
+                                <button
+                                  onClick={() => setSelectedReceiptInvoice(record.invoice || null)}
+                                  className="px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                                >
+                                  <Printer size={13} />
+                                  <span>Receipt</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         );
@@ -810,6 +875,11 @@ export default function AccountManagementClient() {
                     <MessageCircle size={15} /> Contact Support
                   </a>
                 </div>
+
+                <OfficialReceiptModal
+                  invoice={selectedReceiptInvoice}
+                  onClose={() => setSelectedReceiptInvoice(null)}
+                />
               </div>
             )}
 

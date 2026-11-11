@@ -8,6 +8,7 @@ import {
   ChevronRight, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
+import RbacMatrixTable from '@/components/admin/RbacMatrixTable';
 
 interface StaffUser {
   id: string;
@@ -244,33 +245,7 @@ export default function AdminRolesClient() {
         {/* Permissions Matrix View */}
         {activeTab === 'matrix' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roles.map((r) => (
-                <div key={r.name} className="bg-card border border-border rounded-2xl p-4 space-y-3">
-                  <div className="flex items-center justify-between border-b border-border pb-2.5">
-                    <div>
-                      <h3 className="font-bold text-sm text-foreground capitalize">{r.name.replace(/_/g, ' ')}</h3>
-                      <span className="text-[10px] text-muted-foreground font-mono">Hierarchy Level: {r.level}</span>
-                    </div>
-                    {r.isStaffRole ? (
-                      <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-0.5 rounded-full">STAFF</span>
-                    ) : (
-                      <span className="text-[10px] font-bold bg-muted text-muted-foreground px-2 py-0.5 rounded-full">STUDENT</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-muted-foreground mb-1.5">Granted Permissions ({r.permissions.length}):</p>
-                    <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto pr-1">
-                      {r.permissions.map((perm) => (
-                        <span key={perm} className="text-[10px] font-mono px-2 py-0.5 bg-muted rounded-md text-foreground border border-border/50">
-                          {perm}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <RbacMatrixTable />
           </div>
         )}
 

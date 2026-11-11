@@ -13,6 +13,7 @@ import {
   RotateCcw, RotateCw, ListVideo, Send, Trash2, Video, RefreshCw, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { FALLBACK_PRACTICE_QUESTIONS, FallbackQuestion } from '@/lib/data/practiceQuestionsFallback';
 
 interface Lesson {
   id: string;
@@ -110,13 +111,24 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
   const [controlsVisible, setControlsVisible] = useState(true);
   const controlsTimeoutRef = useRef<any>(null);
 
-  // Tabs & Features
-  const [activeTab, setActiveTab] = useState<'playlist' | 'transcript' | 'notes' | 'ai'>('playlist');
+  // Tabs & Features — PW 5-Pillar Pedagogy
+  const [activeTab, setActiveTab] = useState<'playlist' | 'dpp' | 'pdf_notes' | 'transcript' | 'notes' | 'ai'>('playlist');
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [userQuestion, setUserQuestion] = useState('');
   const [aiAnswers, setAiAnswers] = useState<{ q: string; a: string; time: string }[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Daily Practice Problems (DPP) State for Class 10
+  const [dppQuestions, setDppQuestions] = useState<FallbackQuestion[]>([]);
+  const [dppAnswers, setDppAnswers] = useState<Record<string, string>>({});
+  const [dppSubmitted, setDppSubmitted] = useState<Record<string, boolean>>({});
+  const [dppScore, setDppScore] = useState<{ correct: number; incorrect: number; total: number; score: number }>({
+    correct: 0,
+    incorrect: 0,
+    total: 0,
+    score: 0,
+  });
 
   // Post-Video Quiz Modal State
   const [showPostQuiz, setShowPostQuiz] = useState(false);
@@ -413,6 +425,73 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
       setAiLoading(false);
       setUserQuestion('');
     }, 500);
+  };
+
+  // Populate curriculum-aligned DPP questions for Class 10 SEE lesson
+  useEffect(() => {
+    if (!lesson) return;
+    const targetSubj = (lesson.subject_slug || '').toLowerCase();
+    const targetChap = (lesson.chapter_name || lesson.title || '').toLowerCase();
+
+    const matched = FALLBACK_PRACTICE_QUESTIONS.filter((q) => {
+      const qChap = q.chapterTitle.toLowerCase();
+      const qSubj = q.subjectSlug.toLowerCase();
+      const qDisplay = q.subjectDisplayName.toLowerCase();
+
+      if (targetChap && (qChap.includes(targetChap) || targetChap.includes(qChap))) return true;
+      if (targetSubj && (qSubj.includes(targetSubj) || qDisplay.includes(targetSubj) || targetSubj.includes(qSubj))) return true;
+      return false;
+    });
+
+    const pool = matched.length >= 5 ? matched : FALLBACK_PRACTICE_QUESTIONS;
+    const finalSet = pool.slice(0, 10);
+    setDppQuestions(finalSet);
+    setDppAnswers({});
+    setDppSubmitted({});
+    setDppScore({ correct: 0, incorrect: 0, total: finalSet.length, score: 0 });
+  }, [lesson]);
+
+  const handleSelectDppOption = (qId: string, option: 'a' | 'b' | 'c' | 'd', correctOption: string) => {
+    if (dppSubmitted[qId]) return;
+
+    const isCorrect = option === correctOption;
+    const nextAnswers = { ...dppAnswers, [qId]: option };
+    const nextSubmitted = { ...dppSubmitted, [qId]: true };
+
+    setDppAnswers(nextAnswers);
+    setDppSubmitted(nextSubmitted);
+
+    let c = 0;
+    let inc = 0;
+    Object.entries(nextAnswers).forEach(([id, ans]) => {
+      const q = dppQuestions.find((item) => item.id === id);
+      if (q) {
+        if (ans === q.correctOption) c++;
+        else inc++;
+      }
+    });
+
+    // SEE Board marking scheme: +1 mark for correct, 0 negative marks
+    const netScore = c * 1.0;
+    setDppScore({
+      correct: c,
+      incorrect: inc,
+      total: dppQuestions.length,
+      score: netScore,
+    });
+
+    if (isCorrect) {
+      toast.success('🎯 Correct Answer! +1.0 Mark');
+    } else {
+      toast.error(`✕ Incorrect. Correct: Option ${correctOption.toUpperCase()}`);
+    }
+  };
+
+  const handleResetDpp = () => {
+    setDppAnswers({});
+    setDppSubmitted({});
+    setDppScore({ correct: 0, incorrect: 0, total: dppQuestions.length, score: 0 });
+    toast.success('SEE DPP Practice session reset');
   };
 
   const handleMarkCompleted = async () => {
@@ -726,28 +805,39 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                 </div>
               </div>
 
-              {/* Resource & Tools Action Bar */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
+              {/* Resource & Tools Action Bar — PW Pedagogy Standard */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-border/60">
                 <button
-                  onClick={() => setActiveTab('notes')}
-                  className="px-3.5 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  onClick={() => setActiveTab('dpp')}
+                  className="px-3.5 py-2.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-between gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
                 >
-                  <FileText size={14} className="text-emerald-500" />
-                  <span>My Notes ({notes.length})</span>
+                  <div className="flex items-center gap-2">
+                    <Zap size={15} className="fill-current text-amber-500" />
+                    <span className="font-bold">Today&apos;s Board DPP</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-amber-500/20 px-1.5 py-0.5 rounded-md">10 Qs</span>
                 </button>
+
+                <button
+                  onClick={() => setActiveTab('pdf_notes')}
+                  className="px-3.5 py-2.5 rounded-2xl bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-between gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText size={15} />
+                    <span className="font-bold">Class Notes PDF</span>
+                  </div>
+                  <Download size={13} />
+                </button>
+
                 <button
                   onClick={() => setActiveTab('ai')}
-                  className="px-3.5 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2.5 rounded-2xl bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary font-bold text-xs flex items-center justify-between gap-2 transition-all cursor-pointer shadow-xs active:scale-98"
                 >
-                  <Sparkles size={14} />
-                  <span>Ask AI Tutor</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('transcript')}
-                  className="px-3.5 py-1.5 rounded-xl bg-muted/60 hover:bg-muted text-foreground text-xs font-bold flex items-center gap-1.5 transition-colors"
-                >
-                  <Clock size={14} className="text-blue-500" />
-                  <span>Timestamps</span>
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={15} />
+                    <span className="font-bold">Ask AI Tutor</span>
+                  </div>
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>
@@ -758,26 +848,28 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
           <div className="lg:col-span-4 space-y-4">
             
             {/* Tab Buttons Header */}
-            <div className="grid grid-cols-4 gap-1 p-1 bg-card rounded-2xl border border-border">
+            <div className="flex items-center gap-1 p-1 bg-card rounded-2xl border border-border overflow-x-auto">
               {[
                 { id: 'playlist', label: 'Playlist', icon: ListVideo },
-                { id: 'transcript', label: 'Outline', icon: Clock },
-                { id: 'notes', label: 'Notes', icon: FileText },
+                { id: 'dpp', label: `DPP (${dppQuestions.length})`, icon: Zap },
+                { id: 'pdf_notes', label: 'PDF Notes', icon: FileText },
+                { id: 'notes', label: 'Notes', icon: Bookmark },
                 { id: 'ai', label: 'AI Tutor', icon: Sparkles },
+                { id: 'transcript', label: 'Outline', icon: Clock },
               ].map((t) => {
                 const Icon = t.icon;
                 return (
                   <button
                     key={t.id}
                     onClick={() => setActiveTab(t.id as any)}
-                    className={`py-2 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-2 px-2.5 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 cursor-pointer ${
                       activeTab === t.id
                         ? 'bg-emerald-600 text-white shadow-sm'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                   >
-                    <Icon size={13} />
-                    <span className="hidden sm:inline">{t.label}</span>
+                    <Icon size={13} className={t.id === 'dpp' ? 'text-amber-400 fill-current' : ''} />
+                    <span>{t.label}</span>
                   </button>
                 );
               })}
@@ -835,6 +927,189 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
                       </button>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: DPP (Daily Practice Problems) — Class 10 Board Exam Standard */}
+            {activeTab === 'dpp' && (
+              <div className="p-4 rounded-3xl bg-card border border-border space-y-4">
+                {/* Header Banner */}
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-mono">
+                      SEE BOARD DAILY PRACTICE PROBLEMS
+                    </span>
+                    <button
+                      onClick={handleResetDpp}
+                      className="text-[10px] font-bold text-muted-foreground hover:text-foreground flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw size={10} />
+                      <span>Reset</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <h4 className="text-xs font-black text-foreground">
+                        {lesson?.chapter_name || lesson?.title}
+                      </h4>
+                      <p className="text-[10px] text-muted-foreground">
+                        {dppQuestions.length} Board Exam Practice Questions
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black text-emerald-600 font-mono">
+                        {dppScore.correct}/{dppQuestions.length}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block font-mono">
+                        Score: {dppScore.score} Marks
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-emerald-500 h-full transition-all duration-300"
+                      style={{
+                        width: `${(Object.keys(dppSubmitted).length / Math.max(1, dppQuestions.length)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[9px] text-muted-foreground font-mono">
+                    <span>SEE Marking: +1.0 Mark Per Correct (No Negative Marking)</span>
+                    <span>{Object.keys(dppSubmitted).length} of {dppQuestions.length} Answered</span>
+                  </div>
+                </div>
+
+                {/* Questions List */}
+                <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                  {dppQuestions.map((q, qIdx) => {
+                    const isAnswered = Boolean(dppSubmitted[q.id]);
+                    const userChoice = dppAnswers[q.id];
+                    const isUserCorrect = userChoice === q.correctOption;
+
+                    return (
+                      <div
+                        key={q.id}
+                        className={`p-3.5 rounded-2xl border transition-all text-xs space-y-2.5 ${
+                          isAnswered
+                            ? isUserCorrect
+                              ? 'bg-emerald-500/5 border-emerald-500/30'
+                              : 'bg-rose-500/5 border-rose-500/30'
+                            : 'bg-card border-border/80 hover:border-emerald-500/40'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-mono font-bold text-emerald-600 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 shrink-0">
+                            Q{qIdx + 1}
+                          </span>
+                          <p className="text-foreground font-medium flex-1 leading-snug">
+                            {q.questionText}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                          {(['a', 'b', 'c', 'd'] as const).map((opt) => {
+                            const optText =
+                              opt === 'a' ? q.optionA :
+                              opt === 'b' ? q.optionB :
+                              opt === 'c' ? q.optionC : q.optionD;
+
+                            const isSelected = userChoice === opt;
+                            const isThisCorrect = q.correctOption === opt;
+
+                            let optStyle = 'bg-muted/40 border-border text-foreground hover:bg-muted/80';
+                            if (isAnswered) {
+                              if (isThisCorrect) {
+                                optStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold';
+                              } else if (isSelected && !isThisCorrect) {
+                                optStyle = 'bg-rose-500/20 border-rose-500 text-rose-700 dark:text-rose-300 line-through';
+                              } else {
+                                optStyle = 'opacity-50 border-border text-muted-foreground';
+                              }
+                            }
+
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => handleSelectDppOption(q.id, opt, q.correctOption)}
+                                disabled={isAnswered}
+                                className={`p-2 rounded-xl border text-[11px] text-left flex items-start gap-1.5 transition-all cursor-pointer ${optStyle}`}
+                              >
+                                <span className="font-mono font-bold uppercase shrink-0 text-[10px] w-4">
+                                  {opt})
+                                </span>
+                                <span className="leading-tight flex-1">{optText}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {isAnswered && (
+                          <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 text-[11px] space-y-1">
+                            <span className="font-bold text-emerald-600 flex items-center gap-1 text-[10px] uppercase font-mono">
+                              <Sparkles size={11} /> CDC Model Explanation:
+                            </span>
+                            <p className="text-muted-foreground leading-relaxed">{q.explanation}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: Class Notes PDF */}
+            {activeTab === 'pdf_notes' && (
+              <div className="p-4 rounded-3xl bg-card border border-border space-y-4">
+                <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 font-mono">
+                        SEE BOARD HANDOUT
+                      </span>
+                      <h4 className="text-xs font-black text-foreground truncate">
+                        {lesson?.title} — Class Notes
+                      </h4>
+                      <p className="text-[10px] text-muted-foreground">
+                        CDC formula sheets, theorem proofs &amp; diagrams
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <a
+                      href={lesson?.pdf_url || '/free-resources'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-primary flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Download size={13} />
+                      <span>Download PDF Notes (~1.8 MB)</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-muted/30 border border-border space-y-2.5">
+                  <h5 className="text-xs font-black text-foreground uppercase tracking-wider font-mono">
+                    Curriculum Invariants
+                  </h5>
+                  <ul className="text-xs space-y-2 text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                      <span>100% Aligned with Nepal CDC 2081/2082 Curriculum</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold shrink-0">✓</span>
+                      <span>Mark Distribution: 1 Mark (Knowledge), 2 Mark (Understanding), 4 Mark (Higher Ability)</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             )}

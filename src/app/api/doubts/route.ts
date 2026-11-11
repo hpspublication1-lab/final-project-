@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const rateLimit = enforceRateLimit(req, 'submission', 'doubt-create');
+    const rateLimit = await enforceRateLimit(req, 'submission', 'doubt-create');
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: `Too many submissions. Please wait ${rateLimit.resetSeconds}s.` },
@@ -66,6 +66,17 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}));
     const { title, question_text, subject_id, image_base64 } = body;
+
+    // Enforce file upload rate limit if doubt includes image attachment
+    if (image_base64) {
+      const uploadLimit = await enforceRateLimit(req, 'upload', 'doubt-image');
+      if (!uploadLimit.allowed) {
+        return NextResponse.json(
+          { success: false, error: `Too many image uploads. Please wait ${uploadLimit.resetSeconds}s.` },
+          { status: 429 }
+        );
+      }
+    }
 
     if (!title || typeof title !== 'string' || title.trim().length < 3) {
       return NextResponse.json(

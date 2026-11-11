@@ -8,11 +8,16 @@ import {
   sanitizePhone,
   validatePassword,
   clearAuthSecurityState,
+  enforceAuthRateLimit,
+  enforceLoginRateLimit,
+  enforceOtpRateLimit,
 } from '../authSecurity';
+import { clearRateLimits } from '../rateLimiter';
 
 describe('Auth Security Engine', () => {
   beforeEach(() => {
     clearAuthSecurityState();
+    clearRateLimits();
   });
 
   describe('Login Lockout (Brute Force Protection)', () => {
@@ -108,6 +113,41 @@ describe('Auth Security Engine', () => {
       expect(validatePassword('Abcdefgh').strength).toBe('fair');
       expect(validatePassword('Abcdefg1').strength).toBe('good');
       expect(validatePassword('Abcdefg1!').strength).toBe('strong');
+    });
+  });
+
+  describe('Rate Limiting Helpers', () => {
+    it('enforces login rate limit (5 attempts max)', () => {
+      const req = new Request('https://samyaktutor.com/api/auth/login', {
+        headers: { 'x-forwarded-for': '172.16.0.1' },
+      });
+      for (let i = 0; i < 5; i++) {
+        expect(enforceLoginRateLimit(req).allowed).toBe(true);
+      }
+      const blocked = enforceLoginRateLimit(req);
+      expect(blocked.allowed).toBe(false);
+      expect(blocked.remaining).toBe(0);
+    });
+
+    it('enforces OTP rate limit (3 attempts max)', () => {
+      const req = new Request('https://samyaktutor.com/api/auth/otp', {
+        headers: { 'x-forwarded-for': '172.16.0.2' },
+      });
+      for (let i = 0; i < 3; i++) {
+        expect(enforceOtpRateLimit(req, 'user@example.com').allowed).toBe(true);
+      }
+      const blocked = enforceOtpRateLimit(req, 'user@example.com');
+      expect(blocked.allowed).toBe(false);
+      expect(blocked.remaining).toBe(0);
+    });
+
+    it('enforces auth rate limit (10 attempts max)', () => {
+      const req = new Request('https://samyaktutor.com/api/auth/general', {
+        headers: { 'x-forwarded-for': '172.16.0.3' },
+      });
+      const first = enforceAuthRateLimit(req);
+      expect(first.allowed).toBe(true);
+      expect(first.remaining).toBe(9);
     });
   });
 });

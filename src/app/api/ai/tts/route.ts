@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. User-bound rate limiting (cannot be bypassed by spoofing IP/proxy headers)
-    const userRl = checkRateLimit(`ai-tts:user:${user.id}`, 20, 60 * 1000);
+    const userRl = await checkRateLimit(`ai-tts:user:${user.id}`, 20, 60 * 1000);
     if (!userRl.allowed) {
       return NextResponse.json(
         { error: 'Too many voice generation requests. Please slow down.' },
@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. IP-based rate limiting as defense-in-depth
-    const ipRl = enforceRateLimit(request, 'general', 'ai-tts');
+    // 3. IP-based rate limiting as defense-in-depth (ai preset: 15 req / 60s)
+    const ipRl = await enforceRateLimit(request, 'ai', 'ai-tts');
     if (!ipRl.allowed) {
       return NextResponse.json(
         { error: 'Too many voice generation requests from this IP address.' },

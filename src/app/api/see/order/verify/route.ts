@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/supabase/route-auth';
 import { checkFonepayStatus } from '@/lib/payments/gateways';
+import { BillingService } from '@/lib/billing/invoiceEngine';
 
 export async function POST(request: NextRequest) {
   try {
@@ -119,10 +120,37 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', order.user_id);
 
+    // 8. Issue cryptographically signed invoice & receipt
+    const netNpr = Number(order.final_amount_npr ?? order.amount_npr ?? 0);
+    const grossNpr = Number(order.base_amount_npr ?? netNpr);
+    const discountNpr = Math.max(0, grossNpr - netNpr);
+    const invoice = await BillingService.issueOrUpdateInvoice(admin, {
+      userId: order.user_id,
+      sourceType: 'course_order',
+      sourceId: String(order.id),
+      purchaseOrderId: order.order_number,
+      customerName: order.student_name,
+      customerPhone: order.student_phone,
+      planOrSku: order.course_id || 'see_class_10',
+      durationDays: 365,
+      grossAmountPaisa: Math.round(grossNpr * 100),
+      discountAmountPaisa: Math.round(discountNpr * 100),
+      netAmountPaisa: Math.round(netNpr * 100),
+      currency: order.currency || 'NPR',
+      gateway: order.gateway || 'fonepay',
+      gatewayRef: verifyResult.traceId || order.order_number,
+      status: 'paid',
+      issuedAt: order.created_at || now,
+      paidAt: now,
+    });
+
     return NextResponse.json({
       success: true,
       paid: true,
       orderNumber: order.order_number,
+      invoiceNumber: invoice.invoiceNumber,
+      receiptNumber: invoice.receiptNumber,
+      verificationCode: invoice.verificationCode,
       courseId: order.course_id,
       amount: order.final_amount_npr,
       redirectUrl: '/student-dashboard',

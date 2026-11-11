@@ -1,0 +1,59 @@
+version: '3.8'
+
+# ==============================================================================
+# SAMYAK CEE — COLYSEUS MULTIPLAYER PRODUCTION DOCKER COMPOSE
+# Deploy with: docker compose up -d --build
+# ==============================================================================
+
+services:
+  colyseus-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: samyak-multiplayer-worker
+    restart: unless-stopped
+    ports:
+      - "2567:2567"
+    environment:
+      - NODE_ENV=production
+      - PORT=2567
+      - HOST=0.0.0.0
+      - MULTIPLAYER_SECRET_KEY=${MULTIPLAYER_SECRET_KEY:-samyak_colyseus_multiplayer_secret_key_2026}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - RECONNECT_GRACE_SECONDS=15
+      - QUESTION_TIME_LIMIT_SECONDS=15
+      - COUNTDOWN_SECONDS=3
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - multiplayer-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: samyak-multiplayer-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "volatile-lru"]
+    volumes:
+      - redis-data:/data
+    networks:
+      - multiplayer-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  multiplayer-net:
+    driver: bridge
+
+volumes:
+  redis-data:

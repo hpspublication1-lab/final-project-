@@ -3,6 +3,7 @@
  * Records, preserves, and queries administrative actions and high-risk operations.
  */
 
+import crypto from 'crypto';
 import { createAdminClient } from '../supabase/admin';
 import { AuditLog } from '@/types/lms';
 
@@ -27,6 +28,36 @@ export interface AuditQueryOptions {
   endDate?: string;
 }
 
+/**
+ * Computes an immutable HMAC-SHA256 seal for an audit event.
+ * Detects post-facto database alterations or unauthorized edits.
+ */
+export function computeAuditSeal(
+  entry: {
+    actorId: string;
+    action: string;
+    resourceType: string;
+    resourceId?: string;
+    timestamp: string;
+    changesDiff?: Record<string, any>;
+  },
+  secretKey: string = process.env.SUPABASE_SERVICE_ROLE_KEY || 'samyak_audit_master_seal'
+): string {
+  const cleanDiff = { ...(entry.changesDiff || {}) };
+  delete cleanDiff.audit_seal;
+
+  const canonical = [
+    entry.timestamp,
+    entry.actorId,
+    entry.action,
+    entry.resourceType,
+    entry.resourceId || 'global',
+    JSON.stringify(cleanDiff),
+  ].join('|');
+
+  return crypto.createHmac('sha256', secretKey).update(canonical).digest('hex');
+}
+
 // Canonical Audit Action Constants
 export const AUDIT_ACTIONS = {
   ROLE_ASSIGN: 'role_assign',
@@ -43,6 +74,9 @@ export const AUDIT_ACTIONS = {
   ANNOUNCEMENT_BROADCAST: 'announcement_broadcast',
   COUPON_CREATE: 'coupon_create',
   DOUBT_RESOLVE: 'doubt_resolve',
+  IMPERSONATION_START: 'admin_impersonate_start',
+  IMPERSONATION_EXIT: 'admin_impersonate_exit',
+  IMPERSONATION_BLOCKED: 'admin_impersonate_sensitive_action_blocked',
 } as const;
 
 // In-memory buffer for high-performance retrieval and offline/test resilience
@@ -51,11 +85,24 @@ const MAX_BUFFER_SIZE = 200;
 
 export class AuditService {
   /**
-   * Records an audit event for administrative operations.
+   * Records an audit event for administrative operations with cryptographic sealing.
    */
-  static async recordAuditEvent(input: RecordAuditInput): Promise<{ success: boolean; logId?: string; error?: string }> {
+  static async recordAuditEvent(input: RecordAuditInput): Promise<{ success: boolean; logId?: string; auditSeal?: string; error?: string }> {
     const timestamp = new Date().toISOString();
     const fallbackId = `audit_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'samyak_audit_master_seal';
+
+    const auditSeal = computeAuditSeal({
+      actorId: input.actorId,
+      action: input.action,
+      resourceType: input.resourceType,
+      resourceId: input.resourceId,
+      timestamp,
+      changesDiff: {
+        ...(input.changesDiff || {}),
+        actor_email: input.actorEmail,
+      },
+    }, secret);
 
     const logEntry: AuditLog = {
       id: fallbackId,
@@ -66,6 +113,7 @@ export class AuditService {
       changes_diff: {
         ...(input.changesDiff || {}),
         actor_email: input.actorEmail,
+        audit_seal: auditSeal,
       },
       ip_address: input.ipAddress || 'internal',
       user_agent: input.userAgent || 'server-api',
@@ -99,14 +147,44 @@ export class AuditService {
 
         if (!error && data?.id) {
           logEntry.id = data.id;
-          return { success: true, logId: data.id };
+          return { success: true, logId: data.id, auditSeal };
         }
       }
     } catch (err: any) {
       console.warn('[AuditService] Supabase write failed, retained in memory buffer:', err?.message);
     }
 
-    return { success: true, logId: fallbackId };
+    return { success: true, logId: fallbackId, auditSeal };
+  }
+
+  /**
+   * Verifies the cryptographic integrity seal of an audit record.
+   * Detects database tampering or retroactive log alterations.
+   */
+  static verifyAuditIntegrity(
+    log: AuditLog,
+    secretKey: string = process.env.SUPABASE_SERVICE_ROLE_KEY || 'samyak_audit_master_seal'
+  ): { valid: boolean; error?: string } {
+    if (!log) return { valid: false, error: 'Empty audit log record' };
+    const storedSeal = log.changes_diff?.audit_seal;
+    if (!storedSeal) {
+      return { valid: false, error: 'Audit record lacks cryptographic seal' };
+    }
+
+    const expectedSeal = computeAuditSeal({
+      actorId: log.actor_id,
+      action: log.action,
+      resourceType: log.resource_type,
+      resourceId: log.resource_id,
+      timestamp: log.created_at,
+      changesDiff: log.changes_diff,
+    }, secretKey);
+
+    const isMatch = storedSeal === expectedSeal;
+    return {
+      valid: isMatch,
+      error: isMatch ? undefined : 'Audit log integrity check failed: record has been tampered with or modified',
+    };
   }
 
   /**

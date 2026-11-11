@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/supabase/route-auth';
+import { BillingService } from '@/lib/billing/invoiceEngine';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,60 +14,58 @@ export async function GET(request: NextRequest) {
 
     const admin = createAdminClient();
     if (!admin) {
-      return NextResponse.json({ purchases: [] });
+      return NextResponse.json({ purchases: [], invoices: [], activeEnrollments: [], transactions: [] });
     }
 
-    // 1. Fetch course orders
-    const { data: orders } = await admin
-      .from('course_orders')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    // 2. Fetch active enrollments
+    // 1. Fetch active enrollments
     const { data: enrollments } = await admin
       .from('enrollments')
       .select('*')
       .eq('user_id', user.id);
 
-    // 3. Fetch payment_transactions
-    const { data: transactions } = await admin
-      .from('payment_transactions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    // 2. Fetch unified cryptographically signed invoices across all billing tables
+    const invoices = await BillingService.getUnifiedInvoices(admin, {
+      userId: user.id,
+      limit: 100,
+    });
 
-    const courseNames: Record<string, string> = {
-      see_class_10: 'SEE Class 10 Board Exam Master Batch',
-      cee_medical: 'CEE Medical Entrance Super Target Batch',
-      ielts: 'IELTS Academic & General Target Band 8.0+',
-      digital_marketing: 'Digital Marketing & Meta Ads Blueprint',
-      artificial_intelligence: 'AI Academy: Prompt Studio & Python',
-    };
-
-    const purchases = (orders || []).map((o) => {
+    // 3. Map purchases for backward compatibility while attaching full invoice objects
+    const purchases = invoices.map((inv) => {
       const isEnrolled = (enrollments || []).some(
-        (e) => e.program_id === o.course_id && e.status === 'active'
+        (e) =>
+          (e.program_id === inv.courseSlug || e.course_slug === inv.courseSlug) &&
+          e.status === 'active'
       );
       return {
-        id: o.id,
-        orderNumber: o.order_number,
-        courseId: o.course_id,
-        courseName: courseNames[o.course_id] || o.course_id,
-        amount: o.final_amount_npr,
-        currency: o.currency || 'NPR',
-        gateway: o.gateway,
-        status: o.status,
-        createdAt: o.created_at,
-        paidAt: o.paid_at,
+        id: inv.id,
+        orderNumber: inv.purchaseOrderId,
+        invoiceNumber: inv.invoiceNumber,
+        receiptNumber: inv.receiptNumber,
+        verificationCode: inv.verificationCode,
+        signatureHash: inv.signatureHash,
+        signatureValid: inv.signatureValid,
+        courseId: inv.courseSlug || inv.itemSku,
+        courseName: inv.itemTitle,
+        amount: inv.netAmountNpr,
+        grossAmount: inv.grossAmountNpr,
+        discountAmount: inv.discountAmountNpr,
+        amountInWords: inv.amountInWords,
+        currency: inv.currency,
+        gateway: inv.gateway,
+        gatewayRef: inv.gatewayRef,
+        status: inv.status,
+        fiscalYearBs: inv.fiscalYearBs,
+        createdAt: inv.issuedAt,
+        paidAt: inv.paidAt,
         isEnrolled,
+        invoice: inv,
       };
     });
 
     return NextResponse.json({
       purchases,
+      invoices,
       activeEnrollments: enrollments || [],
-      transactions: transactions || [],
     });
   } catch (err: any) {
     console.error('API /api/my-purchases error:', err);

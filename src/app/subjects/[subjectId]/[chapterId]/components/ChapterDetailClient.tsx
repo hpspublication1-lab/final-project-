@@ -30,6 +30,7 @@ interface NoteRow {
   title: string;
   is_premium: boolean;
   pdf_url: string | null;
+  content?: string | null;
   content_markdown?: string | null;
   summary_key_points?: string[] | null;
   formula_sheet_latex?: string | null;
@@ -91,7 +92,7 @@ export default function ChapterDetailClient({ subjectId, chapterId }: ChapterDet
       const [{ count: qCount }, { data: videoRows }, { data: noteRows }, masteryRes] = await Promise.all([
         supabase.from('questions').select('*', { count: 'exact', head: true }).eq('chapter_id', chapterId).eq('is_published', true),
         supabase.from('video_lectures').select('id, title, description, duration_sec, is_premium').eq('chapter_id', chapterId).eq('is_active', true).order('created_at', { ascending: true }),
-        supabase.from('notes').select('id, title, is_premium, pdf_url, content_markdown, summary_key_points, formula_sheet_latex').eq('chapter_id', chapterId).eq('is_active', true).order('created_at', { ascending: true }),
+        supabase.from('notes').select('id, title, is_premium, pdf_url, content, content_markdown, summary_key_points, formula_sheet_latex').eq('chapter_id', chapterId).eq('is_active', true).order('created_at', { ascending: true }),
         user
           ? supabase.from('topic_mastery').select('*').eq('student_id', user.id).eq('chapter_id', chapterId).maybeSingle()
           : Promise.resolve({ data: null }),
@@ -475,7 +476,7 @@ export default function ChapterDetailClient({ subjectId, chapterId }: ChapterDet
                             subjectName: subjectRow.display_name,
                             chapterTitle: chapterRow.title,
                             readingTimeMins: 10,
-                            contentMarkdown: n.content_markdown || `# ${n.title}\n\nComprehensive academic notes for **${chapterRow.title}** (${subjectRow.display_name}).\n\nRefer to the attached lecture recordings and chapter practice tests to solidify your conceptual understanding.`,
+                            contentMarkdown: n.content || n.content_markdown || `# ${n.title}\n\nComprehensive academic notes for **${chapterRow.title}** (${subjectRow.display_name}).\n\nRefer to the attached lecture recordings and chapter practice tests to solidify your conceptual understanding.`,
                             summaryKeyPoints: n.summary_key_points || undefined,
                             formulaSheetLatex: n.formula_sheet_latex || undefined,
                             pdfUrl: n.pdf_url,

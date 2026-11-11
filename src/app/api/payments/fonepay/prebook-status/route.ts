@@ -62,9 +62,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'pending' });
     }
 
+    // Amount & Currency Validation (Prebooking fee is strictly 300 NPR)
+    if (result.raw?.amount || result.raw?.totalAmount) {
+      const reportedAmt = result.raw?.amount ?? result.raw?.totalAmount;
+      const { validateTransactionAmount } = await import('@/lib/payments/fonepaySecurity');
+      const amtCheck = validateTransactionAmount(
+        30000, // 300 NPR in paisa
+        reportedAmt,
+        'NPR',
+        result.raw?.currency || 'NPR'
+      );
+      if (!amtCheck.valid) {
+        console.error(`[Fonepay Security] Prebook amount mismatch for ${booking.payment_ref}:`, amtCheck.error);
+        return NextResponse.json({ error: amtCheck.error }, { status: 400 });
+      }
+    }
+
+    // Replay Protection: ensure traceId has not been used by any other transaction
+    if (result.traceId) {
+      const { count } = await admin
+        .from('payment_transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('gateway_ref', result.traceId);
+
+      if (count && count > 0) {
+        console.error(`[Fonepay Security] Prebook replay attack: traceId ${result.traceId} already used.`);
+        return NextResponse.json(
+          { error: 'Replay attack detected: Fonepay traceId already settled.' },
+          { status: 409 }
+        );
+      }
+    }
+
     const { data: updatedBooking } = await admin
       .from('prebookings')
-      .update({ status: 'confirmed', payment_method: 'fonepay', updated_at: new Date().toISOString() })
+      .update({
+        status: 'confirmed',
+        payment_method: 'fonepay',
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', booking.id)
       .eq('status', 'pending')
       .select('id')

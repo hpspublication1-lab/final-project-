@@ -10,8 +10,15 @@ export const metadata: Metadata = {
 export default async function PaymentSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string }>;
+  searchParams: Promise<{ plan?: string; prn?: string; invoice?: string; sample?: string }>;
 }) {
-  const { plan } = await searchParams;
-  return <PaymentSuccessClient plan={plan ?? ''} />;
+  const { plan, prn, invoice, sample } = await searchParams;
+  return (
+    <PaymentSuccessClient
+      plan={plan ?? ''}
+      prn={prn ?? ''}
+      invoiceParam={invoice ?? ''}
+      isSample={sample === 'true' || sample === '1'}
+    />
+  );
 }

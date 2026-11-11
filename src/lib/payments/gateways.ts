@@ -179,12 +179,17 @@ export interface FonepayConfig {
   env: string;
 }
 
+import {
+  computeFonepayHmacSha512,
+  computeDynamicQrSignature,
+  computeStatusInquirySignature,
+  validateTransactionAmount,
+  isSuccessfulFonepayStatus,
+} from './fonepaySecurity';
+
 /** DataValidation = HMAC-SHA512(secret, message) → lowercase hex. */
-function fonepayHmac(message: string, secretKey: string): string {
-  return crypto
-    .createHmac('sha512', secretKey)
-    .update(message)
-    .digest('hex');
+export function fonepayHmac(message: string, secretKey: string): string {
+  return computeFonepayHmacSha512(message, secretKey);
 }
 
 /**
@@ -305,10 +310,14 @@ export async function generateFonepayQr(opts: {
  */
 export async function checkFonepayStatus(
   prn: string,
-  config: FonepayConfig
+  config: FonepayConfig,
+  opts?: {
+    expectedAmountNpr?: number;
+    expectedCurrency?: string;
+  }
 ): Promise<{ status: 'success' | 'pending'; traceId: string | null; raw: any }> {
   const { merchantCode, username, password, secretKey, env } = config;
-  const dataValidation = fonepayHmac(`${prn},${merchantCode}`, secretKey);
+  const dataValidation = computeStatusInquirySignature(prn, merchantCode, secretKey);
 
   const endpoints = env === 'production'
     ? ['https://merchantapi.fonepay.com', 'https://uat-new-merchant-api.fonepay.com']
@@ -340,8 +349,25 @@ export async function checkFonepayStatus(
       clearTimeout(timer);
       const raw = await res.json().catch(() => null);
       if (raw) {
-        const paymentStatus = String(raw?.paymentStatus ?? '').toLowerCase();
-        const status = paymentStatus === 'success' ? 'success' : 'pending';
+        const paymentStatus = String(raw?.paymentStatus ?? '');
+        let status: 'success' | 'pending' = isSuccessfulFonepayStatus(paymentStatus, raw?.responseCode)
+          ? 'success'
+          : 'pending';
+
+        // Additional strict amount check if opts.expectedAmountNpr is supplied and Fonepay returned amount
+        if (status === 'success' && opts?.expectedAmountNpr && (raw?.amount || raw?.totalAmount)) {
+          const reported = raw?.amount ?? raw?.totalAmount;
+          const amtCheck = validateTransactionAmount(
+            opts.expectedAmountNpr * 100,
+            reported,
+            opts.expectedCurrency || 'NPR',
+            raw?.currency || 'NPR'
+          );
+          if (!amtCheck.valid) {
+            status = 'pending';
+          }
+        }
+
         return { status, traceId: raw?.fonepayTraceId != null ? String(raw.fonepayTraceId) : null, raw };
       }
     } catch {

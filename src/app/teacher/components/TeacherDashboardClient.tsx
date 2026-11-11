@@ -51,29 +51,17 @@ export default function TeacherDashboardClient() {
   const [doubtReply, setDoubtReply] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
 
-  // Sample mock doubts
-  const [doubts, setDoubts] = useState([
-    {
-      id: 'dbt_1',
-      studentName: 'Aarav Sharma',
-      subject: 'Botany',
-      title: 'Difference between cyclic and non-cyclic photophosphorylation?',
-      content: 'Does non-cyclic photophosphorylation produce only ATP or both ATP and NADPH? What is the main electron donor?',
-      created_at: new Date(Date.now() - 3600000 * 2).toISOString(),
-      status: 'open',
-      replies: [],
-    },
-    {
-      id: 'dbt_2',
-      studentName: 'Pooja Thapa',
-      subject: 'Physics',
-      title: 'Terminal velocity derivation in viscous medium',
-      content: 'In Stokes law, how do we account for the buoyant force when the bubble is rising versus when a steel ball is dropping?',
-      created_at: new Date(Date.now() - 3600000 * 6).toISOString(),
-      status: 'open',
-      replies: [],
-    },
-  ]);
+  // Real cohort doubts state (no fake mock data)
+  const [doubts, setDoubts] = useState<Array<{
+    id: string;
+    studentName: string;
+    subject: string;
+    title: string;
+    content: string;
+    created_at: string;
+    status: string;
+    replies: any[];
+  }>>([]);
 
   const fetchTeacherOverview = async () => {
     setLoading(true);
@@ -82,6 +70,26 @@ export default function TeacherDashboardClient() {
       const data = await res.json();
       if (res.ok && data.data) {
         setOverview(data.data);
+      }
+
+      // Fetch authentic doubts from /api/doubts
+      const doubtsRes = await fetch('/api/doubts?status=open');
+      if (doubtsRes.ok) {
+        const doubtsData = await doubtsRes.json();
+        if (doubtsData.doubts && Array.isArray(doubtsData.doubts)) {
+          setDoubts(
+            doubtsData.doubts.map((item: any) => ({
+              id: item.id,
+              studentName: item.student_name || 'Enrolled Student',
+              subject: item.subjects?.display_name || 'Medical Science',
+              title: item.title || 'Student Inquiry',
+              content: item.question_text || '',
+              created_at: item.created_at,
+              status: item.status || 'open',
+              replies: [],
+            }))
+          );
+        }
       }
     } catch (err) {
       console.error('Error loading teacher data:', err);
@@ -670,8 +678,19 @@ export default function TeacherDashboardClient() {
                 </div>
 
                 <div className="space-y-3">
-                  {doubts.map((d) => (
-                    <div key={d.id} className="bg-card border border-border rounded-2xl p-5 space-y-3 shadow-sm">
+                  {doubts.length === 0 ? (
+                    <div className="bg-card border border-border rounded-2xl p-8 text-center text-muted-foreground space-y-2 shadow-xs">
+                      <div className="w-12 h-12 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto text-muted-foreground/60">
+                        <MessageCircleQuestion size={24} />
+                      </div>
+                      <p className="text-sm font-bold text-foreground">No Pending Student Doubts</p>
+                      <p className="text-xs max-w-sm mx-auto">
+                        All incoming questions from your assigned cohort have been resolved. New inquiries will appear here in real-time.
+                      </p>
+                    </div>
+                  ) : (
+                    doubts.map((d) => (
+                      <div key={d.id} className="bg-card border border-border rounded-2xl p-5 space-y-3 shadow-sm">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-bio/10 text-bio uppercase">
@@ -737,7 +756,8 @@ export default function TeacherDashboardClient() {
                         </div>
                       )}
                     </div>
-                  ))}
+                  ))
+                )}
                 </div>
               </div>
             )}

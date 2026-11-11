@@ -8,11 +8,16 @@ import {
   Shield, MessageSquare, Radio, LogOut, Menu, Sun, Moon, KeyRound,
   Upload, Layers, MessageCircleQuestion, Ticket, Tag,
   BellRing, Sliders, Award, RefreshCw, UserCheck, Megaphone,
-  CheckCircle2, Loader2, Play, ExternalLink
+  CheckCircle2, Loader2, Play, ExternalLink, Search, Command,
+  Sparkles, Bot, Swords, Trophy
 } from 'lucide-react';
 import AppLogo from '@/components/ui/AppLogo';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import AdminOmniCommand from '@/components/admin/AdminOmniCommand';
+import AdminTelemetryRadar from '@/components/admin/AdminTelemetryRadar';
+import AdminInfraPulse from '@/components/admin/AdminInfraPulse';
+import Student360Drawer, { type StudentProfileData } from '@/components/admin/Student360Drawer';
 
 interface StatCard {
   label: string;
@@ -49,6 +54,25 @@ const navItems = [
     ],
   },
   {
+    label: 'Arena & Tournaments',
+    key: 'admin-arena-group',
+    icon: Swords,
+    children: [
+      { label: 'Arena Control & Ratings', href: '/admin/arena', icon: Swords, key: 'admin-arena-ctrl' },
+      { label: 'Daily Rs. 1,000 Championship', href: '/admin/arena/championship', icon: Trophy, key: 'admin-arena-champ' },
+      { label: 'Global Leaderboards', href: '/leaderboard', icon: Award, key: 'admin-arena-lead' },
+    ],
+  },
+  {
+    label: 'Autonomous AI Operations',
+    key: 'admin-autonomous-ops',
+    icon: Bot,
+    children: [
+      { label: 'Autonomous Hub & Daemons', href: '/admin/autonomous', icon: Sparkles, key: 'admin-autonomous' },
+      { label: '10,000 Bulk Activation Codes', href: '/admin/activation-codes', icon: KeyRound, key: 'admin-activation-codes' },
+    ],
+  },
+  {
     label: 'Users & Privileges',
     key: 'admin-users',
     icon: Users,
@@ -65,6 +89,7 @@ const navItems = [
     icon: CreditCard,
     children: [
       { label: 'Orders & Payments', href: '/admin/orders', icon: CreditCard, key: 'admin-orders' },
+      { label: 'Billing & Tax Ledger', href: '/admin/billing', icon: FileText, key: 'admin-billing' },
       { label: 'Coupons & Vouchers', href: '/admin/coupons', icon: Tag, key: 'admin-coupons' },
     ],
   },
@@ -91,9 +116,12 @@ const navItems = [
   },
 ];
 
-// 21 Canonical Modules Dashboard Directory
+// Canonical Modules Dashboard Directory
 const canonicalModules = [
   { label: 'Overview', desc: 'Real-time operational dashboard & metrics', href: '/admin', icon: LayoutDashboard, color: 'text-primary', bg: 'bg-primary/10' },
+  { label: 'Battle Arena', desc: '1v1 matchmaking, rating brackets & anti-cheat', href: '/admin/arena', icon: Swords, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { label: 'Daily Championship', desc: 'Daily Rank 1 eSewa payout approvals & fair-play audit', href: '/admin/arena/championship', icon: Trophy, color: 'text-amber-600', bg: 'bg-amber-500/15' },
+  { label: 'Autonomous AI', desc: '10,000 bulk codes, syllabus research & reminders', href: '/admin/autonomous', icon: Sparkles, color: 'text-primary', bg: 'bg-primary/10' },
   { label: 'Students', desc: 'Registered student accounts, progress & status', href: '/admin/users?role=student', icon: Users, color: 'text-success', bg: 'bg-success-light' },
   { label: 'Teachers & Staff', desc: 'Faculty profiles, subject & batch assignments', href: '/admin/teachers', icon: UserCheck, color: 'text-bio', bg: 'bg-bio-light' },
   { label: 'Roles & Permissions', desc: 'RBAC permissions matrix & super admin roles', href: '/admin/roles', icon: Shield, color: 'text-chem', bg: 'bg-chem-light' },
@@ -119,9 +147,43 @@ const canonicalModules = [
 export default function AdminDashboardClient() {
   const [isDark, setIsDark] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [omniOpen, setOmniOpen] = useState(false);
+  const [inspectedStudent, setInspectedStudent] = useState<StudentProfileData | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
-    new Set(['admin-academic', 'admin-assessment', 'admin-users', 'admin-finance'])
+    new Set(['admin-academic', 'admin-assessment', 'admin-arena-group', 'admin-autonomous-ops', 'admin-users', 'admin-finance'])
   );
+
+  // Global Cmd+K / Ctrl+K listener for Omni-Command Bar
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setOmniOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleInspectFromRadar = async (studentId: string) => {
+    try {
+      const res = await fetch(`/api/admin/users?search=${encodeURIComponent(studentId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const found = (data.users || []).find((u: any) => u.id === studentId) || data.users?.[0];
+        if (found) {
+          setInspectedStudent(found);
+          return;
+        }
+      }
+    } catch {}
+    setInspectedStudent({
+      id: studentId,
+      full_name: 'Medical Aspirant',
+      email: 'student@samyak.edu.np',
+      phone: '+977-98XXXXXXXX',
+    });
+  };
   
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<any>({
@@ -300,6 +362,19 @@ export default function AdminDashboardClient() {
           </div>
           
           <div className="flex items-center gap-3">
+            {/* Omni-Command HUD Trigger */}
+            <button
+              onClick={() => setOmniOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors cursor-pointer"
+              title="Omni-Search HUD (Ctrl+K or Cmd+K)"
+            >
+              <Search size={14} className="text-primary" />
+              <span className="hidden sm:inline">Omni-Command HUD</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono bg-background border border-border rounded shadow-xs">
+                ⌘K
+              </kbd>
+            </button>
+
             <Link
               href="/teacher"
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-bio/10 hover:bg-bio/20 text-bio text-xs font-bold rounded-xl transition-colors"
@@ -354,6 +429,12 @@ export default function AdminDashboardClient() {
                 </div>
               ))}
             </div>
+
+            {/* Suite 4: Live Infrastructure, CDN & Gateway Health Pulse */}
+            <AdminInfraPulse />
+
+            {/* Suite 3: Real-Time Academic Intelligence & Telemetry Radar */}
+            <AdminTelemetryRadar onInspectStudent={(id) => handleInspectFromRadar(id)} />
 
             {/* 21 Canonical Modules Directory */}
             <div>
@@ -427,6 +508,15 @@ export default function AdminDashboardClient() {
           </div>
         </main>
       </div>
+
+      {/* Suite 1: Omni-Command Bar HUD (Cmd+K) */}
+      <AdminOmniCommand isOpen={omniOpen} onClose={() => setOmniOpen(false)} />
+
+      {/* Suite 1: Student 360° Omniscient Inspector Drawer */}
+      <Student360Drawer
+        student={inspectedStudent}
+        onClose={() => setInspectedStudent(null)}
+      />
     </div>
   );
 }

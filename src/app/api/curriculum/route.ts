@@ -11,6 +11,9 @@ import { CanonicalCourseSlug } from '@/types/lms';
 
 export const dynamic = 'force-dynamic';
 
+const curriculumCache = new Map<string, { payload: any; exp: number }>();
+const CURRICULUM_CACHE_TTL_MS = 60_000;
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -21,6 +24,17 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    const cacheKey = `${user?.id || 'anon'}:${courseSlug}:${batchIdParam || 'def'}:${lessonIdParam || 'def'}`;
+    const cached = curriculumCache.get(cacheKey);
+    if (cached && Date.now() < cached.exp) {
+      return NextResponse.json(cached.payload, {
+        headers: {
+          'Cache-Control': 'private, max-age=30, stale-while-revalidate=120',
+          'X-Curriculum-Cache': 'HIT',
+        },
+      });
+    }
 
     const admin = createAdminClient() || supabase;
 
@@ -325,7 +339,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const resultPayload = {
       course: {
         slug: courseSlug,
         title: courseSlug === 'see_class_10' ? 'SEE Class 10 Board Exam' : 'CEE Medical Entrance Preparation',
@@ -336,6 +350,19 @@ export async function GET(request: NextRequest) {
       isEnrolled,
       subjects: structuredSubjects,
       activeLesson: activeLessonPayload,
+    };
+
+    if (curriculumCache.size > 200) {
+      const oldestKey = curriculumCache.keys().next().value;
+      if (oldestKey) curriculumCache.delete(oldestKey);
+    }
+    curriculumCache.set(cacheKey, { payload: resultPayload, exp: Date.now() + CURRICULUM_CACHE_TTL_MS });
+
+    return NextResponse.json(resultPayload, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=120',
+        'X-Curriculum-Cache': 'MISS',
+      },
     });
   } catch (err: any) {
     console.error('Curriculum error:', err);

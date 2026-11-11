@@ -175,9 +175,19 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>): void 
   if (eventBuffer.length > 1000) eventBuffer.splice(0, 500);
 }
 
-// ── 6. Auth Rate Limit Helper ──────────────────────────────────────────
+// ── 6. Auth Rate Limit Helpers ──────────────────────────────────────────
 export function enforceAuthRateLimit(req: Request): RateLimitResult {
   return enforceRateLimit(req, 'auth');
+}
+
+export function enforceLoginRateLimit(req: Request, email?: string): RateLimitResult {
+  const emailSuffix = email ? sanitizeEmail(email) : undefined;
+  return enforceRateLimit(req, 'login', emailSuffix);
+}
+
+export function enforceOtpRateLimit(req: Request, identifier?: string): RateLimitResult {
+  const idSuffix = identifier ? identifier.trim().toLowerCase().slice(0, 100) : undefined;
+  return enforceRateLimit(req, 'otp', idSuffix);
 }
 
 // ── 7. Secure Cookie Defaults ──────────────────────────────────────────

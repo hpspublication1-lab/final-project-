@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { assertAiQuota } from '@/lib/ai/completion';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -30,6 +31,30 @@ export interface VisionMarkerResult {
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Enforce file upload rate limit (upload preset: 10 req / 60s)
+    const uploadRl = await enforceRateLimit(request, 'upload');
+    if (!uploadRl.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many paper image uploads. Please wait a moment before uploading again.',
+          retryAfter: uploadRl.resetSeconds,
+        },
+        { status: 429, headers: { 'Retry-After': String(uploadRl.resetSeconds) } }
+      );
+    }
+
+    // 2. Enforce AI burst rate limit (ai preset: 15 req / 60s)
+    const aiRl = await enforceRateLimit(request, 'ai');
+    if (!aiRl.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Too many AI evaluation requests. Please slow down.',
+          retryAfter: aiRl.resetSeconds,
+        },
+        { status: 429, headers: { 'Retry-After': String(aiRl.resetSeconds) } }
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 

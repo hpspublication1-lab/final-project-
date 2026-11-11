@@ -53,7 +53,7 @@ const PILLARS = [
 
 export default function FlagshipPillarsSection() {
   return (
-    <section className="py-20 bg-muted/20 border-t border-border/60 relative overflow-hidden">
+    <section className="py-20 sm:py-28 bg-background border-t border-border/60 relative overflow-hidden">
       <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase tracking-wider">

@@ -8,6 +8,7 @@ import {
   khaltiConfigured, initiateKhaltiPayment,
 } from '@/lib/payments/gateways';
 import { enforceRateLimit } from '@/lib/security/rateLimiter';
+import { blockSensitiveActionDuringImpersonation } from '@/lib/auth/impersonationGuard';
 
 /**
  * POST /api/payments/initiate  { gateway: 'esewa'|'khalti', plan: 'pro' }
@@ -20,7 +21,11 @@ import { enforceRateLimit } from '@/lib/security/rateLimiter';
  */
 export async function POST(request: NextRequest) {
   try {
-    const rl = enforceRateLimit(request, 'payment');
+    // 0. Impersonation Guard: Prevent admins in Ghost mode from initiating real payments
+    const impCheck = await blockSensitiveActionDuringImpersonation(request, 'initiate_payment');
+    if (impCheck) return impCheck;
+
+    const rl = await enforceRateLimit(request, 'payment');
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Too many payment requests. Please wait a moment and try again.' },

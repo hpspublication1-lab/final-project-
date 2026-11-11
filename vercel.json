@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/email-automation",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }

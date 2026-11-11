@@ -15,7 +15,12 @@ import {
   Settings,
   Subtitles,
   Check,
+  Headphones,
+  Radio,
+  Sparkles,
 } from 'lucide-react';
+
+import DynamicDrmWatermark from './DynamicDrmWatermark';
 
 interface BunnyHlsPlayerProps {
   videoUrl: string; // e.g. https://vz-11253e6e-275.b-cdn.net/guid/playlist.m3u8
@@ -25,8 +30,11 @@ interface BunnyHlsPlayerProps {
   initialTime?: number; // Seek here on initial load for resume playback
   seekTo?: number; // Seek here when triggered from timestamped note
   captionsUrl?: string;
+  enableWatermark?: boolean;
   onEnded?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onPause?: (currentTime: number) => void;
+  onPlay?: () => void;
   className?: string;
 }
 
@@ -38,8 +46,11 @@ export default function BunnyHlsPlayer({
   initialTime = 0,
   seekTo,
   captionsUrl,
+  enableWatermark = true,
   onEnded,
   onTimeUpdate,
+  onPause,
+  onPlay,
   className = '',
 }: BunnyHlsPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -56,7 +67,7 @@ export default function BunnyHlsPlayer({
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showControls, setShowControls] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
-  const [qualityLevels, setQualityLevels] = useState<{ id: number; height: number }[]>([]);
+  const [qualityLevels, setQualityLevels] = useState<{ id: number; height: number; bitrate: number }[]>([]);
   const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto
 
   // Mobile-friendly menu toggles
@@ -64,9 +75,11 @@ export default function BunnyHlsPlayer({
   const [showQualityMenu, setShowQualityMenu] = useState<boolean>(false);
   const [captionsEnabled, setCaptionsEnabled] = useState<boolean>(false);
   const [resumeNotice, setResumeNotice] = useState<string | null>(null);
+  const [isAudioOnly, setIsAudioOnly] = useState<boolean>(false);
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasAppliedInitialTime = useRef<boolean>(false);
+  const prevQualityRef = useRef<number>(-1);
 
   const formatTime = (time: number) => {
     if (!time || isNaN(time)) return '0:00';
@@ -133,6 +146,15 @@ export default function BunnyHlsPlayer({
       return;
     }
 
+    // Detect slow mobile connection (2G / 3G / OS Data Saver) to cap initial HLS stream
+    const navConn = typeof navigator !== 'undefined' ? (navigator as any).connection : null;
+    const isSlowNetwork = Boolean(
+      navConn?.saveData ||
+      navConn?.effectiveType === 'slow-2g' ||
+      navConn?.effectiveType === '2g' ||
+      navConn?.effectiveType === '3g'
+    );
+
     // Use HLS.js for Chrome, Firefox, Edge, Android
     (async () => {
       try {
@@ -143,9 +165,9 @@ export default function BunnyHlsPlayer({
           hls = new HlsModule({
             enableWorker: true,
             capLevelToPlayerSize: true,
-            backBufferLength: 90,
-            maxBufferLength: 30,
-            startLevel: -1, // Auto
+            backBufferLength: isSlowNetwork ? 30 : 90,
+            maxBufferLength: isSlowNetwork ? 15 : 30,
+            startLevel: isSlowNetwork ? 0 : -1, // Start at lowest level on 2G/3G/DataSaver, otherwise Auto
           });
 
           hlsRef.current = hls;
@@ -157,7 +179,8 @@ export default function BunnyHlsPlayer({
             if (data.levels) {
               const levels = data.levels.map((l: any, idx: number) => ({
                 id: idx,
-                height: l.height,
+                height: l.height || 0,
+                bitrate: l.bitrate || 0,
               }));
               setQualityLevels(levels);
             }
@@ -243,11 +266,11 @@ export default function BunnyHlsPlayer({
     setCurrentTime(time);
   };
 
-  const handleSkip = (seconds: number) => {
+  const handleSkip = useCallback((seconds: number) => {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = Math.max(0, Math.min(video.duration || 0, video.currentTime + seconds));
-  };
+  }, []);
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const video = videoRef.current;
@@ -258,7 +281,7 @@ export default function BunnyHlsPlayer({
     setIsMuted(val === 0);
   };
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     if (isMuted) {
@@ -268,17 +291,17 @@ export default function BunnyHlsPlayer({
       video.volume = 0;
       setIsMuted(true);
     }
-  };
+  }, [isMuted, volume]);
 
-  const changePlaybackRate = (rate: number) => {
+  const changePlaybackRate = useCallback((rate: number) => {
     const video = videoRef.current;
     if (!video) return;
     video.playbackRate = rate;
     setPlaybackRate(rate);
     setShowSpeedMenu(false);
-  };
+  }, []);
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     const container = containerRef.current;
     if (!container) return;
 
@@ -289,15 +312,176 @@ export default function BunnyHlsPlayer({
       document.exitFullscreen().catch(() => {});
       setIsFullscreen(false);
     }
-  };
+  }, []);
+
+  // Global Keyboard Shortcuts (PW Classroom Standard with Input Focus Guard)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Guard against typing in forms/inputs/textareas/contenteditable
+      const activeEl = document.activeElement;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          (activeEl as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      switch (e.key) {
+        case ' ':
+        case 'k':
+        case 'K':
+          e.preventDefault();
+          handlePlayPause();
+          break;
+        case 'ArrowLeft':
+        case 'j':
+        case 'J':
+          e.preventDefault();
+          handleSkip(-10);
+          break;
+        case 'ArrowRight':
+        case 'l':
+        case 'L':
+          e.preventDefault();
+          handleSkip(10);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          video.volume = Math.min(1, Math.round((video.volume + 0.05) * 100) / 100);
+          setVolume(video.volume);
+          setIsMuted(false);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          video.volume = Math.max(0, Math.round((video.volume - 0.05) * 100) / 100);
+          setVolume(video.volume);
+          setIsMuted(video.volume === 0);
+          break;
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+        case '<':
+        case ',': {
+          e.preventDefault();
+          const speeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+          const currIdx = speeds.indexOf(playbackRate);
+          if (currIdx > 0) {
+            changePlaybackRate(speeds[currIdx - 1]);
+          }
+          break;
+        }
+        case '>':
+        case '.': {
+          e.preventDefault();
+          const speeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+          const currIdx = speeds.indexOf(playbackRate);
+          if (currIdx >= 0 && currIdx < speeds.length - 1) {
+            changePlaybackRate(speeds[currIdx + 1]);
+          }
+          break;
+        }
+        case '1':
+          e.preventDefault();
+          changePlaybackRate(1);
+          break;
+        case '2':
+          e.preventDefault();
+          changePlaybackRate(1.25);
+          break;
+        case '3':
+          e.preventDefault();
+          changePlaybackRate(1.5);
+          break;
+        case '4':
+          e.preventDefault();
+          changePlaybackRate(2);
+          break;
+        case '0':
+          e.preventDefault();
+          video.currentTime = 0;
+          setCurrentTime(0);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handlePlayPause, handleSkip, toggleMute, toggleFullscreen, changePlaybackRate, playbackRate]);
 
   const changeQuality = (levelId: number) => {
+    setIsAudioOnly(false);
     setCurrentQuality(levelId);
     if (hlsRef.current) {
       hlsRef.current.currentLevel = levelId;
+      if (hlsRef.current.config) {
+        hlsRef.current.config.maxBufferLength = 30;
+      }
     }
     setShowQualityMenu(false);
   };
+
+  // Find lowest bitrate/resolution HLS level and calculate genuine bandwidth reduction
+  const lowestLevelInfo = React.useMemo(() => {
+    if (qualityLevels.length === 0) return null;
+    let lowest = qualityLevels[0];
+    let highest = qualityLevels[0];
+    for (const lvl of qualityLevels) {
+      const mLow = lowest.bitrate || lowest.height || Infinity;
+      const mCurr = lvl.bitrate || lvl.height || Infinity;
+      if (mCurr < mLow) lowest = lvl;
+      if ((lvl.bitrate || lvl.height) > (highest.bitrate || highest.height)) highest = lvl;
+    }
+    const savingsPct =
+      highest.bitrate > 0 && lowest.bitrate > 0 && highest.bitrate > lowest.bitrate
+        ? Math.round((1 - lowest.bitrate / highest.bitrate) * 100)
+        : null;
+    return {
+      id: lowest.id,
+      height: lowest.height,
+      kbps: lowest.bitrate > 0 ? Math.round(lowest.bitrate / 1000) : null,
+      savingsPct,
+    };
+  }, [qualityLevels]);
+
+  const toggleLowDataMode = useCallback(
+    (enable: boolean) => {
+      if (enable) {
+        prevQualityRef.current = currentQuality;
+        setIsAudioOnly(true);
+        if (hlsRef.current && lowestLevelInfo !== null) {
+          hlsRef.current.currentLevel = lowestLevelInfo.id;
+          hlsRef.current.nextLevel = lowestLevelInfo.id;
+          if (hlsRef.current.config) {
+            hlsRef.current.config.maxBufferLength = 10;
+          }
+          setCurrentQuality(lowestLevelInfo.id);
+        }
+      } else {
+        setIsAudioOnly(false);
+        const restoreLevel = prevQualityRef.current;
+        setCurrentQuality(restoreLevel);
+        if (hlsRef.current) {
+          hlsRef.current.currentLevel = restoreLevel;
+          if (hlsRef.current.config) {
+            hlsRef.current.config.maxBufferLength = 30;
+          }
+        }
+      }
+    },
+    [currentQuality, lowestLevelInfo]
+  );
 
   const toggleCaptions = () => {
     setCaptionsEnabled((prev) => !prev);
@@ -318,6 +502,7 @@ export default function BunnyHlsPlayer({
       ref={containerRef}
       onMouseMove={handleMouseMove}
       onTouchStart={handleMouseMove}
+      onContextMenu={(e) => e.preventDefault()}
       onMouseLeave={() => isPlaying && !showSpeedMenu && !showQualityMenu && setShowControls(false)}
       className={`relative bg-black rounded-3xl overflow-hidden aspect-video flex items-center justify-center select-none group ${className}`}
     >
@@ -326,8 +511,16 @@ export default function BunnyHlsPlayer({
         ref={videoRef}
         poster={thumbnailUrl}
         playsInline
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        controlsList="nodownload"
+        onContextMenu={(e) => e.preventDefault()}
+        onPlay={() => {
+          setIsPlaying(true);
+          if (onPlay) onPlay();
+        }}
+        onPause={() => {
+          setIsPlaying(false);
+          if (onPause && videoRef.current) onPause(videoRef.current.currentTime);
+        }}
         onWaiting={() => setIsBuffering(true)}
         onPlaying={() => setIsBuffering(false)}
         onTimeUpdate={handleTimeUpdate}
@@ -349,6 +542,64 @@ export default function BunnyHlsPlayer({
           />
         )}
       </video>
+
+      {/* Dynamic Anti-Piracy DRM Watermark */}
+      {enableWatermark && !isAudioOnly && (
+        <DynamicDrmWatermark />
+      )}
+
+      {/* Low-Data / Audio Focus Overlay */}
+      {isAudioOnly && (
+        <div className="absolute inset-0 z-15 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40 flex flex-col items-center justify-center p-6 text-center select-none backdrop-blur-md">
+          {/* Ambient Glow */}
+          <div className="absolute w-64 h-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none animate-pulse" />
+          
+          {/* Animated Waveform Equalizer */}
+          <div className="relative z-10 flex items-center justify-center gap-1.5 mb-4 h-14">
+            {[35, 65, 90, 55, 80, 100, 75, 45, 85, 60, 75, 40].map((h, i) => (
+              <div
+                key={i}
+                className={`w-1.5 rounded-full bg-gradient-to-t from-emerald-500 to-teal-300 transition-all ${
+                  isPlaying ? 'animate-pulse' : 'opacity-40'
+                }`}
+                style={{
+                  height: isPlaying ? `${Math.max(20, h * 0.85)}%` : '20%',
+                  animationDelay: `${i * 80}ms`,
+                  animationDuration: '800ms',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Mode Pill & Honest Stream Metrics */}
+          <div className="relative z-10 space-y-2 max-w-sm">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-bold tracking-wide">
+              <Headphones size={13} />
+              <span>
+                {lowestLevelInfo
+                  ? `Low-Data Stream Active (${lowestLevelInfo.height ? `${lowestLevelInfo.height}p` : 'Min Bitrate'}${
+                      lowestLevelInfo.savingsPct ? ` • ~${lowestLevelInfo.savingsPct}% Less Data` : ''
+                    })`
+                  : 'Audio Focus Mode Active'}
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 font-medium line-clamp-1">
+              {title || 'Lecture Stream'}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {lowestLevelInfo
+                ? `Locked to lowest available HLS stream${lowestLevelInfo.kbps ? ` (${lowestLevelInfo.kbps} kbps)` : ''} with reduced pre-buffering`
+                : 'Video display hidden for distraction-free listening'}
+            </p>
+            <button
+              onClick={() => toggleLowDataMode(false)}
+              className="mt-2 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>Restore Video Display</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Resume Notice Indicator */}
       {resumeNotice && (
@@ -469,9 +720,35 @@ export default function BunnyHlsPlayer({
             </span>
           </div>
 
-          {/* Right Controls: Captions, Speed, Quality, Fullscreen */}
+          {/* Right Controls: Data Saver, Captions, Speed, Quality, Fullscreen */}
           <div className="flex items-center gap-1.5 sm:gap-2 relative">
             
+            {/* Low-Data / Audio Focus Button */}
+            <button
+              onClick={() => toggleLowDataMode(!isAudioOnly)}
+              title={
+                isAudioOnly
+                  ? 'Restore Video Display'
+                  : lowestLevelInfo
+                  ? `Lock to lowest HLS stream (${lowestLevelInfo.height || 'min'}p) & hide video`
+                  : 'Hide video for distraction-free audio listening'
+              }
+              className={`p-1.5 sm:px-2 sm:py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                isAudioOnly
+                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-xs'
+                  : 'bg-white/10 hover:bg-white/20 text-white/90'
+              }`}
+            >
+              <Headphones size={13} />
+              <span className="hidden md:inline">
+                {isAudioOnly
+                  ? lowestLevelInfo?.savingsPct
+                    ? `Low-Data (-${lowestLevelInfo.savingsPct}%)`
+                    : 'Audio Focus'
+                  : 'Data Saver'}
+              </span>
+            </button>
+
             {/* Captions Toggle */}
             <button
               onClick={toggleCaptions}
@@ -519,49 +796,83 @@ export default function BunnyHlsPlayer({
               )}
             </div>
 
-            {/* Quality Selector (Touch + Click menu) */}
-            {qualityLevels.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setShowQualityMenu(!showQualityMenu);
-                    setShowSpeedMenu(false);
-                  }}
-                  aria-label="Video quality"
-                  className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-mono font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                >
-                  <Settings size={12} />
-                  <span>{currentQuality === -1 ? 'Auto' : `${qualityLevels[currentQuality]?.height}p`}</span>
-                </button>
+            {/* Quality / Resolution Selector */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowQualityMenu(!showQualityMenu);
+                  setShowSpeedMenu(false);
+                }}
+                aria-label="Video quality"
+                className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-mono font-bold transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <Settings size={12} />
+                <span>
+                  {isAudioOnly
+                    ? 'Low-Data'
+                    : currentQuality === -1
+                    ? 'Auto'
+                    : qualityLevels[currentQuality]?.height
+                    ? `${qualityLevels[currentQuality].height}p`
+                    : 'Auto'}
+                </span>
+              </button>
 
-                {showQualityMenu && (
-                  <div className="absolute bottom-full right-0 mb-2 flex flex-col bg-slate-900 border border-slate-700 rounded-xl overflow-hidden p-1 shadow-2xl z-50 min-w-[100px]">
-                    <span className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">Quality</span>
+              {showQualityMenu && (
+                <div className="absolute bottom-full right-0 mb-2 flex flex-col bg-slate-900 border border-slate-700 rounded-xl overflow-hidden p-1 shadow-2xl z-50 min-w-[150px]">
+                  <span className="text-[10px] font-bold text-slate-400 px-2 py-1 uppercase tracking-wider">Stream Quality</span>
+                  
+                  {/* Auto Quality */}
+                  <button
+                    onClick={() => changeQuality(-1)}
+                    className={`px-3 py-1.5 text-xs font-mono text-left rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
+                      !isAudioOnly && currentQuality === -1 ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
+                    }`}
+                  >
+                    <span>Auto (Adaptive)</span>
+                    {!isAudioOnly && currentQuality === -1 && <Check size={12} />}
+                  </button>
+
+                  {/* Low-Data / Audio Focus */}
+                  <button
+                    onClick={() => {
+                      toggleLowDataMode(true);
+                      setShowQualityMenu(false);
+                    }}
+                    className={`px-3 py-1.5 text-xs font-mono text-left rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
+                      isAudioOnly ? 'bg-emerald-600 text-white font-bold' : 'text-emerald-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1">
+                      <Headphones size={11} />
+                      <span>
+                        {lowestLevelInfo
+                          ? `Low-Data (${lowestLevelInfo.height || 'Min'}p)`
+                          : 'Audio Focus'}
+                      </span>
+                    </span>
+                    {isAudioOnly && <Check size={12} />}
+                  </button>
+
+                  {/* Actual parsed HLS quality levels only */}
+                  {qualityLevels.map((l) => (
                     <button
-                      onClick={() => changeQuality(-1)}
+                      key={l.id}
+                      onClick={() => changeQuality(l.id)}
                       className={`px-3 py-1.5 text-xs font-mono text-left rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-                        currentQuality === -1 ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
+                        !isAudioOnly && currentQuality === l.id ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
                       }`}
                     >
-                      <span>Auto</span>
-                      {currentQuality === -1 && <Check size={12} />}
+                      <span>
+                        {l.height ? `${l.height}p` : `Level ${l.id + 1}`}
+                        {l.bitrate ? ` (${Math.round(l.bitrate / 1000)} kbps)` : ''}
+                      </span>
+                      {!isAudioOnly && currentQuality === l.id && <Check size={12} />}
                     </button>
-                    {qualityLevels.map((l) => (
-                      <button
-                        key={l.id}
-                        onClick={() => changeQuality(l.id)}
-                        className={`px-3 py-1.5 text-xs font-mono text-left rounded-lg transition-colors flex items-center justify-between cursor-pointer ${
-                          currentQuality === l.id ? 'bg-emerald-600 text-white font-bold' : 'text-slate-300 hover:bg-white/10'
-                        }`}
-                      >
-                        <span>{l.height}p</span>
-                        {currentQuality === l.id && <Check size={12} />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Fullscreen */}
             <button

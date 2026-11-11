@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import QRCode from 'qrcode';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { fonepayConfigured, generateFonepayQr } from '@/lib/payments/gateways';
+import { generateUniquePrn } from '@/lib/payments/fonepaySecurity';
 
 /**
  * POST /api/payments/fonepay/prebook-qr   { reference, phone }
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     }
 
     // prn doubles as the purchase order id. Keep it short (Fonepay max 25).
-    const prn = `PRE${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+    const prn = generateUniquePrn('PRE');
 
     let qr: any;
     try {

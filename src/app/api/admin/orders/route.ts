@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { AuditService, AUDIT_ACTIONS } from '@/lib/services/auditService';
 import { EnrollmentService } from '@/lib/services/enrollmentService';
 import { CanonicalCourseSlug } from '@/types/lms';
+import { BillingService, buildSignedInvoiceRecord } from '@/lib/billing/invoiceEngine';
 
 export async function GET(req: NextRequest) {
   // Accessible to payment_staff, admin, and super_admin
@@ -43,25 +44,57 @@ export async function GET(req: NextRequest) {
     // Fetch user details for these orders
     const userIds = Array.from(new Set((txRows || []).map((o: any) => o.user_id).filter(Boolean)));
     const { data: profiles } = userIds.length > 0
-      ? await admin.from('user_profiles').select('id, full_name, phone').in('id', userIds)
+      ? await admin.from('user_profiles').select('id, full_name, email, phone').in('id', userIds)
       : { data: [] };
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
     const enrichedOrders = (txRows || []).map((o: any) => {
       const p = profileMap.get(o.user_id);
       const amountNpr = Math.round(Number(o.amount_paisa || 0) / 100) || Number(o.net_amount_npr || 0);
+      const discountNpr = Number(o.discount_amount_npr || 0);
+      const grossNpr = amountNpr + discountNpr;
       const normalizedStatus =
         o.status === 'initiated' ? 'pending' : o.status === 'verified' ? 'completed' : o.status || 'pending';
+
+      const invoice = buildSignedInvoiceRecord({
+        userId: o.user_id,
+        sourceType: 'payment_transaction',
+        sourceId: String(o.id),
+        purchaseOrderId: o.purchase_order_id || String(o.id),
+        customerName: p?.full_name || 'Student',
+        customerEmail: p?.email || '',
+        customerPhone: p?.phone || '',
+        planOrSku: o.plan || o.plan_sku || 'cee_premium',
+        durationDays: Number(o.duration_days || 365),
+        grossAmountPaisa: Math.round(grossNpr * 100),
+        discountAmountPaisa: Math.round(discountNpr * 100),
+        netAmountPaisa: Math.round(amountNpr * 100),
+        currency: o.currency || 'NPR',
+        gateway: o.gateway || 'fonepay',
+        gatewayRef: o.gateway_ref || null,
+        status: normalizedStatus,
+        issuedAt: o.created_at,
+        paidAt: normalizedStatus === 'completed' ? o.updated_at || o.created_at : null,
+      });
+
       return {
         id: o.id,
         purchase_order_id: o.purchase_order_id || o.id,
+        invoice_number: invoice.invoiceNumber,
+        receipt_number: invoice.receiptNumber,
+        verification_code: invoice.verificationCode,
+        invoice,
         user_id: o.user_id,
         customer_name: p?.full_name || 'Student',
+        customer_email: p?.email || '',
         customer_phone: p?.phone || '',
         plan_sku: o.plan || o.plan_sku || 'cee_premium',
         gateway: o.gateway || 'fonepay',
-        gross_amount_npr: amountNpr,
-        discount_amount_npr: Number(o.discount_amount_npr || 0),
+        gateway_ref: o.gateway_ref || null,
+        slip_url: o.slip_url || o.proof_url || o.receipt_url || o.metadata?.slip_url || null,
+        metadata: o.metadata || {},
+        gross_amount_npr: grossNpr,
+        discount_amount_npr: discountNpr,
         net_amount_npr: amountNpr,
         status: normalizedStatus,
         created_at: o.created_at,
@@ -119,11 +152,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Order is already marked as completed.' }, { status: 400 });
       }
 
+      const nowIso = new Date().toISOString();
       const { error: updateErr } = await admin
         .from('payment_transactions')
         .update({
           status: 'completed',
-          updated_at: new Date().toISOString(),
+          updated_at: nowIso,
         })
         .eq('id', orderId);
 
@@ -149,7 +183,26 @@ export async function POST(req: NextRequest) {
         notes: notes || 'Payment verified by staff',
       });
 
-      const amountNpr = Math.round(Number(order.amount_paisa || 0) / 100);
+      const netPaisa = Number(order.amount_paisa || 0) || Math.round(Number(order.net_amount_npr || 0) * 100);
+      const invoice = await BillingService.issueOrUpdateInvoice(admin, {
+        userId: order.user_id,
+        sourceType: 'payment_transaction',
+        sourceId: String(order.id),
+        purchaseOrderId: order.purchase_order_id || String(order.id),
+        planOrSku: order.plan || order.plan_sku || courseSlug,
+        durationDays: Number(order.duration_days || 365),
+        grossAmountPaisa: netPaisa,
+        netAmountPaisa: netPaisa,
+        currency: order.currency || 'NPR',
+        gateway: order.gateway || 'fonepay',
+        gatewayRef: order.gateway_ref || null,
+        status: 'paid',
+        notes: notes || 'Verified by payment staff',
+        issuedAt: order.created_at || nowIso,
+        paidAt: nowIso,
+      });
+
+      const amountNpr = Math.round(netPaisa / 100);
       await AuditService.recordAuditEvent({
         actorId: guard.user.id,
         actorEmail: guard.email,
@@ -160,6 +213,8 @@ export async function POST(req: NextRequest) {
           previousStatus: order.status,
           newStatus: 'completed',
           amountNpr,
+          invoiceNumber: invoice.invoiceNumber,
+          receiptNumber: invoice.receiptNumber,
           userId: order.user_id,
           enrollmentGranted: grantResult.success,
           notes,
@@ -170,8 +225,10 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Order verified and enrollment activated.',
+        message: `Order verified, enrollment activated, and receipt ${invoice.receiptNumber} issued.`,
         orderId,
+        invoiceNumber: invoice.invoiceNumber,
+        receiptNumber: invoice.receiptNumber,
         status: 'completed',
       });
     }
@@ -200,17 +257,37 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: 'Order has already been refunded.' }, { status: 400 });
       }
 
+      const nowIso = new Date().toISOString();
       const { error: updateErr } = await admin
         .from('payment_transactions')
         .update({
           status: 'refunded',
-          updated_at: new Date().toISOString(),
+          updated_at: nowIso,
         })
         .eq('id', orderId);
 
       if (updateErr) throw updateErr;
 
-      const amountNpr = Math.round(Number(order.amount_paisa || 0) / 100);
+      const netPaisa = Number(order.amount_paisa || 0) || Math.round(Number(order.net_amount_npr || 0) * 100);
+      const invoice = await BillingService.issueOrUpdateInvoice(admin, {
+        userId: order.user_id,
+        sourceType: 'payment_transaction',
+        sourceId: String(order.id),
+        purchaseOrderId: order.purchase_order_id || String(order.id),
+        planOrSku: order.plan || order.plan_sku || 'cee_premium',
+        durationDays: Number(order.duration_days || 365),
+        grossAmountPaisa: netPaisa,
+        netAmountPaisa: netPaisa,
+        currency: order.currency || 'NPR',
+        gateway: order.gateway || 'fonepay',
+        gatewayRef: order.gateway_ref || null,
+        status: 'refunded',
+        notes: reason || 'Refunded by payment staff',
+        issuedAt: order.created_at || nowIso,
+        refundedAt: nowIso,
+      });
+
+      const amountNpr = Math.round(netPaisa / 100);
       await AuditService.recordAuditEvent({
         actorId: guard.user.id,
         actorEmail: guard.email,
@@ -221,6 +298,7 @@ export async function POST(req: NextRequest) {
           previousStatus: order.status,
           newStatus: 'refunded',
           amountNpr,
+          invoiceNumber: invoice.invoiceNumber,
           userId: order.user_id,
           reason: reason || 'Requested by customer',
         },
@@ -230,8 +308,9 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'Order successfully refunded.',
+        message: 'Order successfully refunded and credit receipt updated.',
         orderId,
+        invoiceNumber: invoice.invoiceNumber,
         status: 'refunded',
       });
     }

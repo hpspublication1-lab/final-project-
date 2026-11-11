@@ -7,7 +7,9 @@ import QRCode from 'qrcode';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { PLAN_PRICES, fonepayConfigured, generateFonepayQr } from '@/lib/payments/gateways';
+import { generateUniquePrn } from '@/lib/payments/fonepaySecurity';
 import { enforceRateLimit } from '@/lib/security/rateLimiter';
+import { blockSensitiveActionDuringImpersonation } from '@/lib/auth/impersonationGuard';
 
 /**
  * POST /api/payments/fonepay/qr   { plan: 'pro' }
@@ -22,7 +24,11 @@ import { enforceRateLimit } from '@/lib/security/rateLimiter';
  */
 export async function POST(request: NextRequest) {
   try {
-    const rl = enforceRateLimit(request, 'payment');
+    // 0. Impersonation Guard: Prevent admins in Ghost mode from initiating real payments
+    const impCheck = await blockSensitiveActionDuringImpersonation(request, 'initiate_payment');
+    if (impCheck) return impCheck;
+
+    const rl = await enforceRateLimit(request, 'payment');
     if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Too many QR generation requests. Please wait a moment and try again.' },
@@ -72,7 +78,7 @@ export async function POST(request: NextRequest) {
     }
 
     // prn doubles as our purchase_order_id. Keep it short (Fonepay prn max 25).
-    const prn = `SCM${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+    const prn = generateUniquePrn('SCM');
 
     // Log the transaction as 'initiated' BEFORE calling Fonepay.
     const { error: insertError } = await admin.from('payment_transactions').insert({

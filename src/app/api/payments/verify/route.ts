@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { verifyEsewaPayment, verifyKhaltiPayment } from '@/lib/payments/gateways';
+import { BillingService } from '@/lib/billing/invoiceEngine';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 /**
  * GET /api/payments/verify?gateway=esewa|khalti&order=<purchase_order_id>
@@ -16,6 +18,9 @@ export async function GET(request: NextRequest) {
     NextResponse.redirect(`${siteUrl}/activate-plan?payment=failed&reason=${encodeURIComponent(reason)}`);
 
   try {
+    const rl = await enforceRateLimit(request, 'payment', 'verify');
+    if (!rl.allowed) return fail('rate-limit-exceeded');
+
     const gateway = request.nextUrl.searchParams.get('gateway');
     const orderId = request.nextUrl.searchParams.get('order');
     if (!gateway || !orderId) return fail('missing-params');
@@ -64,6 +69,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ── Mark paid + activate the plan ─────────────────────────────────────
+    const paidAtIso = new Date().toISOString();
     const { data: updatedTx } = await admin.from('payment_transactions')
       .update({ status: 'completed', gateway_ref: gatewayRef, gateway_response: raw })
       .eq('id', tx.id)
@@ -72,16 +78,14 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
 
     if (!updatedTx) {
-      // Transaction was already transitioned by a concurrent callback/redirect
       return NextResponse.redirect(`${siteUrl}/activate-plan?payment=success`);
     }
 
     const resolvedTier = tx.plan === 'pro' ? 'cee_ai_pro' : 'cee_premium';
 
-    // Extend from existing expiration if student still has active subscription days remaining
     const { data: userProfile } = await admin
       .from('user_profiles')
-      .select('subscription_expires_at')
+      .select('subscription_expires_at, full_name, email, phone')
       .eq('id', tx.user_id)
       .maybeSingle();
 
@@ -97,11 +101,33 @@ export async function GET(request: NextRequest) {
         subscription_plan: tx.plan,
         plan_tier: resolvedTier,
         subscription_expires_at: newExpiresAt,
-        updated_at: new Date().toISOString(),
+        updated_at: paidAtIso,
       })
       .eq('id', tx.user_id);
 
-    return NextResponse.redirect(`${siteUrl}/activate-plan?payment=success`);
+    const invoice = await BillingService.issueOrUpdateInvoice(admin, {
+      userId: tx.user_id,
+      sourceType: 'payment_transaction',
+      sourceId: String(tx.id),
+      purchaseOrderId: tx.purchase_order_id || orderId,
+      customerName: userProfile?.full_name,
+      customerEmail: userProfile?.email,
+      customerPhone: userProfile?.phone,
+      planOrSku: tx.plan || 'pro',
+      durationDays: Number(tx.duration_days || 30),
+      grossAmountPaisa: Number(tx.amount_paisa || 0),
+      netAmountPaisa: Number(tx.amount_paisa || 0),
+      currency: tx.currency || 'NPR',
+      gateway,
+      gatewayRef,
+      status: 'paid',
+      issuedAt: tx.created_at || paidAtIso,
+      paidAt: paidAtIso,
+    });
+
+    return NextResponse.redirect(
+      `${siteUrl}/activate-plan?payment=success&invoice=${encodeURIComponent(invoice.invoiceNumber)}`
+    );
   } catch (err) {
     console.error('payments/verify error:', err);
     return fail('server-error');

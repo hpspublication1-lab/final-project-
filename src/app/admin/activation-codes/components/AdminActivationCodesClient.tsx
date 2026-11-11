@@ -4,9 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   KeyRound, Plus, Copy, Check, Trash2, Loader2, AlertCircle,
-  ArrowLeft, RefreshCw, CheckCircle2, Clock, XCircle
+  ArrowLeft, RefreshCw, CheckCircle2, Clock, XCircle, ShieldCheck
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import BulkMintModal from './BulkMintModal';
 
 interface ActivationCode {
   id: string;
@@ -53,6 +54,7 @@ export default function AdminActivationCodesClient() {
   const [newNotes, setNewNotes] = useState('');
   const [newExpiry, setNewExpiry] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
 
   const fetchCodes = useCallback(async () => {
     setLoading(true);
@@ -164,11 +166,18 @@ export default function AdminActivationCodesClient() {
               <RefreshCw size={16} />
             </button>
             <button
+              onClick={() => setShowBulkModal(true)}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border border-emerald-500/30 flex items-center gap-1.5 transition-colors"
+            >
+              <ShieldCheck size={16} />
+              Bulk Mint (Up to 10k)
+            </button>
+            <button
               onClick={() => setShowForm(!showForm)}
               className="btn-primary flex items-center gap-2"
             >
               <Plus size={16} />
-              Generate Code
+              Generate Single Code
             </button>
           </div>
         </div>
@@ -361,6 +370,12 @@ export default function AdminActivationCodesClient() {
           </div>
         )}
       </div>
+
+      <BulkMintModal
+        isOpen={showBulkModal}
+        onClose={() => setShowBulkModal(false)}
+        onSuccess={fetchCodes}
+      />
     </div>
   );
 }

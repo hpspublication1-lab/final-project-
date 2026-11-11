@@ -128,11 +128,111 @@ export const ROLE_PERMISSIONS: Record<UserRoleType, Set<PermissionCode>> = {
   super_admin: new Set(SUPER_ADMIN_PERMISSIONS),
 };
 
+// Runtime role permission overrides
+const rolePermissionOverrides: Map<string, boolean> = new Map();
+
+export function setRolePermissionOverride(role: UserRoleType, permission: PermissionCode, granted: boolean): void {
+  rolePermissionOverrides.set(`${role}:${permission}`, granted);
+}
+
+export function resetRolePermissionOverrides(): void {
+  rolePermissionOverrides.clear();
+}
+
+export function getRolePermissionOverrides(): Record<string, boolean> {
+  const result: Record<string, boolean> = {};
+  for (const [k, v] of rolePermissionOverrides.entries()) {
+    result[k] = v;
+  }
+  return result;
+}
+
+export function getEffectivePermissions(role: UserRoleType): Set<PermissionCode> {
+  const base = new Set(ROLE_PERMISSIONS[role] || []);
+  for (const [k, granted] of rolePermissionOverrides.entries()) {
+    const [r, perm] = k.split(':') as [UserRoleType, PermissionCode];
+    if (r === role) {
+      if (granted) base.add(perm);
+      else base.delete(perm);
+    }
+  }
+  return base;
+}
+
+export interface PermissionCategoryDef {
+  category: string;
+  description: string;
+  permissions: {
+    code: PermissionCode;
+    label: string;
+    description: string;
+  }[];
+}
+
+export const PERMISSION_CATEGORIES: PermissionCategoryDef[] = [
+  {
+    category: 'Commerce & Financial Operations',
+    description: 'Fonepay/bank payment verification, billing, refunds, and coupons',
+    permissions: [
+      { code: 'orders:view', label: 'View Orders', description: 'Inspect order lists, purchase orders, and payment records' },
+      { code: 'orders:verify', label: 'Approve & Verify Payments', description: 'Reconcile Fonepay slips and issue official tax receipts' },
+      { code: 'orders:refund', label: 'Process Refunds', description: 'Execute audited refunds and revoke course access' },
+      { code: 'coupons:manage', label: 'Manage Discount Coupons', description: 'Create and revoke discount codes and vouchers' },
+      { code: 'enrollments:manage', label: 'Manage Enrollments', description: 'Directly grant, extend, or revoke student course enrollments' },
+    ],
+  },
+  {
+    category: 'Academic & Curriculum Administration',
+    description: 'Courses, subjects, chapters, video lessons, and notes',
+    permissions: [
+      { code: 'content:read', label: 'View Academic Content', description: 'Read syllabus, chapters, and resources' },
+      { code: 'content:create', label: 'Create Courses & Lessons', description: 'Author new curriculum modules, chapters, and upload PDFs' },
+      { code: 'content:edit', label: 'Edit Academic Content', description: 'Modify video URLs, notes, and lesson descriptions' },
+      { code: 'content:publish', label: 'Publish to Students', description: 'Make drafts live to enrolled students' },
+      { code: 'content:archive', label: 'Archive Content', description: 'Retire obsolete syllabus and mock questions' },
+      { code: 'live:host', label: 'Host Live Lectures', description: 'Initiate Zoom/100ms live stream classrooms' },
+    ],
+  },
+  {
+    category: 'Exams, Question Bank & Grading',
+    description: 'MCQs, CEE mock tests, evaluation rubrics, and doubts',
+    permissions: [
+      { code: 'tests:create', label: 'Create Tests & Questions', description: 'Author MCQs, numericals, and mock exams' },
+      { code: 'tests:grade', label: 'Grade & Review Submissions', description: 'Mark subjective answers and adjust score cutoffs' },
+      { code: 'tests:publish', label: 'Publish Test Series', description: 'Schedule and launch exam papers to cohorts' },
+      { code: 'doubts:answer', label: 'Resolve Student Doubts', description: 'Answer student questions in academic doubt forum' },
+    ],
+  },
+  {
+    category: 'Student & User Governance',
+    description: 'Student profiles, telecaller outreach, and directory controls',
+    permissions: [
+      { code: 'users:view', label: 'View Student Directory', description: 'Access student names, scores, and activity telemetry' },
+      { code: 'users:edit', label: 'Edit User Accounts', description: 'Update user profiles, phone numbers, and unlock devices' },
+      { code: 'users:assign_role', label: 'Assign & Modify Roles', description: 'Super Admin privilege to promote or demote staff' },
+    ],
+  },
+  {
+    category: 'Platform Security & Infrastructure',
+    description: 'System administration, audit trails, and global settings',
+    permissions: [
+      { code: 'admin:access', label: 'Admin Portal Access', description: 'Sign into the Samyak Operational Admin panel' },
+      { code: 'settings:manage', label: 'Platform Settings', description: 'Configure payment gateways, maintenance mode, and CDN' },
+      { code: 'announcements:manage', label: 'Broadcast Bulletins', description: 'Send push alerts and urgent banners to student dashboards' },
+      { code: 'audit:view', label: 'Inspect Audit Logs', description: 'Review immutable cryptographic log of all staff mutations' },
+    ],
+  },
+];
+
 /**
  * Checks whether a given role is granted a specific permission.
  */
 export function hasPermission(role: UserRoleType | undefined | null, permission: PermissionCode): boolean {
   if (!role) return false;
+  const key = `${role}:${permission}`;
+  if (rolePermissionOverrides.has(key)) {
+    return rolePermissionOverrides.get(key)!;
+  }
   const permissions = ROLE_PERMISSIONS[role];
   return permissions ? permissions.has(permission) : false;
 }

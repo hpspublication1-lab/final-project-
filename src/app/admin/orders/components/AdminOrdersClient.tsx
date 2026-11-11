@@ -4,16 +4,29 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, CreditCard, RefreshCw, Loader2, Search, CheckCircle2,
-  AlertCircle, DollarSign, Download, ArrowUpRight, RotateCcw, ShieldCheck
+  AlertCircle, DollarSign, Download, ArrowUpRight, RotateCcw, ShieldCheck, Printer, Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
+import OfficialReceiptModal from '@/components/billing/OfficialReceiptModal';
+import PaymentSlipInspectionModal from '@/components/admin/PaymentSlipInspectionModal';
+import type { BillingInvoiceRecord } from '@/lib/billing/invoiceEngine';
 
 interface OrderItem {
   id: string;
+  purchase_order_id?: string;
+  invoice_number?: string;
+  receipt_number?: string | null;
+  verification_code?: string;
+  invoice?: BillingInvoiceRecord;
   user_id: string;
   customer_name?: string;
+  customer_email?: string;
   customer_phone?: string;
   plan_sku: string;
+  gateway?: string;
+  gateway_ref?: string | null;
+  slip_url?: string | null;
+  metadata?: Record<string, any>;
   gross_amount_npr: number;
   discount_amount_npr: number;
   net_amount_npr: number;
@@ -29,9 +42,11 @@ export default function AdminOrdersClient() {
 
   // Action states
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
+  const [inspectingOrder, setInspectingOrder] = useState<OrderItem | null>(null);
   const [actionType, setActionType] = useState<'verify' | 'refund' | null>(null);
   const [actionNotes, setActionNotes] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [receiptInvoice, setReceiptInvoice] = useState<BillingInvoiceRecord | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -79,19 +94,74 @@ export default function AdminOrdersClient() {
     }
   };
 
+  const handleDirectApprove = async (orderId: string, notes: string) => {
+    setProcessing(true);
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          action: 'verify',
+          notes,
+          reason: notes,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to approve order');
+      toast.success(data.message || 'Order approved and receipt issued!');
+      setInspectingOrder(null);
+      fetchOrders();
+    } catch (err: any) {
+      toast.error(err.message || 'Approval failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDirectReject = async (orderId: string, reason: string) => {
+    setProcessing(true);
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          action: 'refund',
+          notes: `Rejected by staff: ${reason}`,
+          reason,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reject order');
+      toast.success(data.message || 'Order rejected.');
+      setInspectingOrder(null);
+      fetchOrders();
+    } catch (err: any) {
+      toast.error(err.message || 'Rejection failed');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const filteredOrders = orders.filter((o) => {
     const q = searchQuery.toLowerCase();
     return (
       o.customer_name?.toLowerCase().includes(q) ||
       o.id.toLowerCase().includes(q) ||
+      o.invoice_number?.toLowerCase().includes(q) ||
+      o.verification_code?.toLowerCase().includes(q) ||
       o.plan_sku?.toLowerCase().includes(q) ||
       o.customer_phone?.includes(q)
     );
   });
 
   const exportCsv = () => {
-    const headers = ['Order ID', 'Customer', 'Phone', 'Plan SKU', 'Gross NPR', 'Discount NPR', 'Net NPR', 'Status', 'Date'];
+    const headers = ['Invoice Number', 'Receipt Number', 'Verification Code', 'Order ID', 'Customer', 'Phone', 'Plan SKU', 'Gross NPR', 'Discount NPR', 'Net NPR', 'Status', 'Date'];
     const lines = filteredOrders.map((o) => [
+      o.invoice_number || '',
+      o.receipt_number || '',
+      o.verification_code || '',
       o.id,
       o.customer_name || '',
       o.customer_phone || '',
@@ -106,7 +176,7 @@ export default function AdminOrdersClient() {
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `samyak-invoices-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -123,10 +193,10 @@ export default function AdminOrdersClient() {
             </Link>
             <div>
               <h1 className="text-xl font-extrabold text-foreground flex items-center gap-2">
-                <CreditCard size={22} className="text-primary" /> Orders &amp; Payment Verification Hub
+                <CreditCard size={22} className="text-primary" /> Orders, Invoices &amp; Payment Verification Hub
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Inspect customer bank transfers, Fonepay slips, approve enrollments, and process refunds.
+                Inspect customer Fonepay slips, issue HMAC-SHA256 signed receipts, approve enrollments, and process refunds.
               </p>
             </div>
           </div>
@@ -137,7 +207,7 @@ export default function AdminOrdersClient() {
               disabled={filteredOrders.length === 0}
               className="btn-secondary py-2 px-3 text-xs font-bold gap-1.5 disabled:opacity-50"
             >
-              <Download size={14} /> Export CSV
+              <Download size={14} /> Export Invoices CSV
             </button>
             <button onClick={fetchOrders} className="btn-secondary py-2 px-3 text-xs font-bold gap-1.5">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
@@ -149,7 +219,7 @@ export default function AdminOrdersClient() {
         <div className="bg-ma-light/30 border border-ma/20 rounded-2xl p-4 flex items-center gap-3">
           <ShieldCheck size={20} className="text-ma shrink-0" />
           <p className="text-xs text-foreground leading-relaxed">
-            <strong>Payment Staff Boundary:</strong> Authorized payment personnel can inspect and verify transactions, approve enrollments, and issue audited refunds. They cannot edit course curricula or modify student quiz scores.
+            <strong>Payment Staff Boundary &amp; Cryptographic Ledger:</strong> Every verified order generates an immutable HMAC-SHA256 signed tax invoice and verification code. Authorized staff can inspect, verify, print receipts, and issue audited refunds.
           </p>
         </div>
 
@@ -159,7 +229,7 @@ export default function AdminOrdersClient() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search by customer name, order ID, phone, plan..."
+              placeholder="Search by Invoice #, Verification Code, customer name, order ID, phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-field pl-9 py-2 text-xs w-full"
@@ -171,7 +241,7 @@ export default function AdminOrdersClient() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="input-field py-2 text-xs"
           >
-            <option value="all">All Orders</option>
+            <option value="all">All Orders &amp; Invoices</option>
             <option value="pending">Pending Approval</option>
             <option value="completed">Completed / Verified</option>
             <option value="refunded">Refunded</option>
@@ -193,7 +263,7 @@ export default function AdminOrdersClient() {
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/50 border-b border-border uppercase font-semibold text-muted-foreground tracking-wider">
                 <tr>
-                  <th className="p-3.5">Order ID &amp; Date</th>
+                  <th className="p-3.5">Invoice &amp; Order ID</th>
                   <th className="p-3.5">Customer</th>
                   <th className="p-3.5">Plan / SKU</th>
                   <th className="p-3.5">Amount (NPR)</th>
@@ -205,10 +275,17 @@ export default function AdminOrdersClient() {
                 {filteredOrders.map((o) => (
                   <tr key={o.id} className="hover:bg-muted/30 transition-colors">
                     <td className="p-3.5">
-                      <div className="font-mono font-bold text-foreground">{o.id.slice(0, 13)}...</div>
-                      <div className="text-[11px] text-muted-foreground">
-                        {new Date(o.created_at).toLocaleDateString()}
+                      <div className="font-mono font-bold text-foreground">
+                        {o.invoice_number || o.id.slice(0, 13)}
                       </div>
+                      <div className="text-[11px] text-muted-foreground font-mono">
+                        Order: {(o.purchase_order_id || o.id).slice(0, 14)} · {new Date(o.created_at).toLocaleDateString()}
+                      </div>
+                      {o.verification_code && (
+                        <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                          Seal: {o.verification_code}
+                        </div>
+                      )}
                     </td>
                     <td className="p-3.5">
                       <div className="font-bold text-foreground">{o.customer_name || 'Student'}</div>
@@ -237,13 +314,29 @@ export default function AdminOrdersClient() {
                     </td>
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setInspectingOrder(o)}
+                          className="px-2.5 py-1 rounded-lg bg-card hover:bg-muted border border-border text-foreground font-semibold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                          title="Inspect Payment Slip Side-by-Side"
+                        >
+                          <Eye size={12} className="text-primary" /> Inspect Slip
+                        </button>
+                        {o.invoice && (
+                          <button
+                            onClick={() => setReceiptInvoice(o.invoice || null)}
+                            className="px-2.5 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+                            title="View & Print Official Receipt"
+                          >
+                            <Printer size={12} /> Receipt
+                          </button>
+                        )}
                         {o.status === 'pending' && (
                           <button
                             onClick={() => {
                               setSelectedOrder(o);
                               setActionType('verify');
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-success/15 hover:bg-success/25 text-success font-bold text-xs transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-success/15 hover:bg-success/25 text-success font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <CheckCircle2 size={13} /> Approve
                           </button>
@@ -254,7 +347,7 @@ export default function AdminOrdersClient() {
                               setSelectedOrder(o);
                               setActionType('refund');
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-error/10 hover:bg-error/20 text-error font-semibold text-xs transition-colors flex items-center gap-1"
+                            className="px-2.5 py-1 rounded-lg bg-error/10 hover:bg-error/20 text-error font-semibold text-xs transition-colors flex items-center gap-1 cursor-pointer"
                           >
                             <RotateCcw size={13} /> Refund
                           </button>
@@ -276,7 +369,7 @@ export default function AdminOrdersClient() {
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                   {actionType === 'verify' ? (
                     <>
-                      <CheckCircle2 size={16} className="text-success" /> Approve Payment &amp; Grant Access
+                      <CheckCircle2 size={16} className="text-success" /> Approve Payment &amp; Issue Receipt
                     </>
                   ) : (
                     <>
@@ -297,6 +390,9 @@ export default function AdminOrdersClient() {
 
               <div className="space-y-3 text-xs">
                 <div className="bg-muted/50 p-3 rounded-xl space-y-1">
+                  {selectedOrder.invoice_number && (
+                    <p><span className="text-muted-foreground">Invoice #:</span> <strong className="font-mono">{selectedOrder.invoice_number}</strong></p>
+                  )}
                   <p><span className="text-muted-foreground">Order ID:</span> <strong className="font-mono">{selectedOrder.id}</strong></p>
                   <p><span className="text-muted-foreground">Customer:</span> <strong>{selectedOrder.customer_name}</strong></p>
                   <p><span className="text-muted-foreground">Amount:</span> <strong>Rs. {selectedOrder.net_amount_npr.toLocaleString()}</strong></p>
@@ -338,12 +434,37 @@ export default function AdminOrdersClient() {
                   }`}
                 >
                   {processing ? <Loader2 size={13} className="animate-spin" /> : null}
-                  {actionType === 'verify' ? 'Confirm & Grant' : 'Confirm Refund'}
+                  {actionType === 'verify' ? 'Confirm & Issue Receipt' : 'Confirm Refund'}
                 </button>
               </div>
             </div>
           </div>
         )}
+
+        {/* Official Printable Receipt Modal */}
+        <OfficialReceiptModal
+          invoice={receiptInvoice}
+          onClose={() => setReceiptInvoice(null)}
+        />
+
+        {/* Side-by-Side Payment Slip Inspection Modal */}
+        <PaymentSlipInspectionModal
+          order={inspectingOrder}
+          onClose={() => setInspectingOrder(null)}
+          onApprove={handleDirectApprove}
+          onReject={handleDirectReject}
+          onRefund={(id, reason) => {
+            setSelectedOrder(inspectingOrder);
+            setActionType('refund');
+            setActionNotes(reason);
+            setInspectingOrder(null);
+          }}
+          onViewReceipt={(inv) => {
+            setReceiptInvoice(inv);
+            setInspectingOrder(null);
+          }}
+          processing={processing}
+        />
 
       </div>
     </div>

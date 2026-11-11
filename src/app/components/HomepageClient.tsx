@@ -4,11 +4,10 @@ import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import PublicNav from '@/components/PublicNav';
 import HeroSection from './HeroSection';
+import AcademicProgramsSection from './AcademicProgramsSection';
 import FlagshipPillarsSection from './FlagshipPillarsSection';
-import FlagshipDemoSection from './FlagshipDemoSection';
 import AnnouncementBar from './AnnouncementBar';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
-import CourseSelectionGate from '@/components/courses/CourseSelectionGate';
 
 const FeaturedInstructors = dynamic(() => import('./FeaturedInstructors'), {
   loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
@@ -22,11 +21,6 @@ const PricingSection = dynamic(() => import('./PricingSection'), {
 
 const TestimonialsSection = dynamic(() => import('./TestimonialsSection'), {
   loading: () => <div className="h-64 bg-card border-t border-border/60 animate-pulse" />,
-  ssr: true,
-});
-
-const AuxiliaryProgramsBanner = dynamic(() => import('./AuxiliaryProgramsBanner'), {
-  loading: () => <div className="h-32 bg-card border-t border-border/60 animate-pulse" />,
   ssr: true,
 });
 
@@ -65,24 +59,33 @@ export default function HomepageClient() {
   return (
     <PageTransitionWrapper>
       <div className="min-h-screen bg-background text-foreground flex flex-col">
-        {/* Top Announcement */}
+        {/* Top Dismissible Announcement */}
         <AnnouncementBar onDismiss={() => setAnnounceOpen(false)} />
 
-        {/* Global Navigation */}
+        {/* Global Navigation Header */}
         <PublicNav isDark={isDark} onToggleDark={() => setIsDark(!isDark)} announcementHeight={announceOpen ? 40 : 0} />
 
-        {/* Main Flagship Hero & Course Selection Gate */}
+        {/* Cohesive, Streamlined Main Journey */}
         <main id="main-content" className="flex-1">
+          {/* 1. Hero with live interactive product showcase (CBT, 1v1 Battle, AI Saarthi, Radar) */}
           <HeroSection />
-          <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-10">
-            <CourseSelectionGate autoOpenOnFirstVisit={false} />
-          </div>
+
+          {/* 2. Structured Academic Programs (Medical, Board, Engineering, Civil Service, Skills) */}
+          <AcademicProgramsSection />
+
+          {/* 3. The 4-Pillar Learning Methodology (Live Classes, 15k+ MCQs, 200Q Mocks, AI Saarthi) */}
           <FlagshipPillarsSection />
-          <FlagshipDemoSection />
+
+          {/* 4. Faculty & Medical Examiners */}
           <FeaturedInstructors />
+
+          {/* 5. Clear, Transparent Pricing & Batches */}
           <PricingSection />
+
+          {/* 6. Student Reviews & Social Proof */}
           <TestimonialsSection />
-          <AuxiliaryProgramsBanner />
+
+          {/* 7. Frequently Asked Questions */}
           <FAQSection />
         </main>
 

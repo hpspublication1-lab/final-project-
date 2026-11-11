@@ -8,6 +8,8 @@ import { TrialProvider } from '@/contexts/TrialContext';
 import AnimatePresenceProvider from '@/components/AnimatePresenceProvider';
 import AnalyticsProvider from '@/components/AnalyticsProvider';
 import TrialBannerAndModals from '@/components/TrialBannerAndModals';
+import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
+import GhostViewBanner from '@/components/admin/GhostViewBanner';
 import { getOrganizationSchema, getWebSiteSchema } from '@/lib/seo/structuredData';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -131,6 +133,8 @@ export default function RootLayout({
             <ProgramProvider>
               <AnimatePresenceProvider>
                 <AnalyticsProvider>
+                  <ServiceWorkerRegister />
+                  <GhostViewBanner />
                   <TrialBannerAndModals />
                   {children}
                 </AnalyticsProvider>

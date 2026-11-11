@@ -37,6 +37,7 @@
     ".next/next-build/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "samyak_multiplayer_implementation_pack"
   ]
 }

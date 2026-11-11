@@ -11,11 +11,25 @@ import {
 import { normalizeOptionKey, isAnswerCorrect } from '@/lib/scoring';
 import { SEE_QUESTION_BANK } from '@/lib/data/seeQuestionBankData';
 import { CEE_VERIFIED_PYQ_DATA } from '@/lib/data/ceePastPapersData';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
+import { blockSensitiveActionDuringImpersonation } from '@/lib/auth/impersonationGuard';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    // 0. Impersonation Guard: Prevent admins in Ghost mode from submitting tests for students
+    const impCheck = await blockSensitiveActionDuringImpersonation(request, 'submit_examination');
+    if (impCheck) return impCheck;
+
+    const rl = await enforceRateLimit(request, 'submission');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many exam submission requests. Please wait a moment.' },
+        { status: 429, headers: { 'Retry-After': String(rl.resetSeconds) } }
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -33,39 +47,6 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient() || supabase;
-
-    // 0. Result Privacy & Duplicate Submission Guard
-    if (attemptId) {
-      const { data: existingAttempt } = await admin
-        .from('exam_attempts')
-        .select('id, student_id, completed_at, score, total_marks, percentage')
-        .eq('id', attemptId)
-        .maybeSingle();
-
-      if (existingAttempt) {
-        const securityCheck = validateSubmissionSecurity(existingAttempt, user?.id || null);
-        if (!securityCheck.allowed) {
-          if (securityCheck.isDuplicate) {
-            return NextResponse.json({
-              success: true,
-              isDuplicate: true,
-              attemptId: existingAttempt.id,
-              examId,
-              message: 'This examination attempt was already finalized and scored.',
-              score: existingAttempt.score,
-              totalMarks: existingAttempt.total_marks,
-              percentage: existingAttempt.percentage,
-              alreadyCompleted: true,
-            });
-          } else {
-            return NextResponse.json(
-              { error: securityCheck.error || 'Forbidden: Unauthorized attempt access' },
-              { status: securityCheck.statusCode || 403 }
-            );
-          }
-        }
-      }
-    }
 
     // 1. Resolve exam configuration (from DB or canonical spec)
     let examSpec = CANONICAL_EXAM_CATALOG.find((e) => e.id === examId || e.slug === examId);
@@ -97,6 +78,55 @@ export async function POST(request: NextRequest) {
           isFreeDiagnostic: false,
           sections: [],
         };
+      }
+    }
+
+    // 2. Result Privacy, Candidate Ownership, and Server-Controlled Deadline Guard
+    if (attemptId) {
+      const { data: existingAttempt } = await admin
+        .from('exam_attempts')
+        .select('id, student_id, completed_at, score, total_marks, percentage, exam_id, started_at, created_at')
+        .eq('id', attemptId)
+        .maybeSingle();
+
+      if (existingAttempt) {
+        const securityCheck = validateSubmissionSecurity(existingAttempt, user?.id || null, {
+          examId,
+          durationMinutes: examSpec?.durationMinutes,
+          serverNowMs: Date.now(),
+          gracePeriodSeconds: 60,
+        });
+
+        if (!securityCheck.allowed) {
+          if (securityCheck.isDuplicate) {
+            return NextResponse.json({
+              success: true,
+              isDuplicate: true,
+              attemptId: existingAttempt.id,
+              examId,
+              message: 'This examination attempt was already finalized and scored.',
+              score: existingAttempt.score,
+              totalMarks: existingAttempt.total_marks,
+              percentage: existingAttempt.percentage,
+              alreadyCompleted: true,
+            });
+          } else if (securityCheck.isExpired) {
+            return NextResponse.json(
+              {
+                error: securityCheck.error || 'Examination deadline expired. Submissions are no longer accepted.',
+                isExpired: true,
+                deadlineIso: securityCheck.deadlineIso,
+                serverRemainingSeconds: 0,
+              },
+              { status: 403 }
+            );
+          } else {
+            return NextResponse.json(
+              { error: securityCheck.error || 'Forbidden: Unauthorized attempt access' },
+              { status: securityCheck.statusCode || 403 }
+            );
+          }
+        }
       }
     }
 

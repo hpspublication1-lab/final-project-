@@ -1,22 +1,35 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const rl = await enforceRateLimit(req, 'api');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers: { 'Retry-After': String(rl.resetSeconds) } }
+      );
+    }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    const supabase = await createServerClient();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return NextResponse.json({ error: 'Unauthorized: Authentication required' }, { status: 401 });
+    }
+
+    const userId = user.id; // Strictly authoritative
+    const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database service unavailable' }, { status: 500 });
     }
 
     // Fetch active pending invitations received
-    const { data: invRows } = await supabaseAdmin
+    const { data: invRows } = await admin
       .from('battle_invitations')
       .select('*')
       .eq('receiver_id', userId)
@@ -27,15 +40,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ invitations: [] });
     }
 
-    const senderIds = invRows.map((inv) => inv.sender_id);
-    const { data: senders } = await supabaseAdmin
+    const senderIds = invRows.map((inv: any) => inv.sender_id);
+    const { data: senders } = await admin
       .from('user_profiles')
       .select('id, full_name, battle_rating, college')
       .in('id', senderIds);
 
-    const senderMap = new Map((senders || []).map((s) => [s.id, s]));
+    const senderMap = new Map((senders || []).map((s: any) => [s.id, s]));
 
-    const invitations = invRows.map((inv) => ({
+    const invitations = invRows.map((inv: any) => ({
       id: inv.id,
       sender: senderMap.get(inv.sender_id) || { id: inv.sender_id, full_name: 'Student' },
       subjectFilter: inv.subject_filter,
@@ -48,18 +61,39 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { action, userId, targetUserId, invitationId, subjectFilter = 'mixed' } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    const rl = await enforceRateLimit(req, 'api');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { status: 429, headers: { 'Retry-After': String(rl.resetSeconds) } }
+      );
     }
 
+    const supabase = await createServerClient();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return NextResponse.json({ error: 'Unauthorized: Authentication required' }, { status: 401 });
+    }
+
+    const userId = user.id; // Strictly authoritative
+    const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database service unavailable' }, { status: 500 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { action, targetUserId, invitationId, subjectFilter = 'mixed' } = body;
+
     if (action === 'send_invite') {
+      if (!targetUserId) {
+        return NextResponse.json({ error: 'Target user ID required' }, { status: 400 });
+      }
+
       // 1. Privacy & In-Match Check
-      const { data: recPresence } = await supabaseAdmin
+      const { data: recPresence } = await admin
         .from('user_presence')
         .select('*')
         .eq('user_id', targetUserId)
@@ -70,7 +104,7 @@ export async function POST(req: Request) {
       }
 
       // Expire previous invites
-      await supabaseAdmin
+      await admin
         .from('battle_invitations')
         .update({ status: 'expired', updated_at: new Date().toISOString() })
         .eq('sender_id', userId)
@@ -79,7 +113,7 @@ export async function POST(req: Request) {
 
       const expiresAt = new Date(Date.now() + 60000).toISOString();
 
-      const { data: inv, error: invError } = await supabaseAdmin
+      const { data: inv, error: invError } = await admin
         .from('battle_invitations')
         .insert({
           sender_id: userId,
@@ -103,8 +137,12 @@ export async function POST(req: Request) {
     }
 
     if (action === 'accept_invite') {
+      if (!invitationId) {
+        return NextResponse.json({ error: 'Invitation ID required' }, { status: 400 });
+      }
+
       // Execute atomic match room creation
-      const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('respond_battle_invitation', {
+      const { data: rpcData, error: rpcError } = await admin.rpc('respond_battle_invitation', {
         p_invitation_id: invitationId,
         p_action: 'accept',
       });
@@ -121,7 +159,7 @@ export async function POST(req: Request) {
       }
 
       // Fallback match room creation
-      const { data: inv } = await supabaseAdmin
+      const { data: inv } = await admin
         .from('battle_invitations')
         .select('*')
         .eq('id', invitationId)
@@ -131,17 +169,22 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: 'Invitation has expired or is no longer valid' });
       }
 
+      // Verify caller is the intended recipient
+      if (inv.receiver_id !== userId) {
+        return NextResponse.json({ error: 'Forbidden: You are not the recipient of this invitation' }, { status: 403 });
+      }
+
       // Fetch questions
-      const { data: qData } = await supabaseAdmin
+      const { data: qData } = await admin
         .from('questions')
         .select('id')
         .eq('is_active', true)
         .limit(10);
 
-      const questionIds = (qData || []).map((q) => q.id);
+      const questionIds = (qData || []).map((q: any) => q.id);
       const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-      const { data: room, error: roomError } = await supabaseAdmin
+      const { data: room, error: roomError } = await admin
         .from('battle_rooms')
         .insert({
           room_code: roomCode,
@@ -160,12 +203,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: 'Failed to create battle room' });
       }
 
-      await supabaseAdmin.from('room_members').insert([
+      await admin.from('room_members').insert([
         { room_id: room.id, user_id: inv.sender_id },
         { room_id: room.id, user_id: userId },
       ]);
 
-      await supabaseAdmin
+      await admin
         .from('battle_invitations')
         .update({ status: 'accepted', matched_room_id: room.id, updated_at: new Date().toISOString() })
         .eq('id', invitationId);
@@ -178,7 +221,11 @@ export async function POST(req: Request) {
     }
 
     if (action === 'decline_invite') {
-      await supabaseAdmin
+      if (!invitationId) {
+        return NextResponse.json({ error: 'Invitation ID required' }, { status: 400 });
+      }
+
+      await admin
         .from('battle_invitations')
         .update({ status: 'declined', updated_at: new Date().toISOString() })
         .eq('id', invitationId);

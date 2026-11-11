@@ -1,22 +1,43 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+export const dynamic = 'force-dynamic';
 
-const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { action, userId, queueMode = 'quick', subjectFilter = 'mixed' } = body;
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Authoritative user ID required' }, { status: 400 });
+    // 0. Rate limiting
+    const rl = await enforceRateLimit(req, 'api');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many matchmaking attempts. Please wait.' },
+        { status: 429, headers: { 'Retry-After': String(rl.resetSeconds) } }
+      );
     }
 
+    // 1. Authoritative Session Verification - Never trust body.userId
+    const supabase = await createServerClient();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+
+    if (authErr || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized: Valid student session required' },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id; // Authoritative ID derived strictly from verified JWT
+    const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json({ error: 'Database service unavailable' }, { status: 500 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { action, queueMode = 'quick', subjectFilter = 'mixed' } = body;
+
     if (action === 'cancel') {
-      await supabaseAdmin
+      await admin
         .from('matchmaking_queue')
         .update({ status: 'cancelled' })
         .eq('player_id', userId)
@@ -25,8 +46,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, status: 'cancelled' });
     }
 
-    // 1. Try atomic database RPC first
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc('find_or_create_battle_match', {
+    // 2. Fetch authoritative rating from user_profiles
+    const { data: profile } = await admin
+      .from('user_profiles')
+      .select('battle_rating')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const playerRating = profile?.battle_rating || 1000;
+
+    // 3. Try atomic database RPC first
+    const { data: rpcData, error: rpcError } = await admin.rpc('find_or_create_battle_match', {
       p_queue_mode: queueMode,
       p_subject_filter: subjectFilter,
     });
@@ -41,16 +71,16 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Server-side Fallback matching logic (if RPC unavailable during migration)
+    // 4. Server-side Fallback matching logic (if RPC unavailable during migration)
     // Clear old searching entries
-    await supabaseAdmin
+    await admin
       .from('matchmaking_queue')
       .update({ status: 'cancelled' })
       .eq('player_id', userId)
       .eq('status', 'searching');
 
     // Look for an existing searching candidate
-    const { data: candidates } = await supabaseAdmin
+    const { data: candidates } = await admin
       .from('matchmaking_queue')
       .select('*')
       .eq('status', 'searching')
@@ -62,16 +92,16 @@ export async function POST(req: Request) {
       const opponent = candidates[0];
       
       // Fetch random questions
-      const { data: qData } = await supabaseAdmin
+      const { data: qData } = await admin
         .from('questions')
         .select('id')
         .eq('is_active', true)
         .limit(10);
 
-      const questionIds = (qData || []).map((q) => q.id);
+      const questionIds = (qData || []).map((q: any) => q.id);
       const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-      const { data: room, error: roomError } = await supabaseAdmin
+      const { data: room, error: roomError } = await admin
         .from('battle_rooms')
         .insert({
           room_code: roomCode,
@@ -88,17 +118,17 @@ export async function POST(req: Request) {
 
       if (!roomError && room) {
         // Mark both queued
-        await supabaseAdmin
+        await admin
           .from('matchmaking_queue')
           .update({ status: 'matched', matched_room_id: room.id, matched_at: new Date().toISOString() })
           .eq('id', opponent.id);
 
-        const { data: myQueue } = await supabaseAdmin
+        const { data: myQueue } = await admin
           .from('matchmaking_queue')
           .insert({
             player_id: userId,
             queue_mode: queueMode,
-            player_rating: 1000,
+            player_rating: playerRating,
             subject_filter: subjectFilter,
             status: 'matched',
             matched_room_id: room.id,
@@ -116,13 +146,13 @@ export async function POST(req: Request) {
       }
     }
 
-    // No opponent found yet -> Queue player A
-    const { data: myQueue } = await supabaseAdmin
+    // No opponent found yet -> Queue player
+    const { data: myQueue } = await admin
       .from('matchmaking_queue')
       .insert({
         player_id: userId,
         queue_mode: queueMode,
-        player_rating: 1000,
+        player_rating: playerRating,
         subject_filter: subjectFilter,
         status: 'searching',
       })

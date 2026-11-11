@@ -113,7 +113,12 @@ export default function FonepayCheckout({ plan }: { plan: string }) {
           if (data.status === 'completed') {
             stopPolling();
             setStage('success');
-            router.push(`/payment-success?plan=${encodeURIComponent(label)}`);
+            const params = new URLSearchParams({
+              plan: label,
+              prn,
+              ...(data.invoiceNumber ? { invoice: data.invoiceNumber } : {}),
+            });
+            router.push(`/payment-success?${params.toString()}`);
           } else if (data.status === 'failed') {
             stopPolling();
             setStage('failed');

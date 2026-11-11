@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import DashboardLayout from '@/components/DashboardLayout';
+import BunnyHlsPlayer from '@/components/video/BunnyHlsPlayer';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -93,9 +94,8 @@ function formatDuration(totalSeconds: number): string {
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
 
-// Video Player Modal Component for direct Bunny.net HLS streams
+// Video Player Modal Component utilizing unified BunnyHlsPlayer with adaptive stream and DRM
 function BatchVideoModal({ video, onClose }: { video: VideoLecture; onClose: () => void }) {
-  const videoElRef = useRef<HTMLVideoElement>(null);
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -106,89 +106,62 @@ function BatchVideoModal({ video, onClose }: { video: VideoLecture; onClose: () 
       try {
         const res = await fetch(`/api/video/sign?video=${video.id}`);
         const data = await res.json().catch(() => null);
-        if (!cancelled) setResolvedUrl(res.ok && data?.url ? data.url : video.video_url);
+        if (!cancelled) {
+          setResolvedUrl(res.ok && data?.url ? data.url : video.video_url);
+          setLoading(false);
+        }
       } catch {
-        if (!cancelled) setResolvedUrl(video.video_url);
+        if (!cancelled) {
+          setResolvedUrl(video.video_url);
+          setLoading(false);
+        }
       }
     })();
     return () => { cancelled = true; };
   }, [video.id, video.video_url]);
 
-  useEffect(() => {
-    const el = videoElRef.current;
-    if (!el || !resolvedUrl) return;
-    const url = resolvedUrl;
-    const isHls = /\.m3u8(\?|$)/i.test(url) || url.includes('playlist.m3u8');
-    let hls: any = null;
-    let destroyed = false;
-
-    if (!isHls) {
-      el.src = url;
-      setLoading(false);
-      return;
-    }
-    if (el.canPlayType('application/vnd.apple.mpegurl')) {
-      el.src = url;
-      setLoading(false);
-      return;
-    }
-    (async () => {
-      try {
-        const Hls = (await import('hls.js')).default;
-        if (destroyed) return;
-        if (Hls.isSupported()) {
-          hls = new Hls({ enableWorker: true, capLevelToPlayerSize: true, backBufferLength: 60 });
-          hls.loadSource(url);
-          hls.attachMedia(el);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            setLoading(false);
-            el.play().catch(() => {});
-          });
-        } else {
-          el.src = url;
-          setLoading(false);
-        }
-      } catch {
-        el.src = url;
-        setLoading(false);
-      }
-    })();
-
-    return () => {
-      destroyed = true;
-      if (hls) hls.destroy();
-    };
-  }, [resolvedUrl]);
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-3 sm:p-5 backdrop-blur-xs" onClick={onClose}>
       <div
-        className="bg-card border border-border rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl"
+        className="bg-card border border-border rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-          <div className="min-w-0">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-card">
+          <div className="min-w-0 pr-3">
             <p className="font-bold text-foreground text-sm truncate">{video.title}</p>
-            <p className="text-xs text-muted-foreground">{formatDuration(video.duration_sec)} duration</p>
+            <p className="text-xs text-muted-foreground">{formatDuration(video.duration_sec)} · Bunny.net Adaptive HLS</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground">
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/learn/${video.id}`}
+              className="btn-primary text-xs font-bold py-1.5 px-3 rounded-xl flex items-center gap-1.5 shadow-xs"
+            >
+              <span>Full Classroom (DPP &amp; Notes)</span>
+              <ArrowRight size={13} />
+            </Link>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="relative aspect-video bg-black flex items-center justify-center">
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-10">
+          {loading || !resolvedUrl ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10 space-y-2 text-white">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+              <span className="text-xs font-bold">Connecting Secure Stream...</span>
             </div>
+          ) : (
+            <BunnyHlsPlayer
+              videoUrl={resolvedUrl}
+              title={video.title}
+              thumbnailUrl={video.thumbnail_url || undefined}
+              className="w-full h-full"
+            />
           )}
-          <video
-            ref={videoElRef}
-            controls
-            autoPlay
-            playsInline
-            className="w-full h-full object-contain"
-          />
         </div>
       </div>
     </div>

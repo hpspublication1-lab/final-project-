@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const rateLimit = enforceRateLimit(req, 'submission', 'doubt-reply');
+    const rateLimit = await enforceRateLimit(req, 'submission', 'doubt-reply');
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, error: `Too many submissions. Please wait ${rateLimit.resetSeconds}s.` },

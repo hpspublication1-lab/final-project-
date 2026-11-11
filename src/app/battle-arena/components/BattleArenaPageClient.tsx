@@ -22,6 +22,7 @@ import { MathText } from '@/components/MathText';
 import { sounds } from '@/utils/soundEffects';
 import { triggerConfetti } from '@/utils/confetti';
 import DailyChampionshipLobby from './DailyChampionshipLobby';
+import BattleProctorCamera from './BattleProctorCamera';
 
 export function getEloRankTier(rating: number) {
   if (rating >= 1900) return { name: 'Grandmaster', icon: '🏆', color: 'text-amber-400 bg-amber-400/10 border-amber-400/30' };
@@ -489,7 +490,7 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
 
     if (typedRoom.status === 'waiting') {
       const myEffectiveId = getEffectiveUserId(user);
-      if (myEffectiveId && typedRoom.creator_id !== myEffectiveId) {
+      if (myEffectiveId && typedRoom.creator_id !== myEffectiveId && !typedRoom.opponent_id) {
         const startIso = new Date().toISOString();
         await supabase
           .from('battle_rooms')
@@ -628,7 +629,41 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
   const opponentDisplayName = opponentProfile?.full_name ?? 'Opponent';
   const authorName = myDisplayName;
 
+  // ── WebRTC Live Proctoring Peer-to-Peer Signaling ───────────────────────
+  const [webrtcSignal, setWebrtcSignal] = useState<{ type: string; data: any; senderSessionId: string } | null>(null);
 
+  useEffect(() => {
+    if (!room?.id || isBotMatch) return;
+    const supabase = createClient();
+    const webrtcChannel = supabase.channel(`webrtc:${room.id}`);
+
+    webrtcChannel
+      .on('broadcast', { event: 'signal' }, ({ payload }) => {
+        if (payload?.fromUserId !== user?.id) {
+          setWebrtcSignal({
+            type: payload.type,
+            data: payload.data,
+            senderSessionId: payload.fromUserId,
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(webrtcChannel);
+    };
+  }, [room?.id, isBotMatch, user?.id]);
+
+  const handleSendWebRtcSignal = useCallback((type: 'offer' | 'answer' | 'ice-candidate', data: any) => {
+    if (!room?.id || isBotMatch) return;
+    const supabase = createClient();
+    const webrtcChannel = supabase.channel(`webrtc:${room.id}`);
+    webrtcChannel.send({
+      type: 'broadcast',
+      event: 'signal',
+      payload: { fromUserId: user?.id, type, data },
+    });
+  }, [room?.id, isBotMatch, user?.id]);
 
   const { sendProgress } = useBattleProgress({
     roomId: room?.id ?? '',
@@ -701,29 +736,70 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
     }
 
     try {
-      const { data, error } = await supabase.rpc('submit_battle_result', {
-        p_room_id: room.id,
-        p_score: score,
-        p_correct_answers: correctAnswers,
-        p_incorrect_answers: incorrectAnswers,
-        p_accuracy: accuracy,
-        p_time_taken_seconds: timeTaken,
+      // 1. Submit through server-authoritative evaluation endpoint
+      const submitRes = await fetch('/api/arena/results/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: room.id,
+          answers,
+          timeTakenSeconds: timeTaken,
+        }),
       });
 
-      if (!error && data && data.length > 0) {
-        const resultRow = data[0] as { rating_change: number; new_rating: number; opponent_submitted: boolean };
-        setMyResult({
-          score,
-          correctAnswers,
-          incorrectAnswers,
-          accuracy,
-          ratingChange: resultRow.rating_change,
-          isWinner: resultRow.rating_change > 0,
+      if (submitRes.ok) {
+        const evalData = await submitRes.json();
+        if (evalData.success) {
+          // Update questions with reveal data for post-match review
+          if (evalData.reveals) {
+            setQuestions((prev) =>
+              prev.map((q) => {
+                const rev = evalData.reveals[q.id];
+                return rev ? { ...q, correctId: rev.correctOptionId } : q;
+              })
+            );
+          }
+
+          setMyResult({
+            score: evalData.score,
+            correctAnswers: evalData.correctAnswers,
+            incorrectAnswers: evalData.incorrectAnswers,
+            accuracy: evalData.accuracy,
+            ratingChange: evalData.ratingChange,
+            isWinner: evalData.ratingChange > 0,
+          });
+
+          if (evalData.opponentSubmitted) {
+            await loadExistingResults(room.id);
+            return;
+          }
+        }
+      } else {
+        // Fallback to legacy RPC if needed
+        const { data, error } = await supabase.rpc('submit_battle_result', {
+          p_room_id: room.id,
+          p_score: score,
+          p_correct_answers: correctAnswers,
+          p_incorrect_answers: incorrectAnswers,
+          p_accuracy: accuracy,
+          p_time_taken_seconds: timeTaken,
         });
 
-        if (resultRow.opponent_submitted) {
-          await loadExistingResults(room.id);
-          return;
+        if (!error && data && data.length > 0) {
+          const resultRow = data[0] as { rating_change: number; new_rating: number; opponent_submitted: boolean };
+          setMyResult({
+            score,
+            correctAnswers,
+            incorrectAnswers,
+            accuracy,
+            ratingChange: resultRow.rating_change,
+            isWinner: resultRow.rating_change > 0,
+          });
+
+          if (resultRow.opponent_submitted) {
+            await loadExistingResults(room.id);
+            return;
+          }
         }
       }
     } catch {
@@ -1500,11 +1576,20 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
               <Swords size={15} /> Enter Live Arena
             </Link>
           </div>
-          {room && !isDemoMode && (
-            <Link href={`/post-match-summary?room=${room.id}`} className="block text-center text-xs text-primary hover:underline mt-3 font-semibold">
-              View Full Match Summary →
+          <div className="mt-4 pt-3 border-t border-border/60 flex flex-col items-center gap-2">
+            {room && !isDemoMode && (
+              <Link href={`/post-match-summary?room=${room.id}`} className="text-center text-xs text-primary hover:underline font-semibold">
+                View Full Match Summary →
+              </Link>
+            )}
+            <Link
+              href="/mistake-analyser"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-xs border border-amber-500/30 transition-all"
+            >
+              <AlertCircle size={14} />
+              <span>Review Battle Misses in Galti Sudhar →</span>
             </Link>
-          )}
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -1534,6 +1619,19 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
               <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> 🔴 LIVE ARENA MATCH (2 PLAYERS)
             </span>
             <span className="text-[11px] text-muted-foreground font-medium">Official ELO Ranked Match</span>
+          </div>
+        )}
+
+        {/* WebRTC Live Proctoring Camera Widget */}
+        {!isDemoMode && (
+          <div className="mb-4 flex justify-center">
+            <BattleProctorCamera
+              localPlayerName={myDisplayName}
+              opponentName={opponentDisplayName}
+              isOpponentConnected={Boolean(opponentProfile)}
+              onSendSignal={handleSendWebRtcSignal}
+              incomingSignal={webrtcSignal}
+            />
           </div>
         )}
 
