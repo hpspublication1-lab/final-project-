@@ -26,6 +26,8 @@ import SubjectMasteryOverview from './SubjectMasteryOverview';
 import RecentExamsTable from './RecentExamsTable';
 import WeakTopicsPanel from './WeakTopicsPanel';
 import AccuracyTrendChart from './AccuracyTrendChart';
+import BatchSwitchModal from './BatchSwitchModal';
+import StreakRepairModal from './StreakRepairModal';
 
 const BatchVideoPlayerModal = dynamic(
   () => import('./BatchVideoPlayerModal'),
@@ -266,38 +268,7 @@ export default function DashboardPageClient() {
   // Streak Repair Drill & Habit Engine state
   const [showStreakRepairModal, setShowStreakRepairModal] = useState(false);
   const [repairingStreak, setRepairingStreak] = useState(false);
-  const [repairQuestionIndex, setRepairQuestionIndex] = useState(0);
-  const [repairSelectedOption, setRepairSelectedOption] = useState<number | null>(null);
-  const [repairScore, setRepairScore] = useState(0);
-  const [repairCompleted, setRepairCompleted] = useState(false);
   const [claimingMissionBonus, setClaimingMissionBonus] = useState(false);
-
-  const STREAK_REPAIR_QUESTIONS = [
-    {
-      id: 'srq-1',
-      subject: 'Physics',
-      question: 'Which of the following physical quantities has the dimensional formula [M L^2 T^-2]?',
-      options: ['Force and Momentum', 'Work and Kinetic Energy', 'Power and Pressure', 'Impulse and Surface Tension'],
-      correctIndex: 1,
-      explanation: 'Work and Kinetic Energy both have the dimension of energy = Force × Displacement = [M L T^-2] × [L] = [M L^2 T^-2].',
-    },
-    {
-      id: 'srq-2',
-      subject: 'Biology',
-      question: 'Which organelle is semi-autonomous, has its own 70S ribosomes and circular DNA, and generates cellular ATP?',
-      options: ['Golgi Complex', 'Lysosome', 'Mitochondria', 'Endoplasmic Reticulum'],
-      correctIndex: 2,
-      explanation: 'Mitochondria are double-membrane semi-autonomous organelles containing 70S ribosomes and circular DNA that drive oxidative phosphorylation.',
-    },
-    {
-      id: 'srq-3',
-      subject: 'Chemistry',
-      question: 'According to Le Chatelier’s principle, an exothermic reaction is favoured by which temperature condition?',
-      options: ['High Temperature', 'Low Temperature', 'Extreme Pressure only', 'Presence of Inhibitor'],
-      correctIndex: 1,
-      explanation: 'For an exothermic reaction (ΔH < 0), lowering temperature shifts the equilibrium in the forward direction according to Le Chatelier’s principle.',
-    },
-  ];
 
   // Curriculum & Video state
   const [curriculumSubjects, setCurriculumSubjects] = useState<CurriculumSubject[]>([]);
@@ -378,10 +349,6 @@ export default function DashboardPageClient() {
       });
 
       setShowStreakRepairModal(false);
-      setRepairCompleted(false);
-      setRepairQuestionIndex(0);
-      setRepairSelectedOption(null);
-      setRepairScore(0);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Streak repair failed';
       toast.error(msg);
@@ -896,13 +863,7 @@ export default function DashboardPageClient() {
         {/* Streak Repair Drill 1-Click Trigger */}
         <div className="pt-2 border-t border-border/60">
           <button
-            onClick={() => {
-              setRepairQuestionIndex(0);
-              setRepairSelectedOption(null);
-              setRepairScore(0);
-              setRepairCompleted(false);
-              setShowStreakRepairModal(true);
-            }}
+            onClick={() => setShowStreakRepairModal(true)}
             className="w-full py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           >
             <Zap size={13} className="text-amber-500" />
@@ -2707,99 +2668,14 @@ export default function DashboardPageClient() {
       </section>
 
       {/* ── BATCH SWITCHER MODAL ─────────────────────────────────────────── */}
-      {showBatchModal && data.batchManagement?.availableBatches && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Switch Batch Cohort"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
-        >
-          <div className="bg-card border border-border/80 rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5 relative">
-            <button
-              type="button"
-              onClick={() => setShowBatchModal(false)}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-foreground">Switch Cohort Batch</h3>
-              <p className="text-xs text-muted-foreground">
-                Choose the academic cohort that best matches your target exam timeline.
-              </p>
-            </div>
-
-            <div className="space-y-2 max-h-72 overflow-y-auto">
-              {data.batchManagement.availableBatches.map((batch) => {
-                const isSelected =
-                  selectedBatchId === batch.id ||
-                  (!selectedBatchId && batch.id === data.batchManagement?.currentBatchId);
-                const isCurrent = batch.id === data.batchManagement?.currentBatchId;
-
-                return (
-                  <button
-                    key={batch.id}
-                    type="button"
-                    onClick={() => setSelectedBatchId(batch.id)}
-                    className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
-                        : 'border-border/70 hover:bg-muted/40'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-foreground">{batch.title}</span>
-                        {isCurrent && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-muted text-muted-foreground">
-                            Active
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-muted-foreground font-mono">
-                        {batch.priceNpr > 0 ? `NPR ${batch.priceNpr.toLocaleString()}` : 'Free'}
-                      </span>
-                    </div>
-
-                    <div
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                        isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setShowBatchModal(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={
-                  switchingBatch ||
-                  !selectedBatchId ||
-                  selectedBatchId === data.batchManagement?.currentBatchId
-                }
-                onClick={() => selectedBatchId && handleSwitchBatch(selectedBatchId)}
-                className="btn-primary text-xs font-bold py-2 px-5 rounded-xl flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-              >
-                {switchingBatch ? <Loader2 size={14} className="animate-spin" /> : null}
-                <span>Confirm Switch</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <BatchSwitchModal
+        isOpen={showBatchModal}
+        onClose={() => setShowBatchModal(false)}
+        availableBatches={data?.batchManagement?.availableBatches || []}
+        currentBatchId={data?.batchManagement?.currentBatchId}
+        onConfirmSwitch={handleSwitchBatch}
+        isSwitching={switchingBatch}
+      />
 
       {/* ── VIDEO PLAYER MODAL ───────────────────────────────────────────── */}
       {activeVideo && (
@@ -2810,147 +2686,13 @@ export default function DashboardPageClient() {
       )}
 
       {/* ── STREAK REPAIR DRILL MODAL (ANTI-DROPOUT RECOVERY) ────────────── */}
-      {showStreakRepairModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-lg rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-border/60 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold">
-                  🔥
-                </span>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black text-foreground">
-                    1-Click Streak Repair Drill
-                  </h3>
-                  <p className="text-[11px] text-muted-foreground">
-                    Answer 3 rapid-fire revision questions to restore broken momentum
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowStreakRepairModal(false)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {!repairCompleted ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="font-bold text-primary">
-                    Question {repairQuestionIndex + 1} of {STREAK_REPAIR_QUESTIONS.length}
-                  </span>
-                  <span className="text-muted-foreground">
-                    Subject: {STREAK_REPAIR_QUESTIONS[repairQuestionIndex].subject}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-muted/20 border border-border/70 space-y-2">
-                  <p className="text-xs sm:text-sm font-bold text-foreground">
-                    {STREAK_REPAIR_QUESTIONS[repairQuestionIndex].question}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  {STREAK_REPAIR_QUESTIONS[repairQuestionIndex].options.map((opt, optIdx) => {
-                    const isSelected = repairSelectedOption === optIdx;
-                    return (
-                      <button
-                        key={optIdx}
-                        type="button"
-                        onClick={() => setRepairSelectedOption(optIdx)}
-                        className={`w-full p-3 rounded-xl border text-left text-xs font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-primary/10 border-primary text-primary font-bold'
-                            : 'bg-card border-border/70 hover:bg-muted/40 text-foreground'
-                        }`}
-                      >
-                        <span>{opt}</span>
-                        <div
-                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                            isSelected ? 'border-primary bg-primary' : 'border-muted-foreground/30'
-                          }`}
-                        >
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-2.5">
-                  <button
-                    type="button"
-                    disabled={repairSelectedOption === null}
-                    onClick={() => {
-                      if (repairSelectedOption === null) return;
-                      const isCorrect =
-                        repairSelectedOption ===
-                        STREAK_REPAIR_QUESTIONS[repairQuestionIndex].correctIndex;
-                      if (isCorrect) setRepairScore((s) => s + 1);
-
-                      if (repairQuestionIndex + 1 < STREAK_REPAIR_QUESTIONS.length) {
-                        setRepairQuestionIndex((i) => i + 1);
-                        setRepairSelectedOption(null);
-                      } else {
-                        setRepairCompleted(true);
-                      }
-                    }}
-                    className="btn-primary text-xs font-bold py-2 px-5 rounded-xl flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                  >
-                    <span>
-                      {repairQuestionIndex + 1 < STREAK_REPAIR_QUESTIONS.length
-                        ? 'Next Question'
-                        : 'Review & Repair'}
-                    </span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 text-center py-2">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto text-2xl font-bold">
-                  🔥
-                </div>
-                <div className="space-y-1">
-                  <h4 className="text-base font-black text-foreground">
-                    Drill Completed • {repairScore} / {STREAK_REPAIR_QUESTIONS.length} Correct
-                  </h4>
-                  <p className="text-xs text-muted-foreground">
-                    Excellent focus! Confirm below to restore your continuous study streak and claim your +50 XP momentum bonus.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-1.5">
-                  <Zap size={14} className="text-amber-500" />
-                  <span>Streak will be restored to {Math.max((data.weeklyProgress.currentStreak || 0) + 1, 7)} Days + 50 XP</span>
-                </div>
-
-                <div className="pt-2 border-t border-border/60 flex items-center justify-end gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => setShowStreakRepairModal(false)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={repairingStreak}
-                    onClick={handleStreakRepair}
-                    className="btn-primary text-xs font-bold py-2 px-5 rounded-xl flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                  >
-                    {repairingStreak ? <Loader2 size={14} className="animate-spin" /> : null}
-                    <span>Claim Restored Streak (+50 XP)</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <StreakRepairModal
+        isOpen={showStreakRepairModal}
+        onClose={() => setShowStreakRepairModal(false)}
+        currentStreak={data?.weeklyProgress?.currentStreak || 0}
+        onConfirmRepair={handleStreakRepair}
+        isRepairing={repairingStreak}
+      />
 
       {/* ── REDEEM VOUCHER MODAL ─────────────────────────────────────────── */}
       <RedeemVoucherModal

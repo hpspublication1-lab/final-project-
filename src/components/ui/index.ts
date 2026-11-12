@@ -15,3 +15,4 @@ export { default as AppLogo } from './AppLogo';
 export { default as AppIcon } from './AppIcon';
 export { default as AppImage } from './AppImage';
 export { default as Tilt3DCard } from './Tilt3DCard';
+export { default as SubjectIcon } from './SubjectIcon';

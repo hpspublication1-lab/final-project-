@@ -20,6 +20,7 @@ import {
   Lock,
   Info,
 } from 'lucide-react';
+import { SubjectIcon } from '@/components/ui';
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
@@ -244,7 +245,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                       key={sIdx}
                       className="p-4 rounded-2xl bg-card border border-border/80 flex items-center gap-3"
                     >
-                      <span className="text-2xl p-2.5 rounded-xl bg-muted/60">{sub.icon}</span>
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shrink-0">
+                        <SubjectIcon name={sub.icon} size={20} />
+                      </div>
                       <div>
                         <h3 className="text-sm font-bold text-foreground">{sub.name}</h3>
                         <p className="text-xs text-muted-foreground">

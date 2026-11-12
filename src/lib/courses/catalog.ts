@@ -1,5 +1,5 @@
 /**
- * Samyak Guru — Canonical Course & Pricing Registry
+ * Samyak CEE — Canonical Course & Pricing Registry
  * Single authoritative source of truth for all public pages, course detail templates,
  * landing pages, pricing comparisons, and checkout entries.
  * All prices strictly match PLAN_PRICES in src/lib/payments/gateways.ts.
@@ -154,11 +154,11 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: 'Full Academic Year (365 Days Access)',
     languageMedium: 'English & Nepali Medium',
     subjects: [
-      { name: 'Compulsory Science', chaptersCount: 24, icon: '🔬' },
-      { name: 'Compulsory Mathematics', chaptersCount: 16, icon: '📐' },
-      { name: 'Optional Mathematics', chaptersCount: 18, icon: '📊' },
-      { name: 'English Grammar & Writing', chaptersCount: 15, icon: '📝' },
-      { name: 'Social Studies & Contemporary', chaptersCount: 14, icon: '🌏' },
+      { name: 'Compulsory Science', chaptersCount: 24, icon: 'Microscope' },
+      { name: 'Compulsory Mathematics', chaptersCount: 16, icon: 'Ruler' },
+      { name: 'Optional Mathematics', chaptersCount: 18, icon: 'BarChart3' },
+      { name: 'English Grammar & Writing', chaptersCount: 15, icon: 'BookOpen' },
+      { name: 'Social Studies & Contemporary', chaptersCount: 14, icon: 'Globe' },
     ],
     faculty: [
       {
@@ -316,11 +316,11 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '6 Months (180 Days Full Entrance Cycle)',
     languageMedium: 'English Medium',
     subjects: [
-      { name: 'Zoology', chaptersCount: 22, icon: '🧬' },
-      { name: 'Botany', chaptersCount: 20, icon: '🌿' },
-      { name: 'Chemistry (Organic, Inorganic, Physical)', chaptersCount: 32, icon: '⚗️' },
-      { name: 'Physics (Mechanics, Optics, Modern)', chaptersCount: 28, icon: '⚡' },
-      { name: 'Mental Agility Test (MAT)', chaptersCount: 10, icon: '🧠' },
+      { name: 'Zoology', chaptersCount: 22, icon: 'Activity' },
+      { name: 'Botany', chaptersCount: 20, icon: 'Leaf' },
+      { name: 'Chemistry (Organic, Inorganic, Physical)', chaptersCount: 32, icon: 'FlaskConical' },
+      { name: 'Physics (Mechanics, Optics, Modern)', chaptersCount: 28, icon: 'Zap' },
+      { name: 'Mental Agility Test (MAT)', chaptersCount: 10, icon: 'Brain' },
     ],
     faculty: [
       {
@@ -483,8 +483,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '45 Days Intensive Crash Access',
     languageMedium: 'English Medium',
     subjects: [
-      { name: 'Medical High-Yield PCB Rapid Revision', chaptersCount: 45, icon: '⚡' },
-      { name: 'MAT Speed & Logic Drills', chaptersCount: 10, icon: '🧠' },
+      { name: 'Medical High-Yield PCB Rapid Revision', chaptersCount: 45, icon: 'Zap' },
+      { name: 'MAT Speed & Logic Drills', chaptersCount: 10, icon: 'Brain' },
     ],
     faculty: [
       {
@@ -606,9 +606,9 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '1 Full Year (365 Days Self-Paced Access)',
     languageMedium: 'English Medium',
     subjects: [
-      { name: 'Zoology & Botany Question Bank', chaptersCount: 42, icon: '🧬' },
-      { name: 'Physics & Chemistry Question Bank', chaptersCount: 60, icon: '⚗️' },
-      { name: 'MAT & Full 200-Q Mock Simulator', chaptersCount: 10, icon: '🧠' },
+      { name: 'Zoology & Botany Question Bank', chaptersCount: 42, icon: 'Activity' },
+      { name: 'Physics & Chemistry Question Bank', chaptersCount: 60, icon: 'FlaskConical' },
+      { name: 'MAT & Full 200-Q Mock Simulator', chaptersCount: 10, icon: 'Brain' },
     ],
     faculty: [
       {
@@ -718,8 +718,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '4 Months (120 Days Access)',
     languageMedium: 'English & Nepali Medium',
     subjects: [
-      { name: 'Optional Mathematics', chaptersCount: 18, icon: '📊' },
-      { name: 'Compulsory Science', chaptersCount: 24, icon: '🔬' },
+      { name: 'Optional Mathematics', chaptersCount: 18, icon: 'BarChart3' },
+      { name: 'Compulsory Science', chaptersCount: 24, icon: 'Microscope' },
     ],
     faculty: [
       {
@@ -833,9 +833,9 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '2 Months (60 Days Access)',
     languageMedium: 'English',
     subjects: [
-      { name: 'IELTS Reading & Listening', chaptersCount: 10, icon: '🎧' },
-      { name: 'IELTS Writing Task 1 & 2', chaptersCount: 6, icon: '✍️' },
-      { name: 'IELTS Speaking Part 1, 2 & 3', chaptersCount: 4, icon: '🎙️' },
+      { name: 'IELTS Reading & Listening', chaptersCount: 10, icon: 'Headphones' },
+      { name: 'IELTS Writing Task 1 & 2', chaptersCount: 6, icon: 'PenTool' },
+      { name: 'IELTS Speaking Part 1, 2 & 3', chaptersCount: 4, icon: 'Mic' },
     ],
     faculty: [
       {
@@ -953,8 +953,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '45 Days Access',
     languageMedium: 'English & Nepali Explanation',
     subjects: [
-      { name: 'Meta Ads & Social Funnels', chaptersCount: 6, icon: '📈' },
-      { name: 'SEO, Content & Analytics', chaptersCount: 6, icon: '🔍' },
+      { name: 'Meta Ads & Social Funnels', chaptersCount: 6, icon: 'BarChart3' },
+      { name: 'SEO, Content & Analytics', chaptersCount: 6, icon: 'Search' },
     ],
     faculty: [
       {
@@ -1062,8 +1062,8 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '2 Months (60 Days Hands-On Access)',
     languageMedium: 'English & Nepali Explanation',
     subjects: [
-      { name: 'Python Core & Automation', chaptersCount: 6, icon: '🐍' },
-      { name: 'LLM APIs & AI Tool Building', chaptersCount: 4, icon: '🤖' },
+      { name: 'Python Core & Automation', chaptersCount: 6, icon: 'Code' },
+      { name: 'LLM APIs & AI Tool Building', chaptersCount: 4, icon: 'Bot' },
     ],
     faculty: [
       {
@@ -1174,10 +1174,10 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '365 Days (Full Grade 11 Academic Year)',
     languageMedium: 'English & Nepali Bilingual Explanation',
     subjects: [
-      { name: 'Class 11 Physics', chaptersCount: 22, icon: '⚡' },
-      { name: 'Class 11 Chemistry', chaptersCount: 20, icon: '🧪' },
-      { name: 'Class 11 Mathematics', chaptersCount: 18, icon: '📐' },
-      { name: 'Class 11 Biology (Botany & Zoology)', chaptersCount: 20, icon: '🌿' },
+      { name: 'Class 11 Physics', chaptersCount: 22, icon: 'Zap' },
+      { name: 'Class 11 Chemistry', chaptersCount: 20, icon: 'FlaskConical' },
+      { name: 'Class 11 Mathematics', chaptersCount: 18, icon: 'Ruler' },
+      { name: 'Class 11 Biology (Botany & Zoology)', chaptersCount: 20, icon: 'Leaf' },
     ],
     faculty: [
       {
@@ -1307,10 +1307,10 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '365 Days (Full Grade 12 Academic Year)',
     languageMedium: 'English & Nepali Bilingual Explanation',
     subjects: [
-      { name: 'Class 12 Physics', chaptersCount: 24, icon: '🧲' },
-      { name: 'Class 12 Chemistry', chaptersCount: 22, icon: '⚗️' },
-      { name: 'Class 12 Mathematics', chaptersCount: 18, icon: '∫' },
-      { name: 'Class 12 Biology', chaptersCount: 20, icon: '🧬' },
+      { name: 'Class 12 Physics', chaptersCount: 24, icon: 'Magnet' },
+      { name: 'Class 12 Chemistry', chaptersCount: 22, icon: 'FlaskConical' },
+      { name: 'Class 12 Mathematics', chaptersCount: 18, icon: 'Sigma' },
+      { name: 'Class 12 Biology', chaptersCount: 20, icon: 'Dna' },
     ],
     faculty: [
       {
@@ -1440,10 +1440,10 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '180 Days (Full IOE Entrance Cycle)',
     languageMedium: 'English (With Nepali Shortcut Explanations)',
     subjects: [
-      { name: 'Engineering Mathematics (50 Marks)', chaptersCount: 28, icon: '📐' },
-      { name: 'Engineering Physics (45 Marks)', chaptersCount: 26, icon: '⚙️' },
-      { name: 'Engineering Chemistry (25 Marks)', chaptersCount: 22, icon: '🧪' },
-      { name: 'English & Engineering Aptitude (20 Marks)', chaptersCount: 14, icon: '📚' },
+      { name: 'Engineering Mathematics (50 Marks)', chaptersCount: 28, icon: 'Ruler' },
+      { name: 'Engineering Physics (45 Marks)', chaptersCount: 26, icon: 'Zap' },
+      { name: 'Engineering Chemistry (25 Marks)', chaptersCount: 22, icon: 'FlaskConical' },
+      { name: 'English & Engineering Aptitude (20 Marks)', chaptersCount: 14, icon: 'BookOpen' },
     ],
     faculty: [
       {
@@ -1572,10 +1572,10 @@ export const CANONICAL_CATALOG: CourseData[] = [
     validityText: '180 Days (6 Months Full Access)',
     languageMedium: 'Nepali & English Bilingual (नेपाली र अंग्रेजी माध्यम)',
     subjects: [
-      { name: 'General Knowledge (GK — सामान्य ज्ञान)', chaptersCount: 24, icon: '🇳🇵' },
-      { name: 'General Mental Ability (IQ — बौद्धिक परीक्षण)', chaptersCount: 20, icon: '🧠' },
-      { name: 'Public Administration & Governance (Paper II)', chaptersCount: 18, icon: '🏛️' },
-      { name: 'Current Affairs & Official Drafting (समसामयिक)', chaptersCount: 14, icon: '📰' },
+      { name: 'General Knowledge (GK — सामान्य ज्ञान)', chaptersCount: 24, icon: 'Globe' },
+      { name: 'General Mental Ability (IQ — बौद्धिक परीक्षण)', chaptersCount: 20, icon: 'Brain' },
+      { name: 'Public Administration & Governance (Paper II)', chaptersCount: 18, icon: 'Landmark' },
+      { name: 'Current Affairs & Official Drafting (समसामयिक)', chaptersCount: 14, icon: 'Newspaper' },
     ],
     faculty: [
       {
