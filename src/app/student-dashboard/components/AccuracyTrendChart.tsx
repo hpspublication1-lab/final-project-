@@ -8,7 +8,7 @@ const AccuracyChartInner = dynamic(() => import('./AccuracyChartInner'), { ssr: 
 
 export default function AccuracyTrendChart() {
   return (
-    <div className="card-base h-full">
+    <div className="bg-card border border-border/80 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs h-full flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <div>
           <p className="font-semibold text-foreground">Accuracy Trend</p>

@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import DashboardPageClient from './components/DashboardPageClient';
 
 export const metadata: Metadata = {
-  title: 'My Dashboard — Samyak Tutor',
+  title: 'Student Academic Dashboard — Samyak CEE',
+  description: 'Track your CEE mock test scores, subject mastery, All-Nepal merit rank projections, and daily practice targets.',
   robots: { index: false, follow: false },
 };
 

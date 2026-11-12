@@ -134,7 +134,7 @@ export default function RecentExamsTable() {
   };
 
   return (
-    <div className="card-luxury p-5 sm:p-6 shadow-luxury">
+    <div className="bg-card border border-border/80 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <FileText size={17} className="text-primary" />

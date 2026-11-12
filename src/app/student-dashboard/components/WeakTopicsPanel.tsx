@@ -98,7 +98,7 @@ export default function WeakTopicsPanel() {
   }, [user?.id]);
 
   return (
-    <div className="card-luxury p-5 sm:p-6 shadow-luxury h-full flex flex-col">
+    <div className="bg-card border border-border/80 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs h-full flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <AlertTriangle size={17} className="text-error" />
