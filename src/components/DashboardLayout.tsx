@@ -49,6 +49,7 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Academic Vault',href: '/free-resources?program=see',     icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
+      { label: 'AI Studio',     href: '/ai-studio',                      icon: Sparkles,      key: 'd-ai-studio', badge: 'RAG', section: 'PRACTICE' },
       { label: 'Question Bank', href: '/see/question-bank',              icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
       { label: 'Practice Drills',href: '/practice?program=see_class_10', icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
       { label: 'Battle Arena',  href: '/battle-arena',                   icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
@@ -73,6 +74,7 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Academic Vault',href: '/free-resources?program=ioe',       icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',                     icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
+      { label: 'AI Studio',     href: '/ai-studio',                        icon: Sparkles,      key: 'd-ai-studio', badge: 'RAG', section: 'PRACTICE' },
       { label: 'CBT Practice',  href: '/practice?program=ioe_engineering', icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
       { label: 'Question Bank', href: '/question-bank',                    icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
       { label: 'Battle Arena',  href: '/battle-arena',                     icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
@@ -122,6 +124,7 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
       { label: 'Academic Vault',href: '/free-resources?program=neb',     icon: FileText,      key: 'd-vault', section: 'LEARN' },
       { label: 'Live Classes',  href: '/live-classes',                   icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
       // Practice
+      { label: 'AI Studio',     href: '/ai-studio',                      icon: Sparkles,      key: 'd-ai-studio', badge: 'RAG', section: 'PRACTICE' },
       { label: 'Derivations & MCQs', href: `/practice?program=${canonicalId}`, icon: Zap,    key: 'd-practice', section: 'PRACTICE' },
       { label: 'Question Bank', href: '/question-bank',                  icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
       { label: 'Battle Arena',  href: '/battle-arena',                   icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },
@@ -194,6 +197,7 @@ function getDesktopNav(canonicalId: CanonicalCourseId): NavItem[] {
     { label: 'Academic Vault',href: '/free-resources',    icon: FileText,      key: 'd-vault', section: 'LEARN' },
     { label: 'Live Classes',  href: '/live-classes',      icon: Radio,         key: 'd-live', badge: 'LIVE', section: 'LEARN' },
     // Practice
+    { label: 'AI Studio',     href: '/ai-studio',         icon: Sparkles,      key: 'd-ai-studio', badge: 'RAG', section: 'PRACTICE' },
     { label: 'Practice MCQs', href: '/practice',          icon: Zap,           key: 'd-practice', section: 'PRACTICE' },
     { label: 'Question Bank', href: '/question-bank',     icon: FileText,      key: 'd-qb', section: 'PRACTICE' },
     { label: 'Battle Arena',  href: '/battle-arena',      icon: Swords,        key: 'd-arena', badge: 'Rs. 1,000', section: 'PRACTICE' },

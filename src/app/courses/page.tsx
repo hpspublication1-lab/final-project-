@@ -24,6 +24,12 @@ import {
   BookOpen,
   Calendar,
   Layers,
+  Stethoscope,
+  Wrench,
+  Landmark,
+  GraduationCap,
+  Globe,
+  Target,
 } from 'lucide-react';
 
 const VALID_TRACKS: Array<'all' | CourseTrack> = [
@@ -180,63 +186,69 @@ function CourseCatalogueContent() {
             </button>
             <button
               onClick={() => setSelectedTrack('cee_medical')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedTrack === 'cee_medical'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🩺 CEE Medical ({ceeCount})
+              <Stethoscope size={13} className="shrink-0" />
+              <span>CEE Medical ({ceeCount})</span>
             </button>
             <button
               onClick={() => setSelectedTrack('ioe_engineering')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedTrack === 'ioe_engineering'
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              ⚙️ IOE Engineering ({ioeCount})
+              <Wrench size={13} className="shrink-0" />
+              <span>IOE Engineering ({ioeCount})</span>
             </button>
             <button
               onClick={() => setSelectedTrack('lok_sewa')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedTrack === 'lok_sewa'
                   ? 'bg-orange-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🏛️ Lok Sewa ({lokSewaCount})
+              <Landmark size={13} className="shrink-0" />
+              <span>Lok Sewa ({lokSewaCount})</span>
             </button>
             <button
               onClick={() => setSelectedTrack('neb_11_12')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedTrack === 'neb_11_12'
                   ? 'bg-teal-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              📘 Class 11 &amp; 12 ({nebCount})
+              <BookOpen size={13} className="shrink-0" />
+              <span>Class 11 &amp; 12 ({nebCount})</span>
             </button>
             <button
               onClick={() => setSelectedTrack('see_class_10')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedTrack === 'see_class_10'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🎓 SEE Class 10 ({seeCount})
+              <GraduationCap size={13} className="shrink-0" />
+              <span>SEE Class 10 ({seeCount})</span>
             </button>
             <button
               onClick={() => setSelectedTrack('skills_languages')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 selectedTrack === 'skills_languages'
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              🌐 Skills &amp; IELTS ({skillsCount})
+              <Globe size={13} className="shrink-0" />
+              <span>Skills &amp; IELTS ({skillsCount})</span>
             </button>
           </div>
 
@@ -290,6 +302,36 @@ function CourseCatalogueContent() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Diagnostic Personalization Card (Tailored to entrance mock weaknesses) */}
+      <div className="max-w-6xl mx-auto p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-primary/10 border border-indigo-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
+            <Sparkles size={20} />
+          </div>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                AI Diagnostic Recommendation
+              </span>
+              <span className="text-xs text-muted-foreground">Tailored to All-Nepal Mock #04 CEE Weaknesses</span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-foreground">
+              Critical Gap Detected: Organic Carbonyl Chemistry (Score: 32%) &amp; Plant Physiology (Score: 41%)
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Recommended Masterclass: <strong>CEE Medical Target Batch 2082</strong> with Dr. Sunil Pokhrel &amp; Er. Ramesh Bhattarai
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/courses/cee-medical-target-batch"
+          className="btn-primary text-xs font-bold py-2 px-4 rounded-xl shrink-0 flex items-center gap-1.5 shadow-xs"
+        >
+          <span>View Cohort</span>
+          <ArrowRight size={14} />
+        </Link>
       </div>
 
       {/* Courses Grid / Empty State */}

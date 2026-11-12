@@ -19,6 +19,13 @@ import {
   Layers,
   Lock,
   Info,
+  Target,
+  Trophy,
+  Calendar,
+  CreditCard,
+  FileCode,
+  Zap,
+  Download,
 } from 'lucide-react';
 import { SubjectIcon } from '@/components/ui';
 
@@ -103,8 +110,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
               {/* Target & Exam Outcome */}
               <div className="grid sm:grid-cols-2 gap-4 pt-2 max-w-3xl">
                 <div className="p-4 rounded-2xl bg-muted/30 border border-border/60">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                    🎯 Student Target
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                    <Target size={14} className="text-primary" />
+                    <span>Student Target</span>
                   </span>
                   <p className="text-xs sm:text-sm font-semibold text-foreground">
                     {course.targetStudent}
@@ -112,8 +120,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                 </div>
 
                 <div className="p-4 rounded-2xl bg-muted/30 border border-border/60">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                    🏆 Exam &amp; Outcome Goal
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mb-1">
+                    <Trophy size={14} className="text-amber-500" />
+                    <span>Exam &amp; Outcome Goal</span>
                   </span>
                   <p className="text-xs sm:text-sm font-semibold text-foreground">
                     {course.examOutcome}
@@ -402,6 +411,118 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                 </div>
               </section>
 
+              {/* Official Entrance Mark Distribution & Blueprint */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Entrance Mark Distribution &amp; High-Yield Blueprint
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Calibrated against Nepal MEC (CEE) / IOE Pulchowk / CDC Board syllabi
+                    </p>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                    {isCee ? '200 Marks Total' : isSee ? '75 Marks Written' : '140 Marks Total'}
+                  </span>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {(isCee
+                    ? [
+                        { subject: 'Physics', marks: 50, pct: '25%', highYield: 'Mechanics (18M), Optics (10M), Modern Physics (12M)' },
+                        { subject: 'Chemistry', marks: 50, pct: '25%', highYield: 'Organic Carbonyls (16M), Electrochemistry (8M), Coordination (6M)' },
+                        { subject: 'Botany', marks: 40, pct: '20%', highYield: 'Genetics & Biotechnology (14M), Plant Physiology (12M), Anatomy (8M)' },
+                        { subject: 'Zoology', marks: 40, pct: '20%', highYield: 'Human Systems (18M), Developmental Biology (8M), Evolution (6M)' },
+                      ]
+                    : [
+                        { subject: 'Core Science', marks: 75, pct: '50%', highYield: 'Mechanics & Energy, Chemical Reactions, Heredity & Ecosystem' },
+                        { subject: 'Compulsory Mathematics', marks: 75, pct: '50%', highYield: 'Sets & Arithmetic, Algebra & Indices, Geometry & Trigonometry' },
+                      ]
+                  ).map((item, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-card border border-border/80 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-foreground">{item.subject}</span>
+                        <span className="text-xs font-mono font-black text-primary px-2 py-0.5 rounded-md bg-primary/10">
+                          {item.marks} Marks ({item.pct})
+                        </span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-primary h-full rounded-full" style={{ width: item.pct }} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        <strong className="text-foreground/80">High Yield:</strong> {item.highYield}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* Devanagari Formula Vault & Keynotes Preview */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileCode className="w-5 h-5 text-indigo-400" />
+                    <div>
+                      <h2 className="text-2xl font-bold text-foreground">
+                        सूत्र भण्डार — Verified Formula Vault &amp; Keynotes
+                      </h2>
+                      <p className="text-xs text-muted-foreground">
+                        Handwritten reaction mechanisms and derivation shortcuts in Devanagari &amp; English
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1">
+                    <CheckCircle2 size={12} />
+                    <span>Included Free</span>
+                  </span>
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-3.5">
+                  {[
+                    {
+                      title: 'अल्डोल र क्यानिजारो प्रतिक्रिया (Aldol & Cannizzaro)',
+                      pages: '14 Pages · PDF',
+                      badge: 'Organic Vault',
+                      desc: 'Alpha-hydrogen selectivity, crossed-aldol mechanisms, and 30-second elimination tricks.',
+                    },
+                    {
+                      title: 'घूर्णन गति र गुरुत्वाकर्षण (Rotational & Gravitation)',
+                      pages: '22 Pages · PDF',
+                      badge: 'Physics Vault',
+                      desc: 'Moment of inertia tensors, torque-angular momentum conservation, and orbital velocities.',
+                    },
+                    {
+                      title: 'आनुवंशिकी तथा मेन्डेलको नियम (Genetics & Mendelian Ratios)',
+                      pages: '18 Pages · PDF',
+                      badge: 'Biology Vault',
+                      desc: 'Dihybrid test-crosses, sex-linked inheritance trees, and pedigree solving cheatsheet.',
+                    },
+                  ].map((card, cIdx) => (
+                    <div key={cIdx} className="p-4 rounded-2xl bg-card border border-border/80 flex flex-col justify-between space-y-3">
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-primary px-2 py-0.5 rounded-md bg-primary/10">
+                          {card.badge}
+                        </span>
+                        <h3 className="text-xs font-bold text-foreground leading-snug pt-1">
+                          {card.title}
+                        </h3>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          {card.desc}
+                        </p>
+                      </div>
+                      <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>{card.pages}</span>
+                        <span className="text-primary font-bold flex items-center gap-1">
+                          <Download size={12} />
+                          <span>Preview</span>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               {/* Prerequisites & Feature Limits */}
               <section className="grid sm:grid-cols-2 gap-6">
                 <div className="bg-card border border-border/80 rounded-2xl p-5 space-y-3">
@@ -505,18 +626,27 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
                 <div className="space-y-3 text-xs">
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
-                    <span className="font-bold text-foreground block">📅 Start Date / Activation:</span>
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <Calendar size={13} className="text-primary" />
+                      <span>Start Date / Activation:</span>
+                    </span>
                     <span className="text-muted-foreground">{course.batchSchedule.startDate}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
-                    <span className="font-bold text-foreground block">🕒 Delivery Schedule:</span>
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <Clock size={13} className="text-primary" />
+                      <span>Delivery Schedule:</span>
+                    </span>
                     <span className="text-muted-foreground">{course.batchSchedule.liveSchedule}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
-                    <span className="font-bold text-foreground block">⏳ Access Validity:</span>
-                    <span className="text-emerald-600 font-semibold">
+                    <span className="font-bold text-foreground flex items-center gap-1.5">
+                      <Clock size={13} className="text-emerald-500" />
+                      <span>Access Validity:</span>
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
                       {course.validityText} ({course.validityDays} Days from enrollment)
                     </span>
                   </div>
@@ -565,8 +695,25 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     </Link>
                   )}
 
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    💳 Fonepay Dynamic QR / Bank Transfer ·{' '}
+                  {/* Supported Nepal Payment Rails */}
+                  <div className="pt-2 flex items-center justify-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      eSewa
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-600 border border-purple-500/20">
+                      Khalti
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                      ConnectIPS
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/20">
+                      Fonepay QR
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-muted-foreground text-center flex items-center justify-center gap-1">
+                    <CreditCard size={12} className="text-muted-foreground shrink-0" />
+                    <span>Instant Digital Access ·{' '}</span>
                     <Link href="/refund" className="underline hover:text-foreground">
                       Refund Policy
                     </Link>
