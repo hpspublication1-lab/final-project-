@@ -4,7 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Radio, Clock, MessageSquare, Send, ThumbsUp, PlayCircle, Calendar, Lock, Search, ArrowLeft, ExternalLink, Download, FileText, Loader2, Video, Bell, User, CheckCircle2 } from 'lucide-react';
+import {
+  Radio, Clock, MessageSquare, Send, ThumbsUp, PlayCircle, Calendar, Lock,
+  Search, ArrowLeft, ExternalLink, Download, FileText, Loader2, Video, Bell,
+  BellOff, User, CheckCircle2, Heart, Flame, Sparkles, Hand, Dna, FlaskConical,
+  Zap, Brain, Atom, Calculator, TrendingUp, Languages, Globe2, BookOpen,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRealtimeChat } from '@/lib/hooks/useRealtimeChat';
 import { useTypingIndicator } from '@/lib/hooks/useTypingIndicator';
@@ -75,17 +80,49 @@ function deriveStream(url?: string | null): { streamProvider: LiveClass['streamP
 // ─── Style map (matches Subjects / Lecture Videos pages) ──────────────────────
 
 const SUBJECT_STYLES: Record<string, { bgLight: string; textColor: string; icon?: string }> = {
-  biology: { bgLight: 'bg-bio-light', textColor: 'text-bio', icon: '🧬' },
-  chemistry: { bgLight: 'bg-chem-light', textColor: 'text-chem', icon: '🧪' },
-  physics: { bgLight: 'bg-physics-light', textColor: 'text-physics', icon: '⚡' },
-  mental_agility: { bgLight: 'bg-ma-light', textColor: 'text-ma', icon: '🧠' },
-  science: { bgLight: 'bg-emerald-500/10', textColor: 'text-emerald-600 dark:text-emerald-400', icon: '🔬' },
-  mathematics: { bgLight: 'bg-blue-500/10', textColor: 'text-blue-600 dark:text-blue-400', icon: '📐' },
-  opt_math: { bgLight: 'bg-purple-500/10', textColor: 'text-purple-600 dark:text-purple-400', icon: '📊' },
-  english: { bgLight: 'bg-amber-500/10', textColor: 'text-amber-600 dark:text-amber-400', icon: '📚' },
-  social: { bgLight: 'bg-orange-500/10', textColor: 'text-orange-600 dark:text-orange-400', icon: '🌍' },
-  nepali: { bgLight: 'bg-red-500/10', textColor: 'text-red-600 dark:text-red-400', icon: '🇳🇵' },
+  biology: { bgLight: 'bg-bio-light', textColor: 'text-bio', icon: 'biology' },
+  chemistry: { bgLight: 'bg-chem-light', textColor: 'text-chem', icon: 'chemistry' },
+  physics: { bgLight: 'bg-physics-light', textColor: 'text-physics', icon: 'physics' },
+  mental_agility: { bgLight: 'bg-ma-light', textColor: 'text-ma', icon: 'mental_agility' },
+  science: { bgLight: 'bg-emerald-500/10', textColor: 'text-emerald-600 dark:text-emerald-400', icon: 'science' },
+  mathematics: { bgLight: 'bg-blue-500/10', textColor: 'text-blue-600 dark:text-blue-400', icon: 'mathematics' },
+  opt_math: { bgLight: 'bg-purple-500/10', textColor: 'text-purple-600 dark:text-purple-400', icon: 'opt_math' },
+  english: { bgLight: 'bg-amber-500/10', textColor: 'text-amber-600 dark:text-amber-400', icon: 'english' },
+  social: { bgLight: 'bg-orange-500/10', textColor: 'text-orange-600 dark:text-orange-400', icon: 'social' },
+  nepali: { bgLight: 'bg-red-500/10', textColor: 'text-red-600 dark:text-red-400', icon: 'nepali' },
 };
+
+function renderClassIcon(subjectKey?: string, className = 'w-4 h-4') {
+  const key = subjectKey?.toLowerCase() || '';
+  if (key.includes('bio') || key.includes('dna') || key.includes('zoology') || key.includes('botany')) return <Dna className={className} />;
+  if (key.includes('chem')) return <FlaskConical className={className} />;
+  if (key.includes('phys')) return <Zap className={className} />;
+  if (key.includes('mat') || key.includes('mental') || key.includes('agility')) return <Brain className={className} />;
+  if (key.includes('sci')) return <Atom className={className} />;
+  if (key.includes('math')) return <Calculator className={className} />;
+  if (key.includes('opt')) return <TrendingUp className={className} />;
+  if (key.includes('eng')) return <Languages className={className} />;
+  if (key.includes('soc')) return <Globe2 className={className} />;
+  if (key.includes('nep')) return <BookOpen className={className} />;
+  return <BookOpen className={className} />;
+}
+
+function renderReactionIcon(key: string) {
+  switch (key) {
+    case 'heart':
+      return <Heart size={18} className="fill-rose-500 text-rose-500 drop-shadow-md" />;
+    case 'fire':
+      return <Flame size={18} className="fill-amber-500 text-amber-500 drop-shadow-md" />;
+    case 'clap':
+      return <Sparkles size={18} className="fill-purple-500 text-purple-500 drop-shadow-md" />;
+    case 'mindblown':
+      return <Zap size={18} className="fill-yellow-400 text-yellow-400 drop-shadow-md" />;
+    case 'hand':
+      return <Hand size={18} className="fill-blue-500 text-blue-500 drop-shadow-md" />;
+    default:
+      return <Heart size={18} className="fill-rose-500 text-rose-500" />;
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -188,8 +225,8 @@ function ClassCard({ cls, isLocked, isReminded, onJoin, onUpgrade, onSetReminder
 
         {/* Info */}
         <div className="flex items-start gap-2 mb-2">
-          <div className={`w-7 h-7 rounded-lg ${cls.subjectBg} flex items-center justify-center shrink-0 mt-0.5`}>
-            <span className="text-sm">{cls.subjectIcon}</span>
+          <div className={`w-7 h-7 rounded-lg ${cls.subjectBg} flex items-center justify-center shrink-0 mt-0.5 text-foreground`}>
+            {renderClassIcon(cls.subjectIcon || cls.subjectDisplayName || '')}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2">{cls.title}</p>
@@ -352,7 +389,13 @@ function LiveClassRoom({ cls, onBack }: LiveClassRoomProps) {
   // Real live attendance + emoji reactions (broadcast, throttled)
   const { viewerCount } = useLiveAttendance({ classId: cls.id, enabled: cls.status === 'live', userId: user?.id });
   const { floaters, sendReaction } = useLiveReactions({ classId: cls.id, enabled: cls.status === 'live' });
-  const REACTIONS = ['❤️', '🔥', '👏', '🤯', '✋'];
+  const REACTIONS = [
+    { id: 'heart', label: 'Heart', icon: Heart, color: 'text-rose-500 hover:text-rose-400' },
+    { id: 'fire', label: 'Fire', icon: Flame, color: 'text-amber-500 hover:text-amber-400' },
+    { id: 'clap', label: 'Clap', icon: Sparkles, color: 'text-purple-500 hover:text-purple-400' },
+    { id: 'mindblown', label: 'Mindblown', icon: Zap, color: 'text-yellow-400 hover:text-yellow-300' },
+    { id: 'hand', label: 'Raise Hand', icon: Hand, color: 'text-blue-500 hover:text-blue-400' },
+  ];
 
   // Merge realtime messages into local QA list (deduped by id)
   useEffect(() => {
@@ -405,8 +448,8 @@ function LiveClassRoom({ cls, onBack }: LiveClassRoomProps) {
           <span>All Classes</span>
         </button>
         <span className="text-border">·</span>
-        <div className={`w-5 h-5 rounded-md ${cls.subjectBg} flex items-center justify-center`}>
-          <span className="text-xs">{cls.subjectIcon}</span>
+        <div className={`w-6 h-6 rounded-md ${cls.subjectBg} flex items-center justify-center text-foreground`}>
+          {renderClassIcon(cls.subjectIcon || cls.subjectDisplayName || '', 'w-3.5 h-3.5')}
         </div>
         <p className="text-sm font-semibold text-foreground truncate flex-1">{cls.title}</p>
         {cls.status === 'live' && (
@@ -489,10 +532,10 @@ function LiveClassRoom({ cls, onBack }: LiveClassRoomProps) {
                 {floaters.map((f) => (
                   <span
                     key={f.id}
-                    className="absolute bottom-2 text-2xl animate-float-up"
+                    className="absolute bottom-2 animate-float-up p-1.5 rounded-full bg-black/60 backdrop-blur-xs border border-white/10"
                     style={{ left: `${f.x}%` }}
                   >
-                    {f.emoji}
+                    {renderReactionIcon(f.emoji)}
                   </span>
                 ))}
               </div>
@@ -500,17 +543,20 @@ function LiveClassRoom({ cls, onBack }: LiveClassRoomProps) {
 
             {/* Reaction bar */}
             {cls.status === 'live' && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/55 backdrop-blur rounded-full px-2.5 py-1.5">
-                {REACTIONS.map((e) => (
-                  <button
-                    key={e}
-                    onClick={() => sendReaction(e)}
-                    className="text-lg hover:scale-125 transition-transform leading-none px-0.5"
-                    aria-label={`React ${e}`}
-                  >
-                    {e}
-                  </button>
-                ))}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full px-2.5 py-1.5 border border-white/10 shadow-lg">
+                {REACTIONS.map((r) => {
+                  const Icon = r.icon;
+                  return (
+                    <button
+                      key={r.id}
+                      onClick={() => sendReaction(r.id)}
+                      className={`p-1.5 rounded-full hover:scale-125 transition-all active:scale-95 ${r.color}`}
+                      aria-label={r.label}
+                    >
+                      <Icon size={16} />
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -724,7 +770,7 @@ export default function LiveClassesClient() {
       const next = new Set(prev);
       if (next.has(cls.id)) {
         next.delete(cls.id);
-        toast('Reminder removed', { icon: '🔕' });
+        toast('Reminder removed');
       } else {
         next.add(cls.id);
         toast.success(`Reminder set for "${cls.title}"! We'll notify you before it starts.`);
@@ -801,7 +847,7 @@ export default function LiveClassesClient() {
           subjectDisplayName: subj?.display_name ?? null,
           subjectBg: style.bgLight,
           subjectText: style.textColor,
-          subjectIcon: subj?.icon ?? style.icon ?? '📚',
+          subjectIcon: subj?.name ?? style.icon ?? 'general',
           scheduledAt: c.scheduled_at,
           scheduledLabel: formatScheduledAt(c.scheduled_at),
           durationMin: c.duration_min ?? 60,
@@ -829,7 +875,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Compulsory Science',
             subjectBg: 'bg-emerald-500/10',
             subjectText: 'text-emerald-600 dark:text-emerald-400',
-            subjectIcon: '🔬',
+            subjectIcon: 'science',
             scheduledAt: new Date().toISOString(),
             scheduledLabel: 'Today, Live Now',
             durationMin: 90,
@@ -852,7 +898,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Compulsory Mathematics',
             subjectBg: 'bg-blue-500/10',
             subjectText: 'text-blue-600 dark:text-blue-400',
-            subjectIcon: '📐',
+            subjectIcon: 'mathematics',
             scheduledAt: new Date(Date.now() + 7200000).toISOString(),
             scheduledLabel: 'Today, 6:00 PM',
             durationMin: 90,
@@ -875,7 +921,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Optional Mathematics',
             subjectBg: 'bg-purple-500/10',
             subjectText: 'text-purple-600 dark:text-purple-400',
-            subjectIcon: '📊',
+            subjectIcon: 'opt_math',
             scheduledAt: new Date(Date.now() + 86400000).toISOString(),
             scheduledLabel: 'Tomorrow, 5:30 PM',
             durationMin: 75,
@@ -898,7 +944,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Compulsory Science',
             subjectBg: 'bg-emerald-500/10',
             subjectText: 'text-emerald-600 dark:text-emerald-400',
-            subjectIcon: '🔬',
+            subjectIcon: 'science',
             scheduledAt: new Date(Date.now() - 86400000).toISOString(),
             scheduledLabel: 'Yesterday',
             durationMin: 80,
@@ -923,7 +969,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Biology (Botany)',
             subjectBg: 'bg-bio-light',
             subjectText: 'text-bio',
-            subjectIcon: '🧬',
+            subjectIcon: 'biology',
             scheduledAt: new Date().toISOString(),
             scheduledLabel: 'Today, Live Now',
             durationMin: 60,
@@ -946,7 +992,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Chemistry',
             subjectBg: 'bg-chem-light',
             subjectText: 'text-chem',
-            subjectIcon: '🧪',
+            subjectIcon: 'chemistry',
             scheduledAt: new Date(Date.now() + 7200000).toISOString(),
             scheduledLabel: 'Today, 6:00 PM',
             durationMin: 90,
@@ -969,7 +1015,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Physics',
             subjectBg: 'bg-physics-light',
             subjectText: 'text-physics',
-            subjectIcon: '⚡',
+            subjectIcon: 'physics',
             scheduledAt: new Date(Date.now() + 86400000).toISOString(),
             scheduledLabel: 'Tomorrow, 5:00 PM',
             durationMin: 75,
@@ -992,7 +1038,7 @@ export default function LiveClassesClient() {
             subjectDisplayName: 'Biology (Zoology)',
             subjectBg: 'bg-bio-light',
             subjectText: 'text-bio',
-            subjectIcon: '🫀',
+            subjectIcon: 'biology',
             scheduledAt: new Date(Date.now() - 86400000).toISOString(),
             scheduledLabel: 'Yesterday',
             durationMin: 80,
@@ -1132,7 +1178,10 @@ export default function LiveClassesClient() {
               }`}
             >
               <p className="text-2xl font-extrabold text-error">{liveCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">🔴 Live Now</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold flex items-center justify-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-error animate-pulse" />
+                Live Now
+              </p>
             </div>
             <div
               onClick={() => setFilterStatus('upcoming')}
@@ -1141,7 +1190,10 @@ export default function LiveClassesClient() {
               }`}
             >
               <p className="text-2xl font-extrabold text-primary">{upcomingCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">📅 Upcoming</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold flex items-center justify-center gap-1.5">
+                <Calendar size={13} className="text-primary" />
+                Upcoming
+              </p>
             </div>
             <div
               onClick={() => setFilterStatus('ended')}
@@ -1150,7 +1202,10 @@ export default function LiveClassesClient() {
               }`}
             >
               <p className="text-2xl font-extrabold text-foreground">{endedCount}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 font-semibold">📼 Recordings</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-semibold flex items-center justify-center gap-1.5">
+                <Video size={13} className="text-muted-foreground" />
+                Recordings
+              </p>
             </div>
           </div>
 

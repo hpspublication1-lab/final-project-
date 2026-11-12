@@ -11,12 +11,13 @@ import {
   Layers, MessageCircleQuestion, Bookmark, Lock, TrendingUp, Radio,
   Search, ShieldCheck, CheckCircle2, ChevronDown, HelpCircle
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import ProgramSelectorModal from '@/components/ProgramSelectorModal';
-import { useProgram, normalizeCourseId, CanonicalCourseId } from '@/contexts/ProgramContext';
+import { useProgram, normalizeCourseId, CanonicalCourseId, COURSES_MAP } from '@/contexts/ProgramContext';
 import MobileBottomNav from '@/components/navigation/MobileBottomNav';
 
 interface NavItem {
@@ -251,7 +252,10 @@ export default function DashboardLayout({
   const notifRef = useRef<HTMLDivElement>(null);
 
   const canonicalId = normalizeCourseId(program);
-  const desktopNav = getDesktopNav(canonicalId);
+  const trackMeta = COURSES_MAP[canonicalId];
+  const desktopNav = getDesktopNav(canonicalId).map((item) =>
+    item.badge === 'LIVE' ? item : { ...item, badge: undefined }
+  );
 
   // Close popovers on click outside
   useEffect(() => {
@@ -270,6 +274,11 @@ export default function DashboardLayout({
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen((prev) => !prev);
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        setNotifOpen(false);
+        setMobileDrawerOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -345,12 +354,23 @@ export default function DashboardLayout({
     : searchableLinks.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col antialiased">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07090E] text-foreground flex flex-col antialiased selection:bg-indigo-500/20 relative">
+      {/* ── AMBIENT TOP RADIAL GLOW (Linear / Stripe Craft) ─────────────── */}
+      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.06),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.15),transparent)]" />
       
       {/* ── GLOBAL SEARCH MODAL (Cmd+K) ─────────────────────────────────── */}
       {searchOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4 animate-fade-in">
-          <div className="bg-card border border-border w-full max-w-lg rounded-3xl p-5 shadow-2xl space-y-4">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4 animate-fade-in"
+          onClick={() => setSearchOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search workspace"
+        >
+          <div
+            className="bg-card border border-border w-full max-w-lg rounded-3xl p-5 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-border/80 pb-3">
               <div className="flex items-center gap-2 flex-1">
                 <Search size={18} className="text-muted-foreground" />
@@ -398,23 +418,23 @@ export default function DashboardLayout({
         </div>
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative z-10">
         
         {/* ── DESKTOP LEFT SIDEBAR ─────────────────────────────────────── */}
         <aside
-          className={`hidden lg:flex flex-col justify-between shrink-0 bg-card border-r border-border/80 transition-all duration-300 z-30 ${
+          className={`hidden lg:flex flex-col justify-between shrink-0 bg-white/80 dark:bg-[#0A0D14]/85 backdrop-blur-xl border-r border-slate-200/80 dark:border-white/[0.06] transition-all duration-300 z-30 shadow-[1px_0_30px_rgba(0,0,0,0.02)] dark:shadow-[1px_0_30px_rgba(0,0,0,0.4)] ${
             sidebarCollapsed ? 'w-20' : 'w-64'
           }`}
         >
           {/* Top Header in Sidebar */}
-          <div className="p-4 border-b border-border/60 space-y-4">
+          <div className="p-4 border-b border-slate-200/60 dark:border-white/[0.06] space-y-4">
             <div className="flex items-center justify-between">
               <Link href="/student-dashboard" className="flex items-center gap-2">
                 <AppLogo size={32} showText={!sidebarCollapsed} />
               </Link>
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                className="p-2 min-h-11 min-w-11 rounded-lg text-slate-400 dark:text-zinc-500 hover:text-foreground hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors inline-flex items-center justify-center"
                 aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -425,22 +445,22 @@ export default function DashboardLayout({
             {!sidebarCollapsed && (
               <button
                 onClick={() => setShowCourseModal(true)}
-                className="w-full p-2 rounded-2xl bg-muted/60 hover:bg-muted border border-border/80 text-left transition-all flex items-center justify-between group"
+                className="w-full p-2.5 rounded-2xl bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-slate-200/70 dark:border-white/[0.08] text-left transition-all flex items-center justify-between group shadow-2xs"
               >
                 <div className="truncate">
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block">
-                    Active Track
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-zinc-400 block font-semibold">
+                    Active track
                   </span>
                   <span className="text-xs font-bold text-foreground truncate block">
-                    {canonicalId === 'see_class_10' ? 'SEE Class 10' : 'CEE Medical'}
+                    {trackMeta.shortName}
                   </span>
                 </div>
-                <ChevronDown size={14} className="text-muted-foreground group-hover:text-foreground shrink-0" />
+                <ChevronDown size={14} className="text-slate-400 dark:text-zinc-500 group-hover:text-foreground shrink-0 transition-transform group-hover:translate-y-0.5" />
               </button>
             )}
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation Links with Framer Motion Floating Indicator */}
           <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
             {desktopNav.map((item, idx) => {
               const active = pathname === item.href || (item.href !== '/student-dashboard' && pathname?.startsWith(item.href.split('?')[0]));
@@ -450,27 +470,46 @@ export default function DashboardLayout({
               return (
                 <React.Fragment key={item.key}>
                   {showSection && (
-                    <div className="pt-3 pb-1 px-3 text-[9px] font-black tracking-widest uppercase text-muted-foreground/60 select-none">
+                    <div className="pt-3.5 pb-1 px-3 text-[10px] font-bold tracking-widest uppercase text-slate-400 dark:text-zinc-500 select-none">
                       {item.section}
                     </div>
                   )}
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+                    aria-current={active ? 'page' : undefined}
+                    className={`relative flex items-center gap-3 px-3 min-h-11 rounded-xl text-xs font-semibold transition-all group ${
                       active
-                        ? 'bg-primary text-white shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                        ? 'text-indigo-600 dark:text-white font-bold'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100/70 dark:hover:bg-white/[0.04]'
                     }`}
                     title={sidebarCollapsed ? item.label : undefined}
                   >
-                    <item.icon size={18} className="shrink-0" />
+                    {active && (
+                      <motion.span
+                        layoutId="activeDesktopNav"
+                        className="absolute inset-0 rounded-xl bg-indigo-50/90 dark:bg-white/[0.08] border border-indigo-200/80 dark:border-white/[0.12] -z-10 shadow-2xs"
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <item.icon
+                      size={17}
+                      className={`shrink-0 transition-transform group-hover:scale-105 ${
+                        active ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-zinc-500'
+                      }`}
+                    />
                     {!sidebarCollapsed && (
                       <div className="flex-1 flex items-center justify-between">
-                        <span>{item.label}</span>
+                        <span className="tracking-tight">{item.label}</span>
                         {item.badge && (
-                          <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full font-black uppercase ${
-                            item.badge === 'LIVE' ? 'bg-red-500 text-white animate-pulse' : active ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'
-                          }`}>
+                          <span
+                            className={`text-[9px] font-mono px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+                              item.badge === 'LIVE'
+                                ? 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/30 animate-pulse'
+                                : active
+                                ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/25'
+                                : 'bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border-slate-200 dark:border-zinc-700'
+                            }`}
+                          >
                             {item.badge}
                           </span>
                         )}
@@ -483,16 +522,16 @@ export default function DashboardLayout({
           </div>
 
           {/* User Profile & Footer in Sidebar */}
-          <div className="p-3 border-t border-border/60 space-y-2">
+          <div className="p-3 border-t border-slate-200/60 dark:border-white/[0.06] space-y-2">
             {!sidebarCollapsed ? (
-              <div className="p-2.5 rounded-2xl bg-muted/40 border border-border/60 flex items-center justify-between">
-                <Link href="/profile" className="flex items-center gap-2.5 truncate hover:opacity-80 transition-opacity">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-black text-xs flex items-center justify-center shrink-0">
+              <div className="p-2.5 rounded-2xl bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/[0.06] flex items-center justify-between">
+                <Link href="/profile" className="flex items-center gap-2.5 truncate hover:opacity-85 transition-opacity">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                     {displayName.charAt(0).toUpperCase()}
                   </div>
                   <div className="truncate">
                     <p className="text-xs font-bold text-foreground leading-none truncate">{displayName}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 font-medium truncate">{roleName}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 mt-0.5 font-medium truncate">{roleName}</p>
                   </div>
                 </Link>
                 <button
@@ -500,7 +539,7 @@ export default function DashboardLayout({
                     await signOut();
                     router.replace('/login');
                   }}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
                   title="Sign Out"
                 >
                   <LogOut size={15} />
@@ -512,7 +551,7 @@ export default function DashboardLayout({
                   await signOut();
                   router.replace('/login');
                 }}
-                className="w-full p-2 flex justify-center text-muted-foreground hover:text-red-500"
+                className="w-full p-2 flex justify-center text-slate-400 hover:text-red-500"
                 title="Sign Out"
               >
                 <LogOut size={18} />
@@ -525,13 +564,13 @@ export default function DashboardLayout({
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           
           {/* Top Application Header */}
-          <header className="h-16 bg-card/85 backdrop-blur-xl border-b border-border/80 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-xs z-20">
+          <header className="h-16 bg-white/80 dark:bg-[#07090E]/85 backdrop-blur-xl border-b border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-[0_1px_12px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] z-20">
             
             {/* Left Header: Mobile Toggle & Program Title */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileDrawerOpen(true)}
-                className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                className="lg:hidden p-2 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-foreground hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
                 aria-label="Open navigation menu"
               >
                 <Menu size={20} />
@@ -541,12 +580,12 @@ export default function DashboardLayout({
                 <AppLogo size={28} />
               </div>
 
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xs font-black text-foreground uppercase tracking-wider">
-                  Student Workspace
+              <div className="hidden sm:flex items-center gap-2.5">
+                <span className="text-xs font-semibold text-foreground tracking-tight">
+                  {trackMeta.shortName}
                 </span>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                  {canonicalId === 'see_class_10' ? 'SEE Class 10' : 'CEE Medical'}
+                <span className="hidden lg:inline text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-[280px]">
+                  {trackMeta.tagline}
                 </span>
               </div>
             </div>
@@ -557,11 +596,11 @@ export default function DashboardLayout({
               {/* Search Button (Cmd+K) */}
               <button
                 onClick={() => setSearchOpen(true)}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/60 border border-border/80 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-zinc-900/60 border border-slate-200/80 dark:border-white/[0.08] text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:border-indigo-500/40 dark:hover:border-indigo-500/40 transition-all shadow-2xs group"
               >
-                <Search size={14} />
-                <span>Search curriculum...</span>
-                <kbd className="text-[10px] font-mono bg-background border border-border px-1.5 py-0.2 rounded">⌘K</kbd>
+                <Search size={14} className="text-slate-400 dark:text-zinc-500 group-hover:text-indigo-500 transition-colors" />
+                <span>Search curriculum, MCQs...</span>
+                <kbd className="text-[10px] font-mono bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 px-1.5 py-0.2 rounded shadow-2xs">⌘K</kbd>
               </button>
 
               {/* Course Switcher */}
@@ -571,7 +610,7 @@ export default function DashboardLayout({
               {/* Dark Mode Toggle */}
               <button
                 onClick={onToggleDark}
-                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all active:scale-90"
+                className="p-2 min-h-11 min-w-11 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-foreground hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all active:scale-90 inline-flex items-center justify-center"
                 aria-label="Toggle dark mode"
               >
                 {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
@@ -581,8 +620,9 @@ export default function DashboardLayout({
               <div className="relative" ref={notifRef}>
                 <button
                   onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                  className="relative p-2 min-h-11 min-w-11 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-foreground hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors inline-flex items-center justify-center"
                   aria-label="Notifications"
+                  aria-expanded={notifOpen}
                 >
                   <Bell size={18} />
                   {unreadCount > 0 && (
@@ -593,8 +633,8 @@ export default function DashboardLayout({
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-2xl shadow-xl animate-scale-in z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.1] rounded-2xl shadow-xl animate-scale-in z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-xs text-foreground">Notifications</span>
                         {unreadCount > 0 && (
@@ -614,32 +654,46 @@ export default function DashboardLayout({
                       )}
                     </div>
 
-                    <div className="max-h-72 overflow-y-auto divide-y divide-border/40">
+                    <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.04]">
                       {notifications.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-muted-foreground space-y-1">
-                          <Bell size={20} className="mx-auto text-muted-foreground/60" />
+                        <div className="px-4 py-6 text-center text-slate-400 dark:text-zinc-500 space-y-1">
+                          <Bell size={20} className="mx-auto text-slate-300 dark:text-zinc-600" />
                           <p className="text-xs font-medium">No notifications yet</p>
                           <p className="text-[10px]">Updates about exams and live classes will appear here</p>
                         </div>
                       ) : (
-                        notifications.map((n) => (
-                          <div
-                            key={n.id}
-                            className={`p-3.5 hover:bg-muted/60 transition-colors cursor-pointer ${
-                              !n.is_read ? 'bg-primary/5' : ''
-                            }`}
-                          >
-                            <p className="text-xs font-bold text-foreground leading-snug">{n.title}</p>
-                            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
-                            <span className="text-[9px] text-muted-foreground mt-1 block">
-                              {new Date(n.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        ))
+                        notifications.map((n) => {
+                          const inner = (
+                            <>
+                              <p className="text-xs font-bold text-foreground leading-snug">{n.title}</p>
+                              <p className="text-[11px] text-slate-500 dark:text-zinc-400 mt-0.5 line-clamp-2">{n.message}</p>
+                              <span className="text-[9px] text-slate-400 dark:text-zinc-500 mt-1 block font-mono tabular-nums">
+                                {new Date(n.created_at).toLocaleDateString()}
+                              </span>
+                            </>
+                          );
+                          const className = `block p-3.5 hover:bg-slate-50 dark:hover:bg-white/[0.04] transition-colors ${
+                            !n.is_read ? 'bg-indigo-50/50 dark:bg-indigo-500/[0.05]' : ''
+                          }`;
+                          return n.action_url ? (
+                            <Link
+                              key={n.id}
+                              href={n.action_url}
+                              onClick={() => setNotifOpen(false)}
+                              className={className}
+                            >
+                              {inner}
+                            </Link>
+                          ) : (
+                            <div key={n.id} className={className}>
+                              {inner}
+                            </div>
+                          );
+                        })
                       )}
                     </div>
 
-                    <div className="p-2 border-t border-border/60 text-center">
+                    <div className="p-2 border-t border-slate-200 dark:border-white/[0.08] text-center">
                       <Link
                         href="/student-dashboard"
                         onClick={() => setNotifOpen(false)}
@@ -655,14 +709,14 @@ export default function DashboardLayout({
               {/* User Profile Avatar Link */}
               <Link
                 href="/profile"
-                className="flex items-center gap-2 pl-2 border-l border-border hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2.5 pl-3 border-l border-slate-200 dark:border-white/[0.08] hover:opacity-85 transition-opacity group"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-2xs">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div className="hidden md:block text-left">
-                  <p className="text-xs font-bold text-foreground leading-none">{displayName}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{roleName}</p>
+                  <p className="text-xs font-bold text-foreground leading-none group-hover:text-indigo-500 transition-colors">{displayName}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-zinc-400 font-medium mt-0.5">{roleName}</p>
                 </div>
               </Link>
             </div>
@@ -717,10 +771,8 @@ export default function DashboardLayout({
                 className="w-full p-3 rounded-2xl bg-muted/60 border border-border flex items-center justify-between text-left"
               >
                 <div>
-                  <span className="text-[10px] font-mono uppercase text-muted-foreground block">Active Course</span>
-                  <span className="text-xs font-bold text-foreground">
-                    {canonicalId === 'see_class_10' ? 'SEE Class 10 Board' : 'CEE Medical Entrance'}
-                  </span>
+                  <span className="text-[10px] font-mono uppercase text-muted-foreground block">Active course</span>
+                  <span className="text-xs font-bold text-foreground">{trackMeta.shortName}</span>
                 </div>
                 <ChevronDown size={14} className="text-muted-foreground" />
               </button>

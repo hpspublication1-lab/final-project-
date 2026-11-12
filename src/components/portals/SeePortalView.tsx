@@ -27,6 +27,10 @@ import {
   Download,
   Star,
   Check,
+  Atom,
+  Calculator,
+  Languages,
+  Globe2,
 } from 'lucide-react';
 import SeePracticeSessionModal from '@/components/see/SeePracticeSessionModal';
 import SeePdfViewerModal from '@/components/see/SeePdfViewerModal';
@@ -44,6 +48,25 @@ interface SeePortalViewProps {
 const STORAGE_MISTAKES_KEY = 'samyak_see_student_mistakes_v1';
 const STORAGE_TODAY_PLAN_KEY = 'samyak_see_today_plan_v1';
 const STORAGE_STREAK_KEY = 'samyak_see_student_streak_v1';
+
+function getSubjectIcon(id: string) {
+  switch (id) {
+    case 'science':
+      return <Atom size={20} className="text-emerald-500" />;
+    case 'math':
+      return <Calculator size={20} className="text-blue-500" />;
+    case 'opt_math':
+      return <TrendingUp size={20} className="text-purple-500" />;
+    case 'english':
+      return <Languages size={20} className="text-amber-500" />;
+    case 'nepali':
+      return <BookOpen size={20} className="text-red-500" />;
+    case 'social':
+      return <Globe2 size={20} className="text-teal-500" />;
+    default:
+      return <BookOpen size={20} className="text-emerald-500" />;
+  }
+}
 
 export default function SeePortalView({
   displayName,
@@ -127,7 +150,7 @@ export default function SeePortalView({
     const questionsToUse = matched.length > 0 ? matched : SEE_QUESTION_BANK.slice(0, 10);
     setPracticeSession({
       questions: questionsToUse,
-      title: `🎯 Practice: ${label} (${marks} Mark${marks > 1 ? 's' : ''})`,
+      title: `Practice: ${label} (${marks} Mark${marks > 1 ? 's' : ''})`,
     });
   };
 
@@ -135,7 +158,7 @@ export default function SeePortalView({
     const matched = SEE_QUESTION_BANK.filter((q) => q.subject === subjectId);
     setPracticeSession({
       questions: matched.length > 0 ? matched : SEE_QUESTION_BANK.slice(0, 10),
-      title: `🎯 Subject Practice Drill: ${subjectName}`,
+      title: `Subject Practice Drill: ${subjectName}`,
     });
   };
 
@@ -146,7 +169,7 @@ export default function SeePortalView({
         : SEE_QUESTION_BANK.filter((q) => q.chapter.includes('Force') || q.chapter.includes('Electricity'));
     setPracticeSession({
       questions: questionsToUse.slice(0, 10),
-      title: '🔥 Targeted Weakness Fixer Session',
+      title: 'Targeted Weakness Fixer Session',
     });
   };
 
@@ -172,8 +195,9 @@ export default function SeePortalView({
 
         <div className="space-y-3 z-10 max-w-xl">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 font-mono">
-              🎯 YOUR SEE 2083 PREPARATION
+            <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 font-mono flex items-center gap-1.5">
+              <Target size={12} className="text-emerald-200" />
+              YOUR SEE 2083 PREPARATION
             </span>
             <span className="text-xs text-emerald-100 font-bold flex items-center gap-1 font-mono">
               <Clock size={13} /> 120 Days Remaining
@@ -211,7 +235,7 @@ export default function SeePortalView({
         </div>
       </div>
 
-      {/* 3. ⚡ "WHAT SHOULD I DO NOW?" (Intelligent Recommendation Engine) */}
+      {/* 3. INTELLIGENT RECOMMENDATION ENGINE */}
       <div className="p-6 rounded-3xl bg-card border-2 border-emerald-500/30 shadow-md space-y-4 relative">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -219,8 +243,9 @@ export default function SeePortalView({
               <Zap size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-black uppercase font-mono tracking-wider text-emerald-600 block">
-                ⚡ INTELLIGENT RECOMMENDATION
+              <span className="text-[10px] font-black uppercase font-mono tracking-wider text-emerald-600 flex items-center gap-1">
+                <Zap size={11} className="text-emerald-500" />
+                INTELLIGENT RECOMMENDATION
               </span>
               <h3 className="text-base font-black text-foreground">
                 Your Next Task to Boost Your Marks
@@ -262,9 +287,10 @@ export default function SeePortalView({
                 const doc = SEE_DIGEST_LIST.find((d) => d.id === 'digest-sci-01') || SEE_DIGEST_LIST[0];
                 setSelectedPdf(doc);
               }}
-              className="px-4 py-2.5 rounded-xl bg-card border border-border hover:bg-muted text-foreground text-xs font-bold transition-colors"
+              className="px-4 py-2.5 rounded-xl bg-card border border-border hover:bg-muted text-foreground text-xs font-bold transition-colors flex items-center gap-1.5"
             >
-              📖 Revise Formula First
+              <BookOpen size={13} className="text-muted-foreground" />
+              <span>Revise Formula First</span>
             </button>
           </div>
         </div>
@@ -272,8 +298,9 @@ export default function SeePortalView({
 
       {/* 4. 4-BUTTON CENTRAL LEARNING HUB */}
       <div className="space-y-3">
-        <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground font-mono">
-          🚀 Core 4-Step Learning Engine (LEARN → REVISE → PRACTICE → TEST)
+        <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground font-mono flex items-center gap-1.5">
+          <Layers size={13} className="text-emerald-500" />
+          <span>Core 4-Step Learning Engine (LEARN → REVISE → PRACTICE → TEST)</span>
         </h3>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -293,7 +320,7 @@ export default function SeePortalView({
             </div>
             <div>
               <h4 className="text-base font-black text-foreground group-hover:text-blue-600 transition-colors">
-                📚 LEARN
+                LEARN
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 Watch Bunny HD video lessons &amp; teacher concept explanations.
@@ -319,7 +346,7 @@ export default function SeePortalView({
             </div>
             <div>
               <h4 className="text-base font-black text-foreground group-hover:text-amber-600 transition-colors">
-                📖 REVISE
+                REVISE
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 Formula sheets, theorem proofs, and 1-day revision digests.
@@ -345,7 +372,7 @@ export default function SeePortalView({
             </div>
             <div>
               <h4 className="text-base font-black text-foreground group-hover:text-emerald-600 transition-colors">
-                🧠 PRACTICE
+                PRACTICE
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 4-Tier Question Bank (1 to 10 marks) with step solutions.
@@ -371,7 +398,7 @@ export default function SeePortalView({
             </div>
             <div>
               <h4 className="text-base font-black text-foreground group-hover:text-purple-600 transition-colors">
-                📝 TEST
+                TEST
               </h4>
               <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
                 Full-length 75 &amp; 100 mark timed board mock exams.
@@ -405,7 +432,9 @@ export default function SeePortalView({
               className="p-4 rounded-3xl bg-card border border-border hover:border-emerald-500 hover:shadow-md transition-all text-left flex flex-col justify-between space-y-3 group shadow-xs"
             >
               <div className="flex items-center justify-between">
-                <span className="text-2xl">{subj.icon}</span>
+                <div className="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center border border-border/40 group-hover:scale-105 transition-transform">
+                  {getSubjectIcon(subj.id)}
+                </div>
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono">
                   {subj.chapters.length} Units
                 </span>
@@ -429,13 +458,13 @@ export default function SeePortalView({
         {/* LEFT COLUMN (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* 🎯 PRACTICE BY MARKS LAUNCHER */}
+          {/* PRACTICE BY MARKS LAUNCHER */}
           <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <h3 className="text-sm sm:text-base font-black text-foreground flex items-center gap-2">
                   <Target size={18} className="text-emerald-500" />
-                  <span>🎯 Quick Practice by Marks (द्रुत अभ्यास)</span>
+                  <span>Quick Practice by Marks (द्रुत अभ्यास)</span>
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Target specific question formats tested in the NEB SEE Board examination.
@@ -477,7 +506,7 @@ export default function SeePortalView({
             </div>
           </div>
 
-          {/* ❌ MY MISTAKES (FIX WEAKNESS WIDGET) */}
+          {/* MY MISTAKES (FIX WEAKNESS WIDGET) */}
           <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
@@ -486,7 +515,7 @@ export default function SeePortalView({
                 </div>
                 <div>
                   <h3 className="text-sm sm:text-base font-black text-foreground">
-                    ❌ My Mistakes &amp; Weak Topics Tracker
+                    My Mistakes &amp; Weak Topics Tracker
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     {studentMistakes.length} question{studentMistakes.length === 1 ? '' : 's'} flagged for revision before finals.
@@ -499,7 +528,7 @@ export default function SeePortalView({
                 className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0"
               >
                 <Flame size={14} />
-                <span>🔥 FIX MY WEAKNESS NOW</span>
+                <span>FIX MY WEAKNESS NOW</span>
               </button>
             </div>
 
@@ -514,7 +543,7 @@ export default function SeePortalView({
             </div>
           </div>
 
-          {/* 🏫 MY BATCH STREAMLINED CARD */}
+          {/* MY BATCH STREAMLINED CARD */}
           <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -546,7 +575,7 @@ export default function SeePortalView({
               >
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 font-mono">
-                    🇬🇧 Library ID: 379737
+                    EN • Library ID: 379737
                   </span>
                   <p className="text-xs font-black text-foreground group-hover:text-emerald-600">
                     SEE English Medium Lectures
@@ -561,7 +590,7 @@ export default function SeePortalView({
               >
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 font-mono">
-                    🇳🇵 Library ID: 367785
+                    NP • Library ID: 367785
                   </span>
                   <p className="text-xs font-black text-foreground group-hover:text-amber-600">
                     SEE नेपाली माध्यम भिडियो कक्षा
@@ -577,12 +606,12 @@ export default function SeePortalView({
         {/* RIGHT COLUMN: Daily Plan & Performance (4 cols) */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* 📅 "TODAY'S PLAN" CHECKLIST */}
+          {/* "TODAY'S PLAN" CHECKLIST */}
           <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Calendar size={16} className="text-emerald-500" />
-                <h3 className="text-sm font-black text-foreground">📅 Today's Plan</h3>
+                <h3 className="text-sm font-black text-foreground">Today's Plan</h3>
               </div>
               <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-md">
                 {completedCount}/4 Done ({planProgressPct}%)
@@ -626,7 +655,7 @@ export default function SeePortalView({
             </div>
           </div>
 
-          {/* 📊 PERFORMANCE SUMMARY */}
+          {/* PERFORMANCE SUMMARY */}
           <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
             <h3 className="text-sm font-black text-foreground flex items-center gap-2">
               <TrendingUp size={16} className="text-emerald-500" />
