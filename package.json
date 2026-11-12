@@ -50,6 +50,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css,md,json}\"",
     "serve": "next start",
     "type-check": "tsc --noEmit",
+    "ui:audit": "node scripts/audit-frontend.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },
