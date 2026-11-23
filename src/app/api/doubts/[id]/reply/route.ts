@@ -47,7 +47,8 @@ export async function POST(
       .eq('id', user.id)
       .maybeSingle();
 
-    const userMetaRole = String((user as any).user_metadata?.role || (user as any).app_metadata?.role || '').toLowerCase();
+    // app_metadata only — user_metadata is editable by the user themselves.
+    const userMetaRole = String((user as any).app_metadata?.role || '').toLowerCase();
     const isStaff = profile?.is_admin || ['teacher', 'admin', 'super_admin'].includes(profile?.role || userMetaRole);
 
     const { data: reply, error: replyError } = await admin
