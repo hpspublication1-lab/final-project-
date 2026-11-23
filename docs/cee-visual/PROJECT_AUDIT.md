@@ -98,7 +98,12 @@ These are blockers outside the code:
 | D3 | Asset storage | Two private Supabase Storage buckets (quarantine, published) with short signed URLs; Bunny CDN later | Same auth as today; nothing public until publication |
 | D4 | Processing | Postgres job table + bounded processing in Vercel functions; heavy optimisation done by the animator before upload, validated on the server | No new infrastructure; Vercel cron is daily-only |
 | D5 | Permissions | New scoped role assignments (program/subject) checked by the existing `verifyServerPermission`; all CEE CMS writes through server routes, never from the browser | Meets "server-side scoped RBAC" without replacing auth |
-| D6 | Scope of the first build | Foundation slice only (the handoff's Weeks 1–4), behind a feature flag, on a staging database | As the handoff specifies |
+| D6 | Feature flag | A database settings row (`cee_visual_enabled`, off by default) | Can be switched off instantly without a redeploy; an env var would need one |
+| D7 | Malware scanner | **Your choice:** a hosted scanning API or a ClamAV VM | Until one is chosen, assets stay `NOT_SCANNED` and publication is refused by design |
+
+These are the same decisions as `TARGET_ARCHITECTURE.md` §13.
+
+**Scope of the first build:** the Foundation slice only (the handoff's Weeks 1–4), behind the flag, on a staging database.
 
 Nothing will be deployed to production, and no migration will be applied, without separate approval.
 
