@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { programTypeField, withProgramType } from '@/lib/courses/programColumn';
 import { COURSES_MAP } from '@/contexts/ProgramContext';
 import { CourseSelect } from '@/components/admin/CourseSelect';
 import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
@@ -121,8 +122,8 @@ export default function AdminUploadsClient() {
   const showError = (msg: string) => { setError(msg); setTimeout(() => setError(null), 5000); };
 
   async function loadSubjects() {
-    const { data } = await supabase.from('subjects').select('id,name,display_name,slug,program_type').order('display_name');
-    if (data) setSubjects(data);
+    const { data } = await supabase.from('subjects').select(await withProgramType(supabase, 'subjects', 'id,name,display_name,slug')).order('display_name');
+    if (data) setSubjects(data as unknown as Subject[]);
   }
 
   async function loadChapters() {
@@ -381,7 +382,7 @@ function NotesTab({ subjects, chapters, notes, loading, supabase, onSuccess, onE
     const c = parseCourseId(course);
     if (!c) { onError('Choose the course this note belongs to'); return; }
     setSaving(true);
-    const payload = { ...form, program_type: storedProgramValue(c), pdf_url: pdfUrl, pdf_path: pdfPath, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
+    const payload = { ...form, ...(await programTypeField(supabase, 'notes', storedProgramValue(c))), pdf_url: pdfUrl, pdf_path: pdfPath, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
     const { error } = editId
       ? await supabase.from('notes').update(payload).eq('id', editId)
       : await supabase.from('notes').insert(payload);
@@ -593,7 +594,7 @@ function VideosTab({ subjects, chapters, videos, loading, supabase, onSuccess, o
     const c = parseCourseId(course);
     if (!c) { onError('Choose the course this video belongs to'); return; }
     setSaving(true);
-    const payload = { ...form, program_type: storedProgramValue(c), video_url: videoUrl, video_path: videoPath, thumbnail_url: thumbUrl, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
+    const payload = { ...form, ...(await programTypeField(supabase, 'video_lectures', storedProgramValue(c))), video_url: videoUrl, video_path: videoPath, thumbnail_url: thumbUrl, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
     const { error } = editId
       ? await supabase.from('video_lectures').update(payload).eq('id', editId)
       : await supabase.from('video_lectures').insert(payload);
@@ -1254,6 +1255,7 @@ function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: Bul
     const c = parseCourseId(course);
     if (!c) { onError('Choose the course these questions belong to'); return; }
     const courseSubjects = subjectsForCourse(subjects, c);
+    const questionCourse = await programTypeField(supabase, 'questions', storedProgramValue(c));
     setImporting(true);
     setImportResult(null);
     let success = 0;
@@ -1282,7 +1284,7 @@ function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: Bul
           difficulty: (['easy','medium','hard'].includes(row.difficulty?.trim()) ? row.difficulty.trim() : 'medium') as 'easy'|'medium'|'hard',
           subject_id: subject?.id || null,
           chapter_id: chapter?.id || null,
-          program_type: storedProgramValue(c),
+          ...questionCourse,
           is_active: true,
         });
         if (error) errors.push(`Row ${i + 2}: ${error.message}`);

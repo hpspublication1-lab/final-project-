@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { programTypeField, withProgramType } from '@/lib/courses/programColumn';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Plus, Pencil, Trash2, Save, X, BookOpen, ToggleLeft, ToggleRight, Loader2, AlertCircle, CheckCircle2, Lock, Unlock,  } from 'lucide-react';
@@ -65,8 +66,8 @@ export default function AdminChaptersClient() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const subsResult = await supabase.from('subjects').select('id, name, display_name, program_type').order('name');
-    setSubjects(subsResult.data || []);
+    const subsResult = await supabase.from('subjects').select(await withProgramType(supabase, 'subjects', 'id, name, display_name')).order('name');
+    setSubjects(((subsResult.data as unknown) as Subject[]) || []);
 
     // Gracefully attempt ordering by chapter_number, fallback to sort_order or created_at
     let chapsResult = await supabase.from('chapters').select('*, subjects(display_name, name)').order('chapter_number', { ascending: true });
@@ -133,7 +134,7 @@ export default function AdminChaptersClient() {
     const parentCourse = (subjects as Array<{ id: string; program_type?: string | null }>).find((x) => x.id === form.subject_id)?.program_type;
     const payload: Record<string, any> = {
       subject_id: form.subject_id,
-      ...(parentCourse ? { program_type: parentCourse } : {}),
+      ...(await programTypeField(supabase, 'chapters', parentCourse)),
       title: form.title.trim(),
       description: form.description.trim() || null,
       chapter_number: num,

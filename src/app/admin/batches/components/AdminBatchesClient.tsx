@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { CourseSelect, courseLabel } from '@/components/admin/CourseSelect';
 import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
@@ -192,7 +193,7 @@ export default function AdminBatchesClient() {
       slug: slugify(form.slug),
       description: form.description.trim() || null,
       subject_id: form.subject_id || null,
-      program_type: storedProgramValue(batchCourse),
+      ...(await programTypeField(supabase, 'batches', storedProgramValue(batchCourse))),
       cee_year: form.cee_year ? parseInt(form.cee_year) : null,
       instructor_name: form.instructor_name.trim() || null,
       thumbnail_url: form.thumbnail_url.trim() || null,

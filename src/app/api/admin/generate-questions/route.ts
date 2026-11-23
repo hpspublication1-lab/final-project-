@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperAdmin } from '@/lib/config/superAdmin';
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'The AI did not return usable questions. Please try again.' }, { status: 502 });
     }
 
+    const courseField = await programTypeField(admin, 'questions', 'cee_medical');
     const rows = generated.map((q) => ({
       question_text: q.question_text,
       options: q.options,
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
       difficulty: q.difficulty,
       subject_id: subjectRow.id,
       chapter_id: requestedChapter,
-      program_type: 'cee_medical', // every subject this route accepts is a CEE subject
+      ...courseField, // every subject this route accepts is a CEE subject
       is_published: publish,
     }));
 

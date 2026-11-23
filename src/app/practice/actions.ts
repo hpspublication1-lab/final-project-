@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { withProgramType } from '@/lib/courses/programColumn';
 
 export interface QuestionRow {
   id: string;
@@ -46,9 +47,9 @@ async function findSubjectForCourse(
   course: CanonicalCourseId | null,
 ): Promise<SubjectRow | null> {
   if (!course) return null;
-  const { data, error } = await supabase.from('subjects').select('id, name, display_name, slug, program_type').limit(500);
+  const { data, error } = await supabase.from('subjects').select(await withProgramType(supabase, 'subjects', 'id, name, display_name, slug')).limit(500);
   if (error || !data) return null;
-  const mine = (data as SubjectRow[]).filter((row) => resolveRowCourse(row) === course);
+  const mine = (data as unknown as SubjectRow[]).filter((row) => resolveRowCourse(row) === course);
   const wantSlug = normalizeSubjectSlug(subjectName);
   const wantName = subjectName.trim().toLowerCase();
   const keys = (row: SubjectRow) => [row.slug, row.name, row.display_name].filter(Boolean).map((v) => String(v).toLowerCase());
@@ -67,11 +68,11 @@ export async function fetchCourseSubjects(courseRaw: string): Promise<{ id: stri
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('subjects')
-      .select('id, name, display_name, slug, program_type, is_active, sort_order')
+      .select(await withProgramType(supabase, 'subjects', 'id, name, display_name, slug, is_active, sort_order'))
       .order('sort_order', { ascending: true })
       .limit(500);
     if (error || !data) return [];
-    return (data as (SubjectRow & { is_active?: boolean | null })[])
+    return (data as unknown as (SubjectRow & { is_active?: boolean | null })[])
       .filter((row) => row.is_active !== false && resolveRowCourse(row) === course)
       .map((row) => ({ id: row.id, name: row.display_name || row.name || '' }))
       .filter((row) => row.name);

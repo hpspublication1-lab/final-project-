@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { CourseSelect, courseLabel } from '@/components/admin/CourseSelect';
 import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
@@ -208,7 +209,7 @@ export default function AdminExamsClient() {
       title: form.title.trim(),
       description: form.description.trim() || null,
       subject_id: form.subject_id || null,
-      program_type: storedProgramValue(examCourse),
+      ...(await programTypeField(supabase, 'exams', storedProgramValue(examCourse))),
       duration_minutes: dur,
       total_marks: marks,
       negative_marking: form.negative_marking,

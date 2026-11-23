@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { verifyServerPermission } from '@/lib/auth/serverGuard';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AuditService } from '@/lib/services/auditService';
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
       .from('notes')
       .insert({
         title,
-        program_type: storedProgramValue(course),
+        ...(await programTypeField(admin, 'notes', storedProgramValue(course))),
         subject_id: subject_id || null,
         chapter_id: chapter_id || null,
         pdf_url,

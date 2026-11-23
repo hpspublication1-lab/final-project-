@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { CourseSelect, courseLabel } from '@/components/admin/CourseSelect';
 import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
@@ -119,7 +120,7 @@ export default function AdminSubjectsClient() {
           icon: form.icon.trim() || null,
           is_active: form.is_active,
           // Everything filed under this subject follows it into this course.
-          program_type: storedProgramValue(subjectCourse),
+          ...(await programTypeField(supabase, 'subjects', storedProgramValue(subjectCourse))),
         })
         .eq('id', editingId);
       if (err) setError(err.message);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { withProgramType } from '@/lib/courses/programColumn';
 import { createClient } from '@/lib/supabase/server';
 import { parseCourseId, resolveRowCourse } from '@/lib/courses/courseIds';
 import type { CanonicalCourseId } from '@/contexts/ProgramContext';
@@ -61,7 +62,8 @@ export async function GET(req: NextRequest) {
     const { data: dbNotes, error } = await supabase
       .from('notes')
       .select(
-        'id, title, content, content_markdown, summary_key_points, formula_sheet_latex, pdf_url, is_premium, is_active, created_at, program_type, subjects(display_name)'
+        await withProgramType(supabase, 'notes',
+          'id, title, content, content_markdown, summary_key_points, formula_sheet_latex, pdf_url, is_premium, is_active, created_at, subjects(display_name)')
       )
       .eq('is_active', true)
       .order('created_at', { ascending: false });

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { hasProgramTypeColumn, withProgramType } from '@/lib/courses/programColumn';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -58,7 +59,8 @@ export async function POST(request: NextRequest) {
     const bunnyVideos = bunnyData?.items || [];
 
     // Query subjects for auto-mapping
-    const { data: dbSubjects } = await supabase.from('subjects').select('id, name, program_type');
+    const { data: dbSubjects } = await supabase.from('subjects').select(await withProgramType(supabase, 'subjects', 'id, name'));
+    const videoCourseColumn = await hasProgramTypeColumn(supabase, 'video_lectures');
     const subjectMap: Record<string, string> = {};
     const subjectCourse: Record<string, string | undefined> = {};
     (dbSubjects || []).forEach((s: any) => {
@@ -129,7 +131,7 @@ export async function POST(request: NextRequest) {
         const course = subjectId ? subjectCourse[subjectId] : undefined;
         const { error: insertErr } = await supabase
           .from('video_lectures')
-          .insert(course ? { ...payload, program_type: course } : payload);
+          .insert(course && videoCourseColumn ? { ...payload, program_type: course } : payload);
         if (insertErr) errors.push(`Failed to insert ${title}: ${insertErr.message}`);
         else syncedCount++;
       }

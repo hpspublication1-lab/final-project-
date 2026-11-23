@@ -8,6 +8,7 @@ import {
 } from '@/lib/auth/accessControl';
 import { CanonicalCourseSlug } from '@/types/lms';
 import { COURSE_TITLES, parseCourseId, resolveRowCourse, strictCourseIsolation } from '@/lib/courses/courseIds';
+import { withProgramType } from '@/lib/courses/programColumn';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,10 +79,12 @@ export async function GET(request: NextRequest) {
     const nowIso = new Date().toISOString();
 
     // 2. Fetch batches for this course
-    const { data: allBatches } = await admin
+    // program_type only where the live table has it (see programColumn.ts).
+    const { data: allBatches, error: batchErr } = await admin
       .from('batches')
-      .select('id, title, slug, start_date, end_date, price_npr, is_premium, is_active, instructor_name, program_type')
+      .select(await withProgramType(admin, 'batches', 'id, title, slug, start_date, end_date, price_npr, is_premium, is_active, instructor_name'))
       .eq('is_active', true);
+    if (batchErr) console.error('[curriculum] batches query failed:', batchErr.message);
 
     // Each batch belongs to the course resolveRowCourse() places it in. Before:
     // CEE took any title with "biology" or "chemistry", AI any title containing
@@ -94,11 +97,12 @@ export async function GET(request: NextRequest) {
       (batchIdParam ? trackBatches.find((b: any) => b.id === batchIdParam) : null) || trackBatches[0] || null;
 
     // 3. Fetch subjects for this course
-    const { data: allSubs } = await admin
+    const { data: allSubs, error: subjectErr } = await admin
       .from('subjects')
-      .select('id, name, display_name, slug, sort_order, is_active, program_type')
+      .select(await withProgramType(admin, 'subjects', 'id, name, display_name, slug, sort_order, is_active'))
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
+    if (subjectErr) console.error('[curriculum] subjects query failed:', subjectErr.message);
 
     // Only this course's subjects. Before, every course except SEE received every
     // program's subjects (and their videos and notes), and SEE fell back to all of
@@ -120,7 +124,7 @@ export async function GET(request: NextRequest) {
     const { data: videoRows } = subjectIds.length
       ? await admin
           .from('video_lectures')
-          .select('id, title, description, video_url, thumbnail_url, duration_sec, subject_id, chapter_id, is_premium, is_active, created_at, program_type')
+          .select(await withProgramType(admin, 'video_lectures', 'id, title, description, video_url, thumbnail_url, duration_sec, subject_id, chapter_id, is_premium, is_active, created_at'))
           .in('subject_id', subjectIds)
           .eq('is_active', true)
           .order('created_at', { ascending: true })
@@ -131,7 +135,7 @@ export async function GET(request: NextRequest) {
     const { data: noteRows } = subjectIds.length
       ? await admin
           .from('notes')
-          .select('id, title, content, pdf_url, subject_id, chapter_id, is_premium, is_active, created_at, program_type')
+          .select(await withProgramType(admin, 'notes', 'id, title, content, pdf_url, subject_id, chapter_id, is_premium, is_active, created_at'))
           .in('subject_id', subjectIds)
           .eq('is_active', true)
       : { data: [] as any[] };
@@ -182,7 +186,7 @@ export async function GET(request: NextRequest) {
             id: v.id,
             title: v.title,
             type: 'recorded_video',
-            durationSec: v.duration_sec || 1800,
+            durationSec: v.duration_sec || undefined, // unknown length: show none (was an invented 30 min)
             videoUrl: v.video_url,
             thumbnailUrl: v.thumbnail_url,
             isPremium: v.is_premium,
@@ -297,12 +301,14 @@ export async function GET(request: NextRequest) {
           isPrivileged || Boolean((accessCtx?.courses as any)?.[lessonCourse]?.canAccessFullCourse);
         return { lessonCourse, canAccess };
       };
+      // A string variable, so the typed query parser doesn't try to read the embed.
+      const lessonSelect: string = `*, subjects(${await withProgramType(admin, 'subjects', 'id, name, display_name, slug')}), chapters(id, title)`;
       if (!foundLesson) {
         const { data: directVideo } = await admin
           .from('video_lectures')
-          .select('*, subjects(id, name, display_name, slug, program_type), chapters(id, title)')
+          .select(lessonSelect)
           .eq('id', lessonIdParam)
-          .maybeSingle();
+          .maybeSingle<any>();
         const videoAccess = directVideo ? lessonCourseAccess(directVideo.subjects, directVideo) : null;
 
         if (directVideo && videoAccess) {
@@ -311,7 +317,7 @@ export async function GET(request: NextRequest) {
             id: directVideo.id,
             title: directVideo.title,
             type: 'recorded_video',
-            durationSec: directVideo.duration_sec || 1800,
+            durationSec: directVideo.duration_sec || undefined,
             videoUrl: directVideo.video_url,
             thumbnailUrl: directVideo.thumbnail_url,
             isPremium: directVideo.is_premium,
@@ -325,9 +331,9 @@ export async function GET(request: NextRequest) {
         } else {
           const { data: directNote } = await admin
             .from('notes')
-            .select('*, subjects(id, name, display_name, slug, program_type), chapters(id, title)')
+            .select(lessonSelect)
             .eq('id', lessonIdParam)
-            .maybeSingle();
+            .maybeSingle<any>();
           const noteAccess = directNote ? lessonCourseAccess(directNote.subjects, directNote) : null;
 
           if (directNote && noteAccess) {

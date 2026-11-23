@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { programTypeField, withProgramType } from '@/lib/courses/programColumn';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -240,7 +241,7 @@ export default function MockTestsPageClient() {
         const supabase = createClient();
         const { data } = await supabase
           .from('exams')
-          .select('id, title, description, duration_minutes, total_marks, subject_id, is_published, created_at, program_type')
+          .select(await withProgramType(supabase, 'exams', 'id, title, description, duration_minutes, total_marks, subject_id, is_published, created_at'))
           .eq('is_published', true)
           .order('created_at', { ascending: false });
 

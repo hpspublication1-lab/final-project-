@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { programTypeField } from '@/lib/courses/programColumn';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -29,9 +30,9 @@ export default function AdminCurriculumClient() {
   const [batches, setBatches] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   // New lessons and notes take their subject's course (they used to get the CEE default).
-  const courseOfSubject = (id: string | null | undefined): { program_type?: string } => {
+  const courseOfSubject = async (table: string, id: string | null | undefined): Promise<{ program_type?: string }> => {
     const pt = (subjects as Array<{ id: string; program_type?: string | null }>).find((x) => x.id === id)?.program_type;
-    return pt ? { program_type: pt } : {};
+    return programTypeField(supabase, table, pt);
   };
   const [chapters, setChapters] = useState<any[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
@@ -145,7 +146,7 @@ export default function AdminCurriculumClient() {
         title: courseForm.title.trim(),
         slug: courseForm.slug.trim().toLowerCase().replace(/\s+/g, '-'),
         description: courseForm.description.trim() || null,
-        program_type: storedProgramValue(course),
+        ...(await programTypeField(supabase, 'batches', storedProgramValue(course))),
         price_npr: Number(courseForm.price_npr) || 0,
         instructor_name: 'Samyak Academic Board',
         is_active: true,
@@ -180,7 +181,7 @@ export default function AdminCurriculumClient() {
         title: batchForm.title.trim(),
         slug: batchForm.slug.trim().toLowerCase().replace(/\s+/g, '-'),
         description: batchForm.description.trim() || null,
-        program_type: storedProgramValue(course),
+        ...(await programTypeField(supabase, 'batches', storedProgramValue(course))),
         price_npr: Number(batchForm.price_npr) || 0,
         instructor_name: batchForm.instructor_name.trim() || 'Samyak Faculty Team',
         start_date: batchForm.start_date || null,
@@ -256,7 +257,7 @@ export default function AdminCurriculumClient() {
           .insert({
             title: lessonForm.title.trim(),
             subject_id: lessonForm.subject_id || null,
-            ...courseOfSubject(lessonForm.subject_id),
+            ...(await courseOfSubject('video_lectures', lessonForm.subject_id)),
             chapter_id: lessonForm.chapter_id || null,
             batch_id: lessonForm.batch_id || null,
             // No sample video and no made-up 30-minute length when none was given.
@@ -296,7 +297,7 @@ export default function AdminCurriculumClient() {
           // Only what the admin picked. It used to fall back to the first subject and
           // chapter in the list, filing the note somewhere it didn't belong.
           subject_id: resourceForm.subject_id || null,
-          ...courseOfSubject(resourceForm.subject_id),
+          ...(await courseOfSubject('notes', resourceForm.subject_id)),
           chapter_id: resourceForm.chapter_id || null,
           pdf_url: resourceForm.pdf_url.trim() || null,
           content: resourceForm.content.trim() || null,
