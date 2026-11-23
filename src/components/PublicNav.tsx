@@ -26,7 +26,28 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const navRef = useRef<HTMLElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
-  const practiceDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [practiceDropdownRef] = [useRef<HTMLDivElement | null>(null)];
+  const [internalDark, setInternalDark] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setInternalDark(document.documentElement.classList.contains('dark'));
+    }
+  }, []);
+
+  const effectiveDark = isDark !== undefined ? isDark : internalDark;
+
+  const handleToggleDark = () => {
+    if (onToggleDark) {
+      onToggleDark();
+    } else if (typeof window !== 'undefined') {
+      const isNowDark = document.documentElement.classList.toggle('dark');
+      setInternalDark(isNowDark);
+      try {
+        localStorage.setItem('theme', isNowDark ? 'dark' : 'light');
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -350,12 +371,12 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
           {/* Right Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
             <button
-              onClick={onToggleDark}
+              onClick={handleToggleDark}
               className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
               aria-label="Toggle dark mode"
-              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={effectiveDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
+              {effectiveDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
             </button>
             <button
               onClick={() => setShowRedeemModal(true)}
@@ -396,11 +417,11 @@ export default function PublicNav({ isDark, onToggleDark, announcementHeight = 0
           {/* Mobile Actions */}
           <div className="flex items-center gap-2 lg:hidden">
             <button
-              onClick={onToggleDark}
+              onClick={handleToggleDark}
               className="p-2 rounded-xl text-muted-foreground hover:text-foreground"
               aria-label="Toggle dark mode"
             >
-              {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+              {effectiveDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
 
             <button

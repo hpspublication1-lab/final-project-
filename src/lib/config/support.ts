@@ -10,8 +10,8 @@ export const SUPPORT_CONFIG = {
   address: 'Old Baneshwor, Kathmandu, Nepal',
   googleReviewLink: 'https://www.google.com/search?q=Samyak+Guru+Old+Baneshwor+Kathmandu+Nepal',
   googleMapsLink: 'https://maps.google.com/?q=Old+Baneshwor,+Kathmandu,+Nepal',
-  trustpilotReviewLink: 'https://www.trustpilot.com/evaluate/samyakcee.com',
   facebookLink: 'https://facebook.com/samyakguru',
+  appDownloadUrl: process.env.NEXT_PUBLIC_APP_DOWNLOAD_URL || 'https://play.google.com/store/apps/details?id=com.samyakguru.learning',
   social: {
     facebook: 'https://facebook.com/samyakguru',
     instagram: 'https://instagram.com/samyakguru',

@@ -20,24 +20,19 @@ interface ChatMessage {
 }
 
 export async function assertAiQuota(userId: string): Promise<void> {
-  try {
-    const admin = createAdminClient();
-    const { data, error } = await admin.rpc('check_and_increment_ai_usage', {
-      p_free_limit: 50,
-      p_pro_limit: 500,
-    });
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc('check_and_increment_ai_usage', {
+    p_free_limit: 50,
+    p_pro_limit: 500,
+  });
 
-    if (error) {
-      console.warn('Quota RPC check skipped:', error.message);
-      return;
-    }
-    const row = Array.isArray(data) ? data[0] : data;
-    if (row && row.allowed === false) {
-      throw new AiLimitError();
-    }
-  } catch (err) {
-    if (err instanceof AiLimitError) throw err;
-    console.warn('Quota check error (proceeding):', err);
+  if (error) {
+    console.error('Quota RPC check failed (failing closed):', error.message);
+    throw new AiServiceError(`AI quota check failed: ${error.message}`);
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  if (row && row.allowed === false) {
+    throw new AiLimitError();
   }
 }
 

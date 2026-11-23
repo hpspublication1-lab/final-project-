@@ -17,8 +17,18 @@ import { PREBOOK_OFFER } from '@/lib/courses/catalog';
 // CONFIG — Synchronized with Authoritative Single Source of Truth
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Offer deadline (6 days from now). Nepal time (UTC+05:45).
-const PREBOOKING_DEADLINE = new Date('2026-08-03T23:59:59+05:45');
+// Offer deadline. Nepal time (UTC+05:45). Configurable via NEXT_PUBLIC_PREBOOK_DEADLINE
+function getPrebookingDeadline(): Date {
+  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_PREBOOK_DEADLINE) {
+    const d = new Date(process.env.NEXT_PUBLIC_PREBOOK_DEADLINE);
+    if (!isNaN(d.getTime())) return d;
+  }
+  const defaultTarget = new Date('2027-01-15T23:59:59+05:45');
+  if (defaultTarget.getTime() > Date.now()) return defaultTarget;
+  return new Date(Date.now() + 6 * 86400000);
+}
+
+const PREBOOKING_DEADLINE = getPrebookingDeadline();
 
 const PREBOOK_FEE = PREBOOK_OFFER.depositAmountNpr;          // 300 NPR payable now to reserve
 const COURSE_PRICE = PREBOOK_OFFER.totalCourseFeeNpr;        // 2299 NPR total course fee
@@ -78,8 +88,8 @@ const FAQS = [
 // Countdown
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Fixed Target Cohort Prebooking Window (Target MECEE 2026 Batch Launch)
-const PREBOOK_COHORT_TARGET_MS = new Date('2026-11-30T23:59:59+05:45').getTime();
+// Synchronized Cohort Prebooking Target Timestamp
+const PREBOOK_COHORT_TARGET_MS = PREBOOKING_DEADLINE.getTime();
 
 function useCountdown() {
   const [left, setLeft] = useState(() => {

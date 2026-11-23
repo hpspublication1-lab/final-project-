@@ -58,9 +58,14 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (user) {
-      await assertAiQuota(user.id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required', details: 'Please sign in to submit your paper for AI vision grading.' },
+        { status: 401 }
+      );
     }
+
+    await assertAiQuota(user.id);
 
     const body = await request.json();
     const {

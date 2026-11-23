@@ -57,6 +57,7 @@ export default function Student360Drawer({
   const [studentInvoices, setStudentInvoices] = useState<BillingInvoiceRecord[]>([]);
   const [invoicesLoading, setInvoicesLoading] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<BillingInvoiceRecord | null>(null);
+  const [ghostLoading, setGhostLoading] = useState(false);
 
   // Live state overrides if admin grants extension or revokes
   const [currentPlan, setCurrentPlan] = useState<string>(student?.plan || 'free');
@@ -122,8 +123,6 @@ export default function Student360Drawer({
     );
     window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
   };
-
-  const [ghostLoading, setGhostLoading] = useState(false);
 
   const handleEnterGhostView = async () => {
     if (!student) return;

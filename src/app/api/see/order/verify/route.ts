@@ -9,6 +9,11 @@ import { BillingService } from '@/lib/billing/invoiceEngine';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized. Please sign in to verify order.' }, { status: 401 });
+    }
+
     const { orderNumber } = await request.json();
     if (!orderNumber) {
       return NextResponse.json({ error: 'Missing order number' }, { status: 400 });
@@ -30,6 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
+    // Authorize order ownership
+    if (order.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: You do not have permission to verify this order.' }, { status: 403 });
+    }
+
     // 2. Idempotency check: If already marked as paid, return success immediately
     if (order.status === 'paid') {
       return NextResponse.json({
@@ -42,16 +52,29 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 3. Query Fonepay Verification API
+    // 3. Query Fonepay Verification API strictly from process.env (fail closed if missing)
+    const merchantCode = process.env.FONEPAY_MERCHANT_CODE;
+    const username = process.env.FONEPAY_USERNAME;
+    const password = process.env.FONEPAY_PASSWORD;
+    const secretKey = process.env.FONEPAY_SECRET_KEY;
+    const env = process.env.FONEPAY_ENV || 'production';
+
+    if (!merchantCode || !username || !password || !secretKey) {
+      return NextResponse.json({ error: 'Payment gateway configuration is missing on server.' }, { status: 500 });
+    }
+
     const fonepayConfig = {
-      merchantCode: process.env.FONEPAY_MERCHANT_CODE || '2222040020144055',
-      username: process.env.FONEPAY_USERNAME || '00501017502791',
-      password: process.env.FONEPAY_PASSWORD || 'APPLE12345.6ss$',
-      secretKey: process.env.FONEPAY_SECRET_KEY || '51626c3021a54430817ca95d24c2ac01',
-      env: process.env.FONEPAY_ENV || 'production',
+      merchantCode,
+      username,
+      password,
+      secretKey,
+      env,
     };
 
-    const verifyResult = await checkFonepayStatus(order.order_number, fonepayConfig);
+    const expectedAmount = Number(order.final_amount_npr ?? order.amount_npr);
+    const verifyResult = await checkFonepayStatus(order.order_number, fonepayConfig, {
+      expectedAmountNpr: expectedAmount,
+    });
 
     const isPaid = verifyResult.status === 'success';
 
@@ -62,6 +85,20 @@ export async function POST(request: NextRequest) {
         status: verifyResult.status || order.status,
         message: 'Payment verification pending. Please complete transaction on your mobile banking app.',
       });
+    }
+
+    // Strict amount integrity validation against order.final_amount_npr
+    const reportedAmount = verifyResult.raw?.amount ?? verifyResult.raw?.totalAmount;
+    if (reportedAmount !== undefined && reportedAmount !== null) {
+      const parsedReported = Number(reportedAmount);
+      if (!isNaN(parsedReported) && Math.abs(parsedReported - expectedAmount) > 0.01) {
+        console.error(`Amount mismatch for order ${orderNumber}: expected ${expectedAmount}, reported ${parsedReported}`);
+        return NextResponse.json({
+          success: false,
+          paid: false,
+          error: 'Payment amount mismatch between gateway and order record.',
+        }, { status: 400 });
+      }
     }
 
     // 4. Mark order as paid

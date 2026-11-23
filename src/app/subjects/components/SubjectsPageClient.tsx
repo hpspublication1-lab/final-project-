@@ -200,9 +200,14 @@ export default function SubjectsPageClient() {
       name.toLowerCase()
     );
   
-  let programFilteredSubjects = subjects.filter((s) => {
+  let programFilteredSubjects = subjects.filter((s: any) => {
+    const pType = s.program_type || s.program;
+    if (pType) {
+      return pType === canonicalId || (canonicalId === 'see_class_10' && pType === 'see') || (canonicalId === 'cee_medical' && pType === 'cee');
+    }
     if (canonicalId === 'see_class_10') return isSeeSubject(s.name);
-    return !isSeeSubject(s.name); // CEE or general
+    if (canonicalId === 'cee_medical') return !isSeeSubject(s.name);
+    return false; // Non-medical/SEE programs without custom DB rows fallback to their COURSE_PORTAL_CONFIGS curriculum
   });
 
   // Fallback to portal curriculum config if program has no custom DB records yet

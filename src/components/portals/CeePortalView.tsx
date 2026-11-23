@@ -41,9 +41,13 @@ export default function CeePortalView({
 }: PortalViewProps) {
   const config = COURSE_PORTAL_CONFIGS.cee_medical;
 
-  const targetDate = new Date('2026-04-15T08:00:00');
+  const targetDateStr = process.env.NEXT_PUBLIC_CEE_EXAM_DATE || '2027-04-15T08:00:00+05:45';
+  const targetDate = new Date(targetDateStr);
   const now = new Date();
-  const ceeDays = Math.max(0, Math.floor((targetDate.getTime() - now.getTime()) / 86400000));
+  const diffDays = Math.ceil((targetDate.getTime() - now.getTime()) / 86400000);
+  const ceeDays = Math.max(0, diffDays);
+  const isCeeExpired = diffDays <= 0;
+  const examYear = targetDate.getFullYear();
 
   const firstName = displayName?.split(' ')?.[0] || 'Student';
 
@@ -56,12 +60,14 @@ export default function CeePortalView({
           <h1 className="text-xl sm:text-2xl font-black text-foreground">
             Good {now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening'}, {firstName}! 👋
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Ready to crack CEE Medical 2026?</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Ready to crack CEE Medical {examYear}?</p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 self-start sm:self-auto">
           <Timer size={16} className="text-primary" />
           <span className="font-black text-lg text-primary font-mono">{ceeDays}</span>
-          <span className="text-xs text-muted-foreground font-semibold">days to CEE</span>
+          <span className="text-xs text-muted-foreground font-semibold">
+            {isCeeExpired ? 'exam in progress' : 'days to CEE'}
+          </span>
         </div>
       </div>
 

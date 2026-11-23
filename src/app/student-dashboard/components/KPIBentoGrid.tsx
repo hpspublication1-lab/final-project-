@@ -6,11 +6,17 @@ import { Flame, Target, Trophy, Swords, AlertTriangle, TrendingUp, TrendingDown,
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-// CEE countdown hook
+// CEE countdown hook with Nepal Standard Time (+05:45)
 function useCEEDays() {
-  const target = new Date('2026-04-15T08:00:00');
+  const targetStr = process.env.NEXT_PUBLIC_CEE_EXAM_DATE || '2027-04-15T08:00:00+05:45';
+  const target = new Date(targetStr);
   const now = new Date();
-  return Math.max(0, Math.floor((target?.getTime() - now?.getTime()) / 86400000));
+  const diffDays = Math.ceil((target.getTime() - now.getTime()) / 86400000);
+  return {
+    days: Math.max(0, diffDays),
+    isExpired: diffDays <= 0,
+    targetYear: target.getFullYear(),
+  };
 }
 
 interface KPIStats {
@@ -25,7 +31,7 @@ interface KPIStats {
 }
 
 export default function KPIBentoGrid() {
-  const ceeDays = useCEEDays();
+  const ceeCountdown = useCEEDays();
   const { user, profile } = useAuth();
   const [stats, setStats] = useState<KPIStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -140,18 +146,20 @@ export default function KPIBentoGrid() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-white/80 bg-black/25 px-2.5 py-0.5 rounded-full border border-white/15">Countdown</span>
-            <span className="text-xs font-bold text-white/90">CEE Medical 2026</span>
+            <span className="text-xs font-bold text-white/90">CEE Medical {ceeCountdown.targetYear}</span>
           </div>
-          <p className="font-mono text-5xl sm:text-6xl font-black tabular-nums leading-none tracking-tight">{ceeDays}</p>
-          <p className="text-white/80 text-xs font-semibold mt-1.5 uppercase tracking-wide">Days Remaining Until Entrance</p>
+          <p className="font-mono text-5xl sm:text-6xl font-black tabular-nums leading-none tracking-tight">{ceeCountdown.days}</p>
+          <p className="text-white/80 text-xs font-semibold mt-1.5 uppercase tracking-wide">
+            {ceeCountdown.isExpired ? 'Session Completed · Preparing Next Batch' : 'Days Remaining Until Entrance'}
+          </p>
         </div>
         <div className="relative z-10 pt-4">
           <div className="flex items-center gap-2.5 mb-3">
             <div className="flex-1 bg-white/25 rounded-full h-2 overflow-hidden backdrop-blur-sm">
-              <div className="bg-gradient-to-r from-emerald-300 to-white h-2 rounded-full shadow-xs transition-all duration-500" style={{ width: `${Math.min(100, Math.round(((365 - ceeDays) / 365) * 100))}%` }} />
+              <div className="bg-gradient-to-r from-emerald-300 to-white h-2 rounded-full shadow-xs transition-all duration-500" style={{ width: `${Math.min(100, Math.round(((365 - ceeCountdown.days) / 365) * 100))}%` }} />
             </div>
             <span className="text-xs font-black text-white/90 tabular-nums">
-              {Math.round(((365 - ceeDays) / 365) * 100)}%
+              {Math.round(((365 - ceeCountdown.days) / 365) * 100)}%
             </span>
           </div>
           <Link href="/study-plan" className="inline-flex items-center gap-1.5 text-xs font-bold text-white/90 hover:text-white bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-xl transition-all border border-white/20">

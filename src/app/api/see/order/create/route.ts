@@ -64,13 +64,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create order. Please try again.' }, { status: 500 });
     }
 
-    // 4. Generate dynamic Fonepay QR using existing payment architecture
+    // 4. Generate dynamic Fonepay QR strictly from process.env (fail closed if missing)
+    const merchantCode = process.env.FONEPAY_MERCHANT_CODE;
+    const username = process.env.FONEPAY_USERNAME;
+    const password = process.env.FONEPAY_PASSWORD;
+    const secretKey = process.env.FONEPAY_SECRET_KEY;
+    const env = process.env.FONEPAY_ENV || 'production';
+
+    if (!merchantCode || !username || !password || !secretKey) {
+      return NextResponse.json({ error: 'Payment gateway configuration is missing on server.' }, { status: 500 });
+    }
+
     const fonepayConfig = {
-      merchantCode: process.env.FONEPAY_MERCHANT_CODE || '2222040020144055',
-      username: process.env.FONEPAY_USERNAME || '00501017502791',
-      password: process.env.FONEPAY_PASSWORD || 'APPLE12345.6ss$',
-      secretKey: process.env.FONEPAY_SECRET_KEY || '51626c3021a54430817ca95d24c2ac01',
-      env: process.env.FONEPAY_ENV || 'production',
+      merchantCode,
+      username,
+      password,
+      secretKey,
+      env,
     };
 
     const qrResult = await generateFonepayQr({

@@ -165,9 +165,15 @@ export default function AiTutorClient() {
           // ── Neural Schema Mode: route through orchestrator ──
           const courseIdMap: Record<string, string> = {
             cee: 'cee_medical',
+            cee_medical: 'cee_medical',
             see: 'see_class_10',
+            see_class_10: 'see_class_10',
             english: 'ielts',
+            ielts: 'ielts',
             digital: 'digital_marketing',
+            digital_marketing: 'digital_marketing',
+            ai: 'artificial_intelligence',
+            artificial_intelligence: 'artificial_intelligence',
           };
 
           setActiveAgents([{ id: 'orchestrator', name: 'Samyak AI Brain', emoji: '🧠' }]);
@@ -177,7 +183,7 @@ export default function AiTutorClient() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               message: text,
-              courseId: courseIdMap[program] || 'cee_medical',
+              courseId: courseIdMap[program] || canonicalId || 'cee_medical',
               conversationHistory: historyForApi.slice(-6),
             }),
           });

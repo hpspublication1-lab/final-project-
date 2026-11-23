@@ -1,6 +1,5 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import { Plus_Jakarta_Sans, IBM_Plex_Mono } from 'next/font/google';
 import '../styles/tailwind.css';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -12,19 +11,9 @@ import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
 import GhostViewBanner from '@/components/admin/GhostViewBanner';
 import { getOrganizationSchema, getWebSiteSchema } from '@/lib/seo/structuredData';
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-plus-jakarta-sans',
-  display: 'swap',
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-ibm-plex-mono',
-  display: 'swap',
-});
+// Decouple build-time font fetch from external network to ensure offline & CI stability
+const plusJakartaSans = { variable: 'font-sans', className: 'font-sans' };
+const ibmPlexMono = { variable: 'font-mono', className: 'font-mono' };
 
 // Inline script to apply dark mode from localStorage BEFORE first paint (prevents FOUC)
 const DARK_MODE_SCRIPT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('samyak-theme');if(t==='dark'||(t==null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){d.classList.add('dark')}}catch(e){}})();`;
@@ -110,6 +99,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
       <head>
+        {/* Preconnect for Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Apply dark mode before paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: DARK_MODE_SCRIPT }} />
         <script

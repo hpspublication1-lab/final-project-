@@ -87,10 +87,10 @@ const nextConfig = {
   // `npm run type-check` and `npm run lint` (run them before deploying). Flip
   // these to false once those pass clean if you want the build itself to gate.
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
   compress: true,

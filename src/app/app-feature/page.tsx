@@ -69,7 +69,7 @@ function AppFeatureContent() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href={(SUPPORT_CONFIG as any).appDownloadUrl || '#'}
+            href={SUPPORT_CONFIG.appDownloadUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-primary text-white font-extrabold text-xs shadow-lg shadow-primary/20 hover:bg-primary-dark transition-all"

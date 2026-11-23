@@ -38,6 +38,7 @@
   ],
   "exclude": [
     "node_modules",
-    "samyak_multiplayer_implementation_pack"
+    "samyak_multiplayer_implementation_pack",
+    "FOR BIOLOGY ANIMATION"
   ]
 }

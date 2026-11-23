@@ -98,11 +98,15 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const userId = user?.id || 'guest_student';
-
-    if (user) {
-      await assertAiQuota(user.id);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required', details: 'Please sign in to submit your speech for AI acoustic evaluation.' },
+        { status: 401 }
+      );
     }
+
+    await assertAiQuota(user.id);
+    const userId = user.id;
 
     const body = await request.json();
     const {

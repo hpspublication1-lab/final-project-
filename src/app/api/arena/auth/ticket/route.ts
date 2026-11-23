@@ -8,12 +8,12 @@ import { blockSensitiveActionDuringImpersonation } from '@/lib/auth/impersonatio
 
 export const dynamic = 'force-dynamic';
 
-export const MULTIPLAYER_SECRET =
+const MULTIPLAYER_SECRET =
   process.env.MULTIPLAYER_SECRET_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   'samyak_colyseus_multiplayer_secret_key_2026';
 
-export const TICKET_EXPIRY_SECONDS = 60; // 60 seconds TTL
+const TICKET_EXPIRY_SECONDS = 60; // 60 seconds TTL
 
 export interface MultiplayerTicketPayload {
   sub?: string;

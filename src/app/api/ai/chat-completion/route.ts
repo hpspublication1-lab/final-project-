@@ -70,8 +70,11 @@ async function enforceRateLimit(req: Request): Promise<NextResponse | null> {
     });
 
     if (error) {
-      console.warn('AI rate-limit RPC check skipped:', error.message);
-      return null;
+      console.error('AI rate-limit RPC check failed (failing closed):', error.message);
+      return NextResponse.json(
+        { error: 'AI quota verification failed. Please try again shortly.', details: error.message },
+        { status: 503 }
+      );
     }
 
     const row = Array.isArray(data) ? data[0] : data;

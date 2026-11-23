@@ -33,8 +33,8 @@ interface MyRank {
 }
 
 const PERIODS = [
-  { key: 'daily', label: 'Today' },
   { key: 'weekly', label: 'This Week' },
+  { key: 'monthly', label: 'This Month' },
   { key: 'all_time', label: 'All Time' },
 ] as const;
 
@@ -232,6 +232,47 @@ export default function LeaderboardClient({ currentUserId }: LeaderboardClientPr
             </div>
           </div>
         )}
+
+        {/* Period & Subject Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-card border border-border rounded-2xl p-3.5">
+          {/* Period selector */}
+          <div className="flex items-center gap-1.5 bg-muted/50 p-1 rounded-xl">
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setPeriod(p.key as any)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  period === p.key
+                    ? 'bg-primary text-white shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Subject selector */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+            {SUBJECTS.map((sub) => {
+              const SubIcon = sub.icon;
+              return (
+                <button
+                  key={sub.key}
+                  onClick={() => setSubject(sub.key)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 ${
+                    subject === sub.key
+                      ? 'bg-primary/10 border-primary text-primary font-extrabold'
+                      : 'border-border bg-card text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <SubIcon size={13} className={sub.color} />
+                  <span>{sub.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Scope Filter Tabs (Nepal, Province, District, School, Friends) */}
         <div className="space-y-3">
