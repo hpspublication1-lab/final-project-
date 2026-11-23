@@ -152,3 +152,22 @@ export function storedProgramValue(course: CanonicalCourseId): string {
   const values = PROGRAM_VALUES[course];
   return values.find((v) => v.length <= PROGRAM_TYPE_MAX) ?? values.reduce((a, b) => (b.length < a.length ? b : a));
 }
+
+/**
+ * Every course, for server code. ProgramContext is a client module ('use client'):
+ * a value imported from it into a route handler is not the real object, so
+ * routes take the list and names from here. A test keeps them equal to COURSES_MAP.
+ */
+export const ALL_COURSE_IDS = Object.keys(PROGRAM_VALUES) as CanonicalCourseId[];
+
+export const COURSE_TITLES: Record<CanonicalCourseId, string> = {
+  cee_medical: 'Samyak CEE — Medical Entrance Prep',
+  see_class_10: 'Samyak SEE — Class 10 Board Exam',
+  neb_class_11: 'Samyak Class 11 — NEB Science & Math Foundation',
+  neb_class_12: 'Samyak Class 12 — NEB Board Topper & Entrance Bridge',
+  ioe_engineering: 'Samyak IOE — BE Engineering Entrance Prep',
+  lok_sewa: 'Samyak Lok Sewa — Public Service Commission Prep',
+  ielts: 'Samyak IELTS — English Language Mastery',
+  digital_marketing: 'Samyak Digital — Career & Marketing Skills',
+  artificial_intelligence: 'Samyak AI — AI & Python Academy',
+};

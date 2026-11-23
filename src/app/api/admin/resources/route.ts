@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyServerPermission } from '@/lib/auth/serverGuard';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AuditService } from '@/lib/services/auditService';
-import { CANONICAL_COURSES } from '@/contexts/ProgramContext';
-import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
+import { ALL_COURSE_IDS, parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,7 +72,7 @@ export async function GET(req: NextRequest) {
       totalCount: filtered.length,
       // Every course, plus what can't be placed — counted from real rows.
       programBreakdown: {
-        ...Object.fromEntries(CANONICAL_COURSES.map((c) => [c, deduplicated.filter((r) => r.course === c).length])),
+        ...Object.fromEntries(ALL_COURSE_IDS.map((c) => [c, deduplicated.filter((r) => r.course === c).length])),
         cee: deduplicated.filter((r) => r.course === 'cee_medical').length,
         see: deduplicated.filter((r) => r.course === 'see_class_10').length,
         ielts: deduplicated.filter((r) => r.course === 'ielts').length,

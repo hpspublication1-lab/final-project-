@@ -7,7 +7,7 @@ import {
   RawEnrollment,
 } from '@/lib/auth/accessControl';
 import { CanonicalCourseSlug } from '@/types/lms';
-import { parseCourseId, resolveRowCourse, strictCourseIsolation } from '@/lib/courses/courseIds';
+import { COURSE_TITLES, parseCourseId, resolveRowCourse, strictCourseIsolation } from '@/lib/courses/courseIds';
 
 export const dynamic = 'force-dynamic';
 
@@ -362,7 +362,8 @@ export async function GET(request: NextRequest) {
     const resultPayload = {
       course: {
         slug: courseSlug,
-        title: courseSlug === 'see_class_10' ? 'SEE Class 10 Board Exam' : 'CEE Medical Entrance Preparation',
+        // The course's own name. Every course except SEE used to be titled CEE.
+        title: COURSE_TITLES[courseSlug as keyof typeof COURSE_TITLES] ?? courseSlug,
       },
       batch: activeBatch,
       availableBatches: trackBatches,

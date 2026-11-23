@@ -107,3 +107,13 @@ describe('storedProgramValue', () => {
     expect(storedProgramValue('cee_medical')).toBe('cee_medical');
   });
 });
+
+import { ALL_COURSE_IDS, COURSE_TITLES } from '../courseIds';
+import { COURSES_MAP } from '@/contexts/ProgramContext';
+
+describe('server-side course list', () => {
+  it('has the same courses and names as the client list', () => {
+    expect([...ALL_COURSE_IDS].sort()).toEqual([...ALL_COURSES].sort());
+    for (const c of ALL_COURSES) expect(COURSE_TITLES[c]).toBe(COURSES_MAP[c].name);
+  });
+});
