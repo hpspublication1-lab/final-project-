@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isSuperAdmin } from '@/lib/config/superAdmin';
@@ -8,8 +9,12 @@ import { generateQuestions } from '@/lib/ai/generateQuestions';
  * POST /api/admin/generate-questions  { subject, count, publish? }
  *
  * Super-admin only. Generates real CEE MCQs for a subject via OpenAI and inserts
- * them into the question bank, de-duped against existing questions and mapped to
- * a random chapter of that subject. Returns how many were added.
+ * them into the question bank, de-duped against existing questions. Returns how
+ * many were added.
+ *
+ * Questions are saved as drafts unless `publish: true` is sent, and with no chapter
+ * unless a `chapter_id` of that subject is sent. They used to go live immediately,
+ * each filed under a randomly chosen chapter.
  */
 export const maxDuration = 300; // generation can take a while for large counts
 
@@ -28,7 +33,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const subject = String(body.subject ?? '').toLowerCase();
     const count = Math.max(1, Math.min(50, parseInt(String(body.count), 10) || 10)); // cap per request
-    const publish = body.publish !== false;
+    const publish = body.publish === true;
+    const requestedChapter = typeof body.chapter_id === 'string' ? body.chapter_id : null;
 
     if (!VALID_SUBJECTS.includes(subject)) {
       return NextResponse.json({ error: `subject must be one of: ${VALID_SUBJECTS.join(', ')}` }, { status: 400 });
@@ -42,6 +48,9 @@ export async function POST(request: NextRequest) {
       admin.from('questions').select('question_text').eq('subject_id', subjectRow.id).limit(500),
     ]);
     const chapterIds = (chapters ?? []).map((c: any) => c.id);
+    if (requestedChapter && !chapterIds.includes(requestedChapter)) {
+      return NextResponse.json({ error: 'That chapter is not part of this subject.' }, { status: 400 });
+    }
     const existingTexts = (existing ?? []).map((q: any) => q.question_text);
 
     const generated = await generateQuestions(subject, count, existingTexts);
@@ -49,6 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'The AI did not return usable questions. Please try again.' }, { status: 502 });
     }
 
+    const courseField = await programTypeField(admin, 'questions', 'cee_medical');
     const rows = generated.map((q) => ({
       question_text: q.question_text,
       options: q.options,
@@ -56,14 +66,15 @@ export async function POST(request: NextRequest) {
       explanation: q.explanation,
       difficulty: q.difficulty,
       subject_id: subjectRow.id,
-      chapter_id: chapterIds.length ? chapterIds[Math.floor(Math.random() * chapterIds.length)] : null,
+      chapter_id: requestedChapter,
+      ...courseField, // every subject this route accepts is a CEE subject
       is_published: publish,
     }));
 
     const { error } = await admin.from('questions').insert(rows);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true, added: rows.length, subject });
+    return NextResponse.json({ ok: true, added: rows.length, subject, published: publish, chapter_id: requestedChapter });
   } catch (err) {
     console.error('admin/generate-questions error:', err);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Generation failed' }, { status: 500 });

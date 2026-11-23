@@ -15,7 +15,8 @@ interface Props {
 
 export default function UploadResourceModal({ isOpen, onClose, onSuccess }: Props) {
   const [title, setTitle] = useState('');
-  const [program, setProgram] = useState<'cee' | 'see' | 'ielts' | 'neb' | 'ioe'>('cee');
+  // No default: the admin must say which course this belongs to. It used to be CEE.
+  const [program, setProgram] = useState<string | null>(null);
   const [fileType, setFileType] = useState('pdf_notes');
   const [subject, setSubject] = useState('Physics');
   const [chapter, setChapter] = useState('');
@@ -31,6 +32,14 @@ export default function UploadResourceModal({ isOpen, onClose, onSuccess }: Prop
     if (!title.trim()) {
       toast.error('Resource title is required');
       return;
+    }
+
+    if (!program) {
+
+      toast.error('Choose the course this resource belongs to.');
+
+      return;
+
     }
 
     setSubmitting(true);
@@ -91,16 +100,20 @@ export default function UploadResourceModal({ isOpen, onClose, onSuccess }: Prop
             <label className="block font-bold text-foreground mb-1 text-[11px]">Academic Section:</label>
             <div className="grid grid-cols-3 gap-1.5">
               {[
-                { key: 'cee', label: '🩺 CEE Medical' },
-                { key: 'see', label: '🎒 SEE Class 10' },
-                { key: 'ielts', label: '🌍 IELTS' },
-                { key: 'neb', label: '🎓 NEB 11/12' },
-                { key: 'ioe', label: '📐 IOE Eng' },
+                { key: 'cee_medical', label: 'CEE Medical' },
+                { key: 'see_class_10', label: 'SEE Class 10' },
+                { key: 'neb_class_11', label: 'NEB Class 11' },
+                { key: 'neb_class_12', label: 'NEB Class 12' },
+                { key: 'ioe_engineering', label: 'IOE Engineering' },
+                { key: 'lok_sewa', label: 'Lok Sewa' },
+                { key: 'ielts', label: 'IELTS' },
+                { key: 'digital_marketing', label: 'Digital Marketing' },
+                { key: 'artificial_intelligence', label: 'AI' },
               ].map((item) => (
                 <button
                   key={item.key}
                   type="button"
-                  onClick={() => setProgram(item.key as any)}
+                  onClick={() => setProgram(item.key)}
                   className={`py-1.5 px-2 rounded-xl font-bold text-center transition-all cursor-pointer ${
                     program === item.key
                       ? 'bg-primary text-white'

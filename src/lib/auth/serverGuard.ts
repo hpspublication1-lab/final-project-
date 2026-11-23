@@ -110,12 +110,14 @@ export async function verifyServerPermission(
           };
         }
 
+        // Never read role or is_admin from user_metadata: any signed-in user can
+        // rewrite their own with supabase.auth.updateUser({ data: { is_admin: true } }).
+        // app_metadata is server-only, and /api/admin/roles writes it.
         const rawRole =
           profAny?.role ||
           profAny?.role_name ||
-          (user.app_metadata as any)?.role ||
-          (user.user_metadata as any)?.role;
-        const isAdminFlag = Boolean(profAny?.is_admin || (user.user_metadata as any)?.is_admin);
+          (user.app_metadata as any)?.role;
+        const isAdminFlag = Boolean(profAny?.is_admin);
         const normalized = normalizeRoleType(rawRole, isAdminFlag);
         role = normalized === 'visitor' ? 'student_free' : normalized;
       }

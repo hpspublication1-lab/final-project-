@@ -31,7 +31,7 @@ import {
   Award,
   Layers
 } from 'lucide-react';
-import { fetchPracticeQuestions, fetchSubjectChapters, type QuestionRow, type ChapterOption } from '../actions';
+import { fetchPracticeQuestions, fetchSubjectChapters, fetchCourseSubjects, type QuestionRow, type ChapterOption } from '../actions';
 import { createClient } from '@/lib/supabase/client';
 import { useChat } from '@/lib/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
@@ -165,7 +165,39 @@ export default function PracticePageClient() {
     { name: 'Social Studies', icon: '🌍', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
   ];
 
-  const availableSubjects = isSee || canonicalId === 'see_class_10' ? seeSubjectsList : ceeSubjectsList;
+  // CEE and SEE have built-in subject lists. Every other course uses the subjects
+  // stored for it — it used to be shown CEE's (Biology, Chemistry…) and CEE questions.
+  const [dbSubjects, setDbSubjects] = useState<{ id: string; name: string }[] | null>(null);
+  const hasBuiltInSubjects = canonicalId === 'cee_medical' || canonicalId === 'see_class_10';
+  useEffect(() => {
+    if (hasBuiltInSubjects) return;
+    let cancelled = false;
+    setDbSubjects(null);
+    fetchCourseSubjects(canonicalId).then((rows) => {
+      if (!cancelled) setDbSubjects(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [canonicalId, hasBuiltInSubjects]);
+  const availableSubjects = useMemo(
+    () =>
+      canonicalId === 'see_class_10' || isSee
+        ? seeSubjectsList
+        : canonicalId === 'cee_medical'
+          ? ceeSubjectsList
+          : (dbSubjects ?? []).map((row) => ({
+              name: row.name,
+              icon: '📘',
+              color: 'text-primary',
+              bg: 'bg-muted',
+              border: 'border-primary',
+            })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [canonicalId, isSee, dbSubjects],
+  );
+  const subjectsLoading = !hasBuiltInSubjects && dbSubjects === null;
+  const noSubjects = !subjectsLoading && availableSubjects.length === 0;
 
   // Auto-switch selected subject when program changes
   useEffect(() => {
@@ -259,7 +291,7 @@ export default function PracticePageClient() {
   useEffect(() => {
     let cancelled = false;
     setLoadingChapters(true);
-    fetchSubjectChapters(selectedSubject).then((chaps) => {
+    fetchSubjectChapters(selectedSubject, canonicalId).then((chaps) => {
       if (!cancelled) {
         setAvailableChapters(chaps);
         setLoadingChapters(false);
@@ -268,7 +300,7 @@ export default function PracticePageClient() {
     return () => {
       cancelled = true;
     };
-  }, [selectedSubject]);
+  }, [selectedSubject, canonicalId]);
 
   const handleStartSession = useCallback((overrideCount?: number, overrideDiff?: string, overrideSubj?: string) => {
     const count = overrideCount ?? questionCount;
@@ -341,7 +373,7 @@ export default function PracticePageClient() {
         // fail open
       }
 
-      const result = await fetchPracticeQuestions(subj, diff, count, selectedChapterId);
+      const result = await fetchPracticeQuestions(subj, diff, count, selectedChapterId, canonicalId);
       if (result.error || result.questions.length === 0) {
         const scope = chapterFilterTitle ? `${chapterFilterTitle} (${subj})` : `${subj} (${diff})`;
         setFetchError(result.error ?? `No questions found for ${scope}. Try a different filter.`);
@@ -354,7 +386,7 @@ export default function PracticePageClient() {
       setShowExplanation(false);
       setMode('active');
     });
-  }, [liveMode, questionCount, selectedDifficulty, selectedSubject, selectedChapterId, chapterFilterTitle, isSee]);
+  }, [liveMode, questionCount, selectedDifficulty, selectedSubject, selectedChapterId, chapterFilterTitle, isSee, canonicalId]);
 
   useEffect(() => {
     const countParam = searchParams.get('count');
@@ -749,6 +781,19 @@ Official Explanation: ${q.explanation || 'None provided'}`
             </div>
           )}
 
+          {subjectsLoading ? (
+            <div className="bg-card border border-border rounded-2xl p-10 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 size={16} className="animate-spin" /> Loading subjects…
+            </div>
+          ) : noSubjects ? (
+            <div className="bg-card border border-border rounded-2xl p-10 text-center">
+              <p className="text-base font-bold text-foreground">No learning content available yet.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Learning materials for this course have not been uploaded yet. Please check back later.
+              </p>
+            </div>
+          ) : (
+          <>
           {/* Subject Cards & Chapter Configuration */}
           <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-xs">
             <div>
@@ -888,6 +933,8 @@ Official Explanation: ${q.explanation || 'None provided'}`
               )}
             </button>
           </div>
+          </>
+          )}
         </div>
       </DashboardLayout>
     );

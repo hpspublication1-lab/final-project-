@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { programTypeField } from '@/lib/courses/programColumn';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getSessionUser } from '@/lib/supabase/route-auth';
 
@@ -29,6 +30,8 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    // This importer is SEE-only; tag rows SEE where the table has a course column.
+    const courseField = admin ? await programTypeField(admin, 'questions', 'see_class_10') : {};
     if (!admin) {
       return NextResponse.json({ error: 'Database connection unavailable' }, { status: 500 });
     }
@@ -81,6 +84,7 @@ export async function POST(request: NextRequest) {
         difficulty: (row.difficulty || 'medium').toLowerCase(),
         is_published: true,
         is_active: true,
+        ...courseField,
       });
     });
 

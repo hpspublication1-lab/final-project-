@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import 'katex/dist/katex.min.css';
 
 :root {
@@ -25,8 +24,9 @@
   --input: #F1F4F9;
   --ring: #5243E0;
   --radius: 16px;
-  --font-plus-jakarta-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-ibm-plex-mono: 'IBM Plex Mono', Menlo, Monaco, Consolas, monospace;
+  /* Supplied by next/font/local in app/layout.tsx; the fallback stack lives there too. */
+  --font-plus-jakarta-sans: var(--font-jakarta);
+  --font-ibm-plex-mono: var(--font-plex-mono);
   --font-sans: var(--font-plus-jakarta-sans), sans-serif;
   --font-mono: var(--font-ibm-plex-mono), monospace;
 
@@ -61,7 +61,7 @@
   --primary: #8176FF;
   --primary-rgb: 129, 118, 255;
   --primary-dark: #5243E0;
-  --primary-foreground: #FFFFFF;
+  --primary-foreground: #1B1038; /* white was 3.5:1 on the dark-mode violet, under the 4.5:1 text minimum; this is 5.1:1 */
   --secondary: #131728;
   --secondary-foreground: #C7C0FF;
   --accent: #00E5CC;

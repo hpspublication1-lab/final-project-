@@ -117,18 +117,17 @@ export async function POST(req: NextRequest) {
       metadata: { userId: data.user?.id, role: resolvedRole, deviceFingerprint },
     });
 
+    // The Supabase SSR client above already wrote the session to the
+    // `sb-*-auth-token` cookie on this response, so the browser is signed in
+    // before this body is parsed. Tokens are deliberately NOT echoed here:
+    // a response body ends up in server logs, proxy logs, error-reporting
+    // payloads and devtools history, and the refresh token is long-lived.
     return NextResponse.json({
       success: true,
       user: {
         id: data.user?.id,
         email: data.user?.email,
       },
-      session: data.session
-        ? {
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          }
-        : null,
       deviceFingerprint,
       role: resolvedRole,
       isSuperAdmin: superAdmin,
