@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTrial } from '@/contexts/TrialContext';
 import { Sparkles, Clock, Zap, CheckCircle2, ChevronRight, X, Lock, RefreshCw, Trophy, Star } from 'lucide-react';
 
@@ -18,11 +19,21 @@ export default function TrialBannerAndModals() {
     resetTrial,
   } = useTrial();
 
+  const pathname = usePathname() || '';
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!mounted) return null;
+
+  // Someone on a sign-in, reset or onboarding screen is mid-task: a full-screen
+  // promo or a countdown bar on top of the form only gets in the way.
+  const isAuthFlow =
+    /^\/(login|signup|register|reset-password|onboarding)(\/|$)/.test(pathname) ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/admin/login');
+  if (isAuthFlow) return null;
 
   return (
     <>

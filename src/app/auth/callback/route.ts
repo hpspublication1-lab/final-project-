@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { type NextRequest } from 'next/server';
-import { enforceAuthRateLimit, logSecurityEvent } from '@/lib/security/authSecurity';
+import { logSecurityEvent } from '@/lib/security/authSecurity';
 import type { EmailOtpType } from '@supabase/supabase-js';
 
 const ALLOWED_OTP_TYPES = new Set<EmailOtpType>([
@@ -36,12 +36,25 @@ function safeNextPath(next: string | null): string {
   return clean;
 }
 
+/**
+ * Turns a code-exchange failure into a short reason the login page can explain.
+ * The commonest one in practice: the sign-in started in a different browser
+ * than it finished in (an in-app browser handing off to Chrome), so the PKCE
+ * verifier cookie isn't here.
+ */
+function exchangeFailureCode(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes('code verifier') || m.includes('flow state') || m.includes('pkce')) return 'oauth_browser_switched';
+  if (m.includes('expired') || m.includes('already used') || m.includes('invalid grant')) return 'oauth_code_expired';
+  return 'oauth_exchange_failed';
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const rl = enforceAuthRateLimit(request);
-    if (!rl.allowed) {
-      return NextResponse.redirect(new URL('/login?error=rate_limited', request.url).toString());
-    }
+    // No IP rate limit here. This route only redeems a single-use, PKCE-bound
+    // code, so a limit buys no security — and on Nepal's mobile networks many
+    // students share one carrier IP, so 10/minute per IP was turning real
+    // Google sign-ins away with "too many attempts" at busy times.
 
     const { searchParams, origin } = new URL(request.url);
     const code = searchParams.get('code');
@@ -76,6 +89,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}${next}`);
       }
       console.warn('OAuth code exchange failed:', exchangeError.message);
+      const failed = new URL('/login', origin);
+      failed.searchParams.set('error', exchangeFailureCode(exchangeError.message));
+      return NextResponse.redirect(failed.toString());
     }
 
     // 2. Handle Token Hash Verification (Magic Link / Email OTP / Password Reset)
