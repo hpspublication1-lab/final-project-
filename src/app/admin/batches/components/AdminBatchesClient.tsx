@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { CourseSelect, courseLabel } from '@/components/admin/CourseSelect';
+import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -102,6 +104,7 @@ export default function AdminBatchesClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(defaultForm);
+  const [course, setCourse] = useState('');
   const [slugTouched, setSlugTouched] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
@@ -139,12 +142,14 @@ export default function AdminBatchesClient() {
   const openCreate = () => {
     setEditingId(null);
     setForm(defaultForm);
+    setCourse('');
     setSlugTouched(false);
     setShowForm(true);
   };
 
   const openEdit = (batch: Batch) => {
     setEditingId(batch.id);
+    setCourse(resolveRowCourse(batch as any) ?? '');
     setForm({
       title: batch.title,
       slug: batch.slug,
@@ -177,6 +182,8 @@ export default function AdminBatchesClient() {
   const handleSave = async () => {
     if (!form.title.trim()) { setError('Title is required'); return; }
     if (!form.slug.trim()) { setError('Slug is required'); return; }
+    const batchCourse = parseCourseId(course);
+    if (!batchCourse) { setError('Choose the course this batch belongs to'); return; }
     setSaving(true);
     setError(null);
 
@@ -185,6 +192,7 @@ export default function AdminBatchesClient() {
       slug: slugify(form.slug),
       description: form.description.trim() || null,
       subject_id: form.subject_id || null,
+      program_type: storedProgramValue(batchCourse),
       cee_year: form.cee_year ? parseInt(form.cee_year) : null,
       instructor_name: form.instructor_name.trim() || null,
       thumbnail_url: form.thumbnail_url.trim() || null,
@@ -276,6 +284,7 @@ export default function AdminBatchesClient() {
                 />
                 <p className="text-xs text-muted-foreground mt-1">Shown at /batches/{form.slug || '...'}</p>
               </div>
+              <CourseSelect value={course} onChange={setCourse} />
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Subject</label>
                 <select

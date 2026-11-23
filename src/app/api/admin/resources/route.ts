@@ -2,149 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyServerPermission } from '@/lib/auth/serverGuard';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { AuditService } from '@/lib/services/auditService';
+import { CANONICAL_COURSES } from '@/contexts/ProgramContext';
+import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 
 export const dynamic = 'force-dynamic';
 
-const CURATED_DEFAULT_RESOURCES = [
-  // CEE Section
-  {
-    id: 'res_cee_1',
-    title: 'CEE High-Yield Physics Formula & Dimensional Analysis Sheet',
-    program_type: 'cee',
-    subject: 'Physics',
-    chapter: 'Mechanics & Thermodynamics',
-    file_type: 'formula_sheet',
-    file_size_mb: 3.4,
-    is_downloadable: true,
-    is_premium_only: false,
-    is_archived: false,
-    download_count: 842,
-    pdf_url: 'https://example.com/handouts/cee-physics-formulas.pdf',
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-  },
-  {
-    id: 'res_cee_2',
-    title: 'Medical Entrance Botany: Plant Anatomy & Genetics Mindmaps',
-    program_type: 'cee',
-    subject: 'Botany',
-    chapter: 'Genetics & Molecular Biology',
-    file_type: 'pdf_notes',
-    file_size_mb: 6.8,
-    is_downloadable: true,
-    is_premium_only: true,
-    is_archived: false,
-    download_count: 1420,
-    pdf_url: 'https://example.com/handouts/cee-botany-genetics.pdf',
-    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-  },
-  {
-    id: 'res_cee_3',
-    title: 'MEC CEE Organic Chemistry Reaction Mechanisms & Name Reactions',
-    program_type: 'cee',
-    subject: 'Chemistry',
-    chapter: 'Organic Chemistry',
-    file_type: 'formula_sheet',
-    file_size_mb: 4.2,
-    is_downloadable: true,
-    is_premium_only: true,
-    is_archived: false,
-    download_count: 980,
-    pdf_url: null,
-    created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-  },
-  // SEE Section
-  {
-    id: 'res_see_1',
-    title: 'SEE Class 10 Compulsory Science Board Model Question Paper 2081/2082',
-    program_type: 'see',
-    subject: 'Compulsory Science',
-    chapter: 'Full CDC Specification Grid',
-    file_type: 'model_question',
-    file_size_mb: 2.1,
-    is_downloadable: true,
-    is_premium_only: false,
-    is_archived: false,
-    download_count: 3250,
-    pdf_url: 'https://example.com/handouts/see-science-model-2081.pdf',
-    created_at: new Date(Date.now() - 3600000 * 36).toISOString(),
-  },
-  {
-    id: 'res_see_2',
-    title: 'SEE Class 10 Compulsory Mathematics Theorem Proofs & Mensuration Guide',
-    program_type: 'see',
-    subject: 'Compulsory Mathematics',
-    chapter: 'Circle Theorems & Mensuration',
-    file_type: 'formula_sheet',
-    file_size_mb: 5.1,
-    is_downloadable: true,
-    is_premium_only: false,
-    is_archived: false,
-    download_count: 2190,
-    pdf_url: null,
-    created_at: new Date(Date.now() - 3600000 * 60).toISOString(),
-  },
-  {
-    id: 'res_see_3',
-    title: 'SEE English Free Writing Formats: Formal Letters, News Reports & Essays',
-    program_type: 'see',
-    subject: 'English',
-    chapter: 'Writing & Grammar Transformations',
-    file_type: 'pdf_notes',
-    file_size_mb: 1.8,
-    is_downloadable: true,
-    is_premium_only: true,
-    is_archived: false,
-    download_count: 1120,
-    pdf_url: null,
-    created_at: new Date(Date.now() - 3600000 * 84).toISOString(),
-  },
-  // IELTS Section
-  {
-    id: 'res_ielts_1',
-    title: 'IELTS Academic Writing Task 2: 50 Band 9 Model Essays & Collocations',
-    program_type: 'ielts',
-    subject: 'Writing Task 2',
-    chapter: 'Essay Band 9 Masterclass',
-    file_type: 'ielts_pack',
-    file_size_mb: 8.5,
-    is_downloadable: true,
-    is_premium_only: true,
-    is_archived: false,
-    download_count: 4890,
-    pdf_url: 'https://example.com/handouts/ielts-band-9-essays.pdf',
-    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-  },
-  {
-    id: 'res_ielts_2',
-    title: 'IELTS Speaking Part 2: 100 Latest Cue Cards with High-Band Idioms',
-    program_type: 'ielts',
-    subject: 'Speaking Part 2',
-    chapter: '2-Minute Monologue Cue Cards',
-    file_type: 'ielts_pack',
-    file_size_mb: 3.9,
-    is_downloadable: true,
-    is_premium_only: false,
-    is_archived: false,
-    download_count: 3410,
-    pdf_url: null,
-    created_at: new Date(Date.now() - 3600000 * 40).toISOString(),
-  },
-  {
-    id: 'res_ielts_3',
-    title: 'IELTS Academic Reading: Cambridge 1-19 True/False/Not Given Trap Breaker',
-    program_type: 'ielts',
-    subject: 'Reading Mastery',
-    chapter: 'T/F/NG & Heading Matching Strategy',
-    file_type: 'pdf_notes',
-    file_size_mb: 2.8,
-    is_downloadable: true,
-    is_premium_only: true,
-    is_archived: false,
-    download_count: 2750,
-    pdf_url: null,
-    created_at: new Date(Date.now() - 3600000 * 90).toISOString(),
-  },
-];
 
 export async function GET(req: NextRequest) {
   const guard = await verifyServerPermission(req, 'content:read');
@@ -168,16 +30,19 @@ export async function GET(req: NextRequest) {
       if (notes && notes.length > 0) {
         dbResources = notes.map((n: any) => ({
           id: n.id,
-          title: n.title || 'Study Resource',
-          program_type: n.program_type || 'cee',
-          subject: n.subjects?.display_name || n.subjects?.name || 'General',
-          chapter: n.chapter_title || 'Core Chapter',
+          title: n.title || '(untitled)',
+          // What is stored, and the course the site actually shows it under —
+          // null when it can't be placed, so the admin can see what needs fixing.
+          program_type: n.program_type ?? null,
+          course: resolveRowCourse(n),
+          subject: n.subjects?.display_name || n.subjects?.name || null,
+          chapter: n.chapter_title || null,
           file_type: n.formula_sheet_latex ? 'formula_sheet' : 'pdf_notes',
-          file_size_mb: 3.5,
+          file_size_mb: null,
           is_downloadable: true,
           is_premium_only: !!n.is_premium,
           is_archived: !n.is_active,
-          download_count: Math.floor(Math.random() * 400) + 100,
+          download_count: null,
           pdf_url: n.pdf_url || null,
           content: n.content || null,
           created_at: n.created_at,
@@ -185,18 +50,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Merge database items with curated items (avoiding duplicate IDs)
-    const combined = [...dbResources, ...CURATED_DEFAULT_RESOURCES];
-    const seenIds = new Set<string>();
-    const deduplicated = combined.filter((item) => {
-      if (seenIds.has(item.id)) return false;
-      seenIds.add(item.id);
-      return true;
-    });
+    // Real uploads only. A hardcoded list used to be mixed in here as if it had been
+    // uploaded (kept, unused, in src/lib/data/unverified/hardcodedStudyResources.ts).
+    const deduplicated = dbResources;
+    const wantedCourse = program === 'all' ? null : parseCourseId(program);
 
     // Apply filtering
     const filtered = deduplicated.filter((r) => {
-      const matchesProgram = program === 'all' || r.program_type === program;
+      const matchesProgram = program === 'all' || (program === 'unassigned' ? !r.course : r.course === wantedCourse);
       const matchesType = type === 'all' || r.file_type === type;
       const matchesSearch =
         !query ||
@@ -210,10 +71,13 @@ export async function GET(req: NextRequest) {
       success: true,
       resources: filtered,
       totalCount: filtered.length,
+      // Every course, plus what can't be placed — counted from real rows.
       programBreakdown: {
-        cee: deduplicated.filter((r) => r.program_type === 'cee').length,
-        see: deduplicated.filter((r) => r.program_type === 'see').length,
-        ielts: deduplicated.filter((r) => r.program_type === 'ielts').length,
+        ...Object.fromEntries(CANONICAL_COURSES.map((c) => [c, deduplicated.filter((r) => r.course === c).length])),
+        cee: deduplicated.filter((r) => r.course === 'cee_medical').length,
+        see: deduplicated.filter((r) => r.course === 'see_class_10').length,
+        ielts: deduplicated.filter((r) => r.course === 'ielts').length,
+        unassigned: deduplicated.filter((r) => !r.course).length,
       },
     });
   } catch (err: any) {
@@ -232,7 +96,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       title,
-      program_type = 'cee',
+      program_type,
       subject_id,
       chapter_id,
       file_type = 'pdf_notes',
@@ -245,12 +109,17 @@ export async function POST(req: NextRequest) {
     if (!title) {
       return NextResponse.json({ error: 'Resource title is required' }, { status: 400 });
     }
+    // Every upload must name its course. A missing one used to become CEE.
+    const course = parseCourseId(program_type);
+    if (!course) {
+      return NextResponse.json({ error: 'Choose the course this resource belongs to.' }, { status: 400 });
+    }
 
     const { data: inserted, error } = await admin
       .from('notes')
       .insert({
         title,
-        program_type,
+        program_type: storedProgramValue(course),
         subject_id: subject_id || null,
         chapter_id: chapter_id || null,
         pdf_url,

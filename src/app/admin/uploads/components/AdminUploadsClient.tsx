@@ -1,18 +1,22 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { COURSES_MAP } from '@/contexts/ProgramContext';
+import { CourseSelect } from '@/components/admin/CourseSelect';
+import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Upload, FileText, Video, Image, BookOpen, Radio, Trash2, Eye, Plus, X, Save, Loader2, AlertCircle, CheckCircle2, Download, Search, File, Zap, ExternalLink, RefreshCw, FolderOpen, Lock } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Subject { id: string; name: string; display_name: string; }
+interface Subject { id: string; name: string; display_name: string; slug?: string | null; program_type?: string | null; }
 interface Chapter { id: string; subject_id: string; title: string; }
 
 interface Note {
   id: string; title: string; content: string | null; pdf_url: string | null;
   pdf_path: string | null; subject_id: string | null; chapter_id: string | null;
+  program_type?: string | null;
   is_premium: boolean; is_active: boolean; created_at: string;
   subjects?: { display_name: string }; chapters?: { title: string };
 }
@@ -55,6 +59,20 @@ const SUBJECT_COLORS: Record<string, string> = {
   biology: 'bg-bio-light text-bio', chemistry: 'bg-chem-light text-chem',
   physics: 'bg-physics-light text-physics', mental_agility: 'bg-ma-light text-ma',
 };
+
+/**
+ * Every upload says which course it belongs to. This screen never wrote one, so
+ * every note, video and question got the column default — CEE — whatever it was.
+ */
+function subjectsForCourse(subjects: Subject[], course: string): Subject[] {
+  const c = parseCourseId(course);
+  return c ? subjects.filter((s) => resolveRowCourse(s) === c) : [];
+}
+
+function NoSubjectsHint({ course, count }: { course: string; count: number }) {
+  if (!course || count > 0) return null;
+  return <p className="mt-1 text-[11px] text-muted-foreground">No subjects set up for this course yet.</p>;
+}
 
 function formatBytes(bytes: number) {
   if (bytes === 0) return '0 B';
@@ -103,7 +121,7 @@ export default function AdminUploadsClient() {
   const showError = (msg: string) => { setError(msg); setTimeout(() => setError(null), 5000); };
 
   async function loadSubjects() {
-    const { data } = await supabase.from('subjects').select('id,name,display_name').order('display_name');
+    const { data } = await supabase.from('subjects').select('id,name,display_name,slug,program_type').order('display_name');
     if (data) setSubjects(data);
   }
 
@@ -334,6 +352,8 @@ function NotesTab({ subjects, chapters, notes, loading, supabase, onSuccess, onE
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [form, setForm] = useState({ title: '', content: '', subject_id: '', chapter_id: '', is_premium: false, is_active: true });
+  const [course, setCourse] = useState('');
+  const courseSubjects = subjectsForCourse(subjects, course);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfPath, setPdfPath] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -358,8 +378,10 @@ function NotesTab({ subjects, chapters, notes, loading, supabase, onSuccess, onE
 
   async function handleSave() {
     if (!form.title.trim()) { onError('Title is required'); return; }
+    const c = parseCourseId(course);
+    if (!c) { onError('Choose the course this note belongs to'); return; }
     setSaving(true);
-    const payload = { ...form, pdf_url: pdfUrl, pdf_path: pdfPath, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
+    const payload = { ...form, program_type: storedProgramValue(c), pdf_url: pdfUrl, pdf_path: pdfPath, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
     const { error } = editId
       ? await supabase.from('notes').update(payload).eq('id', editId)
       : await supabase.from('notes').insert(payload);
@@ -381,6 +403,7 @@ function NotesTab({ subjects, chapters, notes, loading, supabase, onSuccess, onE
 
   function startEdit(note: Note) {
     setForm({ title: note.title, content: note.content || '', subject_id: note.subject_id || '', chapter_id: note.chapter_id || '', is_premium: note.is_premium, is_active: note.is_active });
+    setCourse(resolveRowCourse(note as any) ?? '');
     setPdfUrl(note.pdf_url);
     setPdfPath(note.pdf_path);
     setEditId(note.id);
@@ -389,6 +412,7 @@ function NotesTab({ subjects, chapters, notes, loading, supabase, onSuccess, onE
 
   function resetForm() {
     setForm({ title: '', content: '', subject_id: '', chapter_id: '', is_premium: false, is_active: true });
+    setCourse('');
     setPdfUrl(null); setPdfPath(null); setEditId(null); setShowForm(false);
   }
 
@@ -423,12 +447,14 @@ function NotesTab({ subjects, chapters, notes, loading, supabase, onSuccess, onE
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">Title *</label>
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Note title" className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-primary/50" />
             </div>
+            <CourseSelect className="sm:col-span-2" value={course} onChange={(c) => { setCourse(c); setForm(f => ({ ...f, subject_id: '', chapter_id: '' })); }} />
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">Subject</label>
               <select value={form.subject_id} onChange={e => setForm(f => ({ ...f, subject_id: e.target.value, chapter_id: '' }))} className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-primary/50">
-                <option value="">All subjects</option>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
+                <option value="">No subject</option>
+                {courseSubjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
               </select>
+              <NoSubjectsHint course={course} count={courseSubjects.length} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">Chapter</label>
@@ -527,6 +553,8 @@ function VideosTab({ subjects, chapters, videos, loading, supabase, onSuccess, o
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [form, setForm] = useState({ title: '', description: '', subject_id: '', chapter_id: '', duration_sec: 0, is_premium: false, is_active: true });
+  const [course, setCourse] = useState('');
+  const courseSubjects = subjectsForCourse(subjects, course);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoPath, setVideoPath] = useState<string | null>(null);
   const [thumbUrl, setThumbUrl] = useState<string | null>(null);
@@ -562,8 +590,10 @@ function VideosTab({ subjects, chapters, videos, loading, supabase, onSuccess, o
 
   async function handleSave() {
     if (!form.title.trim()) { onError('Title is required'); return; }
+    const c = parseCourseId(course);
+    if (!c) { onError('Choose the course this video belongs to'); return; }
     setSaving(true);
-    const payload = { ...form, video_url: videoUrl, video_path: videoPath, thumbnail_url: thumbUrl, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
+    const payload = { ...form, program_type: storedProgramValue(c), video_url: videoUrl, video_path: videoPath, thumbnail_url: thumbUrl, subject_id: form.subject_id || null, chapter_id: form.chapter_id || null };
     const { error } = editId
       ? await supabase.from('video_lectures').update(payload).eq('id', editId)
       : await supabase.from('video_lectures').insert(payload);
@@ -585,12 +615,14 @@ function VideosTab({ subjects, chapters, videos, loading, supabase, onSuccess, o
 
   function startEdit(v: VideoLecture) {
     setForm({ title: v.title, description: v.description || '', subject_id: v.subject_id || '', chapter_id: v.chapter_id || '', duration_sec: v.duration_sec, is_premium: v.is_premium, is_active: v.is_active });
+    setCourse(resolveRowCourse(v as any) ?? '');
     setVideoUrl(v.video_url); setVideoPath(v.video_path); setThumbUrl(v.thumbnail_url);
     setEditId(v.id); setShowForm(true);
   }
 
   function resetForm() {
     setForm({ title: '', description: '', subject_id: '', chapter_id: '', duration_sec: 0, is_premium: false, is_active: true });
+    setCourse('');
     setVideoUrl(null); setVideoPath(null); setThumbUrl(null); setEditId(null); setShowForm(false);
   }
 
@@ -622,12 +654,14 @@ function VideosTab({ subjects, chapters, videos, loading, supabase, onSuccess, o
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">Title *</label>
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Lecture title" className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-primary/50" />
             </div>
+            <CourseSelect className="sm:col-span-2" value={course} onChange={(c) => { setCourse(c); setForm(f => ({ ...f, subject_id: '', chapter_id: '' })); }} />
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">Subject</label>
               <select value={form.subject_id} onChange={e => setForm(f => ({ ...f, subject_id: e.target.value, chapter_id: '' }))} className="w-full px-3 py-2 text-sm bg-background border border-border rounded-xl focus:outline-none focus:border-primary/50">
                 <option value="">Select subject</option>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
+                {courseSubjects.map(s => <option key={s.id} value={s.id}>{s.display_name}</option>)}
               </select>
+              <NoSubjectsHint course={course} count={courseSubjects.length} />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground mb-1 block">Chapter</label>
@@ -1174,6 +1208,7 @@ const CSV_TEMPLATE = `question_text,option_a,option_b,option_c,option_d,correct_
 "What is the powerhouse of the cell?","Nucleus","Mitochondria","Ribosome","Golgi body","b","Mitochondria produces ATP energy","easy","biology","Cell Biology" "What is Newton's first law?","Law of inertia","Law of acceleration","Law of action-reaction","Law of gravity","a","Objects at rest stay at rest unless acted upon","medium","physics","Laws of Motion"`;
 
 function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: BulkImportTabProps) {
+  const [course, setCourse] = useState('');
   const [csvText, setCsvText] = useState('');
   const [importing, setImporting] = useState(false);
   const [preview, setPreview] = useState<Record<string, string>[]>([]);
@@ -1216,6 +1251,9 @@ function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: Bul
   async function handleImport() {
     const rows = parseCsv(csvText);
     if (rows.length === 0) { onError('No valid rows found in CSV'); return; }
+    const c = parseCourseId(course);
+    if (!c) { onError('Choose the course these questions belong to'); return; }
+    const courseSubjects = subjectsForCourse(subjects, c);
     setImporting(true);
     setImportResult(null);
     let success = 0;
@@ -1224,7 +1262,14 @@ function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: Bul
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       try {
-        const subject = subjects.find(s => s.name.toLowerCase() === (row.subject_name || '').toLowerCase().trim());
+        // Look the subject up inside the chosen course only. Two courses can both
+        // have "English" or "Physics"; this used to take whichever came first.
+        const wanted = (row.subject_name || '').toLowerCase().trim();
+        const subject = courseSubjects.find(s => s.name.toLowerCase() === wanted || (s.display_name || '').toLowerCase() === wanted);
+        if (wanted && !subject) {
+          errors.push(`Row ${i + 2}: subject "${row.subject_name}" is not a subject of ${COURSES_MAP[c]?.shortName ?? c}`);
+          continue;
+        }
         const chapter = chapters.find(c => c.title.toLowerCase() === (row.chapter_title || '').toLowerCase().trim() && (!subject || c.subject_id === subject.id));
         const { error } = await supabase.from('questions').insert({
           question_text: row.question_text?.trim(),
@@ -1237,6 +1282,7 @@ function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: Bul
           difficulty: (['easy','medium','hard'].includes(row.difficulty?.trim()) ? row.difficulty.trim() : 'medium') as 'easy'|'medium'|'hard',
           subject_id: subject?.id || null,
           chapter_id: chapter?.id || null,
+          program_type: storedProgramValue(c),
           is_active: true,
         });
         if (error) errors.push(`Row ${i + 2}: ${error.message}`);
@@ -1270,6 +1316,10 @@ function BulkImportTab({ subjects, chapters, supabase, onSuccess, onError }: Bul
           <button onClick={downloadTemplate} className="flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground rounded-xl text-xs font-semibold hover:bg-muted/80 transition-colors">
             <Download size={13} /> Template
           </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <CourseSelect value={course} onChange={setCourse} />
         </div>
 
         {/* CSV Format Guide */}

@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTrial } from '@/contexts/TrialContext';
 import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
-import { COURSE_PORTAL_CONFIGS } from '@/lib/config/courseFeatures';
+import { resolveRowCourse } from '@/lib/courses/courseIds';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
 import { BookOpen, ChevronRight, CheckCircle2, Lock, PlayCircle, Zap, Clock, TrendingUp, Search, FileText, Loader2, GraduationCap, Stethoscope } from 'lucide-react';
 
@@ -194,52 +194,19 @@ export default function SubjectsPageClient() {
     return () => { cancelled = true; };
   }, [user?.id, isFree]);
 
-  // Filter subjects by active program (CEE vs SEE vs IELTS vs Digital/AI)
-  const isSeeSubject = (name: string) =>
-    ['compulsory_science', 'compulsory_math', 'optional_math', 'english', 'social_studies', 'science', 'math', 'opt_math', 'social'].includes(
-      name.toLowerCase()
-    );
-  
-  let programFilteredSubjects = subjects.filter((s: any) => {
-    const pType = s.program_type || s.program;
-    if (pType) {
-      return pType === canonicalId || (canonicalId === 'see_class_10' && pType === 'see') || (canonicalId === 'cee_medical' && pType === 'cee');
-    }
-    if (canonicalId === 'see_class_10') return isSeeSubject(s.name);
-    if (canonicalId === 'cee_medical') return !isSeeSubject(s.name);
-    return false; // Non-medical/SEE programs without custom DB rows fallback to their COURSE_PORTAL_CONFIGS curriculum
-  });
-
-  // Fallback to portal curriculum config if program has no custom DB records yet
-  if (programFilteredSubjects.length === 0 && COURSE_PORTAL_CONFIGS[canonicalId]?.defaultSubjects) {
-    const portalConfig = COURSE_PORTAL_CONFIGS[canonicalId];
-    programFilteredSubjects = portalConfig.defaultSubjects.map((ds, idx) => ({
-      id: ds.id || `sub-fallback-${idx}`,
-      name: ds.name.toLowerCase().replace(/\s+/g, '_'),
-      displayName: ds.name,
-      icon: ds.icon || 'BookOpen',
-      color: ds.color || '#5A45E8',
-      bgLight: 'bg-primary/10',
-      textColor: 'text-primary',
-      borderColor: 'border-primary/20',
-      chapters: Array.from({ length: ds.chaptersCount || 5 }, (_, cIdx) => ({
-        id: `ch-${ds.id}-${cIdx + 1}`,
-        subjectId: ds.id,
-        title: `Module ${cIdx + 1}: Core Concepts & High-Yield Strategy`,
-        chapterNumber: cIdx + 1,
-        isPremium: cIdx > 1,
-        mcqCount: 25,
-        videoCount: 2,
-        videoDurationSec: 1800,
-        progress: cIdx === 0 ? 60 : 0,
-        masteryLevel: cIdx === 0 ? 'Practiced' : 'Not Started',
-        isLocked: isFree && cIdx > 1,
-      })),
-      totalMCQs: (ds.chaptersCount || 5) * 25,
-      completedChapters: 0,
-      masteryPercent: 0,
-    }));
-  }
+  // Only subjects that belong to this course (see resolveRowCourse). Before,
+  // subjects with no program went to CEE, and a course with no subjects was given
+  // invented ones — "Module N: Core Concepts & High-Yield Strategy", 25 MCQs and 2
+  // videos each, and 60% progress on the first chapter the student never made.
+  const programFilteredSubjects = subjects.filter(
+    (s: any) =>
+      resolveRowCourse({
+        program_type: s.program_type ?? s.program ?? null,
+        name: s.name,
+        slug: s.slug,
+        display_name: s.displayName ?? s.display_name,
+      }) === canonicalId
+  );
 
   // Ensure activeSubject points to a valid subject in the currently active program
   useEffect(() => {
@@ -293,8 +260,10 @@ export default function SubjectsPageClient() {
         ) : programFilteredSubjects.length === 0 ? (
           <div className="bg-card border border-border rounded-2xl p-12 text-center max-w-xl mx-auto">
             <BookOpen size={36} className="text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-base font-bold text-foreground">No subjects found for {programDetails.shortName}</h3>
-            <p className="text-xs text-muted-foreground mt-1">Subjects for this section are being updated in the curriculum database.</p>
+            <h3 className="text-base font-bold text-foreground">No learning content available yet.</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Learning materials for {programDetails.shortName} have not been uploaded yet. Please check back later.
+            </p>
           </div>
         ) : (
           <div className="grid lg:grid-cols-12 gap-6">

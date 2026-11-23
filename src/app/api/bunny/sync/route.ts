@@ -58,10 +58,12 @@ export async function POST(request: NextRequest) {
     const bunnyVideos = bunnyData?.items || [];
 
     // Query subjects for auto-mapping
-    const { data: dbSubjects } = await supabase.from('subjects').select('id, name');
+    const { data: dbSubjects } = await supabase.from('subjects').select('id, name, program_type');
     const subjectMap: Record<string, string> = {};
+    const subjectCourse: Record<string, string | undefined> = {};
     (dbSubjects || []).forEach((s: any) => {
       subjectMap[s.name] = s.id;
+      subjectCourse[s.id] = s.program_type ?? undefined;
     });
 
     let syncedCount = 0;
@@ -122,9 +124,12 @@ export async function POST(request: NextRequest) {
         if (updateErr) errors.push(`Failed to update ${title}: ${updateErr.message}`);
         else syncedCount++;
       } else {
+        // New videos take their subject's course (they used to get the CEE default).
+        // Updates leave the course alone so an admin's correction isn't undone.
+        const course = subjectId ? subjectCourse[subjectId] : undefined;
         const { error: insertErr } = await supabase
           .from('video_lectures')
-          .insert(payload);
+          .insert(course ? { ...payload, program_type: course } : payload);
         if (insertErr) errors.push(`Failed to insert ${title}: ${insertErr.message}`);
         else syncedCount++;
       }

@@ -29,115 +29,77 @@ export interface ChapterOption {
 }
 
 import { FALLBACK_PRACTICE_QUESTIONS } from '@/lib/data/practiceQuestionsFallback';
+import { FALLBACK_SUBJECT_COURSE, normalizeSubjectSlug } from '@/lib/data/fallbackBankScope';
+import { parseCourseId, resolveRowCourse } from '@/lib/courses/courseIds';
+import type { CanonicalCourseId } from '@/contexts/ProgramContext';
 
-const SUBJECT_MAP: Record<string, string> = {
-  // CEE
-  biology: 'biology',
-  chemistry: 'chemistry',
-  physics: 'physics',
-  'mental agility': 'mental_agility',
-  mental_agility: 'mental_agility',
-  mat: 'mental_agility',
-  botany: 'biology',
-  zoology: 'biology',
 
-  // SEE
-  'compulsory science': 'compulsory_science',
-  'compulsory science & tech': 'compulsory_science',
-  compulsory_science: 'compulsory_science',
-  science: 'compulsory_science',
-  'compulsory mathematics': 'compulsory_math',
-  compulsory_math: 'compulsory_math',
-  'compulsory math': 'compulsory_math',
-  math: 'compulsory_math',
-  mathematics: 'compulsory_math',
-  'optional mathematics': 'optional_math',
-  optional_math: 'optional_math',
-  'opt math': 'optional_math',
-  opt_math: 'optional_math',
-  english: 'english',
-  'social studies': 'social_studies',
-  social_studies: 'social_studies',
+type SubjectRow = { id: string; name: string | null; display_name: string | null; slug?: string | null; program_type?: string | null };
 
-  // Lok Sewa
-  'general knowledge': 'loksewa_gk',
-  'general knowledge (gk)': 'loksewa_gk',
-  'general knowledge (gk / सामान्य ज्ञान)': 'loksewa_gk',
-  loksewa_gk: 'loksewa_gk',
-  gk: 'loksewa_gk',
-  'general mental ability (iq / बौद्धिक परीक्षण)': 'loksewa_iq',
-  'general mental ability': 'loksewa_iq',
-  loksewa_iq: 'loksewa_iq',
-  iq: 'loksewa_iq',
-  'governance & constitution (शासन प्रणाली)': 'loksewa_governance',
-  'governance & constitution': 'loksewa_governance',
-  loksewa_governance: 'loksewa_governance',
-
-  // IOE & NEB
-  'engineering mathematics': 'engineering_math',
-  'engineering mathematics (ioe 140m)': 'engineering_math',
-  engineering_math: 'engineering_math',
-  'computer science': 'neb_computer_science',
-  'computer science & c programming': 'neb_computer_science',
-  neb_computer_science: 'neb_computer_science',
-};
-
-function normalizeSubjectSlug(subjectName: string): string {
-  const clean = (subjectName || '').toLowerCase().trim();
-  return SUBJECT_MAP[clean] || clean.replace(/\s+/g, '_');
+/**
+ * Find a subject by name inside one course. Matching happens here rather than in
+ * a PostgREST `.or()` string, which the subject name used to be pasted into.
+ */
+async function findSubjectForCourse(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  subjectName: string,
+  course: CanonicalCourseId | null,
+): Promise<SubjectRow | null> {
+  if (!course) return null;
+  const { data, error } = await supabase.from('subjects').select('id, name, display_name, slug, program_type').limit(500);
+  if (error || !data) return null;
+  const mine = (data as SubjectRow[]).filter((row) => resolveRowCourse(row) === course);
+  const wantSlug = normalizeSubjectSlug(subjectName);
+  const wantName = subjectName.trim().toLowerCase();
+  const keys = (row: SubjectRow) => [row.slug, row.name, row.display_name].filter(Boolean).map((v) => String(v).toLowerCase());
+  return (
+    mine.find((row) => keys(row).some((k) => k === wantSlug || k === wantName || normalizeSubjectSlug(k) === wantSlug)) ??
+    mine.find((row) => keys(row).some((k) => k.includes(wantSlug) || k.includes(wantName))) ??
+    null
+  );
 }
 
-const DEFAULT_CURRICULUM_CHAPTERS: Record<string, string[]> = {
-  biology: ['Cell Biology & Genetics', 'Plant Physiology', 'Animal Diversity', 'Human Physiology', 'Ecology & Environment'],
-  chemistry: ['Chemical Bonding & Structure', 'Physical Chemistry & Thermodynamics', 'Organic Chemistry', 'Inorganic Chemistry', 'Electrochemistry'],
-  physics: ['Mechanics & Gravitation', 'Optics & Wave Motion', 'Heat & Thermodynamics', 'Current Electricity & Magnetism', 'Modern Physics'],
-  mental_agility: ['Number Series & Coding', 'Logical & Analytical Reasoning', 'Spatial & Visual Puzzles', 'Verbal Reasoning'],
-  compulsory_science: ['Force & Gravitation', 'Pressure & Hydraulics', 'Energy, Light & Electricity', 'Chemical Reactions & Periodic Table', 'Metals & Industrial Chemistry', 'Heredity & Chromosomes'],
-  compulsory_math: ['Sets & Cardinality', 'Compound Interest', 'Mensuration (3D Solids)', 'Algebra & Equations', 'Geometry (Theorems & Circles)', 'Trigonometry & Statistics'],
-  optional_math: ['Functions & Polynomials', 'Matrices & Determinants', 'Coordinate Geometry', 'Trigonometry', 'Vectors & Transformation', 'Statistics'],
-  english: ['Grammar & Sentence Structure', 'Reading Comprehension & Vocabulary', 'Subject-Verb Agreement', 'Indirect Speech & Voice'],
-  social_studies: ['Constitution of Nepal (2072)', 'Social Problems & Solutions', 'Geography & Heritage of Nepal', 'International Relations & UN'],
-  loksewa_gk: ['Geography & History of Nepal', 'Constitution & Governance', 'Socio-Economic Development', 'Current Affairs & SAARC'],
-  loksewa_iq: ['Logical Deduction', 'Numerical Sequence', 'Analogy & Classification', 'Spatial Reasoning'],
-};
-
-export async function fetchSubjectChapters(subjectName: string): Promise<ChapterOption[]> {
-  const targetSlug = normalizeSubjectSlug(subjectName);
+/** The subjects stored for a course, for courses with no built-in subject list. */
+export async function fetchCourseSubjects(courseRaw: string): Promise<{ id: string; name: string }[]> {
+  const course = parseCourseId(courseRaw);
+  if (!course) return [];
   try {
     const supabase = await createClient();
-    const { data: subjectData } = await supabase
+    const { data, error } = await supabase
       .from('subjects')
-      .select('id, name, display_name')
-      .or(`name.eq.${targetSlug},name.ilike.%${targetSlug}%,display_name.ilike.%${subjectName.trim()}%`)
-      .limit(1)
-      .maybeSingle();
-
-    if (subjectData) {
-      const { data: chapters } = await supabase
-        .from('chapters')
-        .select('id, title')
-        .eq('subject_id', subjectData.id)
-        .order('order_index', { ascending: true });
-
-      if (chapters && chapters.length > 0) {
-        return chapters as ChapterOption[];
-      }
-    }
-  } catch (err) {
-    console.warn('fetchSubjectChapters Supabase query failed, falling back to curriculum defaults:', err);
+      .select('id, name, display_name, slug, program_type, is_active, sort_order')
+      .order('sort_order', { ascending: true })
+      .limit(500);
+    if (error || !data) return [];
+    return (data as (SubjectRow & { is_active?: boolean | null })[])
+      .filter((row) => row.is_active !== false && resolveRowCourse(row) === course)
+      .map((row) => ({ id: row.id, name: row.display_name || row.name || '' }))
+      .filter((row) => row.name);
+  } catch {
+    return [];
   }
+}
 
-  // Graceful fallback to verified curriculum chapters
-  const fallbackTitles = DEFAULT_CURRICULUM_CHAPTERS[targetSlug] || [
-    'Fundamental Concepts',
-    'Core Problem Solving',
-    'Advanced High-Yield Applications',
-  ];
 
-  return fallbackTitles.map((title, idx) => ({
-    id: `chap-${targetSlug}-${idx + 1}`,
-    title,
-  }));
+
+
+export async function fetchSubjectChapters(subjectName: string, courseRaw: string): Promise<ChapterOption[]> {
+  try {
+    const supabase = await createClient();
+    const subjectData = await findSubjectForCourse(supabase, subjectName, parseCourseId(courseRaw));
+    if (!subjectData) return [];
+    const { data: chapters } = await supabase
+      .from('chapters')
+      .select('id, title')
+      .eq('subject_id', subjectData.id)
+      .order('order_index', { ascending: true });
+    // Real chapters only. A made-up list ("Fundamental Concepts", …) used to be shown
+    // when there were none, and picking one of those filtered nothing.
+    return (chapters as ChapterOption[] | null) ?? [];
+  } catch (err) {
+    console.warn('fetchSubjectChapters failed:', err);
+    return [];
+  }
 }
 
 /** Normalise a DB correct answer (letter "B", index "1", or option text) to an
@@ -156,20 +118,19 @@ export async function fetchPracticeQuestions(
   subjectName: string,
   difficulty: string,
   count: number,
-  chapterId?: string | null
+  chapterId: string | null | undefined,
+  courseRaw: string
 ): Promise<FetchQuestionsResult> {
   const targetSlug = normalizeSubjectSlug(subjectName);
+  const course = parseCourseId(courseRaw);
+  if (!course) return { questions: [], error: 'Unknown course.' };
+  const realChapter = !!chapterId && !chapterId.startsWith('chap-');
 
   try {
     const supabase = await createClient();
 
-    // Flexible subject resolution (matches slug or display name)
-    const { data: subjectData } = await supabase
-      .from('subjects')
-      .select('id, name, display_name')
-      .or(`name.eq.${targetSlug},name.ilike.%${targetSlug}%,display_name.ilike.%${subjectName.trim()}%`)
-      .limit(1)
-      .maybeSingle();
+    // The subject must belong to this student's course.
+    const subjectData = await findSubjectForCourse(supabase, subjectName, course);
 
     if (subjectData) {
       // Build query — real schema: options (array), correct_answer (letter), is_published.
@@ -190,8 +151,8 @@ export async function fetchPracticeQuestions(
         .eq('subject_id', subjectData.id)
         .eq('is_published', true);
 
-      if (chapterId && !chapterId.startsWith('chap-')) {
-        query = query.eq('chapter_id', chapterId);
+      if (realChapter) {
+        query = query.eq('chapter_id', chapterId as string);
       }
 
       if (difficulty !== 'All') {
@@ -237,16 +198,15 @@ export async function fetchPracticeQuestions(
     console.warn('Database question fetch encountered an issue, falling back to verified bank:', err?.message);
   }
 
-  // Graceful fallback to verified practice question bank
-  const matchingFallback = FALLBACK_PRACTICE_QUESTIONS.filter((q) => {
-    if (q.subjectSlug === targetSlug) return true;
-    if (targetSlug.includes('science') && (q.subjectSlug === 'compulsory_science' || q.subjectSlug === 'physics' || q.subjectSlug === 'chemistry')) return true;
-    if (targetSlug.includes('math') && (q.subjectSlug === 'compulsory_math' || q.subjectSlug === 'optional_math')) return true;
-    if (targetSlug.includes('bio') && q.subjectSlug === 'biology') return true;
-    return false;
-  });
-
-  const pool = matchingFallback.length > 0 ? matchingFallback : FALLBACK_PRACTICE_QUESTIONS;
+  // Built-in bank: only this exact subject, only in its own course, and only when no
+  // chapter was picked (the bank has no chapter ids). It used to fall back to SEE
+  // science → CEE physics/chemistry, and to the whole bank when nothing matched.
+  if (realChapter || FALLBACK_SUBJECT_COURSE[targetSlug] !== course) {
+    return { questions: [], error: null };
+  }
+  const pool = FALLBACK_PRACTICE_QUESTIONS.filter(
+    (q) => q.subjectSlug === targetSlug && (difficulty === 'All' || q.difficulty === difficulty.toLowerCase()),
+  );
   const shuffledFallback = [...pool].sort(() => Math.random() - 0.5);
   const selectedFallback = shuffledFallback.slice(0, count);
 
@@ -271,6 +231,8 @@ export async function fetchPracticeQuestions(
 
 export interface SaveAttemptInput {
   subjectName: string;
+  /** The student's course; the subject is looked up inside it. */
+  course?: string;
   difficulty: string;
   totalQuestions: number;
   correctAnswers: number;
@@ -305,14 +267,8 @@ export async function savePracticeAttempt(input: SaveAttemptInput): Promise<Save
 
     // Get or create a practice exam record
     const practiceTitle = `Practice: ${input.subjectName} (${input.difficulty})`;
-    const subjectSlug = normalizeSubjectSlug(input.subjectName);
 
-    const { data: subjectData } = await supabase
-      .from('subjects')
-      .select('id')
-      .or(`name.eq.${subjectSlug},name.ilike.%${subjectSlug}%,display_name.ilike.%${input.subjectName.trim()}%`)
-      .limit(1)
-      .maybeSingle();
+    const subjectData = await findSubjectForCourse(supabase, input.subjectName, parseCourseId(input.course ?? ''));
 
     // Upsert a practice exam
     const { data: examData, error: examError } = await supabase

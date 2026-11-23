@@ -81,6 +81,8 @@ export async function POST(request: NextRequest) {
         difficulty: (row.difficulty || 'medium').toLowerCase(),
         is_published: true,
         is_active: true,
+        // This importer is SEE-only. Without this, every row got the column default: CEE.
+        program_type: 'see_class_10',
       });
     });
 

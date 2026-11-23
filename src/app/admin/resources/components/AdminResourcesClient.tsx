@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CANONICAL_COURSES, COURSES_MAP } from '@/contexts/ProgramContext';
+import { parseCourseId } from '@/lib/courses/courseIds';
 import Link from 'next/link';
 import {
   ArrowLeft, FileText, Download, Plus, Archive, RefreshCw,
@@ -15,15 +17,17 @@ import AutonomousAutoPilotModal from './AutonomousAutoPilotModal';
 interface ResourceItem {
   id: string;
   title: string;
-  program_type: 'cee' | 'see' | 'ielts' | 'neb' | 'ioe';
+  program_type: string | null;
+  /** The course the site shows this under; null = can't be placed, needs an admin. */
+  course?: string | null;
   subject?: string;
   chapter?: string;
   file_type: 'pdf_notes' | 'model_question' | 'formula_sheet' | 'ielts_pack' | 'syllabus';
-  file_size_mb: number;
+  file_size_mb: number | null;
   is_downloadable: boolean;
   is_premium_only: boolean;
   is_archived: boolean;
-  download_count: number;
+  download_count: number | null;
   pdf_url?: string | null;
   content?: string | null;
   created_at: string;
@@ -45,7 +49,8 @@ export default function AdminResourcesClient() {
   const fetchResources = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/resources?program=${programFilter}&type=${typeFilter}&query=${encodeURIComponent(searchQuery)}`);
+      // Load every course and filter here, so each course tab keeps its real count.
+      const res = await fetch(`/api/admin/resources?program=all&type=${typeFilter}&query=${encodeURIComponent(searchQuery)}`);
       const data = await res.json();
       if (data?.resources) {
         setResources(data.resources);
@@ -59,7 +64,7 @@ export default function AdminResourcesClient() {
 
   useEffect(() => {
     fetchResources();
-  }, [programFilter, typeFilter]);
+  }, [typeFilter]);
 
   const handleToggleArchive = async (id: string) => {
     const target = resources.find((r) => r.id === id);
@@ -115,14 +120,18 @@ export default function AdminResourcesClient() {
       (r.chapter && r.chapter.toLowerCase().includes(q)) ||
       r.file_type.includes(q);
     const matchesType = typeFilter === 'all' || r.file_type === typeFilter;
-    const matchesProgram = programFilter === 'all' || r.program_type === programFilter;
+    const matchesProgram =
+      programFilter === 'all' ||
+      (programFilter === 'unassigned' ? !r.course : r.course === parseCourseId(programFilter));
     return matchesSearch && matchesType && matchesProgram;
   });
 
-  const ceeCount = resources.filter((r) => r.program_type === 'cee').length;
-  const seeCount = resources.filter((r) => r.program_type === 'see').length;
-  const ieltsCount = resources.filter((r) => r.program_type === 'ielts').length;
-  const totalDownloads = resources.reduce((acc, r) => acc + (r.download_count || 0), 0);
+  // Counted by the course students actually see each file under.
+  const countFor = (course: string) => resources.filter((r) => r.course === course).length;
+  const ceeCount = countFor('cee_medical');
+  const seeCount = countFor('see_class_10');
+  const ieltsCount = countFor('ielts');
+  const unassignedCount = resources.filter((r) => !r.course).length;
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
@@ -182,7 +191,9 @@ export default function AdminResourcesClient() {
           <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">Total Resources</span>
             <div className="text-xl font-extrabold text-foreground mt-1">{resources.length} Handouts</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Across all academic streams</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              {unassignedCount > 0 ? `${unassignedCount} not shown to students: course unclear` : 'Every file is assigned to a course'}
+            </p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
             <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">🩺 CEE Medical</span>
@@ -197,19 +208,16 @@ export default function AdminResourcesClient() {
           <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
             <span className="text-[10px] font-bold text-purple-600 uppercase tracking-wider block">🌍 IELTS Mastery</span>
             <div className="text-xl font-extrabold text-foreground mt-1">{ieltsCount} Packs</div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{totalDownloads.toLocaleString()} Student Downloads</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Downloads not tracked yet</p>
           </div>
         </div>
 
         {/* Program Tabs */}
         <div className="flex border-b border-border gap-2 overflow-x-auto pb-1 text-xs">
           {[
-            { key: 'all', label: `All Sections (${resources.length})` },
-            { key: 'cee', label: `🩺 CEE Medical (${ceeCount})` },
-            { key: 'see', label: `🎒 SEE Class 10 (${seeCount})` },
-            { key: 'ielts', label: `🌍 IELTS (${ieltsCount})` },
-            { key: 'neb', label: '🎓 NEB 11/12' },
-            { key: 'ioe', label: '📐 IOE Eng' },
+            { key: 'all', label: `All courses (${resources.length})` },
+            ...CANONICAL_COURSES.map((c) => ({ key: c, label: `${COURSES_MAP[c]?.shortName ?? c} (${countFor(c)})` })),
+            ...(unassignedCount > 0 ? [{ key: 'unassigned', label: `Course unclear (${unassignedCount})` }] : []),
           ].map((tab) => (
             <button
               key={tab.key}
@@ -282,22 +290,19 @@ export default function AdminResourcesClient() {
                     <td className="p-3.5">
                       <div className="font-bold text-foreground line-clamp-1">{r.title}</div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-foreground">{r.subject || 'Core'}</span>
+                        <span className="font-semibold text-foreground">{r.subject || 'No subject'}</span>
                         {r.chapter && <span>· {r.chapter}</span>}
-                        <span>· {r.file_size_mb} MB</span>
+                        {r.file_size_mb != null && <span>· {r.file_size_mb} MB</span>}
+                        {r.course === null && (
+                          <span className="font-semibold text-[#B42318] dark:text-[#FDA29B]">· Not shown to students: course unclear</span>
+                        )}
                       </div>
                     </td>
                     <td className="p-3.5">
                       <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
-                        r.program_type === 'cee'
-                          ? 'bg-primary/10 text-primary'
-                          : r.program_type === 'see'
-                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                          : r.program_type === 'ielts'
-                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-                          : 'bg-muted text-foreground'
+                        r.course ? 'bg-muted text-foreground' : 'bg-[#FEF3F2] text-[#B42318] dark:bg-[#55160C] dark:text-[#FDA29B]'
                       }`}>
-                        {r.program_type}
+                        {r.course ? COURSES_MAP[r.course as keyof typeof COURSES_MAP]?.shortName ?? r.course : 'Course unclear'}
                       </span>
                     </td>
                     <td className="p-3.5">
@@ -320,7 +325,7 @@ export default function AdminResourcesClient() {
                       </button>
                     </td>
                     <td className="p-3.5 text-muted-foreground font-mono">
-                      {r.download_count ? r.download_count.toLocaleString() : 0}
+                      {r.download_count != null ? r.download_count.toLocaleString() : '—'}
                     </td>
                     <td className="p-3.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">

@@ -39,7 +39,7 @@ interface ResourceItem {
   type: 'notes' | 'formula_sheet' | 'model_question' | 'ielts_pack';
   is_premium: boolean;
   reading_time_mins: number;
-  download_count: number;
+  download_count: number | null;
   pdf_url?: string | null;
   content: string;
   summary_key_points: string[];
@@ -226,10 +226,19 @@ export default function FreeResourcesPage() {
           ) : resources.length === 0 ? (
             <div className="py-16 text-center space-y-4 bg-muted/20 border border-border rounded-3xl p-8">
               <BookOpen size={36} className="text-muted-foreground mx-auto opacity-50" />
-              <h3 className="text-base font-bold text-foreground">No resources match your query</h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                Try clearing your search keyword or switching programs. You can also trigger an autonomous curriculum sweep from the Admin Command Center.
-              </p>
+              {searchQuery || selectedType !== 'all' ? (
+                <>
+                  <h3 className="text-base font-bold text-foreground">No resources match your search</h3>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto">Try a different keyword, or clear the filters.</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-base font-bold text-foreground">No learning content available yet.</h3>
+                  <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                    Learning materials for this course have not been uploaded yet. Please check back later.
+                  </p>
+                </>
+              )}
               <button
                 onClick={() => {
                   setSearchQuery('');
@@ -287,8 +296,12 @@ export default function FreeResourcesPage() {
                       <span className="flex items-center gap-1">
                         <Clock size={12} /> {item.reading_time_mins} min read
                       </span>
-                      <span>•</span>
-                      <span>{item.download_count} reads</span>
+                      {item.download_count != null && (
+                        <>
+                          <span>•</span>
+                          <span>{item.download_count} reads</span>
+                        </>
+                      )}
                     </div>
 
                     {/* Summary Bullets */}

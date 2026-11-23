@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram, normalizeCourseId, COURSES_MAP } from '@/contexts/ProgramContext';
+import { resolveCheckoutPlanSku } from '@/lib/courses/catalog';
 import {
   Play, ArrowRight, AlertTriangle,
   ShieldCheck, RefreshCw, TrendingUp, KeyRound, RotateCcw,
@@ -314,13 +315,19 @@ export default function DashboardPageClient() {
     };
   }, [user?.id, canonicalId]);
 
-  // Load Curriculum for Classes Tab
+  // Load Curriculum for Classes Tab. Replies for a course the student has since
+  // switched away from are dropped, so a slow answer can't overwrite the new one.
+  const curriculumCourseRef = useRef(canonicalId);
+  curriculumCourseRef.current = canonicalId;
   const loadCurriculum = async () => {
+    const requestedFor = canonicalId;
     try {
       setCurriculumLoading(true);
-      const res = await fetch(`/api/curriculum?course=${canonicalId}`);
+      const res = await fetch(`/api/curriculum?course=${requestedFor}`);
+      if (curriculumCourseRef.current !== requestedFor) return;
       if (res.ok) {
         const json = await res.json();
+        if (curriculumCourseRef.current !== requestedFor) return;
         if (json.subjects && Array.isArray(json.subjects)) {
           setCurriculumSubjects(json.subjects);
           // Auto-expand first chapter of first subject if none expanded
@@ -335,6 +342,15 @@ export default function DashboardPageClient() {
       setCurriculumLoading(false);
     }
   };
+
+  // A new course starts empty. Before, the previous course's subjects stayed on
+  // screen after a switch, because loading only ran while the list was empty.
+  const [curriculumFor, setCurriculumFor] = useState(canonicalId);
+  if (curriculumFor !== canonicalId) {
+    setCurriculumFor(canonicalId);
+    setCurriculumSubjects([]);
+    setExpandedChapterId(null);
+  }
 
   // Pre-fetch curriculum quietly 80ms after initial mount for 0ms tab switching
   useEffect(() => {
@@ -378,7 +394,9 @@ export default function DashboardPageClient() {
   const isSee = canonicalId === 'see_class_10';
   const isTrial = data.activeCourse.state === 'free_preview';
   const isExpired = data.activeCourse.state === 'expired';
-  const checkoutPlanSku = isSee ? 'see-class-10-board-topper-batch' : 'cee-mbbs-mastery-2026';
+  // This course's own plan. It used to be SEE's or else CEE's, so an IELTS, AI or
+  // IOE student buying from their dashboard was sent to the CEE plan.
+  const checkoutPlanSku = resolveCheckoutPlanSku(COURSES_MAP[canonicalId]?.courseSlug);
 
   const completedCount = Object.values(completedTasks).filter(Boolean).length;
   const totalTasksCount = data.todayStudyPlan.tasks.length;

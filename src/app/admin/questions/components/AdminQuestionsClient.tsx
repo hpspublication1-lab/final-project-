@@ -175,6 +175,10 @@ function calculateSimilarity(str1: string, str2: string): number {
 export default function AdminQuestionsClient() {
   const supabase = createClient();
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  // A question belongs to its subject's course. Every screen here used to leave it
+  // out, so each question got the CEE default.
+  const courseOfSubject = (id: string | null | undefined) =>
+    (subjects as Array<{ id: string; program_type?: string | null }>).find((x) => x.id === id)?.program_type ?? undefined;
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,7 +239,7 @@ export default function AdminQuestionsClient() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     const [subResult, chapResult] = await Promise.all([
-      supabase.from('subjects').select('id, name, display_name').order('name'),
+      supabase.from('subjects').select('id, name, display_name, program_type').order('name'),
       supabase.from('chapters').select('id, subject_id, title').order('title'),
     ]);
     setSubjects(subResult.data || []);
@@ -388,6 +392,7 @@ Requirements:
 
     const payload = aiPreview.map(q => ({
       subject_id: aiForm.subject_id || null,
+      program_type: courseOfSubject(aiForm.subject_id),
       chapter_id: null,
       question_text: q.question_text,
       options: [q.option_a, q.option_b, q.option_c, q.option_d],
@@ -418,6 +423,7 @@ Requirements:
 
     const payload = {
       subject_id: form.subject_id || null,
+      program_type: courseOfSubject(form.subject_id),
       chapter_id: form.chapter_id || null,
       question_text: form.question_text.trim(),
       options: [form.option_a.trim(), form.option_b.trim(), form.option_c.trim(), form.option_d.trim()],
@@ -483,6 +489,7 @@ Requirements:
 
         const { error: err } = await supabase.from('questions').insert({
           subject_id: subjectId,
+          program_type: courseOfSubject(subjectId),
           chapter_id: chapterId,
           question_text: row.question_text,
           options: [row.option_a, row.option_b, row.option_c, row.option_d],
@@ -538,6 +545,7 @@ Requirements:
 
         const { error: err } = await supabase.from('questions').insert({
           subject_id: subjectId,
+          program_type: courseOfSubject(subjectId),
           chapter_id: null,
           question_text: item.question_text,
           options: item.options,

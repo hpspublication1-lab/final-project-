@@ -65,7 +65,7 @@ export default function AdminChaptersClient() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const subsResult = await supabase.from('subjects').select('id, name, display_name').order('name');
+    const subsResult = await supabase.from('subjects').select('id, name, display_name, program_type').order('name');
     setSubjects(subsResult.data || []);
 
     // Gracefully attempt ordering by chapter_number, fallback to sort_order or created_at
@@ -129,8 +129,11 @@ export default function AdminChaptersClient() {
     setError(null);
     
     const num = form.chapter_number ? parseInt(form.chapter_number) : null;
+    // A chapter belongs to its subject's course (it used to get the CEE default).
+    const parentCourse = (subjects as Array<{ id: string; program_type?: string | null }>).find((x) => x.id === form.subject_id)?.program_type;
     const payload: Record<string, any> = {
       subject_id: form.subject_id,
+      ...(parentCourse ? { program_type: parentCourse } : {}),
       title: form.title.trim(),
       description: form.description.trim() || null,
       chapter_number: num,

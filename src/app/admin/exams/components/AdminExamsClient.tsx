@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { CourseSelect, courseLabel } from '@/components/admin/CourseSelect';
+import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
@@ -90,6 +92,7 @@ export default function AdminExamsClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(defaultForm);
+  const [course, setCourse] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'blueprints' | 'evaluations'>('blueprints');
@@ -161,11 +164,13 @@ export default function AdminExamsClient() {
   const openCreate = () => {
     setEditingId(null);
     setForm(defaultForm);
+    setCourse('');
     setShowForm(true);
   };
 
   const openEdit = (exam: Exam) => {
     setEditingId(exam.id);
+    setCourse(resolveRowCourse(exam as any) ?? '');
     setForm({
       title: exam.title,
       description: exam.description || '',
@@ -193,6 +198,8 @@ export default function AdminExamsClient() {
     const marks = parseInt(form.total_marks);
     if (isNaN(dur) || dur < 1) { setError('Duration must be a positive number'); return; }
     if (isNaN(marks) || marks < 1) { setError('Total marks must be a positive number'); return; }
+    const examCourse = parseCourseId(course);
+    if (!examCourse) { setError('Choose the course this exam belongs to'); return; }
 
     setSaving(true);
     setError(null);
@@ -201,6 +208,7 @@ export default function AdminExamsClient() {
       title: form.title.trim(),
       description: form.description.trim() || null,
       subject_id: form.subject_id || null,
+      program_type: storedProgramValue(examCourse),
       duration_minutes: dur,
       total_marks: marks,
       negative_marking: form.negative_marking,
@@ -424,6 +432,13 @@ export default function AdminExamsClient() {
                   placeholder="e.g. MEC CEE Grand Mock Examination #3 (Full 200 MCQs)"
                 />
               </div>
+
+              <CourseSelect
+                value={course}
+                onChange={setCourse}
+                labelClassName="block text-xs font-bold text-foreground mb-1.5"
+                selectClassName="w-full px-3.5 py-2.5 bg-background border border-border rounded-2xl text-xs text-foreground focus:outline-hidden focus:border-primary"
+              />
 
               <div>
                 <label className="block text-xs font-bold text-foreground mb-1.5">Category *</label>

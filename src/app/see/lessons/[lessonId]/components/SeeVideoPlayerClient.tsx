@@ -13,7 +13,8 @@ import {
   RotateCcw, RotateCw, ListVideo, Send, Trash2, Video, RefreshCw, Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { FALLBACK_PRACTICE_QUESTIONS, FallbackQuestion } from '@/lib/data/practiceQuestionsFallback';
+import type { FallbackQuestion } from '@/lib/data/practiceQuestionsFallback';
+import { bankQuestionsForLesson } from '@/lib/data/fallbackBankScope';
 
 interface Lesson {
   id: string;
@@ -430,20 +431,8 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
   // Populate curriculum-aligned DPP questions for Class 10 SEE lesson
   useEffect(() => {
     if (!lesson) return;
-    const targetSubj = (lesson.subject_slug || '').toLowerCase();
-    const targetChap = (lesson.chapter_name || lesson.title || '').toLowerCase();
-
-    const matched = FALLBACK_PRACTICE_QUESTIONS.filter((q) => {
-      const qChap = q.chapterTitle.toLowerCase();
-      const qSubj = q.subjectSlug.toLowerCase();
-      const qDisplay = q.subjectDisplayName.toLowerCase();
-
-      if (targetChap && (qChap.includes(targetChap) || targetChap.includes(qChap))) return true;
-      if (targetSubj && (qSubj.includes(targetSubj) || qDisplay.includes(targetSubj) || targetSubj.includes(qSubj))) return true;
-      return false;
-    });
-
-    const pool = matched.length >= 5 ? matched : FALLBACK_PRACTICE_QUESTIONS;
+    // Same course and subject only — see fallbackBankScope.ts.
+    const pool = bankQuestionsForLesson('see_class_10', lesson.subject_slug, lesson.chapter_name);
     const finalSet = pool.slice(0, 10);
     setDppQuestions(finalSet);
     setDppAnswers({});
@@ -985,6 +974,9 @@ export default function SeeVideoPlayerClient({ lessonId }: SeeVideoPlayerProps) 
 
                 {/* Questions List */}
                 <div className="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+                  {dppQuestions.length === 0 && (
+                    <p className="py-6 text-center text-sm text-muted-foreground">No practice questions for this lesson yet.</p>
+                  )}
                   {dppQuestions.map((q, qIdx) => {
                     const isAnswered = Boolean(dppSubmitted[q.id]);
                     const userChoice = dppAnswers[q.id];

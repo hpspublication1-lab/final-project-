@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { CourseSelect, courseLabel } from '@/components/admin/CourseSelect';
+import { parseCourseId, resolveRowCourse, storedProgramValue } from '@/lib/courses/courseIds';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Pencil, Trash2, Save, X, ToggleLeft, ToggleRight, Loader2, AlertCircle, CheckCircle2,  } from 'lucide-react';
@@ -14,6 +16,8 @@ interface Subject {
   icon: string | null;
   is_active: boolean;
   created_at: string;
+  slug?: string | null;
+  program_type?: string | null;
 }
 
 interface FormState {
@@ -49,6 +53,7 @@ export default function AdminSubjectsClient() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(defaultForm);
+  const [course, setCourse] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const fetchSubjects = useCallback(async () => {
@@ -59,17 +64,10 @@ export default function AdminSubjectsClient() {
       .select('*')
       .order('name', { ascending: true });
 
-    if (data && data.length > 0) {
-      setSubjects(data);
-    } else {
-      const DEFAULT_ADMIN_SUBJECTS: Subject[] = [
-        { id: 'subj-1', name: 'biology', display_name: 'Biology', description: 'Botany & Zoology for CEE medical entrance', color: '#10B981', icon: '🧬', is_active: true, created_at: new Date().toISOString() },
-        { id: 'subj-2', name: 'chemistry', display_name: 'Chemistry', description: 'Organic, Inorganic & Physical Chemistry', color: '#06B6D4', icon: '🧪', is_active: true, created_at: new Date().toISOString() },
-        { id: 'subj-3', name: 'physics', display_name: 'Physics', description: 'Mechanics, Electromagnetism & Modern Physics', color: '#3B82F6', icon: '⚡', is_active: true, created_at: new Date().toISOString() },
-        { id: 'subj-4', name: 'mental_agility', display_name: 'Mental Agility (MAT)', description: 'Logical Reasoning & Quantitative Aptitude', color: '#8B5CF6', icon: '🧠', is_active: true, created_at: new Date().toISOString() },
-      ];
-      setSubjects(DEFAULT_ADMIN_SUBJECTS);
-    }
+    // Real rows only. Four made-up subjects (ids subj-1…subj-4) used to be shown when
+    // this came back empty or failed, and editing one could only error.
+    if (err) setError(err.message);
+    setSubjects(data ?? []);
     setLoading(false);
   }, []);
 
@@ -82,6 +80,7 @@ export default function AdminSubjectsClient() {
 
   const openEdit = (subject: Subject) => {
     setEditingId(subject.id);
+    setCourse(resolveRowCourse(subject) ?? '');
     setForm({
       display_name: subject.display_name,
       description: subject.description || '',
@@ -106,6 +105,8 @@ export default function AdminSubjectsClient() {
 
   const handleSave = async () => {
     if (!form.display_name.trim()) { setError('Display name is required'); return; }
+    const subjectCourse = parseCourseId(course);
+    if (!subjectCourse) { setError('Choose the course this subject belongs to'); return; }
     setSaving(true);
     setError(null);
     if (editingId) {
@@ -117,6 +118,8 @@ export default function AdminSubjectsClient() {
           color: form.color,
           icon: form.icon.trim() || null,
           is_active: form.is_active,
+          // Everything filed under this subject follows it into this course.
+          program_type: storedProgramValue(subjectCourse),
         })
         .eq('id', editingId);
       if (err) setError(err.message);
@@ -150,7 +153,7 @@ export default function AdminSubjectsClient() {
           </Link>
           <div>
             <h1 className="text-lg font-bold text-foreground">Subjects Management</h1>
-            <p className="text-xs text-muted-foreground">CEE syllabus subjects · {subjects.length} total</p>
+            <p className="text-xs text-muted-foreground">{subjects.length} subjects across all courses</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -187,6 +190,12 @@ export default function AdminSubjectsClient() {
               <button onClick={closeForm} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><X size={16} /></button>
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
+              <CourseSelect
+                className="sm:col-span-2"
+                value={course}
+                onChange={setCourse}
+                hint="Changing this moves the subject, and everything filed under it, to that course for students."
+              />
               <div>
                 <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Display Name *</label>
                 <input
@@ -250,12 +259,18 @@ export default function AdminSubjectsClient() {
               <thead>
                 <tr className="border-b border-border bg-muted/30">
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Subject</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Course</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Description</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">Status</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
+                {subjects.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground">No subjects set up yet.</td>
+                  </tr>
+                )}
                 {subjects.map((subject) => (
                   <tr key={subject.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-4 py-3">
@@ -268,6 +283,11 @@ export default function AdminSubjectsClient() {
                           <p className="text-xs text-muted-foreground capitalize">{subject.name.replace('_', ' ')}</p>
                         </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-semibold ${resolveRowCourse(subject) ? 'text-foreground' : 'text-[#B42318] dark:text-[#FDA29B]'}`}>
+                        {courseLabel(resolveRowCourse(subject))}
+                      </span>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <p className="text-xs text-muted-foreground line-clamp-2 max-w-xs">{subject.description || '—'}</p>
