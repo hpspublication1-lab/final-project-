@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
 import '../styles/tailwind.css';
 import { Toaster } from 'sonner';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -11,9 +12,40 @@ import ServiceWorkerRegister from '@/components/pwa/ServiceWorkerRegister';
 import GhostViewBanner from '@/components/admin/GhostViewBanner';
 import { getOrganizationSchema, getWebSiteSchema } from '@/lib/seo/structuredData';
 
-// Decouple build-time font fetch from external network to ensure offline & CI stability
-const plusJakartaSans = { variable: 'font-sans', className: 'font-sans' };
-const ibmPlexMono = { variable: 'font-mono', className: 'font-mono' };
+/**
+ * Fonts are self-hosted from `src/app/fonts/` via next/font/local.
+ *
+ * They were briefly loaded with `@import url(fonts.googleapis.com)` in
+ * tailwind.css so the build would not need the network. That fixed CI at the
+ * cost of production: an @import is discovered only after the stylesheet is
+ * parsed, so the browser made three serial round trips (CSS -> Google CSS ->
+ * gstatic font) before text rendered in the right face, and the automatic
+ * fallback metrics that prevent reflow were lost. It also sat after the
+ * @tailwind directives, where CSS requires imports to come first.
+ *
+ * Local files give both: no network at build time, and a font served from our
+ * own origin with preloading and size-adjusted fallbacks.
+ *
+ * The Jakarta file is variable, so one 27KB download covers every weight.
+ */
+const plusJakartaSans = localFont({
+  src: './fonts/plus-jakarta-sans-latin-wght-normal.woff2',
+  weight: '200 800',
+  display: 'swap',
+  variable: '--font-jakarta',
+  fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+});
+
+const ibmPlexMono = localFont({
+  src: [
+    { path: './fonts/ibm-plex-mono-latin-400-normal.woff2', weight: '400', style: 'normal' },
+    { path: './fonts/ibm-plex-mono-latin-500-normal.woff2', weight: '500', style: 'normal' },
+    { path: './fonts/ibm-plex-mono-latin-600-normal.woff2', weight: '600', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-plex-mono',
+  fallback: ['Menlo', 'Monaco', 'Consolas', 'monospace'],
+});
 
 // Inline script to apply dark mode from localStorage BEFORE first paint (prevents FOUC)
 const DARK_MODE_SCRIPT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('samyak-theme');if(t==='dark'||(t==null&&window.matchMedia('(prefers-color-scheme:dark)').matches)){d.classList.add('dark')}}catch(e){}})();`;
@@ -99,9 +131,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
       <head>
-        {/* Preconnect for Google Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* Apply dark mode before paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: DARK_MODE_SCRIPT }} />
         <script
