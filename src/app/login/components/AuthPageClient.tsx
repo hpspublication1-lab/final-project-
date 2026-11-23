@@ -23,7 +23,6 @@ import {
 import { toast } from 'sonner';
 import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
 import { Analytics } from '@/lib/analytics/mixpanel';
 import { SUPPORT_CONFIG } from '@/lib/config/support';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
@@ -374,12 +373,11 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
         if (!res.ok) {
           throw new Error(data.error || 'Incorrect email or password. Please check your credentials.');
         }
-        if (data.session?.access_token && data.session?.refresh_token) {
-          await createClient().auth.setSession({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-          }).catch(() => null);
-        }
+        // No setSession() here: /api/auth/login already set the session cookie
+        // on its response, and every branch below leaves this page with a full
+        // navigation, so the Supabase browser client reads the session from the
+        // cookie on the next page. Re-applying it client-side only duplicated
+        // work and required the tokens in the response body.
         Analytics.loggedIn('password');
         toast.success('Signed in! Redirecting…');
 
