@@ -1,8 +1,8 @@
 'use client';
 
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useState } from 'react';
+import Image from 'next/image';
 import AppIcon from './AppIcon';
-import AppImage from './AppImage';
 
 interface AppLogoProps {
   src?: string; // Image source (optional)
@@ -21,6 +21,8 @@ const AppLogo = memo(function AppLogo({
   onClick,
   showText = false,
 }: AppLogoProps) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   // Memoize className calculation
   const containerClassName = useMemo(() => {
     const classes = ['flex items-center gap-2.5'];
@@ -32,16 +34,28 @@ const AppLogo = memo(function AppLogo({
   return (
     <div className={containerClassName} onClick={onClick}>
       {/* Show image if src provided, otherwise show icon */}
-      {src ? (
-        <AppImage
+      {src && !imageFailed ? (
+        <Image
           src={src}
-          alt="Samyak Tutor Logo" 
+          alt="Samyak Guru"
           width={size}
           height={size}
           className="flex-shrink-0 object-contain rounded-xl"
-          priority={true}
+          priority
           unoptimized={src.endsWith('.svg')}
+          onError={() => setImageFailed(true)}
         />
+      ) : src ? (
+        // The logo file is missing or failed to load: show a clean monogram
+        // instead of the browser's broken-image icon and squashed alt text.
+        <span
+          aria-label="Samyak Guru"
+          role="img"
+          style={{ width: size, height: size, fontSize: Math.round(size * 0.5) }}
+          className="flex-shrink-0 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-extrabold leading-none select-none"
+        >
+          S
+        </span>
       ) : (
         <AppIcon name={iconName} size={size} className="flex-shrink-0" />
       )}
