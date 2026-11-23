@@ -61,7 +61,7 @@
   --primary: #8176FF;
   --primary-rgb: 129, 118, 255;
   --primary-dark: #5243E0;
-  --primary-foreground: #FFFFFF;
+  --primary-foreground: #1B1038; /* white was 3.5:1 on the dark-mode violet, under the 4.5:1 text minimum; this is 5.1:1 */
   --secondary: #131728;
   --secondary-foreground: #C7C0FF;
   --accent: #00E5CC;

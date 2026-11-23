@@ -11,6 +11,7 @@ interface AppLogoProps {
   className?: string; // Additional classes
   onClick?: () => void; // Click handler
   showText?: boolean; // Whether to display 'SAMYAK TUTOR' text alongside
+  onDark?: boolean; // Fallback mark sits on a dark or brand-coloured background
 }
 
 const AppLogo = memo(function AppLogo({
@@ -20,6 +21,7 @@ const AppLogo = memo(function AppLogo({
   className = '',
   onClick,
   showText = false,
+  onDark = false,
 }: AppLogoProps) {
   const [imageFailed, setImageFailed] = useState(false);
 
@@ -52,7 +54,9 @@ const AppLogo = memo(function AppLogo({
           aria-label="Samyak Guru"
           role="img"
           style={{ width: size, height: size, fontSize: Math.round(size * 0.5) }}
-          className="flex-shrink-0 inline-flex items-center justify-center rounded-xl bg-primary text-primary-foreground font-extrabold leading-none select-none"
+          className={`flex-shrink-0 inline-flex items-center justify-center rounded-xl font-extrabold leading-none select-none ${
+            onDark ? 'bg-white text-[#3B2DB8]' : 'bg-primary text-primary-foreground'
+          }`}
         >
           S
         </span>

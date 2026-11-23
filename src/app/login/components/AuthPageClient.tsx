@@ -15,6 +15,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import AppLogo from '@/components/ui/AppLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Analytics } from '@/lib/analytics/mixpanel';
@@ -22,6 +23,7 @@ import { SUPPORT_CONFIG } from '@/lib/config/support';
 import { toE164Nepal, maskNepalPhone } from '@/lib/auth/nepalPhone';
 import PageTransitionWrapper from '@/components/PageTransitionWrapper';
 import PasswordStrength from './PasswordStrength';
+import SampleQuestion from './SampleQuestion';
 
 /*
  * One screen for every way in: Google, a texted code (Aakash SMS via the
@@ -83,6 +85,52 @@ function friendlyError(err: unknown): string {
   if (m.includes('rate limit') || m.includes('too many')) return 'Too many attempts. Wait a minute and try again.';
   if (m.includes('failed to fetch') || m.includes('network')) return 'Can’t reach the server. Check your connection and try again.';
   return 'Something went wrong. Please try again.';
+}
+
+type LastMethod = 'google' | 'phone' | 'email';
+const LAST_METHOD_KEY = 'samyak_last_sign_in';
+
+/** Which way this browser signed in last time, so returning students land on it. */
+function readLastMethod(): LastMethod | null {
+  try {
+    const v = localStorage.getItem(LAST_METHOD_KEY);
+    return v === 'google' || v === 'phone' || v === 'email' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function rememberMethod(m: LastMethod) {
+  try {
+    localStorage.setItem(LAST_METHOD_KEY, m);
+  } catch {
+    // Private mode or storage blocked: nothing to remember.
+  }
+}
+
+/**
+ * "9812345678", "+977 981-234-5678", "09812345678" → "981 234 5678" while typing.
+ * No Nepali mobile starts with 977, 00977 or 0, so those prefixes are dropped as
+ * soon as they appear — the field already shows +977.
+ */
+function formatNepalInput(raw: string): string {
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith('00977')) d = d.slice(5);
+  else if (d.startsWith('977')) d = d.slice(3);
+  d = d.replace(/^0+/, '').slice(0, 10);
+  return [d.slice(0, 3), d.slice(3, 6), d.slice(6)].filter(Boolean).join(' ');
+}
+
+function LastUsed() {
+  return (
+    // Below 360px wide it shrinks to a dot; the text stays for screen readers.
+    <span
+      title="Last used"
+      className="whitespace-nowrap rounded-full bg-[rgba(var(--primary-rgb),0.12)] px-2 py-0.5 text-[11px] font-semibold text-primary max-[359px]:h-2 max-[359px]:w-2 max-[359px]:overflow-hidden max-[359px]:bg-primary max-[359px]:p-0 max-[359px]:text-[0px]"
+    >
+      Last used
+    </span>
+  );
 }
 
 /** Google refuses OAuth inside embedded app browsers ("disallowed_useragent"). */
@@ -184,6 +232,8 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
   const [inAppBrowser, setInAppBrowser] = useState<string | null>(null);
   const [showInAppHelp, setShowInAppHelp] = useState(false);
   const [platform, setPlatform] = useState<'android' | 'ios' | 'other'>('other');
+  const [lastMethod, setLastMethod] = useState<LastMethod | null>(null);
+  const [capsLock, setCapsLock] = useState(false);
 
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
@@ -207,6 +257,10 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
     const ua = navigator.userAgent || '';
     setInAppBrowser(detectInAppBrowser(ua));
     setPlatform(/Android/i.test(ua) ? 'android' : /iPhone|iPad|iPod/i.test(ua) ? 'ios' : 'other');
+
+    const last = readLastMethod();
+    setLastMethod(last);
+    if (last === 'email') setMethod('email');
   }, [isAdminPortal]);
 
   useEffect(() => {
@@ -215,9 +269,13 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
     return () => clearInterval(t);
   }, [resendIn]);
 
+  // Runs after the 180 ms view transition, once the new step's fields exist.
   useEffect(() => {
-    if (view === 'code') setTimeout(() => otpRefs.current[0]?.focus(), 60);
-    else setTimeout(() => firstFieldRef.current?.focus(), 60);
+    const t = setTimeout(() => {
+      if (view === 'code') otpRefs.current[0]?.focus();
+      else firstFieldRef.current?.focus();
+    }, 240);
+    return () => clearTimeout(t);
   }, [view, method]);
 
   const go = (next: View) => {
@@ -271,6 +329,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
       const origin = window.location.origin;
       const callbackUrl = next ? `${origin}/auth/callback?next=${encodeURIComponent(next)}` : `${origin}/auth/callback`;
       Analytics.loggedIn('google-oauth');
+      rememberMethod('google');
       await signInWithOAuth('google', { redirectTo: callbackUrl, queryParams: { prompt: 'select_account' } });
       // The browser is now on its way to Google; leave the spinner running.
     } catch (err) {
@@ -344,9 +403,11 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
         if (codeTarget.kind === 'phone') {
           await verifyPhoneOtp(codeTarget.e164, code);
           Analytics.loggedIn('phone-otp');
+          rememberMethod('phone');
         } else {
           await verifyEmailOtp(codeTarget.email, code);
           Analytics.loggedIn('email-otp');
+          rememberMethod('email');
         }
         toast.success('You’re in. Taking you there…');
         await routeAfterLogin();
@@ -433,6 +494,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
       // The route set the session cookie on its response; every path below
       // leaves with a full navigation, so the next page reads it from there.
       Analytics.loggedIn('password');
+      rememberMethod('email');
 
       const { next } = readRedirectParams();
       const role = String(data.role || '').toLowerCase();
@@ -537,6 +599,10 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
           setPassword(e.target.value);
           setError(null);
         }}
+        onKeyUp={(e) => setCapsLock(e.getModifierState?.('CapsLock') ?? false)}
+        onKeyDown={(e) => setCapsLock(e.getModifierState?.('CapsLock') ?? false)}
+        onBlur={() => setCapsLock(false)}
+        aria-describedby={capsLock ? `${id}-caps` : undefined}
         className="input-field pr-11 text-base"
       />
       <button
@@ -548,6 +614,11 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
       >
         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
       </button>
+      {capsLock && (
+        <p id={`${id}-caps`} className="mt-1.5 text-sm font-medium text-[#B54708] dark:text-[#FEC84B]">
+          Caps Lock is on.
+        </p>
+      )}
     </div>
   );
 
@@ -613,6 +684,7 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
           <>
             <GoogleMark />
             Continue with Google
+            {lastMethod === 'google' && <LastUsed />}
           </>
         )}
       </button>
@@ -657,12 +729,24 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
                 setMethod(m);
                 setError(null);
               }}
-              className={`flex items-center justify-center gap-2 rounded-lg py-2 transition-colors ${
-                method === m ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              className={`relative flex items-center justify-center gap-2 rounded-lg py-2 transition-colors ${
+                method === m ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              {m === 'phone' ? <Smartphone size={16} aria-hidden="true" /> : <Mail size={16} aria-hidden="true" />}
-              {m === 'phone' ? 'Mobile number' : 'Email'}
+              {method === m && (
+                <motion.span
+                  layoutId="sign-in-method"
+                  className="absolute inset-0 rounded-lg bg-card shadow-sm"
+                  transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+                />
+              )}
+              <span className="relative flex items-center gap-2">
+                <span className={lastMethod === m ? 'max-[399px]:hidden' : ''}>
+                  {m === 'phone' ? <Smartphone size={16} aria-hidden="true" /> : <Mail size={16} aria-hidden="true" />}
+                </span>
+                {m === 'phone' ? 'Phone' : 'Email'}
+                {lastMethod === m && <LastUsed />}
+              </span>
             </button>
           ))}
         </div>
@@ -681,11 +765,10 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
               type="tel"
               inputMode="numeric"
               autoComplete="tel-national"
-              placeholder="98XXXXXXXX"
-              maxLength={14}
+              placeholder="98X XXX XXXX"
               value={phoneInput}
               onChange={(e) => {
-                setPhoneInput(e.target.value);
+                setPhoneInput(formatNepalInput(e.target.value));
                 setError(null);
               }}
               className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base text-foreground outline-none placeholder:text-muted-foreground"
@@ -908,52 +991,115 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
             </>
           )}
         </p>
+        {codeTarget?.kind === 'phone' && resendIn === 0 && (
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            SMS not arriving?{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setMethod('email');
+                go('start');
+              }}
+              className={linkCls}
+            >
+              Sign in with email instead
+            </button>
+          </p>
+        )}
       </>
     );
   };
 
+  const brandLink = (light: boolean) => (
+    <Link
+      href="/"
+      aria-label="Samyak Guru home"
+      className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--primary-rgb),0.4)]"
+    >
+      <AppLogo size={32} onDark={light} />
+      <span className={`text-lg font-extrabold tracking-tight ${light ? 'text-white' : 'text-foreground'}`}>Samyak Guru</span>
+    </Link>
+  );
+
   return (
     <PageTransitionWrapper>
-      <main className="flex min-h-screen justify-center bg-background px-4 py-8 sm:items-center sm:py-12">
-        <div className="w-full max-w-[420px]">
-          <div className="mb-6 flex items-center justify-center gap-2.5">
-            <Link href="/" aria-label="Samyak Guru home" className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--primary-rgb),0.4)]">
-              <AppLogo size={32} />
-              <span className="text-lg font-extrabold tracking-tight text-foreground">Samyak Guru</span>
-            </Link>
-          </div>
+      <MotionConfig reducedMotion="user">
+        <main className="min-h-screen bg-background lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:bg-card">
+          {/* Desktop: what Samyak is, shown rather than told. */}
+          {!isAdminPortal && (
+            <aside className="hidden flex-col justify-between bg-[#3B2DB8] px-10 py-10 text-white lg:flex xl:px-16 dark:bg-[#1A1452]">
+              {brandLink(true)}
+              <div className="mx-auto w-full max-w-[440px]">
+                <p className="mb-4 text-[15px] font-semibold text-white/85">Try today’s question</p>
+                <SampleQuestion />
+                <p className="mt-5 text-[15px] leading-relaxed text-white/80">
+                  Sign in to save your answers and pick up where you left off.
+                </p>
+              </div>
+              <p className="text-sm text-white/70">Practice questions, mock tests and live classes for CEE, SEE and IELTS.</p>
+            </aside>
+          )}
 
-          <div className="card-base p-6 sm:p-8">
-            {view === 'start' && renderStart()}
-            {view === 'signup' && renderSignup()}
-            {view === 'forgot' && renderForgot()}
-            {view === 'forgot_sent' && renderForgotSent()}
-            {view === 'code' && renderCode()}
-          </div>
+          <section
+            className={`flex justify-center px-4 py-8 sm:items-center sm:py-12 lg:px-10 ${
+              isAdminPortal ? 'lg:col-span-2 lg:bg-background' : ''
+            }`}
+          >
+            <div className="w-full max-w-[420px]">
+              <div className={`mb-6 flex justify-center ${isAdminPortal ? '' : 'lg:hidden'}`}>{brandLink(false)}</div>
 
-          <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
-            By continuing you agree to our{' '}
-            <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
-              Terms
-            </Link>{' '}
-            and{' '}
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
-              Privacy Policy
-            </Link>
-            .
-            <br />
-            Trouble signing in?{' '}
-            <a href={SUPPORT_CONFIG.whatsappLink} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
-              Message us on WhatsApp
-            </a>{' '}
-            or email{' '}
-            <a href={`mailto:${SUPPORT_CONFIG.email}`} className="underline underline-offset-2 hover:text-foreground">
-              {SUPPORT_CONFIG.email}
-            </a>
-            .
-          </p>
-        </div>
-      </main>
+              <div
+                className={`card-base p-6 sm:p-8 ${
+                  isAdminPortal ? '' : 'lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none'
+                }`}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={view}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    {view === 'start' && renderStart()}
+                    {view === 'signup' && renderSignup()}
+                    {view === 'forgot' && renderForgot()}
+                    {view === 'forgot_sent' && renderForgotSent()}
+                    {view === 'code' && renderCode()}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
+                By continuing you agree to our{' '}
+                <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                  Privacy Policy
+                </Link>
+                .
+                <br />
+                Trouble signing in?{' '}
+                <a
+                  href={SUPPORT_CONFIG.whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  Message us on WhatsApp
+                </a>{' '}
+                or email{' '}
+                <a href={`mailto:${SUPPORT_CONFIG.email}`} className="underline underline-offset-2 hover:text-foreground">
+                  {SUPPORT_CONFIG.email}
+                </a>
+                .
+              </p>
+            </div>
+          </section>
+        </main>
+      </MotionConfig>
     </PageTransitionWrapper>
   );
 }
