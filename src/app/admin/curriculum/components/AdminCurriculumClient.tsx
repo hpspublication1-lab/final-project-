@@ -1,17 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { programTypeField } from '@/lib/courses/programColumn';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { CANONICAL_COURSES, COURSES_MAP } from '@/contexts/ProgramContext';
+import { parseCourseId, storedProgramValue } from '@/lib/courses/courseIds';
 import {
   Layers, BookOpen, Video, FileText, Plus, Save, Trash2, ArrowLeft,
   Calendar, CheckCircle2, AlertCircle, Loader2, Search, Eye, Edit3,
   ToggleLeft, ToggleRight, ArrowUpDown, Clock, Shield, Sparkles, Upload,
   Paperclip, ExternalLink, Download, ChevronUp, ChevronDown, Check, X
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+// sonner is the toaster mounted in app/layout.tsx; react-hot-toast's is not, so its
+// messages here (including "Choose the course…") were never shown.
+import { toast } from 'sonner';
 
 export default function AdminCurriculumClient() {
   const router = useRouter();
@@ -24,6 +29,11 @@ export default function AdminCurriculumClient() {
   // Core Data
   const [batches, setBatches] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  // New lessons and notes take their subject's course (they used to get the CEE default).
+  const courseOfSubject = async (table: string, id: string | null | undefined): Promise<{ program_type?: string }> => {
+    const pt = (subjects as Array<{ id: string; program_type?: string | null }>).find((x) => x.id === id)?.program_type;
+    return programTypeField(supabase, table, pt);
+  };
   const [chapters, setChapters] = useState<any[]>([]);
   const [videos, setVideos] = useState<any[]>([]);
   const [resources, setResources] = useState<any[]>([]);
@@ -43,7 +53,7 @@ export default function AdminCurriculumClient() {
   const [courseForm, setCourseForm] = useState({
     title: '',
     slug: '',
-    program_type: 'see',
+    program_type: '',
     description: '',
     price_npr: 4990,
   });
@@ -53,7 +63,7 @@ export default function AdminCurriculumClient() {
     title: '',
     slug: '',
     description: '',
-    program_type: 'cee',
+    program_type: '',
     price_npr: 4990,
     instructor_name: 'Samyak Faculty Team',
     start_date: '',
@@ -127,11 +137,16 @@ export default function AdminCurriculumClient() {
 
     try {
       // Register or update course batch track
+      const course = parseCourseId(courseForm.program_type);
+      if (!course) {
+        toast.error('Choose the course this belongs to');
+        return;
+      }
       const { data, error } = await supabase.from('batches').insert({
         title: courseForm.title.trim(),
         slug: courseForm.slug.trim().toLowerCase().replace(/\s+/g, '-'),
         description: courseForm.description.trim() || null,
-        program_type: courseForm.program_type,
+        ...(await programTypeField(supabase, 'batches', storedProgramValue(course))),
         price_npr: Number(courseForm.price_npr) || 0,
         instructor_name: 'Samyak Academic Board',
         is_active: true,
@@ -142,7 +157,7 @@ export default function AdminCurriculumClient() {
       toast.success('Course created and added to active catalogue!');
       setBatches((prev) => [data, ...prev]);
       setShowCourseModal(false);
-      setCourseForm({ title: '', slug: '', program_type: 'see', description: '', price_npr: 4990 });
+      setCourseForm({ title: '', slug: '', program_type: '', description: '', price_npr: 4990 });
     } catch (err: any) {
       toast.error(err.message || 'Could not create course');
     }
@@ -157,11 +172,16 @@ export default function AdminCurriculumClient() {
     }
 
     try {
+      const course = parseCourseId(batchForm.program_type);
+      if (!course) {
+        toast.error('Choose the course this batch belongs to');
+        return;
+      }
       const { data, error } = await supabase.from('batches').insert({
         title: batchForm.title.trim(),
         slug: batchForm.slug.trim().toLowerCase().replace(/\s+/g, '-'),
         description: batchForm.description.trim() || null,
-        program_type: batchForm.program_type,
+        ...(await programTypeField(supabase, 'batches', storedProgramValue(course))),
         price_npr: Number(batchForm.price_npr) || 0,
         instructor_name: batchForm.instructor_name.trim() || 'Samyak Faculty Team',
         start_date: batchForm.start_date || null,
@@ -178,7 +198,7 @@ export default function AdminCurriculumClient() {
         title: '',
         slug: '',
         description: '',
-        program_type: 'cee',
+        program_type: '',
         price_npr: 4990,
         instructor_name: 'Samyak Faculty Team',
         start_date: '',
@@ -207,7 +227,7 @@ export default function AdminCurriculumClient() {
             chapter_id: lessonForm.chapter_id || null,
             batch_id: lessonForm.batch_id || null,
             video_url: lessonForm.video_url.trim() || null,
-            duration_sec: Number(lessonForm.duration_sec) || 1800,
+            duration_sec: Number(lessonForm.duration_sec) || 0,
             is_premium: lessonForm.is_premium,
             is_active: lessonForm.is_active,
             updated_at: new Date().toISOString(),
@@ -237,10 +257,12 @@ export default function AdminCurriculumClient() {
           .insert({
             title: lessonForm.title.trim(),
             subject_id: lessonForm.subject_id || null,
+            ...(await courseOfSubject('video_lectures', lessonForm.subject_id)),
             chapter_id: lessonForm.chapter_id || null,
             batch_id: lessonForm.batch_id || null,
-            video_url: lessonForm.video_url.trim() || 'https://vz-11253e6e-275.b-cdn.net/sample/playlist.m3u8',
-            duration_sec: Number(lessonForm.duration_sec) || 1800,
+            // No sample video and no made-up 30-minute length when none was given.
+            video_url: lessonForm.video_url.trim() || null,
+            duration_sec: Number(lessonForm.duration_sec) || 0,
             is_premium: lessonForm.is_premium,
             is_active: lessonForm.is_active,
           })
@@ -272,8 +294,11 @@ export default function AdminCurriculumClient() {
         .from('notes')
         .insert({
           title: resourceForm.title.trim(),
-          subject_id: resourceForm.subject_id || subjects[0]?.id || null,
-          chapter_id: resourceForm.chapter_id || chapters[0]?.id || null,
+          // Only what the admin picked. It used to fall back to the first subject and
+          // chapter in the list, filing the note somewhere it didn't belong.
+          subject_id: resourceForm.subject_id || null,
+          ...(await courseOfSubject('notes', resourceForm.subject_id)),
+          chapter_id: resourceForm.chapter_id || null,
           pdf_url: resourceForm.pdf_url.trim() || null,
           content: resourceForm.content.trim() || null,
           is_premium: resourceForm.is_premium,
@@ -395,7 +420,7 @@ export default function AdminCurriculumClient() {
                 title: '',
                 slug: '',
                 description: '',
-                program_type: 'cee',
+                program_type: '',
                 price_npr: 4990,
                 instructor_name: 'Samyak Faculty Team',
                 start_date: '',
@@ -865,11 +890,10 @@ export default function AdminCurriculumClient() {
                     onChange={(e) => setCourseForm({ ...courseForm, program_type: e.target.value })}
                     className="w-full text-xs p-2.5 rounded-xl border border-border bg-background mt-1 cursor-pointer"
                   >
-                    <option value="see">SEE Class 10</option>
-                    <option value="cee">CEE Medical Entrance</option>
-                    <option value="ielts">IELTS Masterclass</option>
-                    <option value="digital">Digital Marketing</option>
-                    <option value="ai">AI &amp; Python</option>
+                    <option value="">Choose a course</option>
+                    {CANONICAL_COURSES.map((c) => (
+                      <option key={c} value={c}>{COURSES_MAP[c]?.shortName ?? c}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -961,9 +985,10 @@ export default function AdminCurriculumClient() {
                     onChange={(e) => setBatchForm({ ...batchForm, program_type: e.target.value })}
                     className="w-full text-xs p-2.5 rounded-xl border border-border bg-background mt-1 cursor-pointer"
                   >
-                    <option value="cee">CEE Medical</option>
-                    <option value="see">SEE Class 10</option>
-                    <option value="ielts">IELTS</option>
+                    <option value="">Choose a course</option>
+                    {CANONICAL_COURSES.map((c) => (
+                      <option key={c} value={c}>{COURSES_MAP[c]?.shortName ?? c}</option>
+                    ))}
                   </select>
                 </div>
               </div>

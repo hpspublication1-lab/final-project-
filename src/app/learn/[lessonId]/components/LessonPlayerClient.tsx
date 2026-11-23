@@ -7,6 +7,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import BunnyHlsPlayer from '@/components/video/BunnyHlsPlayer';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram } from '@/contexts/ProgramContext';
+import { parseCourseId } from '@/lib/courses/courseIds';
 import {
   Play, Pause, ChevronLeft, ChevronRight, CheckCircle2, FileText,
   Download, ArrowRight, Clock, Sparkles, BookOpen, Loader2, Bookmark,
@@ -16,7 +17,8 @@ import {
   Tv, Eye, EyeOff
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { FALLBACK_PRACTICE_QUESTIONS, FallbackQuestion } from '@/lib/data/practiceQuestionsFallback';
+import type { FallbackQuestion } from '@/lib/data/practiceQuestionsFallback';
+import { bankQuestionsForLesson } from '@/lib/data/fallbackBankScope';
 
 interface LessonPlayerClientProps {
   lessonId: string;
@@ -379,20 +381,8 @@ export default function LessonPlayerClient({ lessonId }: LessonPlayerClientProps
   // Populate curriculum-aligned DPP questions for active lesson
   useEffect(() => {
     if (!activeLesson) return;
-    const targetSubj = (activeLesson.subjectName || activeLesson.subjectId || program || '').toLowerCase();
-    const targetChap = (activeLesson.chapterTitle || activeLesson.chapter_name || activeLesson.title || '').toLowerCase();
-
-    const matched = FALLBACK_PRACTICE_QUESTIONS.filter((q) => {
-      const qChap = q.chapterTitle.toLowerCase();
-      const qSubj = q.subjectSlug.toLowerCase();
-      const qDisplay = q.subjectDisplayName.toLowerCase();
-
-      if (targetChap && (qChap.includes(targetChap) || targetChap.includes(qChap))) return true;
-      if (targetSubj && (qSubj.includes(targetSubj) || qDisplay.includes(targetSubj) || targetSubj.includes(qSubj))) return true;
-      return false;
-    });
-
-    const pool = matched.length >= 5 ? matched : FALLBACK_PRACTICE_QUESTIONS;
+    // Same course and subject only — see fallbackBankScope.ts.
+    const pool = bankQuestionsForLesson(activeLesson.courseId ?? parseCourseId(program), activeLesson.subjectName || activeLesson.subjectId, activeLesson.chapterTitle || activeLesson.chapter_name);
     const finalSet = pool.slice(0, 10);
     setDppQuestions(finalSet);
     setDppAnswers({});
@@ -874,7 +864,9 @@ export default function LessonPlayerClient({ lessonId }: LessonPlayerClientProps
               </button>
             </div>
 
-            {/* Teacher Information Card */}
+            {/* Teacher card: only for a real batch with a named instructor. It used to
+                show "Samyak Senior Faculty · Senior Subject Specialist" when there was none. */}
+            {curriculumData?.batch?.instructor_name && (
             <div className="p-5 rounded-3xl bg-card border border-border/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm shrink-0">
@@ -882,10 +874,10 @@ export default function LessonPlayerClient({ lessonId }: LessonPlayerClientProps
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-foreground">
-                    {curriculumData?.batch?.instructor_name || 'Samyak Senior Faculty'}
+                    {curriculumData.batch.instructor_name}
                   </h4>
                   <p className="text-xs text-muted-foreground">
-                    Senior Subject Specialist · Batch: <span className="font-semibold text-foreground">{curriculumData?.batch?.title}</span>
+                    Batch: <span className="font-semibold text-foreground">{curriculumData.batch.title}</span>
                   </p>
                 </div>
               </div>
@@ -898,6 +890,7 @@ export default function LessonPlayerClient({ lessonId }: LessonPlayerClientProps
                 <span>Ask Faculty Doubt</span>
               </button>
             </div>
+            )}
           </div>
 
           {/* Right Column: Playlist, DPP, Notes, Resources, and Doubts Drawer */}
@@ -1068,6 +1061,9 @@ export default function LessonPlayerClient({ lessonId }: LessonPlayerClientProps
 
                   {/* Questions List */}
                   <div className="space-y-3">
+                    {dppQuestions.length === 0 && (
+                      <p className="py-6 text-center text-sm text-muted-foreground">No practice questions for this lesson yet.</p>
+                    )}
                     {dppQuestions.map((q, qIdx) => {
                       const isAnswered = Boolean(dppSubmitted[q.id]);
                       const userChoice = dppAnswers[q.id];

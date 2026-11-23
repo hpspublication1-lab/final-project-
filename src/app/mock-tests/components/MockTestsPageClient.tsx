@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { programTypeField, withProgramType } from '@/lib/courses/programColumn';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -11,6 +12,7 @@ import {
   Target, TrendingUp, CheckSquare, Compass, Bookmark, Heart
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { resolveRowCourse } from '@/lib/courses/courseIds';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProgram, normalizeCourseId } from '@/contexts/ProgramContext';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
@@ -64,8 +66,9 @@ interface MockExam {
   type: string;
   category: ExamCategory;
   difficulty: string;
-  attempts: number;
-  avgScore: number;
+  /** Real attempt count when known; null rather than a made-up number. */
+  attempts: number | null;
+  avgScore: number | null;
   isPremium: boolean;
   isFreeDiagnostic: boolean;
   scheduledStartIso?: string;
@@ -200,8 +203,8 @@ export default function MockTestsPageClient() {
         cat.category === 'diagnostic_free' ? 'Diagnostic Free' : 'Practice Test',
       category: cat.category,
       difficulty: cat.category === 'cee_full_200' ? 'Hard' : 'Medium',
-      attempts: cat.category === 'cee_full_200' ? 2450 : 1280,
-      avgScore: Math.round(cat.totalMarks * 0.62),
+      attempts: null,
+      avgScore: null,
       isPremium: cat.isPremium,
       isFreeDiagnostic: cat.isFreeDiagnostic,
       scheduledStartIso: cat.scheduledStartIso,
@@ -209,6 +212,26 @@ export default function MockTestsPageClient() {
       sections: cat.sections,
     }));
   }, []);
+
+  // The built-in catalog is CEE's and SEE's. Before, every course that wasn't SEE
+  // was shown the CEE tests — IELTS, IOE, Lok Sewa and NEB students included.
+  const catalogForCourse = (all: MockExam[], course: string): MockExam[] =>
+    all.filter((e) => {
+      if (course === 'see_class_10') {
+        return e.category === 'see_model' || e.category === 'see_subject' || e.id.startsWith('see-') || e.isFreeDiagnostic;
+      }
+      if (course === 'cee_medical') {
+        return (
+          e.category === 'cee_full_200' ||
+          e.category === 'cee_subject' ||
+          e.category === 'chapter_test' ||
+          e.category === 'scheduled_test' ||
+          e.category === 'practice_test' ||
+          e.id.startsWith('cee-')
+        );
+      }
+      return false;
+    });
 
   // Fetch exams from database and merge with canonical catalog
   useEffect(() => {
@@ -218,37 +241,17 @@ export default function MockTestsPageClient() {
         const supabase = createClient();
         const { data } = await supabase
           .from('exams')
-          .select('id, title, description, duration_minutes, total_marks, subject_id, is_published, created_at')
+          .select(await withProgramType(supabase, 'exams', 'id, title, description, duration_minutes, total_marks, subject_id, is_published, created_at'))
           .eq('is_published', true)
           .order('created_at', { ascending: false });
 
-        const isSeeActive = canonicalId === 'see_class_10';
-
-        // Filter canonical exams for current program
-        const programCanonical = canonicalExams.filter((e) => {
-          if (isSeeActive) {
-            return (
-              e.category === 'see_model' ||
-              e.category === 'see_subject' ||
-              e.id.startsWith('see-') ||
-              e.isFreeDiagnostic
-            );
-          } else {
-            return (
-              e.category === 'cee_full_200' ||
-              e.category === 'cee_subject' ||
-              e.category === 'chapter_test' ||
-              e.category === 'scheduled_test' ||
-              e.category === 'practice_test' ||
-              e.id.startsWith('cee-')
-            );
-          }
-        });
+        const programCanonical = catalogForCourse(canonicalExams, canonicalId);
 
         // Add any additional dynamic exams from database
         const dbExamsMapped: MockExam[] = (data || []).map((e: any) => {
           const title = (e.title || '').toLowerCase();
-          const isSee = title.includes('see') || title.includes('class 10');
+          // Marking scheme follows the course the exam belongs to, not words in its title.
+          const isSee = resolveRowCourse(e) === 'see_class_10';
           return {
             id: e.id,
             title: e.title,
@@ -262,16 +265,20 @@ export default function MockTestsPageClient() {
             type: isSee ? 'SEE Model' : 'CEE Mock',
             category: (isSee ? 'see_model' : 'cee_full_200') as ExamCategory,
             difficulty: 'Medium',
-            attempts: 320,
-            avgScore: Math.round((e.total_marks || 100) * 0.6),
+            attempts: null,
+            avgScore: null,
             isPremium: false,
             isFreeDiagnostic: false,
           };
-        }).filter((e) => (isSeeActive ? e.title.toLowerCase().includes('see') : !e.title.toLowerCase().includes('see')));
+        });
+        // Database exams belong to the course resolveRowCourse() places them in, not
+        // to "SEE if the title says see, otherwise CEE".
+        const ownExamIds = new Set((data || []).filter((e: any) => resolveRowCourse(e) === canonicalId).map((e: any) => e.id));
+        const ownDbExams = dbExamsMapped.filter((e) => ownExamIds.has(e.id));
 
         // Merge, deduplicating by ID
         const combined = [...programCanonical];
-        dbExamsMapped.forEach((de) => {
+        ownDbExams.forEach((de) => {
           if (!combined.some((c) => c.id === de.id)) {
             combined.push(de);
           }
@@ -280,7 +287,7 @@ export default function MockTestsPageClient() {
         setExams(combined);
       } catch (err) {
         console.error('Failed to load exams:', err);
-        setExams(canonicalExams);
+        setExams(catalogForCourse(canonicalExams, canonicalId));
       } finally {
         setExamsLoading(false);
       }
@@ -1338,9 +1345,13 @@ export default function MockTestsPageClient() {
 
                     {/* Marking Scheme Indicator */}
                     <div className="flex items-center justify-between text-xs text-muted-foreground mb-5 pb-3 border-b border-border/60">
-                      <span className="flex items-center gap-1 font-semibold">
-                        <BarChart3 size={12} className="text-primary" /> {exam.attempts.toLocaleString()} candidates
-                      </span>
+                      {exam.attempts != null ? (
+                        <span className="flex items-center gap-1 font-semibold">
+                          <BarChart3 size={12} className="text-primary" /> {exam.attempts.toLocaleString()} candidates
+                        </span>
+                      ) : (
+                        <span />
+                      )}
                       {exam.negativeMarking ? (
                         <span className="font-black text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md text-[11px]">
                           -0.25 Negative Marking
