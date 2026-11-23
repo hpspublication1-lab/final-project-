@@ -645,7 +645,9 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
             .
           </>
         ) : (
-          'New here? Google and phone codes create your account automatically.'
+          phoneAllowed
+            ? 'New here? Google and phone codes create your account automatically.'
+            : 'New here? Continue with Google and your account is created automatically.'
         )}
       </p>
 
