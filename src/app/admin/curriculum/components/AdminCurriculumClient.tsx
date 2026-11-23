@@ -13,7 +13,9 @@ import {
   ToggleLeft, ToggleRight, ArrowUpDown, Clock, Shield, Sparkles, Upload,
   Paperclip, ExternalLink, Download, ChevronUp, ChevronDown, Check, X
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+// sonner is the toaster mounted in app/layout.tsx; react-hot-toast's is not, so its
+// messages here (including "Choose the course…") were never shown.
+import { toast } from 'sonner';
 
 export default function AdminCurriculumClient() {
   const router = useRouter();
