@@ -619,29 +619,6 @@ export default function AuthPageClient({ initialMode = 'signin', isAdminPortal =
                     </button>
                   </div>
 
-                  {/* Admin Quick-Fill Helper Box */}
-                  {portalTarget === 'admin' && (
-                    <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-2 text-xs">
-                      <div>
-                        <p className="font-extrabold text-foreground">Super Admin Access</p>
-                        <p className="text-[11px] text-muted-foreground font-mono">admin@samyakcee.com</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setAuthMode('password');
-                          setPasswordAction('signin');
-                          setEmail('admin@samyakcee.com');
-                          setPassword('SamyakAdmin@2026');
-                          setError(null);
-                          toast.success('Admin credentials filled! Click Sign In below.');
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-primary text-white font-extrabold text-[11px] shadow-sm hover:opacity-95 transition-opacity shrink-0"
-                      >
-                        Auto-Fill Admin ID
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 {/* Preferred Hero Action: Google Sign In Button */}
