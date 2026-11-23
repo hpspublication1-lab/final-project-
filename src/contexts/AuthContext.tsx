@@ -197,9 +197,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       provider,
       options: {
         redirectTo: targetRedirect,
+        // No access_type: 'offline' — that asks Google for a long-lived refresh
+        // token the app never uses, and adds an extra consent screen.
         queryParams: {
           prompt: 'select_account',
-          access_type: 'offline',
           ...options?.queryParams,
         },
       },
