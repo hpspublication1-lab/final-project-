@@ -106,9 +106,31 @@ export function courseFromTitle(text: string | null | undefined): CanonicalCours
   if (hits.has('artificial_intelligence') && hits.has('ioe_engineering') && word('prompt[ _-]engineering').test(t)) {
     hits.delete('ioe_engineering');
   }
+  // "NEB" alone doesn't say which class.
+  if (word('neb').test(t) && !hits.has('neb_class_11') && !hits.has('neb_class_12')) {
+    hits.add('neb_class_11');
+    hits.add('neb_class_12');
+  }
   if (hits.size > 1) return 'ambiguous';
   return hits.size === 1 ? [...hits][0] : null;
 }
+
+/**
+ * Subject names the repo itself assigns to a course
+ * (supabase/migrations/20260809000000_cee_see_program_architecture.sql, steps 3–4).
+ * Matched exactly against a subject's `name`, never as a word in other text.
+ */
+export const KNOWN_SUBJECT_NAMES: Readonly<Record<string, CanonicalCourseId>> = {
+  biology: 'cee_medical',
+  chemistry: 'cee_medical',
+  physics: 'cee_medical',
+  mental_agility: 'cee_medical',
+  compulsory_science: 'see_class_10',
+  compulsory_math: 'see_class_10',
+  optional_math: 'see_class_10',
+  english: 'see_class_10',
+  social_studies: 'see_class_10',
+};
 
 export interface CourseOwnedRow {
   program_type?: string | null;
@@ -125,8 +147,10 @@ export interface CourseOwnedRow {
  * Strict mode: `program_type` only.
  * Transitional mode: `program_type` when it names a course other than CEE;
  * 'cee' proves nothing on its own, because it is also the column default every
- * untagged upload received. Then the course words in the row's own title, slug
- * or name. Then 'cee' as stored. Rows naming several courses are left out.
+ * untagged upload received. Then a subject name the repo assigns to a course
+ * (KNOWN_SUBJECT_NAMES). Then the course words in the row's own title, slug or
+ * name. Then CEE, when the row stores 'cee' or nothing at all. Rows naming
+ * several courses, 'digital', or an unknown value are left out.
  */
 export function resolveRowCourse(row: CourseOwnedRow | null | undefined): CanonicalCourseId | null {
   if (!row) return null;
@@ -135,9 +159,15 @@ export function resolveRowCourse(row: CourseOwnedRow | null | undefined): Canoni
   if (strictCourseIsolation()) return explicit;
   if (AMBIGUOUS_PROGRAM_VALUES.includes(stored)) return null;
   if (explicit && explicit !== 'cee_medical') return explicit;
+  const known = row.name ? KNOWN_SUBJECT_NAMES[String(row.name).trim().toLowerCase()] : undefined;
+  if (known) return known;
   const fromTitle = courseFromTitle([row.slug, row.name, row.display_name, row.title].filter(Boolean).join(' '));
   if (fromTitle === 'ambiguous') return null;
-  return fromTitle ?? explicit;
+  if (fromTitle) return fromTitle;
+  // 'cee' as stored — or nothing stored at all (the live database may have no
+  // program_type column): the column default, and what the site has always
+  // assumed for unlabelled rows. Any other unknown value is left out.
+  return explicit ?? (stored === '' ? 'cee_medical' : null);
 }
 
 /** `program_type` is VARCHAR(20) in every content table. */
