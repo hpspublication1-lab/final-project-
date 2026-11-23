@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'node:crypto';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
@@ -65,11 +66,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: qErr.message }, { status: 500 });
     }
 
-    // 5. Sanitize: Never leak correct_answer to client-facing responses
+    // 5. Sanitize: never leak correct_answer to client-facing responses.
+    //
+    // The internal bypass is for the Colyseus daemon only. Its key had a
+    // hardcoded fallback, and this repository is public — so anyone could read
+    // the default out of the source, send it as x-arena-internal-key, and be
+    // handed the answer key for any room. With no MULTIPLAYER_SECRET_KEY set,
+    // the bypass is now simply unavailable.
+    const expectedInternalKey = process.env.MULTIPLAYER_SECRET_KEY;
     const internalKey = req.headers.get('x-arena-internal-key');
     const isAuthorizedInternal = Boolean(
-      internalKey &&
-      internalKey === (process.env.MULTIPLAYER_SECRET_KEY || 'samyak_colyseus_multiplayer_secret_key_2026')
+      expectedInternalKey && internalKey && timingSafeEquals(internalKey, expectedInternalKey)
     );
 
     const sanitizedQuestions = (questions || []).map((q: any) => {
@@ -87,4 +94,12 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Failed to load arena questions' }, { status: 500 });
   }
+}
+
+/** Constant-time string compare, so a wrong key leaks nothing through timing. */
+function timingSafeEquals(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  if (left.length !== right.length) return false;
+  return timingSafeEqual(left, right);
 }

@@ -326,7 +326,14 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
           id: q.id,
           question: q.question_text,
           options: (q.options as string[]).slice(0, 4).map((text, i) => ({ id: OPTION_IDS[i], text })),
-          correctId: resolveCorrectId(q.correct_answer, q.options),
+          // '' means "not known to the client". /api/arena/questions strips
+          // correct_answer, so this stays empty until the server grades an
+          // answer and tells us. It must never default to a letter: doing so
+          // scored every question as if the answer were A.
+          correctId:
+            q.correct_answer === undefined || q.correct_answer === null
+              ? ''
+              : resolveCorrectId(q.correct_answer, q.options),
           subject: SUBJECT_LABELS[subMap.get(q.subject_id) as string] ?? 'Mixed',
           difficulty: q.difficulty ?? 'medium',
         }));
@@ -905,39 +912,72 @@ const FALLBACK_BATTLE_QUESTIONS: BattleQuestion[] = [
   // ── Answer handling — records locally, broadcasts live progress, and logs
   //    the answer server-side so the post-match summary can show a real
   //    question-by-question replay instead of made-up data ─────────────────
-  const handleAnswer = (optId: string) => {
+  const handleAnswer = async (optId: string) => {
     if (!current || myAnswer) return;
     const updatedAnswers = { ...answers, [current.id]: optId };
     setAnswers(updatedAnswers);
 
-    if (optId === current.correctId) {
+    // The server grades. /api/arena/questions withholds correct_answer, so the
+    // client has no key to grade against and should not have one. The verdict
+    // comes back and is written onto the question, which is what the score,
+    // the option highlighting and the progress dots all read.
+    let isCorrect = false;
+    let correctOption = '';
+
+    if (room && user) {
+      try {
+        const res = await fetch('/api/arena/answer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomId: room.id,
+            questionId: current.id,
+            questionIndex: currentIdx,
+            selectedOption: optId,
+            timeTakenSeconds: 54 - questionTimer,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          isCorrect = Boolean(data.isCorrect);
+          correctOption = String(data.correctOption ?? '');
+        } else {
+          console.error('Failed to grade battle answer:', data?.error);
+        }
+      } catch (err) {
+        console.error('Could not reach the arena grader:', err);
+      }
+    } else {
+      // Practice against the bot uses the built-in question set, which carries
+      // its own answers and never touches the server.
+      correctOption = current.correctId;
+      isCorrect = optId === current.correctId;
+    }
+
+    if (correctOption) {
+      setQuestions((qs) =>
+        qs.map((q) => (q.id === current.id ? { ...q, correctId: correctOption } : q))
+      );
+    }
+
+    if (isCorrect) {
       sounds.playCorrect();
     } else {
       sounds.playWrong();
     }
 
+    const graded = questions.map((q) =>
+      q.id === current.id ? { ...q, correctId: correctOption || q.correctId } : q
+    );
     const correctCount = Object.keys(updatedAnswers).filter(
-      (k) => updatedAnswers[k] === questions.find((q) => q.id === k)?.correctId
+      (k) => updatedAnswers[k] === graded.find((q) => q.id === k)?.correctId
     ).length;
     const incorrectCount = Object.keys(updatedAnswers).length - correctCount;
-    sendProgress({ questionIndex: currentIdx, score: (correctCount * 1) - (incorrectCount * 0.25), correctCount });
-
-    if (room && user) {
-      supabase
-        .from('battle_answers')
-        .insert({
-          room_id: room.id,
-          player_id: user.id,
-          question_id: current.id,
-          question_index: currentIdx,
-          selected_option: optId,
-          is_correct: optId === current.correctId,
-          time_taken_seconds: 54 - questionTimer,
-        })
-        .then(({ error }) => {
-          if (error) console.error('Failed to log battle answer:', error.message);
-        });
-    }
+    sendProgress({
+      questionIndex: currentIdx,
+      score: correctCount * 1 - incorrectCount * 0.25,
+      correctCount,
+    });
   };
 
   // ── Private room: create ────────────────────────────────────────────────────

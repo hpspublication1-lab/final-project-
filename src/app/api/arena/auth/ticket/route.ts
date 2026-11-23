@@ -8,10 +8,15 @@ import { blockSensitiveActionDuringImpersonation } from '@/lib/auth/impersonatio
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Signing key for multiplayer tickets.
+ *
+ * The literal fallback that used to sit here is published in this repository,
+ * so anyone could mint a valid ticket. There is no safe default for a signing
+ * key: if neither variable is set, ticket issuing fails loudly instead.
+ */
 const MULTIPLAYER_SECRET =
-  process.env.MULTIPLAYER_SECRET_KEY ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'samyak_colyseus_multiplayer_secret_key_2026';
+  process.env.MULTIPLAYER_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const TICKET_EXPIRY_SECONDS = 60; // 60 seconds TTL
 
@@ -126,7 +131,14 @@ export async function POST(req: NextRequest) {
       exp: nowSec + TICKET_EXPIRY_SECONDS,
     };
 
-    // 5. Sign JWT ticket with server-side secret
+    // 5. Sign JWT ticket with server-side secret.
+    // Refuse rather than sign with an empty key, which would produce a ticket
+    // anyone could forge.
+    if (!MULTIPLAYER_SECRET) {
+      console.error('MULTIPLAYER_SECRET_KEY is not configured; refusing to issue an arena ticket.');
+      return NextResponse.json({ error: 'Multiplayer is not configured' }, { status: 503 });
+    }
+
     const ticket = jwt.sign(payload, MULTIPLAYER_SECRET, { algorithm: 'HS256' });
 
     const wsEndpoint =
