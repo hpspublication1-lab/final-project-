@@ -1,0 +1,554 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+-- PROPOSED — NOT APPLIED. CEE Visual Intelligence: Foundation schema.
+-- Samyak Guru, 24 Nov 2026. See docs/cee-visual/DATABASE_DESIGN.md.
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Additive only: creates new cee_* tables, functions and triggers. It does not
+-- alter, reference by foreign key, or lock any existing table. (legacy_subject_id
+-- and legacy_chapter_id are plain uuids, checked by the service, so deleting an
+-- old chapter keeps working exactly as today.)
+--
+-- Must be re-checked against a schema dump of the live database before use; the
+-- repo's migrations are known not to match live (CURRENT_ARCHITECTURE.md §5).
+-- Undo: 20261124_cee_visual_foundation_ROLLBACK.sql (drops only what this adds).
+-- ═══════════════════════════════════════════════════════════════════════════
+
+BEGIN;
+
+-- ── Program ids: the same canonical ids as src/lib/courses/courseIds.ts ─────
+CREATE DOMAIN cee_program_code AS text
+  CHECK (VALUE IN ('cee_medical','see_class_10','neb_class_11','neb_class_12','ioe_engineering',
+                   'lok_sewa','ielts','digital_marketing','artificial_intelligence'));
+
+-- ── Feature flag, read by the server (no redeploy to switch) ───────────────
+CREATE TABLE public.cee_settings (
+  key         text PRIMARY KEY,
+  value       jsonb NOT NULL,
+  updated_by  uuid,
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO public.cee_settings (key, value) VALUES ('cee_visual_enabled', 'false');
+
+-- ── Syllabus versions ─────────────────────────────────────────────────────
+CREATE TABLE public.cee_syllabus_versions (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  program_code   cee_program_code NOT NULL,
+  label          text NOT NULL,
+  source_url     text,
+  source_sha256  char(64),
+  effective_date date,
+  status         text NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT','VERIFIED','RETIRED')),
+  verified_by    uuid,
+  verified_at    timestamptz,
+  notes          text,
+  created_by     uuid NOT NULL,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (program_code, label),
+  CHECK (status <> 'VERIFIED' OR (verified_by IS NOT NULL AND verified_at IS NOT NULL AND source_sha256 IS NOT NULL))
+);
+
+-- ── Curriculum tree: SUBJECT → CHAPTER → TOPIC (topics may nest) ──────────
+CREATE TABLE public.cee_curriculum_nodes (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  syllabus_version_id uuid NOT NULL REFERENCES public.cee_syllabus_versions(id) ON DELETE RESTRICT,
+  parent_id           uuid REFERENCES public.cee_curriculum_nodes(id) ON DELETE RESTRICT,
+  node_type           text NOT NULL CHECK (node_type IN ('SUBJECT','CHAPTER','TOPIC')),
+  code                text NOT NULL CHECK (code ~ '^[a-z0-9][a-z0-9_-]{0,63}$'),
+  title               text NOT NULL,
+  sort_key            integer NOT NULL DEFAULT 0,
+  legacy_subject_id   uuid,   -- existing public.subjects.id (no FK on purpose)
+  legacy_chapter_id   uuid,   -- existing public.chapters.id (no FK on purpose)
+  created_by          uuid NOT NULL,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  CHECK ((node_type = 'SUBJECT') = (parent_id IS NULL))
+);
+-- Sibling codes unique; roots handled separately (no nullable-unique trap).
+CREATE UNIQUE INDEX cee_nodes_sibling_code ON public.cee_curriculum_nodes (parent_id, code) WHERE parent_id IS NOT NULL;
+CREATE UNIQUE INDEX cee_nodes_root_code    ON public.cee_curriculum_nodes (syllabus_version_id, code) WHERE parent_id IS NULL;
+
+CREATE FUNCTION public.cee_check_node() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE p record; hops int := 0; cur uuid;
+BEGIN
+  IF NEW.parent_id IS NULL THEN RETURN NEW; END IF;
+  SELECT * INTO p FROM public.cee_curriculum_nodes WHERE id = NEW.parent_id;
+  IF p.syllabus_version_id <> NEW.syllabus_version_id THEN
+    RAISE EXCEPTION 'CURRICULUM_SCOPE: parent belongs to another syllabus version' USING ERRCODE = 'check_violation';
+  END IF;
+  IF NOT ((NEW.node_type = 'CHAPTER' AND p.node_type = 'SUBJECT')
+       OR (NEW.node_type = 'TOPIC'   AND p.node_type IN ('CHAPTER','TOPIC'))) THEN
+    RAISE EXCEPTION 'CURRICULUM_SHAPE: % cannot sit under %', NEW.node_type, p.node_type USING ERRCODE = 'check_violation';
+  END IF;
+  cur := NEW.parent_id;                         -- walk up: reject cycles
+  WHILE cur IS NOT NULL LOOP
+    IF cur = NEW.id THEN RAISE EXCEPTION 'CURRICULUM_CYCLE' USING ERRCODE = 'check_violation'; END IF;
+    hops := hops + 1;
+    IF hops > 32 THEN RAISE EXCEPTION 'CURRICULUM_DEPTH' USING ERRCODE = 'check_violation'; END IF;
+    SELECT parent_id INTO cur FROM public.cee_curriculum_nodes WHERE id = cur;
+  END LOOP;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_check_node BEFORE INSERT OR UPDATE ON public.cee_curriculum_nodes
+  FOR EACH ROW EXECUTE FUNCTION public.cee_check_node();
+
+CREATE TABLE public.cee_learning_objectives (
+  id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  node_id   uuid NOT NULL REFERENCES public.cee_curriculum_nodes(id) ON DELETE RESTRICT,
+  code      text NOT NULL,
+  text      text NOT NULL,
+  sort_key  integer NOT NULL DEFAULT 0,
+  UNIQUE (node_id, code)
+);
+
+-- ── Lessons and immutable revisions ───────────────────────────────────────
+CREATE TABLE public.cee_lessons (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  program_code  cee_program_code NOT NULL,
+  slug          text NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9][a-z0-9-]{1,95}$'),
+  title         text NOT NULL,
+  created_by    uuid NOT NULL,
+  created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.cee_lesson_revisions (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id        uuid NOT NULL REFERENCES public.cee_lessons(id) ON DELETE RESTRICT,
+  revision_number  integer NOT NULL CHECK (revision_number > 0),
+  status           text NOT NULL DEFAULT 'DRAFT'
+                   CHECK (status IN ('DRAFT','IN_REVIEW','CHANGES_REQUESTED','APPROVED','PUBLISHED','SUPERSEDED','ARCHIVED')),
+  content          jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by       uuid NOT NULL,
+  created_at       timestamptz NOT NULL DEFAULT now(),
+  submitted_at     timestamptz,
+  UNIQUE (lesson_id, revision_number)
+);
+
+CREATE TABLE public.cee_lesson_mappings (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id          uuid NOT NULL REFERENCES public.cee_lessons(id) ON DELETE RESTRICT,
+  node_id            uuid NOT NULL REFERENCES public.cee_curriculum_nodes(id) ON DELETE RESTRICT,
+  cross_program      boolean NOT NULL DEFAULT false,
+  status             text NOT NULL DEFAULT 'PROPOSED' CHECK (status IN ('PROPOSED','APPROVED','REJECTED')),
+  approved_by        uuid,
+  approved_at        timestamptz,
+  created_by         uuid NOT NULL,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (lesson_id, node_id)
+);
+
+-- A lesson may map only into its own program, unless the row is explicitly
+-- marked cross-program (which the service gates behind its own review).
+CREATE FUNCTION public.cee_check_mapping() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE lp text; np text;
+BEGIN
+  SELECT program_code INTO lp FROM public.cee_lessons WHERE id = NEW.lesson_id;
+  SELECT s.program_code INTO np FROM public.cee_curriculum_nodes n
+    JOIN public.cee_syllabus_versions s ON s.id = n.syllabus_version_id WHERE n.id = NEW.node_id;
+  IF lp <> np AND NOT NEW.cross_program THEN
+    RAISE EXCEPTION 'CROSS_PROGRAM_MAPPING: lesson is % but node is %', lp, np USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_check_mapping BEFORE INSERT OR UPDATE ON public.cee_lesson_mappings
+  FOR EACH ROW EXECUTE FUNCTION public.cee_check_mapping();
+
+-- ── Assets and immutable versions ─────────────────────────────────────────
+CREATE TABLE public.cee_visual_assets (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  program_code   cee_program_code NOT NULL,
+  title          text NOT NULL,
+  kind           text NOT NULL CHECK (kind IN ('MODEL_3D','DIAGRAM_2D','ANIMATION_2D','VIDEO','SIMULATION')),
+  license        text,          -- e.g. 'owned', 'CC-BY-4.0', 'licensed:<vendor>'
+  source_credit  text,
+  created_by     uuid NOT NULL,
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.cee_asset_versions (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  asset_id           uuid NOT NULL REFERENCES public.cee_visual_assets(id) ON DELETE RESTRICT,
+  version_number     integer NOT NULL CHECK (version_number > 0),
+  status             text NOT NULL DEFAULT 'UPLOADING'
+                     CHECK (status IN ('UPLOADING','VALIDATING','VALIDATED','REJECTED')),
+  quarantine_key     text NOT NULL UNIQUE,
+  published_key      text UNIQUE,
+  sha256             char(64) NOT NULL CHECK (sha256 ~ '^[0-9a-f]{64}$'),
+  size_bytes         bigint NOT NULL CHECK (size_bytes > 0 AND size_bytes <= 52428800),
+  mime_type          text NOT NULL,
+  scan_status        text NOT NULL DEFAULT 'NOT_SCANNED' CHECK (scan_status IN ('NOT_SCANNED','CLEAN','INFECTED','ERROR')),
+  manifest           jsonb NOT NULL DEFAULT '{}'::jsonb,   -- hotspots, layers, sequences, fallback (zod-validated)
+  validation_report  jsonb,
+  locked_at          timestamptz,   -- set when first approved; bytes and manifest frozen from then on
+  created_by         uuid NOT NULL,
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (asset_id, version_number),
+  CHECK (published_key IS NULL OR status = 'VALIDATED')
+);
+
+CREATE TABLE public.cee_asset_jobs (
+  id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  asset_version_id  uuid NOT NULL REFERENCES public.cee_asset_versions(id) ON DELETE RESTRICT,
+  step              text NOT NULL CHECK (step IN ('VERIFY_UPLOAD','VALIDATE','SCAN','PROMOTE')),
+  status            text NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','RUNNING','DONE','FAILED','DEAD')),
+  attempts          integer NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 3),
+  last_error        text,
+  updated_at        timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (asset_version_id, step)
+);
+
+CREATE TABLE public.cee_lesson_assets (
+  lesson_revision_id  uuid NOT NULL REFERENCES public.cee_lesson_revisions(id) ON DELETE RESTRICT,
+  asset_version_id    uuid NOT NULL REFERENCES public.cee_asset_versions(id) ON DELETE RESTRICT,
+  role                text NOT NULL DEFAULT 'PRIMARY' CHECK (role IN ('PRIMARY','FALLBACK','SUPPORTING')),
+  sort_key            integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (lesson_revision_id, asset_version_id)
+);
+
+-- ── Questions: immutable revisions, pinned to lesson revisions ────────────
+CREATE TABLE public.cee_question_revisions (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  question_key        uuid NOT NULL,                 -- stable identity across revisions
+  revision_number     integer NOT NULL CHECK (revision_number > 0),
+  program_code        cee_program_code NOT NULL,
+  node_id             uuid REFERENCES public.cee_curriculum_nodes(id) ON DELETE RESTRICT,
+  objective_id        uuid REFERENCES public.cee_learning_objectives(id) ON DELETE RESTRICT,
+  stem                text NOT NULL,
+  options             jsonb NOT NULL CHECK (jsonb_typeof(options) = 'array' AND jsonb_array_length(options) = 4),
+  answer_key          char(1) NOT NULL CHECK (answer_key IN ('A','B','C','D')),
+  rationale           text NOT NULL,
+  difficulty          text CHECK (difficulty IN ('easy','medium','hard')),
+  status              text NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT','IN_REVIEW','APPROVED','RETIRED')),
+  asset_version_id    uuid REFERENCES public.cee_asset_versions(id) ON DELETE RESTRICT,
+  visual_state        jsonb,
+  source_question_id  uuid,      -- existing public.questions.id it was imported from, if any
+  created_by          uuid NOT NULL,
+  created_at          timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (question_key, revision_number)
+);
+
+CREATE TABLE public.cee_lesson_questions (
+  lesson_revision_id    uuid NOT NULL REFERENCES public.cee_lesson_revisions(id) ON DELETE RESTRICT,
+  question_revision_id  uuid NOT NULL REFERENCES public.cee_question_revisions(id) ON DELETE RESTRICT,
+  sort_key              integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (lesson_revision_id, question_revision_id)
+);
+
+-- ── Reviews: requests and append-only decisions ───────────────────────────
+CREATE TABLE public.cee_review_requests (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  entity_type   text NOT NULL CHECK (entity_type IN ('LESSON_REVISION','ASSET_VERSION','QUESTION_REVISION','SYLLABUS_VERSION','LESSON_MAPPING')),
+  entity_id     uuid NOT NULL,
+  gate          text NOT NULL CHECK (gate IN ('SYLLABUS_MAPPING','SCIENTIFIC','VISUAL','ASSESSMENT','ACCESSIBILITY','RIGHTS')),
+  status        text NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','DECIDED','CANCELLED')),
+  requested_by  uuid NOT NULL,
+  assigned_to   uuid,
+  requested_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX cee_one_open_request ON public.cee_review_requests (entity_type, entity_id, gate) WHERE status = 'OPEN';
+
+CREATE TABLE public.cee_review_decisions (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id   uuid NOT NULL REFERENCES public.cee_review_requests(id) ON DELETE RESTRICT,
+  decision     text NOT NULL CHECK (decision IN ('APPROVE','REQUEST_CHANGES','REJECT')),
+  comments     text,
+  reviewer_id  uuid NOT NULL,
+  decided_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- ── Publications: one active per lesson ───────────────────────────────────
+CREATE TABLE public.cee_publications (
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  lesson_id           uuid NOT NULL REFERENCES public.cee_lessons(id) ON DELETE RESTRICT,
+  lesson_revision_id  uuid NOT NULL UNIQUE REFERENCES public.cee_lesson_revisions(id) ON DELETE RESTRICT,
+  published_by        uuid NOT NULL,
+  published_at        timestamptz NOT NULL DEFAULT now(),
+  superseded_at       timestamptz,
+  archived_at         timestamptz,
+  idempotency_key     text NOT NULL UNIQUE
+);
+CREATE UNIQUE INDEX cee_one_active_publication ON public.cee_publications (lesson_id)
+  WHERE superseded_at IS NULL AND archived_at IS NULL;
+
+-- ── Scoped roles ──────────────────────────────────────────────────────────
+CREATE TABLE public.cee_role_assignments (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id          uuid NOT NULL,
+  role_key         text NOT NULL CHECK (role_key IN ('ACADEMIC_DIRECTOR','SUBJECT_EXPERT','ANIMATOR','EDITOR',
+                                                     'QUESTION_REVIEWER','ACCESSIBILITY_REVIEWER','RIGHTS_REVIEWER','PUBLISHER')),
+  program_code     cee_program_code NOT NULL,
+  subject_node_id  uuid REFERENCES public.cee_curriculum_nodes(id) ON DELETE RESTRICT,  -- NULL = whole program
+  granted_by       uuid NOT NULL,
+  granted_at       timestamptz NOT NULL DEFAULT now(),
+  revoked_at       timestamptz
+);
+CREATE UNIQUE INDEX cee_role_active ON public.cee_role_assignments
+  (user_id, role_key, program_code, coalesce(subject_node_id, '00000000-0000-0000-0000-000000000000'::uuid))
+  WHERE revoked_at IS NULL;
+
+-- ── Audit (append-only) ───────────────────────────────────────────────────
+CREATE TABLE public.cee_audit_logs (
+  id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  actor_id     uuid,
+  action       text NOT NULL,
+  entity_type  text NOT NULL,
+  entity_id    uuid,
+  before_json  jsonb,
+  after_json   jsonb,
+  request_id   text,
+  created_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- ── Student progress, events, attempts ────────────────────────────────────
+CREATE TABLE public.cee_student_progress (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id      uuid NOT NULL,
+  lesson_id       uuid NOT NULL REFERENCES public.cee_lessons(id) ON DELETE RESTRICT,
+  publication_id  uuid NOT NULL REFERENCES public.cee_publications(id) ON DELETE RESTRICT,
+  state           text NOT NULL DEFAULT 'IN_PROGRESS' CHECK (state IN ('IN_PROGRESS','COMPLETED')),
+  objectives_met  jsonb NOT NULL DEFAULT '[]'::jsonb,
+  best_score      numeric(5,2),
+  updated_at      timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (student_id, publication_id)
+);
+
+CREATE TABLE public.cee_player_events (
+  event_id          uuid PRIMARY KEY,                 -- client-generated: duplicates are rejected
+  student_id        uuid NOT NULL,
+  publication_id    uuid NOT NULL REFERENCES public.cee_publications(id) ON DELETE RESTRICT,
+  asset_version_id  uuid REFERENCES public.cee_asset_versions(id) ON DELETE RESTRICT,
+  type              text NOT NULL CHECK (type IN ('LESSON_OPENED','PLAYER_READY','PLAYER_ERROR','FALLBACK_SHOWN',
+                                                  'STRUCTURE_SELECTED','SEQUENCE_STEP','SEQUENCE_COMPLETED','SECTION_READ')),
+  payload           jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (octet_length(payload::text) <= 8192),
+  occurred_at       timestamptz NOT NULL,
+  received_at       timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX cee_events_student_pub ON public.cee_player_events (student_id, publication_id);
+
+CREATE TABLE public.cee_attempts (
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id       uuid NOT NULL,
+  publication_id   uuid NOT NULL REFERENCES public.cee_publications(id) ON DELETE RESTRICT,
+  answers          jsonb NOT NULL,
+  score            numeric(6,2) NOT NULL,
+  max_score        numeric(6,2) NOT NULL,
+  idempotency_key  text NOT NULL UNIQUE,
+  submitted_at     timestamptz NOT NULL DEFAULT now()
+);
+
+-- ═══ Immutability and append-only rules ════════════════════════════════════
+
+-- Lesson revisions: content frozen from the moment it is submitted for review,
+-- so every approval applies to exactly the content reviewed. "Revise" after
+-- CHANGES_REQUESTED creates a NEW revision; the old one is never edited.
+CREATE FUNCTION public.cee_guard_lesson_revision() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.status <> 'DRAFT' THEN RAISE EXCEPTION 'IMMUTABLE_REVISION: only drafts can be deleted' USING ERRCODE = 'check_violation'; END IF;
+    RETURN OLD;
+  END IF;
+  IF OLD.status <> 'DRAFT'
+     AND (NEW.content IS DISTINCT FROM OLD.content OR NEW.lesson_id <> OLD.lesson_id OR NEW.revision_number <> OLD.revision_number) THEN
+    RAISE EXCEPTION 'IMMUTABLE_REVISION: create a new revision instead' USING ERRCODE = 'check_violation';
+  END IF;
+  IF NEW.status <> OLD.status AND NOT (
+       (OLD.status = 'DRAFT'             AND NEW.status = 'IN_REVIEW')
+    OR (OLD.status = 'IN_REVIEW'         AND NEW.status IN ('CHANGES_REQUESTED','APPROVED'))
+    OR (OLD.status = 'APPROVED'          AND NEW.status = 'PUBLISHED')
+    OR (OLD.status = 'PUBLISHED'         AND NEW.status IN ('SUPERSEDED','ARCHIVED'))
+  ) THEN
+    RAISE EXCEPTION 'ILLEGAL_TRANSITION: % -> %', OLD.status, NEW.status USING ERRCODE = 'check_violation';
+  END IF;
+  IF NEW.status = 'PUBLISHED' AND OLD.status <> 'PUBLISHED'
+     AND coalesce(current_setting('cee.publishing', true), '') <> 'on' THEN
+    RAISE EXCEPTION 'PUBLISH_VIA_FUNCTION: use cee_publish_revision()' USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_guard_lesson_revision BEFORE UPDATE OR DELETE ON public.cee_lesson_revisions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_lesson_revision();
+
+-- Asset versions: bytes, checksum and manifest frozen once locked.
+CREATE FUNCTION public.cee_guard_asset_version() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN RAISE EXCEPTION 'IMMUTABLE_ASSET: asset versions are never deleted' USING ERRCODE = 'check_violation'; END IF;
+  IF NEW.sha256 <> OLD.sha256 OR NEW.quarantine_key <> OLD.quarantine_key OR NEW.size_bytes <> OLD.size_bytes THEN
+    RAISE EXCEPTION 'IMMUTABLE_ASSET: bytes never change; upload a new version' USING ERRCODE = 'check_violation';
+  END IF;
+  IF OLD.published_key IS NOT NULL AND NEW.published_key IS DISTINCT FROM OLD.published_key THEN
+    RAISE EXCEPTION 'IMMUTABLE_ASSET: published key is permanent' USING ERRCODE = 'check_violation';
+  END IF;
+  IF OLD.locked_at IS NOT NULL AND (NEW.manifest IS DISTINCT FROM OLD.manifest OR NEW.locked_at IS DISTINCT FROM OLD.locked_at) THEN
+    RAISE EXCEPTION 'IMMUTABLE_ASSET: approved manifest is frozen; create a new version' USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_guard_asset_version BEFORE UPDATE OR DELETE ON public.cee_asset_versions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_asset_version();
+
+-- Question revisions: frozen once approved.
+CREATE FUNCTION public.cee_guard_question_revision() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.status <> 'DRAFT' THEN RAISE EXCEPTION 'IMMUTABLE_QUESTION' USING ERRCODE = 'check_violation'; END IF;
+    RETURN OLD;
+  END IF;
+  IF OLD.status IN ('IN_REVIEW','APPROVED','RETIRED') AND (
+       NEW.stem IS DISTINCT FROM OLD.stem OR NEW.options IS DISTINCT FROM OLD.options
+    OR NEW.answer_key IS DISTINCT FROM OLD.answer_key OR NEW.rationale IS DISTINCT FROM OLD.rationale
+    OR NEW.asset_version_id IS DISTINCT FROM OLD.asset_version_id OR NEW.visual_state IS DISTINCT FROM OLD.visual_state) THEN
+    RAISE EXCEPTION 'IMMUTABLE_QUESTION: create a new revision instead' USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_guard_question_revision BEFORE UPDATE OR DELETE ON public.cee_question_revisions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_question_revision();
+
+-- An asset version's manifest freezes when its first review is requested.
+CREATE FUNCTION public.cee_lock_on_review() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.entity_type = 'ASSET_VERSION' THEN
+    UPDATE public.cee_asset_versions SET locked_at = now() WHERE id = NEW.entity_id AND locked_at IS NULL;
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_lock_on_review AFTER INSERT ON public.cee_review_requests
+  FOR EACH ROW EXECUTE FUNCTION public.cee_lock_on_review();
+
+-- Append-only tables.
+CREATE FUNCTION public.cee_append_only() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION 'APPEND_ONLY: % rows cannot be changed or deleted', TG_TABLE_NAME USING ERRCODE = 'check_violation';
+END $$;
+CREATE TRIGGER cee_decisions_append_only BEFORE UPDATE OR DELETE ON public.cee_review_decisions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_append_only();
+CREATE TRIGGER cee_audit_append_only BEFORE UPDATE OR DELETE ON public.cee_audit_logs
+  FOR EACH ROW EXECUTE FUNCTION public.cee_append_only();
+CREATE TRIGGER cee_events_append_only BEFORE UPDATE OR DELETE ON public.cee_player_events
+  FOR EACH ROW EXECUTE FUNCTION public.cee_append_only();
+CREATE TRIGGER cee_attempts_append_only BEFORE UPDATE OR DELETE ON public.cee_attempts
+  FOR EACH ROW EXECUTE FUNCTION public.cee_append_only();
+
+-- Separation of duties: nobody decides on a request for something they created.
+CREATE FUNCTION public.cee_check_decision() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE r record; creator uuid;
+BEGIN
+  SELECT * INTO r FROM public.cee_review_requests WHERE id = NEW.request_id;
+  IF r.status <> 'OPEN' THEN RAISE EXCEPTION 'REVIEW_CLOSED' USING ERRCODE = 'check_violation'; END IF;
+  creator := CASE r.entity_type
+    WHEN 'LESSON_REVISION'   THEN (SELECT created_by FROM public.cee_lesson_revisions   WHERE id = r.entity_id)
+    WHEN 'ASSET_VERSION'     THEN (SELECT created_by FROM public.cee_asset_versions     WHERE id = r.entity_id)
+    WHEN 'QUESTION_REVISION' THEN (SELECT created_by FROM public.cee_question_revisions WHERE id = r.entity_id)
+    WHEN 'SYLLABUS_VERSION'  THEN (SELECT created_by FROM public.cee_syllabus_versions  WHERE id = r.entity_id)
+    WHEN 'LESSON_MAPPING'    THEN (SELECT created_by FROM public.cee_lesson_mappings    WHERE id = r.entity_id)
+  END;
+  IF creator = NEW.reviewer_id THEN
+    RAISE EXCEPTION 'SOD_VIOLATION: the creator cannot review their own work' USING ERRCODE = 'check_violation';
+  END IF;
+  UPDATE public.cee_review_requests SET status = 'DECIDED' WHERE id = NEW.request_id;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_check_decision BEFORE INSERT ON public.cee_review_decisions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_check_decision();
+
+-- ═══ Publication transaction ═══════════════════════════════════════════════
+-- Gates required for a lesson revision. Asset versions need SCIENTIFIC, VISUAL
+-- and RIGHTS on the exact version, plus VALIDATED + CLEAN + a fallback for 3D.
+CREATE FUNCTION public.cee_latest_decision(p_type text, p_id uuid, p_gate text) RETURNS text
+LANGUAGE sql STABLE AS $$
+  SELECT d.decision FROM public.cee_review_decisions d
+  JOIN public.cee_review_requests r ON r.id = d.request_id
+  WHERE r.entity_type = p_type AND r.entity_id = p_id AND r.gate = p_gate
+  ORDER BY d.decided_at DESC, d.id DESC LIMIT 1
+$$;
+
+CREATE FUNCTION public.cee_publish_revision(p_revision uuid, p_publisher uuid, p_idempotency_key text)
+RETURNS uuid LANGUAGE plpgsql AS $$
+DECLARE rev record; existing uuid; pub uuid; g text; a record; q record; m record;
+BEGIN
+  SELECT id INTO existing FROM public.cee_publications WHERE idempotency_key = p_idempotency_key;
+  IF existing IS NOT NULL THEN RETURN existing; END IF;            -- safe retry
+
+  SELECT * INTO rev FROM public.cee_lesson_revisions WHERE id = p_revision FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND' USING ERRCODE = 'no_data_found'; END IF;
+  IF rev.status <> 'APPROVED' THEN RAISE EXCEPTION 'STATE_CONFLICT: revision is %', rev.status USING ERRCODE = 'check_violation'; END IF;
+  IF rev.created_by = p_publisher THEN RAISE EXCEPTION 'SOD_VIOLATION: the author cannot publish' USING ERRCODE = 'check_violation'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.cee_role_assignments ra JOIN public.cee_lessons l ON l.id = rev.lesson_id
+                 WHERE ra.user_id = p_publisher AND ra.role_key = 'PUBLISHER' AND ra.program_code = l.program_code AND ra.revoked_at IS NULL) THEN
+    RAISE EXCEPTION 'FORBIDDEN: no PUBLISHER role for this program' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+
+  FOREACH g IN ARRAY ARRAY['SYLLABUS_MAPPING','SCIENTIFIC','VISUAL','ASSESSMENT','ACCESSIBILITY','RIGHTS'] LOOP
+    IF coalesce(public.cee_latest_decision('LESSON_REVISION', p_revision, g), '') <> 'APPROVE' THEN
+      RAISE EXCEPTION 'ACADEMIC_APPROVAL_REQUIRED: gate % not approved', g USING ERRCODE = 'check_violation';
+    END IF;
+  END LOOP;
+
+  -- At least one approved mapping, into a VERIFIED syllabus.
+  IF NOT EXISTS (SELECT 1 FROM public.cee_lesson_mappings mp
+                 JOIN public.cee_curriculum_nodes n ON n.id = mp.node_id
+                 JOIN public.cee_syllabus_versions s ON s.id = n.syllabus_version_id
+                 WHERE mp.lesson_id = rev.lesson_id AND mp.status = 'APPROVED' AND s.status = 'VERIFIED') THEN
+    RAISE EXCEPTION 'MAPPING_NOT_VERIFIED' USING ERRCODE = 'check_violation';
+  END IF;
+
+  FOR a IN SELECT av.*, va.kind FROM public.cee_lesson_assets la
+           JOIN public.cee_asset_versions av ON av.id = la.asset_version_id
+           JOIN public.cee_visual_assets va ON va.id = av.asset_id
+           WHERE la.lesson_revision_id = p_revision LOOP
+    IF a.status <> 'VALIDATED' OR a.scan_status <> 'CLEAN' OR a.published_key IS NULL OR a.locked_at IS NULL THEN
+      RAISE EXCEPTION 'ASSET_NOT_READY: %', a.id USING ERRCODE = 'check_violation';
+    END IF;
+    FOREACH g IN ARRAY ARRAY['SCIENTIFIC','VISUAL','RIGHTS'] LOOP
+      IF coalesce(public.cee_latest_decision('ASSET_VERSION', a.id, g), '') <> 'APPROVE' THEN
+        RAISE EXCEPTION 'ASSET_APPROVAL_REQUIRED: % on %', g, a.id USING ERRCODE = 'check_violation';
+      END IF;
+    END LOOP;
+  END LOOP;
+  IF EXISTS (SELECT 1 FROM public.cee_lesson_assets la JOIN public.cee_asset_versions av ON av.id = la.asset_version_id
+             JOIN public.cee_visual_assets va ON va.id = av.asset_id
+             WHERE la.lesson_revision_id = p_revision AND va.kind = 'MODEL_3D')
+     AND NOT EXISTS (SELECT 1 FROM public.cee_lesson_assets WHERE lesson_revision_id = p_revision AND role = 'FALLBACK') THEN
+    RAISE EXCEPTION 'FALLBACK_REQUIRED' USING ERRCODE = 'check_violation';
+  END IF;
+
+  FOR q IN SELECT qr.* FROM public.cee_lesson_questions lq JOIN public.cee_question_revisions qr ON qr.id = lq.question_revision_id
+           WHERE lq.lesson_revision_id = p_revision LOOP
+    IF q.status <> 'APPROVED' THEN RAISE EXCEPTION 'QUESTION_NOT_APPROVED: %', q.id USING ERRCODE = 'check_violation'; END IF;
+  END LOOP;
+
+  PERFORM set_config('cee.publishing', 'on', true);
+  UPDATE public.cee_lesson_revisions SET status = 'SUPERSEDED'
+   WHERE id IN (SELECT lesson_revision_id FROM public.cee_publications
+                WHERE lesson_id = rev.lesson_id AND superseded_at IS NULL AND archived_at IS NULL);
+  UPDATE public.cee_publications SET superseded_at = now()
+   WHERE lesson_id = rev.lesson_id AND superseded_at IS NULL AND archived_at IS NULL;
+  UPDATE public.cee_lesson_revisions SET status = 'PUBLISHED' WHERE id = p_revision;
+  INSERT INTO public.cee_publications (lesson_id, lesson_revision_id, published_by, idempotency_key)
+  VALUES (rev.lesson_id, p_revision, p_publisher, p_idempotency_key) RETURNING id INTO pub;
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id, after_json)
+  VALUES (p_publisher, 'PUBLISH', 'LESSON_REVISION', p_revision, jsonb_build_object('publication_id', pub));
+  PERFORM set_config('cee.publishing', 'off', true);
+  RETURN pub;
+END $$;
+
+-- ═══ Access: server only ═══════════════════════════════════════════════════
+-- Row security on, no policies for anon/authenticated: the browser can't read or
+-- write any cee_* table. Route handlers use the service role after verifyCeeScope().
+DO $rls$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['cee_settings','cee_syllabus_versions','cee_curriculum_nodes','cee_learning_objectives',
+    'cee_lessons','cee_lesson_revisions','cee_lesson_mappings','cee_visual_assets','cee_asset_versions','cee_asset_jobs',
+    'cee_lesson_assets','cee_question_revisions','cee_lesson_questions','cee_review_requests','cee_review_decisions',
+    'cee_publications','cee_role_assignments','cee_audit_logs','cee_student_progress','cee_player_events','cee_attempts'] LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', t);
+    EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC', t);
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN EXECUTE format('REVOKE ALL ON public.%I FROM anon', t); END IF;
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN EXECUTE format('REVOKE ALL ON public.%I FROM authenticated', t); END IF;
+  END LOOP;
+END $rls$;
+REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM PUBLIC;
+DO $fn$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM anon; END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM authenticated; END IF;
+END $fn$;
+
+COMMIT;
