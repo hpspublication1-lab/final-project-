@@ -294,7 +294,7 @@ export default function ClassesNotesTab({
                                           </a>
                                         ) : (
                                           <Link
-                                            href={`/practice?chapter=${chapter.id}`}
+                                            href={String(chapter.id).startsWith('other-') ? '/practice' : `/practice?chapter=${chapter.id}`}
                                             className="font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
                                           >
                                             <Zap size={13} />

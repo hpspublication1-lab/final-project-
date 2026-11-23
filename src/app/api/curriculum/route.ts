@@ -154,6 +154,16 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Chapters that actually have published questions. Every chapter used to get a
+    // "High-Yield Mastery Quiz" (with an invented 15-minute length), even with none.
+    const chapterIdList = (chapters || []).map((c: any) => c.id);
+    const { data: quizRows, error: quizErr } = chapterIdList.length
+      ? await admin.from('questions').select('chapter_id').in('chapter_id', chapterIdList).eq('is_published', true).limit(50000)
+      : { data: [] as any[], error: null };
+    if (quizErr) console.error('[curriculum] question count failed:', quizErr.message);
+    // If the count failed, keep the quizzes as before rather than hide real ones.
+    const chapterHasQuiz = (id: string) => Boolean(quizErr) || (quizRows || []).some((q: any) => q.chapter_id === id);
+
     // Grouping by Subject -> Unit -> Chapter -> Lessons
     const structuredSubjects = (subjects || []).map((subject: any) => {
       const subChapters = (chapters || []).filter((c: any) => c.subject_id === subject.id);
@@ -211,17 +221,18 @@ export async function GET(request: NextRequest) {
           });
         });
 
-        // Default Chapter Quiz lesson
-        lessons.push({
-          id: `quiz-${chap.id}`,
-          title: `${chap.title} — High-Yield Mastery Quiz`,
-          type: 'quiz',
-          durationSec: 900,
-          isPremium: chap.is_premium,
-          isLocked: chap.is_premium && !hasAccess,
-          isCompleted: (masteryMap[chap.id] || 0) >= 80,
-          order: order++,
-        });
+        // Chapter quiz, only when the chapter has published questions.
+        if (chapterHasQuiz(chap.id)) {
+          lessons.push({
+            id: `quiz-${chap.id}`,
+            title: `${chap.title} — High-Yield Mastery Quiz`,
+            type: 'quiz',
+            isPremium: chap.is_premium,
+            isLocked: chap.is_premium && !hasAccess,
+            isCompleted: (masteryMap[chap.id] || 0) >= 80,
+            order: order++,
+          });
+        }
 
         // Subjective Assignment for SEE Class 10
         if (courseSlug === 'see_class_10') {
@@ -249,6 +260,54 @@ export async function GET(request: NextRequest) {
         });
       });
 
+      // Videos and notes filed under this subject but not in a chapter. They used to be
+      // shown inside the subject's first chapter as if they belonged to it.
+      const looseVideos = (videos || []).filter((v: any) => v.subject_id === subject.id && !v.chapter_id);
+      const looseNotes = (notes || []).filter((n: any) => n.subject_id === subject.id && !n.chapter_id);
+      if (looseVideos.length || looseNotes.length) {
+        let order = 1;
+        const lessons: any[] = [
+          ...looseVideos.map((v: any) => ({
+            id: v.id,
+            title: v.title,
+            type: 'recorded_video',
+            durationSec: v.duration_sec || undefined,
+            videoUrl: v.video_url,
+            thumbnailUrl: v.thumbnail_url,
+            isPremium: v.is_premium,
+            isLocked: v.is_premium && !hasAccess,
+            isCompleted: false,
+            order: order++,
+          })),
+          ...looseNotes.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            type: n.pdf_url ? 'pdf_note' : 'text_lesson',
+            pdfUrl: n.pdf_url,
+            content: n.content,
+            isPremium: n.is_premium,
+            isLocked: n.is_premium && !hasAccess,
+            isCompleted: false,
+            order: order++,
+          })),
+        ];
+        const otherId = `other-${subject.id}`;
+        unitsMap[`unit-${otherId}`] = {
+          id: `unit-${otherId}`,
+          title: 'Other materials',
+          order: Number.MAX_SAFE_INTEGER,
+          chapters: [{
+            id: otherId,
+            title: `More ${subject.display_name || subject.name} materials`,
+            description: 'Not placed in a chapter yet.',
+            order: Number.MAX_SAFE_INTEGER,
+            masteryScore: 0,
+            isCompleted: false,
+            lessons,
+          }],
+        };
+      }
+
       const units = Object.values(unitsMap).sort((a, b) => a.order - b.order);
 
       return {
@@ -275,7 +334,8 @@ export async function GET(request: NextRequest) {
                 ...les,
                 subjectId: sub.id,
                 subjectDisplayName: sub.displayName,
-                chapterId: chap.id,
+                // "Other materials" is a section, not a chapter: no chapter id to record progress against.
+                chapterId: String(chap.id).startsWith('other-') ? null : chap.id,
                 chapterTitle: chap.title,
               });
             });

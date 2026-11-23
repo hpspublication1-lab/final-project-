@@ -125,7 +125,8 @@ export async function fetchPracticeQuestions(
   const targetSlug = normalizeSubjectSlug(subjectName);
   const course = parseCourseId(courseRaw);
   if (!course) return { questions: [], error: 'Unknown course.' };
-  const realChapter = !!chapterId && !chapterId.startsWith('chap-');
+  // Only a real chapter id narrows the questions ("chap-…" and "other-…" are display-only).
+  const realChapter = !!chapterId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(chapterId);
 
   try {
     const supabase = await createClient();
