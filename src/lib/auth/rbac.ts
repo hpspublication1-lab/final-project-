@@ -24,6 +24,7 @@ const BASE_STUDENT_PERMISSIONS: PermissionCode[] = [
   'content:preview',
   'tests:attempt',
   'doubts:ask',
+  'visual:read',
 ];
 
 const PAID_SEE_PERMISSIONS: PermissionCode[] = [
@@ -57,6 +58,8 @@ const TEACHER_PERMISSIONS: PermissionCode[] = [
   'tests:grade',
   'tests:publish',
   'doubts:answer',
+  'visual:author',
+  'visual:review',
 ];
 
 const CONTENT_MANAGER_PERMISSIONS: PermissionCode[] = [
@@ -68,6 +71,8 @@ const CONTENT_MANAGER_PERMISSIONS: PermissionCode[] = [
   'content:archive',
   'tests:create',
   'tests:publish',
+  'visual:read',
+  'visual:author',
 ];
 
 const SUPPORT_STAFF_PERMISSIONS: PermissionCode[] = [
@@ -107,6 +112,7 @@ const ADMIN_PERMISSIONS: PermissionCode[] = [
   'settings:manage',
   'announcements:manage',
   'audit:view',
+  'visual:publish',
 ];
 
 const SUPER_ADMIN_PERMISSIONS: PermissionCode[] = [

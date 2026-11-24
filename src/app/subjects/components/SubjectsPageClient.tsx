@@ -9,7 +9,7 @@ import { useTrial } from '@/contexts/TrialContext';
 import { useProgram, PROGRAMS, normalizeCourseId } from '@/contexts/ProgramContext';
 import { resolveRowCourse } from '@/lib/courses/courseIds';
 import ProgramSwitcher from '@/components/ProgramSwitcher';
-import { BookOpen, ChevronRight, CheckCircle2, Lock, PlayCircle, Zap, Clock, TrendingUp, Search, FileText, Loader2, GraduationCap, Stethoscope } from 'lucide-react';
+import { BookOpen, ChevronRight, CheckCircle2, Lock, PlayCircle, Zap, Clock, TrendingUp, Search, FileText, Loader2, GraduationCap, Stethoscope, Sparkles, ExternalLink } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -220,6 +220,14 @@ export default function SubjectsPageClient() {
 
   const selectedSubjectObj = programFilteredSubjects.find((s) => s.id === activeSubject) || programFilteredSubjects[0];
 
+  const getVisualLessonForChapter = (title: string) => {
+    const t = title.toLowerCase();
+    if (t.includes('circulat') || t.includes('heart') || t.includes('cardio')) return { slug: 'human-heart', label: 'Human Heart 3D' };
+    if (t.includes('excret') || t.includes('nephron') || t.includes('kidney')) return { slug: 'nephron', label: 'Nephron 3D' };
+    if (t.includes('respirat') || t.includes('lung') || t.includes('gas exchange')) return { slug: 'gas-exchange', label: 'Gas Exchange 3D' };
+    return null;
+  };
+
   const filteredChapters = (selectedSubjectObj?.chapters ?? []).filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -309,6 +317,52 @@ export default function SubjectsPageClient() {
 
             {/* Chapters & Content List (8 cols) */}
             <div className="lg:col-span-8 space-y-4">
+
+              {/* CEE Visual Intelligence Spotlight Banner */}
+              {canonicalId === 'cee_medical' && (
+                <div className="bg-card border border-emerald-500/30 rounded-2xl p-5 shadow-sm space-y-3 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-500 shrink-0">
+                        <Sparkles size={18} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-foreground">CEE 3D Visual Intelligence Studio</h3>
+                        <p className="text-xs text-muted-foreground">Interactive physiological simulations & anatomical models</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/40">
+                      Verified CEE Standard
+                    </span>
+                  </div>
+
+                  <div className="grid sm:grid-cols-3 gap-3 pt-1">
+                    {[
+                      { title: 'Human Heart Anatomy', slug: 'human-heart', topic: 'Cardiac Cycle & Valves' },
+                      { title: 'Nephron Ultrastructure', slug: 'nephron', topic: 'Countercurrent Multiplier' },
+                      { title: 'Alveolar Gas Exchange', slug: 'gas-exchange', topic: 'Diffusion Barrier' },
+                    ].map((vis) => (
+                      <Link
+                        key={vis.slug}
+                        href={`/learn/visual/${vis.slug}`}
+                        className="group/vis p-3 rounded-xl bg-background border border-border hover:border-emerald-500/50 hover:bg-emerald-500/5 transition flex flex-col justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-foreground group-hover/vis:text-emerald-500 transition line-clamp-1">
+                            {vis.title}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{vis.topic}</p>
+                        </div>
+                        <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/40 text-[11px] font-semibold text-emerald-500">
+                          <span>Launch 3D</span>
+                          <ExternalLink size={12} className="group-hover/vis:translate-x-0.5 transition" />
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between gap-3 bg-card border border-border rounded-2xl p-4 shadow-sm flex-wrap">
                 <div>
                   <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -346,9 +400,16 @@ export default function SubjectsPageClient() {
                           {c.chapterNumber ? `Ch.${c.chapterNumber}` : '•'}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                            {c.title}
-                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                              {c.title}
+                            </p>
+                            {getVisualLessonForChapter(c.title) && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
+                                <Sparkles size={10} /> 3D Visual
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-mono">
                             <span className="flex items-center gap-1"><Zap size={12} className="text-warning" /> {c.mcqCount} MCQs</span>
                             {c.videoCount > 0 && (

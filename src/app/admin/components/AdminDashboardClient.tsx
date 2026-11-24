@@ -41,6 +41,8 @@ const navItems = [
       { label: 'Batches (Cohorts)', href: '/admin/batches', icon: Layers, key: 'admin-batches' },
       { label: 'Subjects & Chapters', href: '/admin/subjects', icon: Layers, key: 'admin-subjects' },
       { label: 'Lessons & Videos', href: '/admin/lessons', icon: Video, key: 'admin-lessons' },
+      { label: 'CEE Visual Studio', href: '/admin/cee-visual/lessons', icon: Sparkles, key: 'admin-cee-visual-lessons' },
+      { label: 'CEE Review Queue', href: '/admin/cee-visual/reviews', icon: CheckCircle2, key: 'admin-cee-visual-reviews' },
       { label: 'Study Resources & PDFs', href: '/admin/resources', icon: FileText, key: 'admin-resources' },
     ],
   },

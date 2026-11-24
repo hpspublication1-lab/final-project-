@@ -48,7 +48,11 @@ export type PermissionCode =
   | 'settings:manage'
   | 'announcements:manage'
   | 'admin:access'
-  | 'audit:view';
+  | 'audit:view'
+  | 'visual:read'
+  | 'visual:author'
+  | 'visual:review'
+  | 'visual:publish';
 
 export interface User {
   id: string;
@@ -86,7 +90,7 @@ export interface Permission {
   id: string;
   code: PermissionCode;
   display_name: string;
-  category: 'content' | 'live' | 'assessment' | 'doubts' | 'ai' | 'commerce' | 'administration';
+  category: 'content' | 'live' | 'assessment' | 'doubts' | 'ai' | 'commerce' | 'administration' | 'visual';
 }
 
 export interface RolePermission {
