@@ -10,9 +10,21 @@ Built on `11_SPRINTS_AND_BACKLOG.md`, recalibrated after the audit.
 |---|---|
 | `PROJECT_AUDIT.md`, `CURRENT_ARCHITECTURE.md`, `FEATURE_INVENTORY.md`, `GAP_ANALYSIS.md`, `RISK_REGISTER.md` | Done |
 | `TARGET_ARCHITECTURE.md`, `DATABASE_DESIGN.md`, `API_SPECIFICATION.md`, this roadmap, `SPRINT_BACKLOG.md` | Done (proposals) |
-| Proposed schema, tested on a scratch database (47 of 47 checks), with a tested rollback | Done; **not applied** |
+| Proposed schema, tested on a scratch database (51 of 51 checks), with a tested rollback | Done; **not applied** |
 | **Your decisions D1–D7** (`TARGET_ARCHITECTURE.md` §13) | **Waiting** |
 | **Live schema dump; staging Supabase project** | **Waiting** (owner) |
+
+## Foundation code built so far (branch `feat/cee-visual-foundation`)
+
+Built and tested **locally**. Nothing is applied to any database, the feature flag is off, and every route returns 404 until the tables exist and the flag is turned on.
+
+| Item | State |
+|---|---|
+| FND-005 scoped permissions | Rules in `src/lib/cee-visual/authz.ts`, unit-tested; CMS routes that use them not built yet |
+| FND-008/009 file checks | GLB (structure + Khronos validator), SVG (allowlist) and manifest-vs-model checks, tested with malicious files; upload pipeline not built yet |
+| FND-010/011 player | 3D player, layers, parts, guided tour, 2D fallback, context-loss recovery, keyboard, screen reader, reduced motion; checked in Chrome |
+| FND-004/020 student API | Read routes, events, attempts, progress; integration-tested against PostgREST; lesson page tested end to end in Chrome |
+| FND-019 bridge | Message protocol and validation, unit-tested; mobile harness not built |
 
 ## Phase 0.5: Fix what the new work depends on (≈3 days, needs your approval)
 

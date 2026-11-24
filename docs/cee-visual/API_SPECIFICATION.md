@@ -46,6 +46,7 @@ Next.js route handlers under `src/app/api/v1/cee/…`. This adapts `05_API_CONTR
 | 403 | `SOD_VIOLATION` | Author reviewing or publishing their own work |
 | 404 | `NOT_FOUND` | Missing, or hidden from this caller |
 | 409 | `REVISION_CONFLICT` | Stale `revision` on a draft edit |
+| 409 | `IDEMPOTENCY_CONFLICT` | An idempotency key reused with a different request body |
 | 409 | `STATE_CONFLICT` | Illegal transition, e.g. editing a submitted revision (`IMMUTABLE_REVISION` from the database) |
 | 413 | `PAYLOAD_TOO_LARGE` | Over the per-kind size cap |
 | 415 | `UNSUPPORTED_TYPE` | MIME type or magic bytes not allowed |
@@ -59,6 +60,7 @@ Next.js route handlers under `src/app/api/v1/cee/…`. This adapts `05_API_CONTR
 | 422 | `ASSET_INVALID` | glTF/SVG validation failed (details carry the validator report) |
 | 423 | `FEATURE_DISABLED` | `cee_visual_enabled` is off (student routes return 404 instead) |
 | 429 | `RATE_LIMITED` | Per-user limit hit |
+| 500 | `INTERNAL` | Unexpected failure; the database message is logged with the request id, never returned |
 | 503 | `SCANNER_UNAVAILABLE` | Malware scanner not configured or unreachable; the asset stays `NOT_SCANNED` |
 
 ## 3. Student routes (published content only)
@@ -69,7 +71,7 @@ Next.js route handlers under `src/app/api/v1/cee/…`. This adapts `05_API_CONTR
 | `GET /api/v1/cee/syllabi/:id/tree` | Subject/chapter/topic tree, with counts of **published** lessons | Signed in | Empty topics shown; nothing invented |
 | `GET /api/v1/cee/topics/:id/lessons` | Published lessons mapped to a topic | Signed in + CEE access | Empty list → page shows "No visual lessons have been published for this topic yet." |
 | `GET /api/v1/cee/lessons/:id` | Active published snapshot: content, objectives, question stems and options (**no answer keys**) | Signed in + CEE access (existing entitlement check) | 404 if nothing published |
-| `GET /api/v1/cee/lessons/:id/manifest` | Manifests of the pinned asset versions, with signed URLs (expire ≤ 10 min) | Same | Never exposes storage keys |
+| `GET /api/v1/cee/lessons/:id/manifest` | Manifests of the pinned asset versions, with signed URLs (expire ≤ 10 min) | Same | Only signed URLs; no key fields or unsigned bucket access |
 | `GET /api/v1/cee/me/progress` | Own progress across published lessons | Signed in | |
 | `GET /api/v1/cee/me/lessons/:id/progress` | Own progress for one lesson | Signed in | |
 | `POST /api/v1/cee/me/lessons/:id/events` | Up to 50 events per call | Signed in | Each `{eventId: uuid, type, occurredAt, assetVersionId?, payload ≤ 8 KB}`; duplicates reported `{duplicate: true}`, no credit |

@@ -144,10 +144,13 @@ Any failure raises a named error, for example `ACADEMIC_APPROVAL_REQUIRED`, `ASS
 - **Row security** is enabled on all 21 tables. All privileges are revoked from `PUBLIC`, `anon` and `authenticated`, and no policies are created. The browser therefore can't read or write any of these tables.
 - **Server access.** Route handlers use the service role, but only after `verifyCeeScope()`: session, role permission, program/subject scope, and separation of duties.
 - **Publishing.** `cee_publish_revision` can't be called by `anon` or `authenticated`.
+- **Server role.** `service_role` is granted exactly `SELECT, INSERT, UPDATE, DELETE` on each `cee_*` table and `EXECUTE` on the publish function, stated in the migration rather than inherited from Supabase's default privileges (no `TRUNCATE`, `REFERENCES` or `TRIGGER`).
+
+**API-level evidence.** `src/lib/cee-visual/__tests__/api.integration.test.ts` runs the real route handlers through supabase-js against PostgREST 12 on this schema (set up by `scripts/cee/it-setup.sh`): 12 of 12 pass, covering the flag, sign-in, course access, answer-key hiding, idempotent events and attempts, server-side completion and student isolation.
 
 ## 5. Test evidence (executed 24 Nov 2026, local Postgres 16, scratch database)
 
-The schema was applied to a scratch database that mimics Supabase's default grants (`anon` and `authenticated` get table privileges by default, which the migration revokes). Then `tests/cee_visual_foundation_test.sql` ran: **47 of 47 checks passed.** They include the handoff's scenarios:
+The schema was applied to a scratch database that mimics Supabase's default grants (`anon` and `authenticated` get table privileges by default, which the migration revokes). Then `tests/cee_visual_foundation_test.sql` ran: **51 of 51 checks passed** (re-run 24 Nov after adding the pin guard below). They include the handoff's scenarios:
 
 | Scenario | Check |
 |---|---|
@@ -158,6 +161,7 @@ The schema was applied to a scratch database that mimics Supabase's default gran
 | CEE-006 | A submitted revision can't be edited (`IMMUTABLE_REVISION`); revising creates a new revision |
 | CEE-009 | A duplicate event id is rejected |
 | CEE-010 | A published revision can't be changed; the previous publication becomes `SUPERSEDED`; exactly one is active |
+| Pins | Assets and questions pinned to a revision can't be added, removed or changed once it leaves DRAFT (`cee_guard_revision_pins`), so nothing can be swapped in after review |
 
 Also checked:
 
