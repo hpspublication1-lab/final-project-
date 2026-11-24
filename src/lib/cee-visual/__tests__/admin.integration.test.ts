@@ -45,7 +45,6 @@ type Who = keyof typeof people;
 const email = (w: Who) => `${w}@test.invalid`;
 const as = (w: Who) => (state.user = { id: people[w], email: email(w) });
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 type Res = { status: number; body: any };
 const call = async (p: Promise<Response>): Promise<Res> => {
   const r = await p;

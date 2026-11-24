@@ -10,7 +10,21 @@
  * Used only by scripts/cee/it-setup.sh and the API integration test.
  */
 import http from 'node:http';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+
+const jwtSecret = process.env.IT_JWT_SECRET ?? 'it-only-secret-not-for-any-real-project-0123456789';
+
+/** Verifies an HS256 test JWT (signed with the throwaway secret) and returns its payload. */
+function verifyJwt(token) {
+  const [h, p, sig] = token.split('.');
+  if (!h || !p || !sig) return null;
+  const expected = createHmac('sha256', jwtSecret).update(`${h}.${p}`).digest();
+  const given = Buffer.from(sig, 'base64url');
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
+  const payload = JSON.parse(Buffer.from(p, 'base64url').toString());
+  return payload.exp && payload.exp * 1000 < Date.now() ? null : payload;
+}
 
 const port = Number(process.env.IT_PROXY_PORT ?? 54331);
 const upstream = new URL(process.env.POSTGREST_URL ?? 'http://127.0.0.1:54330');
@@ -65,9 +79,12 @@ const server = http.createServer((req, res) => {
     created_at: '2026-11-01T00:00:00Z',
   });
   if (url.pathname === '/auth/v1/user') {
-    const m = (req.headers.authorization ?? '').match(/^Bearer it-user\.([0-9a-f-]{36})$/);
-    res.writeHead(m ? 200 : 401, { 'content-type': 'application/json' });
-    res.end(JSON.stringify(m ? fakeUser(m[1]) : { msg: 'not a test token' }));
+    const token = (req.headers.authorization ?? '').replace(/^Bearer /, '');
+    const m = token.match(/^it-user\.([0-9a-f-]{36})$/);
+    const jwt = m ? null : verifyJwt(token);
+    const user = m ? fakeUser(m[1]) : jwt?.sub ? { ...fakeUser(jwt.sub), email: jwt.email ?? fakeUser(jwt.sub).email } : null;
+    res.writeHead(user ? 200 : 401, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(user ?? { msg: 'not a test token' }));
     return;
   }
   const admin = url.pathname.match(/^\/auth\/v1\/admin\/users\/([0-9a-f-]{36})$/);
