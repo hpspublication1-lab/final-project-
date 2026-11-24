@@ -7,7 +7,8 @@
 # binary (POSTGREST_BIN), node.
 #
 #   PG="psql -h /tmp -p 5440 -U postgres" POSTGREST_BIN=/path/to/postgrest scripts/cee/it-setup.sh
-#   then run the printed `export …` lines and: npx vitest run src/lib/cee-visual/__tests__/api.integration.test.ts
+#   then run the printed `export …` lines and (one file at a time; both reset the same database):
+#   npx vitest run --no-file-parallelism src/lib/cee-visual/__tests__/*.integration.test.ts
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 

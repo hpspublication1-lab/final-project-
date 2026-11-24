@@ -10,6 +10,8 @@ DO $guard$ BEGIN
   END IF;
 END $guard$;
 DROP FUNCTION IF EXISTS public.cee_publish_revision(uuid, uuid, text);
+DROP FUNCTION IF EXISTS public.cee_submit_revision(uuid, uuid);
+DROP FUNCTION IF EXISTS public.cee_decide_review(uuid, uuid, text, text);
 DROP FUNCTION IF EXISTS public.cee_latest_decision(text, uuid, text);
 DROP TABLE IF EXISTS public.cee_attempts, public.cee_player_events, public.cee_student_progress,
   public.cee_audit_logs, public.cee_role_assignments, public.cee_publications, public.cee_review_decisions,

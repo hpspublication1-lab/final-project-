@@ -118,6 +118,7 @@ CREATE TABLE public.cee_lesson_revisions (
   created_by       uuid NOT NULL,
   created_at       timestamptz NOT NULL DEFAULT now(),
   submitted_at     timestamptz,
+  updated_at       timestamptz NOT NULL DEFAULT now(),  -- set by the guard; editors send it back to detect concurrent edits
   UNIQUE (lesson_id, revision_number)
 );
 
@@ -360,6 +361,7 @@ BEGIN
      AND coalesce(current_setting('cee.publishing', true), '') <> 'on' THEN
     RAISE EXCEPTION 'PUBLISH_VIA_FUNCTION: use cee_publish_revision()' USING ERRCODE = 'check_violation';
   END IF;
+  NEW.updated_at := clock_timestamp();
   RETURN NEW;
 END $$;
 CREATE TRIGGER cee_guard_lesson_revision BEFORE UPDATE OR DELETE ON public.cee_lesson_revisions
@@ -554,6 +556,76 @@ BEGIN
   RETURN pub;
 END $$;
 
+-- ═══ Submission and review decisions (transactional) ═══════════════════════
+-- The API checks scoped roles first; these make each step all-or-nothing.
+
+-- DRAFT → IN_REVIEW, freeze pinned questions, open the six lesson gates.
+CREATE FUNCTION public.cee_submit_revision(p_revision uuid, p_actor uuid) RETURNS void
+LANGUAGE plpgsql AS $$
+DECLARE g text;
+BEGIN
+  UPDATE public.cee_lesson_revisions SET status = 'IN_REVIEW', submitted_at = now()
+   WHERE id = p_revision AND status = 'DRAFT';
+  IF NOT FOUND THEN RAISE EXCEPTION 'STATE_CONFLICT: only a draft can be submitted' USING ERRCODE = 'check_violation'; END IF;
+  UPDATE public.cee_question_revisions SET status = 'IN_REVIEW'
+   WHERE status = 'DRAFT'
+     AND id IN (SELECT question_revision_id FROM public.cee_lesson_questions WHERE lesson_revision_id = p_revision);
+  FOREACH g IN ARRAY ARRAY['SYLLABUS_MAPPING','SCIENTIFIC','VISUAL','ASSESSMENT','ACCESSIBILITY','RIGHTS'] LOOP
+    INSERT INTO public.cee_review_requests (entity_type, entity_id, gate, requested_by)
+    VALUES ('LESSON_REVISION', p_revision, g, p_actor);
+  END LOOP;
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id)
+  VALUES (p_actor, 'SUBMIT', 'LESSON_REVISION', p_revision);
+END $$;
+
+-- Record a decision on a lesson-revision gate and apply its consequences:
+--  REQUEST_CHANGES / REJECT → revision CHANGES_REQUESTED, other open gates cancelled;
+--  APPROVE on ASSESSMENT → pinned questions APPROVED;
+--  APPROVE on SYLLABUS_MAPPING → the lesson's proposed mappings APPROVED;
+--  all six gates approved → revision APPROVED.
+CREATE FUNCTION public.cee_decide_review(p_request uuid, p_reviewer uuid, p_decision text, p_comments text)
+RETURNS text LANGUAGE plpgsql AS $$
+DECLARE r record; rev record; g text; pending int := 0;
+BEGIN
+  SELECT * INTO r FROM public.cee_review_requests WHERE id = p_request FOR UPDATE;
+  IF r.id IS NULL THEN RAISE EXCEPTION 'NOT_FOUND: review request' USING ERRCODE = 'check_violation'; END IF;
+  IF r.entity_type <> 'LESSON_REVISION' THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: only lesson-revision reviews are decided here' USING ERRCODE = 'check_violation';
+  END IF;
+  SELECT * INTO rev FROM public.cee_lesson_revisions WHERE id = r.entity_id FOR UPDATE;
+  IF rev.status <> 'IN_REVIEW' THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: the revision is %, not in review', rev.status USING ERRCODE = 'check_violation';
+  END IF;
+
+  -- The decision trigger enforces separation of duties and closes the request.
+  INSERT INTO public.cee_review_decisions (request_id, decision, comments, reviewer_id)
+  VALUES (p_request, p_decision, p_comments, p_reviewer);
+
+  IF p_decision IN ('REQUEST_CHANGES','REJECT') THEN
+    UPDATE public.cee_lesson_revisions SET status = 'CHANGES_REQUESTED' WHERE id = rev.id;
+    UPDATE public.cee_review_requests SET status = 'CANCELLED'
+     WHERE entity_type = 'LESSON_REVISION' AND entity_id = rev.id AND status = 'OPEN';
+  ELSE
+    IF r.gate = 'ASSESSMENT' THEN
+      UPDATE public.cee_question_revisions SET status = 'APPROVED'
+       WHERE status = 'IN_REVIEW'
+         AND id IN (SELECT question_revision_id FROM public.cee_lesson_questions WHERE lesson_revision_id = rev.id);
+    ELSIF r.gate = 'SYLLABUS_MAPPING' THEN
+      UPDATE public.cee_lesson_mappings SET status = 'APPROVED', approved_by = p_reviewer, approved_at = now()
+       WHERE lesson_id = rev.lesson_id AND status = 'PROPOSED';
+    END IF;
+    FOREACH g IN ARRAY ARRAY['SYLLABUS_MAPPING','SCIENTIFIC','VISUAL','ASSESSMENT','ACCESSIBILITY','RIGHTS'] LOOP
+      IF public.cee_latest_decision('LESSON_REVISION', rev.id, g) IS DISTINCT FROM 'APPROVE' THEN pending := pending + 1; END IF;
+    END LOOP;
+    IF pending = 0 THEN UPDATE public.cee_lesson_revisions SET status = 'APPROVED' WHERE id = rev.id; END IF;
+  END IF;
+
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id, after_json)
+  VALUES (p_reviewer, 'REVIEW_' || p_decision, 'LESSON_REVISION', rev.id,
+          jsonb_build_object('gate', r.gate, 'request_id', p_request));
+  RETURN (SELECT status FROM public.cee_lesson_revisions WHERE id = rev.id);
+END $$;
+
 -- ═══ Access: server only ═══════════════════════════════════════════════════
 -- Row security on, no policies for anon/authenticated: the browser can't read or
 -- write any cee_* table. Route handlers use the service role after verifyCeeScope().
@@ -577,10 +649,16 @@ BEGIN
   END LOOP;
 END $rls$;
 REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.cee_submit_revision(uuid, uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.cee_decide_review(uuid, uuid, text, text) FROM PUBLIC;
 DO $fn$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM anon; END IF;
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM authenticated; END IF;
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN GRANT EXECUTE ON FUNCTION public.cee_publish_revision(uuid, uuid, text) TO service_role; END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+    GRANT EXECUTE ON FUNCTION public.cee_publish_revision(uuid, uuid, text) TO service_role;
+    GRANT EXECUTE ON FUNCTION public.cee_submit_revision(uuid, uuid) TO service_role;
+    GRANT EXECUTE ON FUNCTION public.cee_decide_review(uuid, uuid, text, text) TO service_role;
+  END IF;
 END $fn$;
 
 COMMIT;

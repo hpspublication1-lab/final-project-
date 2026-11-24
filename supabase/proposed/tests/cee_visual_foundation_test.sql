@@ -228,6 +228,57 @@ INSERT INTO cee_student_progress (student_id, lesson_id, publication_id) VALUES 
 SELECT pg_temp.expect('one progress row per student and publication',
   format($q$INSERT INTO cee_student_progress (student_id, lesson_id, publication_id) VALUES ('%s','c0000000-0000-0000-0000-000000000001','%s')$q$, pg_temp.u('student'), (SELECT id FROM pub2)), 'duplicate key');
 
+-- ── Submission and review decisions ─────────────────────────────────────
+INSERT INTO cee_lessons (id, program_code, slug, title, created_by)
+VALUES ('c0000000-0000-0000-0000-000000000002', 'cee_medical', 'submit-flow-fixture', 'Submit flow (dev fixture)', pg_temp.u('editor'));
+INSERT INTO cee_lesson_mappings (lesson_id, node_id, created_by)
+VALUES ('c0000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000004', pg_temp.u('editor'));
+INSERT INTO cee_lesson_revisions (id, lesson_id, revision_number, content, created_by)
+VALUES ('e0000000-0000-0000-0000-000000000010', 'c0000000-0000-0000-0000-000000000002', 1, '{"v":10}', pg_temp.u('editor'));
+INSERT INTO cee_question_revisions (id, question_key, revision_number, program_code, stem, options, answer_key, rationale, created_by)
+VALUES ('90000000-0000-0000-0000-000000000001', gen_random_uuid(), 1, 'cee_medical', 'Fixture stem', '["a","b","c","d"]', 'A', 'Fixture rationale', pg_temp.u('editor'));
+INSERT INTO cee_lesson_questions VALUES ('e0000000-0000-0000-0000-000000000010', '90000000-0000-0000-0000-000000000001', 1);
+
+CREATE TEMP TABLE t_before AS SELECT updated_at FROM cee_lesson_revisions WHERE id = 'e0000000-0000-0000-0000-000000000010';
+UPDATE cee_lesson_revisions SET content = '{"v":11}' WHERE id = 'e0000000-0000-0000-0000-000000000010';
+SELECT pg_temp.check('editing a draft moves updated_at forward (concurrent-edit detection)',
+  (SELECT updated_at FROM cee_lesson_revisions WHERE id = 'e0000000-0000-0000-0000-000000000010') > (SELECT updated_at FROM t_before));
+
+SELECT public.cee_submit_revision('e0000000-0000-0000-0000-000000000010', pg_temp.u('editor'));
+SELECT pg_temp.check('submit: revision in review, six gates open, pinned question frozen',
+  (SELECT status FROM cee_lesson_revisions WHERE id = 'e0000000-0000-0000-0000-000000000010') = 'IN_REVIEW'
+  AND (SELECT count(*) FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000010' AND status = 'OPEN') = 6
+  AND (SELECT status FROM cee_question_revisions WHERE id = '90000000-0000-0000-0000-000000000001') = 'IN_REVIEW');
+SELECT pg_temp.expect('a revision cannot be submitted twice',
+  $q$SELECT public.cee_submit_revision('e0000000-0000-0000-0000-000000000010', gen_random_uuid())$q$, 'STATE_CONFLICT');
+SELECT pg_temp.expect('the author cannot decide a review of their own revision',
+  format($q$SELECT public.cee_decide_review((SELECT id FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000010' AND gate = 'SCIENTIFIC'), '%s', 'APPROVE', NULL)$q$, pg_temp.u('editor')),
+  'SOD_VIOLATION');
+
+SELECT public.cee_decide_review((SELECT id FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000010' AND gate = 'ASSESSMENT'), pg_temp.u('expert'), 'APPROVE', 'ok');
+SELECT pg_temp.check('approving the assessment gate approves the pinned questions',
+  (SELECT status FROM cee_question_revisions WHERE id = '90000000-0000-0000-0000-000000000001') = 'APPROVED'
+  AND (SELECT status FROM cee_lesson_revisions WHERE id = 'e0000000-0000-0000-0000-000000000010') = 'IN_REVIEW');
+SELECT public.cee_decide_review((SELECT id FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000010' AND gate = 'SYLLABUS_MAPPING'), pg_temp.u('expert'), 'APPROVE', NULL);
+SELECT pg_temp.check('approving the syllabus-mapping gate approves the proposed mapping',
+  (SELECT status FROM cee_lesson_mappings WHERE lesson_id = 'c0000000-0000-0000-0000-000000000002') = 'APPROVED');
+SELECT public.cee_decide_review(id, pg_temp.u('expert'), 'APPROVE', NULL) FROM cee_review_requests
+ WHERE entity_id = 'e0000000-0000-0000-0000-000000000010' AND status = 'OPEN';
+SELECT pg_temp.check('the revision is approved once all six gates are approved',
+  (SELECT status FROM cee_lesson_revisions WHERE id = 'e0000000-0000-0000-0000-000000000010') = 'APPROVED');
+SELECT pg_temp.expect('a decided revision takes no more decisions',
+  format($q$SELECT public.cee_decide_review((SELECT id FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000010' AND gate = 'RIGHTS'), '%s', 'REJECT', NULL)$q$, pg_temp.u('expert')),
+  'STATE_CONFLICT');
+
+INSERT INTO cee_lesson_revisions (id, lesson_id, revision_number, content, created_by)
+VALUES ('e0000000-0000-0000-0000-000000000011', 'c0000000-0000-0000-0000-000000000002', 2, '{"v":12}', pg_temp.u('editor'));
+SELECT public.cee_submit_revision('e0000000-0000-0000-0000-000000000011', pg_temp.u('editor'));
+SELECT public.cee_decide_review((SELECT id FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000011' AND gate = 'SCIENTIFIC'), pg_temp.u('expert'), 'REQUEST_CHANGES', 'Fix the caption');
+SELECT pg_temp.check('requesting changes sends the revision back and cancels the other open gates',
+  (SELECT status FROM cee_lesson_revisions WHERE id = 'e0000000-0000-0000-0000-000000000011') = 'CHANGES_REQUESTED'
+  AND (SELECT count(*) FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000011' AND status = 'CANCELLED') = 5
+  AND (SELECT count(*) FROM cee_audit_logs WHERE entity_id = 'e0000000-0000-0000-0000-000000000011' AND action = 'REVIEW_REQUEST_CHANGES') = 1);
+
 -- ── Browser roles have no access (CEE-004) ───────────────────────────────
 SELECT pg_temp.check('row security is on for every cee_* table',
   (SELECT bool_and(relrowsecurity) FROM pg_class WHERE relname LIKE 'cee\_%' AND relkind = 'r'));
@@ -236,6 +287,8 @@ SELECT pg_temp.expect('CEE-004 a signed-in browser client cannot read drafts (or
   $q$SELECT * FROM public.cee_lesson_revisions$q$, 'permission denied');
 SELECT pg_temp.expect('a signed-in browser client cannot call the publish function',
   $q$SELECT public.cee_publish_revision(gen_random_uuid(), gen_random_uuid(), 'x')$q$, 'permission denied');
+SELECT pg_temp.expect('a signed-in browser client cannot submit or decide reviews',
+  $q$SELECT public.cee_submit_revision(gen_random_uuid(), gen_random_uuid())$q$, 'permission denied');
 RESET ROLE;
 SET ROLE anon;
 SELECT pg_temp.expect('an anonymous client cannot read lessons', $q$SELECT * FROM public.cee_lessons$q$, 'permission denied');
