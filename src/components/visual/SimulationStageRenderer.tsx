@@ -113,6 +113,16 @@ export default function SimulationStageRenderer({
           } else if (drift === 'to-air') {
             p.x -= Math.abs(p.vx) * speed * 1.2;
             if (p.x < 0) p.x = canvas.width;
+          } else if (drift === 'down') {
+            p.y += Math.abs(p.vy || 1.2) * speed * 1.5;
+            if (p.y > canvas.height) p.y = 0;
+          } else if (drift === 'filtration') {
+            p.y += Math.abs(p.vy || 1.0) * speed * 1.3;
+            p.x += (Math.sin(p.y * 0.05) * 0.5) * speed;
+            if (p.y > canvas.height) {
+              p.y = 0;
+              p.x = 240 + Math.random() * 160;
+            }
           } else {
             // General drift
             p.x += p.vx * speed;
