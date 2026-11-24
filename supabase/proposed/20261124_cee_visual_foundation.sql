@@ -401,6 +401,31 @@ END $$;
 CREATE TRIGGER cee_guard_question_revision BEFORE UPDATE OR DELETE ON public.cee_question_revisions
   FOR EACH ROW EXECUTE FUNCTION public.cee_guard_question_revision();
 
+-- Pinned assets and questions freeze with their revision: once a revision
+-- leaves DRAFT, nothing can be swapped in or out behind the reviewers' backs.
+CREATE FUNCTION public.cee_guard_revision_pins() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE st text;
+BEGIN
+  IF TG_OP IN ('UPDATE','DELETE') THEN
+    SELECT status INTO st FROM public.cee_lesson_revisions WHERE id = OLD.lesson_revision_id;
+    IF st IS DISTINCT FROM 'DRAFT' THEN
+      RAISE EXCEPTION 'IMMUTABLE_REVISION: pinned assets and questions change only in a draft' USING ERRCODE = 'check_violation';
+    END IF;
+  END IF;
+  IF TG_OP IN ('INSERT','UPDATE') THEN
+    SELECT status INTO st FROM public.cee_lesson_revisions WHERE id = NEW.lesson_revision_id;
+    IF st IS DISTINCT FROM 'DRAFT' THEN
+      RAISE EXCEPTION 'IMMUTABLE_REVISION: pinned assets and questions change only in a draft' USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  RETURN OLD;
+END $$;
+CREATE TRIGGER cee_guard_lesson_asset_pins BEFORE INSERT OR UPDATE OR DELETE ON public.cee_lesson_assets
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_revision_pins();
+CREATE TRIGGER cee_guard_lesson_question_pins BEFORE INSERT OR UPDATE OR DELETE ON public.cee_lesson_questions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_revision_pins();
+
 -- An asset version's manifest freezes when its first review is requested.
 CREATE FUNCTION public.cee_lock_on_review() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -543,12 +568,19 @@ BEGIN
     EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC', t);
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN EXECUTE format('REVOKE ALL ON public.%I FROM anon', t); END IF;
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN EXECUTE format('REVOKE ALL ON public.%I FROM authenticated', t); END IF;
+    -- The server's role gets exactly row access, stated here rather than inherited from
+    -- Supabase's default privileges (no TRUNCATE, REFERENCES or TRIGGER).
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+      EXECUTE format('REVOKE ALL ON public.%I FROM service_role', t);
+      EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO service_role', t);
+    END IF;
   END LOOP;
 END $rls$;
 REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM PUBLIC;
 DO $fn$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM anon; END IF;
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM authenticated; END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN GRANT EXECUTE ON FUNCTION public.cee_publish_revision(uuid, uuid, text) TO service_role; END IF;
 END $fn$;
 
 COMMIT;

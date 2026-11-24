@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS public.cee_attempts, public.cee_player_events, public.cee_s
   public.cee_lesson_revisions, public.cee_lessons, public.cee_learning_objectives, public.cee_curriculum_nodes,
   public.cee_syllabus_versions, public.cee_settings;
 DROP FUNCTION IF EXISTS public.cee_check_node(), public.cee_check_mapping(), public.cee_guard_lesson_revision(),
-  public.cee_guard_asset_version(), public.cee_guard_question_revision(), public.cee_append_only(),
+  public.cee_guard_asset_version(), public.cee_guard_question_revision(), public.cee_guard_revision_pins(), public.cee_append_only(),
   public.cee_check_decision(), public.cee_lock_on_review();
 DROP DOMAIN IF EXISTS cee_program_code;
 COMMIT;

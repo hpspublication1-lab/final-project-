@@ -201,6 +201,14 @@ UPDATE cee_question_revisions SET status = 'APPROVED' WHERE id = '30000000-0000-
 CREATE TEMP TABLE pub2 AS SELECT cee_publish_revision('e0000000-0000-0000-0000-000000000004', pg_temp.u('publisher'), 'k-r4') AS id;
 SELECT pg_temp.check('revision with model, fallback and approved question publishes', (SELECT id FROM pub2) IS NOT NULL);
 SELECT pg_temp.check('the previous revision is superseded', (SELECT status FROM cee_lesson_revisions WHERE id='e0000000-0000-0000-0000-000000000002') = 'SUPERSEDED');
+SELECT pg_temp.expect('a pinned asset cannot be swapped out of a published revision',
+  $q$DELETE FROM cee_lesson_assets WHERE lesson_revision_id = 'e0000000-0000-0000-0000-000000000004' AND role = 'FALLBACK'$q$, 'IMMUTABLE_REVISION');
+SELECT pg_temp.expect('nothing can be pinned to a published revision',
+  $q$INSERT INTO cee_lesson_assets (lesson_revision_id, asset_version_id, role) VALUES ('e0000000-0000-0000-0000-000000000004','20000000-0000-0000-0000-000000000001','SUPPORTING')$q$, 'IMMUTABLE_REVISION');
+SELECT pg_temp.expect('a pinned question cannot be repointed after approval',
+  $q$UPDATE cee_lesson_questions SET sort_key = 2 WHERE lesson_revision_id = 'e0000000-0000-0000-0000-000000000004'$q$, 'IMMUTABLE_REVISION');
+SELECT pg_temp.expect('pins cannot be added to a revision under review',
+  $q$INSERT INTO cee_lesson_assets (lesson_revision_id, asset_version_id, role) VALUES ('e0000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002','FALLBACK')$q$, 'IMMUTABLE_REVISION');
 SELECT pg_temp.check('exactly one active publication per lesson',
   (SELECT count(*) FROM cee_publications WHERE lesson_id='c0000000-0000-0000-0000-000000000001' AND superseded_at IS NULL AND archived_at IS NULL) = 1);
 SELECT pg_temp.expect('a question with three options is rejected',
