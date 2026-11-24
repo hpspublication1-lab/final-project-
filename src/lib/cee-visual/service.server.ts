@@ -635,3 +635,61 @@ export async function studentLesson(req: Request, rawLessonId: string) {
   await requireProgramAccess(user, lesson.program);
   return { client, user, lesson };
 }
+
+// ── Discovery for existing course pages ───────────────────────────────────
+
+export interface PublishedLessonLink {
+  id: string;
+  title: string;
+  /** Title of the curriculum node the lesson is mapped to. */
+  topic: string;
+  /** Existing public.chapters ids this lesson sits under (via node ancestry). */
+  legacyChapterIds: string[];
+}
+
+/**
+ * Published visual lessons for a program, with the existing chapters they map
+ * to, so course pages can link to them. Only lessons with an active publication
+ * and an approved mapping into a verified syllabus are listed.
+ */
+export async function publishedLessonLinks(client: SupabaseClient, program: ProgramCode): Promise<PublishedLessonLink[]> {
+  const syllabi = check(
+    await client.from('cee_syllabus_versions').select('id').eq('program_code', program).eq('status', 'VERIFIED')
+  ) as { id: string }[];
+  if (syllabi.length === 0) return [];
+
+  const nodes = check(
+    await client
+      .from('cee_curriculum_nodes')
+      .select('id, parent_id, title, legacy_chapter_id')
+      .in('syllabus_version_id', syllabi.map((s) => s.id))
+  ) as { id: string; parent_id: string | null; title: string; legacy_chapter_id: string | null }[];
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  if (byId.size === 0) return [];
+
+  const maps = check(
+    await client.from('cee_lesson_mappings').select('lesson_id, node_id').in('node_id', [...byId.keys()]).eq('status', 'APPROVED')
+  ) as { lesson_id: string; node_id: string }[];
+  const live = await activelyPublished(client, [...new Set(maps.map((m) => m.lesson_id))]);
+  if (live.size === 0) return [];
+
+  const lessons = check(await client.from('cee_lessons').select('id, title').in('id', [...live])) as { id: string; title: string }[];
+  const titleOf = new Map(lessons.map((l) => [l.id, l.title]));
+
+  const chaptersAbove = (nodeId: string): string[] => {
+    const out: string[] = [];
+    for (let n = byId.get(nodeId), hops = 0; n && hops < 10; n = n.parent_id ? byId.get(n.parent_id) : undefined, hops++) {
+      if (n.legacy_chapter_id) out.push(n.legacy_chapter_id);
+    }
+    return out;
+  };
+
+  const result = new Map<string, PublishedLessonLink>();
+  for (const m of maps) {
+    if (!live.has(m.lesson_id) || !titleOf.has(m.lesson_id)) continue;
+    const link = result.get(m.lesson_id) ?? { id: m.lesson_id, title: titleOf.get(m.lesson_id)!, topic: byId.get(m.node_id)!.title, legacyChapterIds: [] };
+    link.legacyChapterIds = [...new Set([...link.legacyChapterIds, ...chaptersAbove(m.node_id)])];
+    result.set(m.lesson_id, link);
+  }
+  return [...result.values()].sort((a, b) => a.title.localeCompare(b.title)).slice(0, 200);
+}
