@@ -130,3 +130,37 @@ export function isAllowedAssetOrigin(url: string, allowedOrigins: string[] = [])
     return false;
   }
 }
+
+/**
+ * Validate an untrusted manifest JSON payload against canonical schema and origin restrictions.
+ */
+export function validateVisualAssetManifest(
+  input: unknown,
+  allowedOrigins: string[] = []
+): {
+  valid: boolean;
+  manifest?: VisualAssetManifest;
+  errors: string[];
+} {
+  const parsed = VisualAssetManifestSchema.safeParse(input);
+  if (!parsed.success) {
+    const issues = parsed.error.issues ?? (parsed.error as any).errors ?? [];
+    const errors = issues.map((e: any) => `${e.path.join('.')}: ${e.message}`);
+    return { valid: false, errors };
+  }
+
+  const errors: string[] = [];
+  if (!isAllowedAssetOrigin(parsed.data.sourceUrl, allowedOrigins)) {
+    errors.push(`sourceUrl: untrusted CDN origin (${parsed.data.sourceUrl})`);
+  }
+  if (parsed.data.fallbackUrl && !isAllowedAssetOrigin(parsed.data.fallbackUrl, allowedOrigins)) {
+    errors.push(`fallbackUrl: untrusted CDN origin (${parsed.data.fallbackUrl})`);
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return { valid: true, manifest: parsed.data, errors: [] };
+}
+
