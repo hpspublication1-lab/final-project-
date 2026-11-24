@@ -25,6 +25,9 @@ Built and tested **locally**. Nothing is applied to any database, the feature fl
 | FND-010/011 player | 3D player, layers, parts, guided tour, 2D fallback, context-loss recovery, keyboard, screen reader, reduced motion; checked in Chrome |
 | FND-004/020 student API | Read routes, events, attempts, progress; integration-tested against PostgREST; lesson page tested end to end in Chrome |
 | FND-019 bridge | Message protocol and validation, unit-tested; mobile harness not built |
+| FND-013–017 CMS | Admin API and screens: roles, syllabus (with verification), lessons, draft editor, questions, submit, review queue, publish, audit; integration-tested and browser-tested end to end |
+
+**24 Nov 2026, parallel build.** A separate implementation was pushed straight to the production branch (not deployed). The owner chose this design as the base. Its admin studio, review queue and course-page links were moved onto it. Its migrations are in `supabase/superseded/` (not to be applied), and its lesson text is in `content/cee-visual-drafts/` as unreviewed draft material.
 
 ## Phase 0.5: Fix what the new work depends on (≈3 days, needs your approval)
 

@@ -146,11 +146,11 @@ Any failure raises a named error, for example `ACADEMIC_APPROVAL_REQUIRED`, `ASS
 - **Publishing.** `cee_publish_revision` can't be called by `anon` or `authenticated`.
 - **Server role.** `service_role` is granted exactly `SELECT, INSERT, UPDATE, DELETE` on each `cee_*` table and `EXECUTE` on the publish function, stated in the migration rather than inherited from Supabase's default privileges (no `TRUNCATE`, `REFERENCES` or `TRIGGER`).
 
-**API-level evidence.** `src/lib/cee-visual/__tests__/api.integration.test.ts` runs the real route handlers through supabase-js against PostgREST 12 on this schema (set up by `scripts/cee/it-setup.sh`): 12 of 12 pass, covering the flag, sign-in, course access, answer-key hiding, idempotent events and attempts, server-side completion and student isolation.
+**API-level evidence.** `src/lib/cee-visual/__tests__/admin.integration.test.ts` runs the whole editorial flow (roles, syllabus, lessons, drafts, submit, six reviews, publish) through the admin routes: 9 of 9 pass. `src/lib/cee-visual/__tests__/api.integration.test.ts` runs the real route handlers through supabase-js against PostgREST 12 on this schema (set up by `scripts/cee/it-setup.sh`): 12 of 12 pass, covering the flag, sign-in, course access, answer-key hiding, idempotent events and attempts, server-side completion and student isolation.
 
 ## 5. Test evidence (executed 24 Nov 2026, local Postgres 16, scratch database)
 
-The schema was applied to a scratch database that mimics Supabase's default grants (`anon` and `authenticated` get table privileges by default, which the migration revokes). Then `tests/cee_visual_foundation_test.sql` ran: **51 of 51 checks passed** (re-run 24 Nov after adding the pin guard below). They include the handoff's scenarios:
+The schema was applied to a scratch database that mimics Supabase's default grants (`anon` and `authenticated` get table privileges by default, which the migration revokes). Then `tests/cee_visual_foundation_test.sql` ran: **61 of 61 checks passed** (re-run 24 Nov after adding the pin guard and the submit/decide functions below). They include the handoff's scenarios:
 
 | Scenario | Check |
 |---|---|
@@ -162,6 +162,9 @@ The schema was applied to a scratch database that mimics Supabase's default gran
 | CEE-009 | A duplicate event id is rejected |
 | CEE-010 | A published revision can't be changed; the previous publication becomes `SUPERSEDED`; exactly one is active |
 | Pins | Assets and questions pinned to a revision can't be added, removed or changed once it leaves DRAFT (`cee_guard_revision_pins`), so nothing can be swapped in after review |
+| Submit | `cee_submit_revision()` moves a draft to review, freezes its questions and opens the six gates in one transaction; a second submit is refused |
+| Decide | `cee_decide_review()` records a decision (authors refused), sends the revision back and cancels the other gates on requested changes, approves pinned questions on the assessment gate and the mapping on the syllabus gate, and approves the revision after six approvals |
+| Concurrency | `cee_lesson_revisions.updated_at` moves on every change; the API saves a draft only if it still matches what the editor opened |
 
 Also checked:
 
