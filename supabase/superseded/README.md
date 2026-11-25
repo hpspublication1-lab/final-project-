@@ -9,13 +9,21 @@ They create tables with the same names as the chosen schema but different
 columns, and their row-level policies would let students write their own progress
 rows (completion included) and let anyone insert audit entries.
 
-If they were ever run on a database, check before applying the chosen schema:
+`20261124000001_cee_audit_and_reviews.sql` cannot apply to this app's schema at all:
+its policies filter on `user_profiles.user_id` (the table is keyed by `id`) and compare
+`role` with `super_admin` and `content_manager`, which the `user_role` enum doesn't have.
+Run as a file it fails and leaves nothing. So a database where someone tried them
+most likely has the first file's tables only. CI checks exactly this state.
 
-```sql
--- Read-only. Any row returned means the parallel tables exist.
-SELECT table_name FROM information_schema.tables
-WHERE table_schema = 'public' AND table_name IN ('cee_exam_programs', 'cee_subjects', 'cee_asset_hotspots', 'cee_animation_sequences');
+Before applying the chosen schema anywhere, find out what is installed:
+
+```bash
+psql "$DB_URL" -At -F'|' -f scripts/cee/staging/check_superseded.sql   # read-only; last row is the VERDICT
 ```
+
+If it says SUPERSEDED INSTALLED, `scripts/cee/staging/remove_superseded.sql` drops those
+tables in one transaction. It refuses if the chosen schema is present, or if any superseded
+table holds rows other than its own seed data, so it can't destroy real content.
 
 The chosen schema runs in one transaction and never uses `CREATE … IF NOT EXISTS`, so on a database
 that already has these tables it stops at the first clash and changes nothing.

@@ -39,6 +39,11 @@ The handoff's rule applies: nothing counts as complete on the strength of mockup
 | Full flow: editor → 3 reviewers → publisher → student | Chrome, dev and production builds | Pass |
 | Answer keys absent from the student page HTML | Production build | Absent (dev mode serialises them; production doesn't) |
 | Security policy: `blob:` textures blocked before, allowed after | Chrome, production build | Confirmed |
+| `scripts/cee/staging/tests/snapshot_roundtrip.sh`: schema-only snapshot → empty DB → snapshot again | Postgres 16 | **Identical** (24 tables, 14 triggers, `public` and `storage.objects` policies); planted rows absent; 61/61 on the copy |
+| `check_superseded.sql` on clean / chosen / superseded / history-only / first-file-only databases | Postgres 16 | Correct verdict in all five |
+| `remove_superseded.sql`: seed rows only / chosen schema present / one non-seed row | Postgres 16 | Removes / refuses / refuses |
+| `validate_migration.sh`: no confirmation / production URL / user rows / schema-only copy / second run | Postgres 16 | Refuses / refuses / refuses / **PASS all 4 steps** / stops (already installed) |
+| `.github/workflows/cee-visual-db.yml`, every step run locally under `bash -eo pipefail` | Postgres 16, PostgREST 12.0.2 | All pass (integration 12/12 and 9/9). Not yet run on GitHub |
 
 ## Foundation acceptance criteria
 
@@ -56,7 +61,7 @@ Format: `Requirement | status | code path | commit/PR | tests executed | result 
 | F8 | No cross-program leakage in queries, search or CMS | VERIFIED (local) | `authz.ts`, `service.server.ts`, course isolation (PR #4, live) | `1f5a961`, `a16e0bd` | `authz` tests (IELTS/IOE/Physics denied); admin test (IELTS editor denied); course isolation verified live 23 Nov | Pass | — | 24 Nov | Search isn't part of the CEE visual API yet |
 | F9 | Mobile bridge validated on reference devices, including resume and errors | PARTIAL | `bridge.ts` | `b98f1a9` | 4 protocol tests | Pass | — | 24 Nov | **BLOCKED: mobile app code (G1)**; no device harness |
 | F10 | Server-validated, deduplicated progress events | VERIFIED (local) | `completion.ts`, `recordEvents`, `cee_player_events` PK | `b98f1a9` | `api.integration` (duplicates earn nothing, foreign events rejected, other students isolated) | Pass | — | 24 Nov | Section reads still come from the browser (documented limit) |
-| F11 | Critical E2E, security and accessibility tests pass with recorded evidence | PARTIAL | `__tests__/*.integration.test.ts`; browser scripts kept outside the repo | `1f5a961` | Local only | Pass locally | — | 24 Nov | **No staging E2E; no CI job runs the DB tests** (M5); browser checks aren't yet in the repo's test runner |
+| F11 | Critical E2E, security and accessibility tests pass with recorded evidence | PARTIAL | `__tests__/*.integration.test.ts`; browser scripts kept outside the repo | `1f5a961` | Local only | Pass locally | — | 24 Nov | **No staging E2E** (M5). The CI job for the DB and integration tests is written and passes locally, but hasn't run on GitHub yet; browser checks aren't yet in the repo's test runner |
 | F12 | Staging rollout and rollback tested; academic pilot sign-off | BLOCKED | — | — | — | — | — | — | **Needs a staging project (M2), real content (M9) and academic reviewers** |
 
 ## Critical scenarios
@@ -93,9 +98,24 @@ Format: `Requirement | status | code path | commit/PR | tests executed | result 
 
 None is met yet. Critical E2E on staging, zero open critical/high security issues (the security audit is assigned to Antigravity), a verified syllabus with academically reviewed content, every published 3D lesson having a fallback (enforced by the database), role isolation (tested locally), a migration dry-run on staging, a rollback rehearsal, and reference-device benchmarks.
 
+## Were the superseded migrations ever installed? (objective 3)
+
+**Not yet answerable for production**: it needs read access (the Supabase connector sign-in, or
+someone running `check_superseded.sql`). What the code shows:
+
+- `20261124000001_cee_audit_and_reviews.sql` **cannot apply** to this app's schema as defined in
+  `supabase/migrations/20260715003118_initial_schema.sql`. Its policies use `user_profiles.user_id`
+  (the table is keyed by `id`), and once that is corrected they fail again on `role IN ('super_admin', 'content_manager')`,
+  values the `user_role` enum doesn't have. Run as a file, it fails and leaves nothing.
+- So if anyone ran `supabase db push` with both files, the likely state is the first file's tables
+  only, plus `20261124000000` in the CLI history. `check_superseded.sql` reports that as
+  SUPERSEDED INSTALLED, and CI reproduces exactly that state on every run.
+- The commits were pushed to the production branch but not deployed, and nothing in the repo applies
+  migrations on deploy. That makes an install less likely, but it doesn't prove one never happened.
+
 ## Remaining criteria, in dependency order
 
-1. **Staging project** (owner: finish the Supabase connector sign-in) → F3, F11, F12, CEE-012.
+1. **Staging project** (owner: finish the Supabase connector sign-in, or create a separate staging project) → F3, F11, F12, CEE-012. Everything else for M2–M5 is built and tested: once access exists it's one snapshot command and one validation command (`scripts/cee/staging/README.md`).
 2. **Upload pipeline** (M7, in progress) → F4, F5, CEE-003; then **D7 scanner choice** (owner) to make it operational.
 3. **Official MEC syllabus document plus an academic director** → F2 and every publication.
 4. **A licensed heart model and named reviewers** (owner and academic staff) → the pilot and F12.
