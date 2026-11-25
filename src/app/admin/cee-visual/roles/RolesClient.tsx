@@ -54,8 +54,9 @@ export default function RolesClient() {
     setBusy(true);
     setMessage(null);
     try {
-      setMessage({ tone: 'ok', text: await fn() });
-      await roles.reload();
+      const text = await fn();
+      await roles.reload(); // confirm only once the list shows the change
+      setMessage({ tone: 'ok', text });
     } catch (e) {
       setMessage({ tone: 'error', text: e instanceof CeeAdminError ? e.message : String(e) });
     } finally {

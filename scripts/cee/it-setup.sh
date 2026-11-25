@@ -36,6 +36,10 @@ END $$;
 GRANT anon, authenticated, service_role TO it_authenticator;
 SQL
 $PG -q -d "$DB" -c "GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role"
+# Same default privileges as a Supabase project, so missing REVOKEs show up here too.
+$PG -q -d "$DB" -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role" \
+  -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role" \
+  -c "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role"
 $PG -q -d "$DB" -v ON_ERROR_STOP=1 -f supabase/proposed/20261124_cee_visual_foundation.sql >/dev/null
 $PG -q -d "$DB" -v ON_ERROR_STOP=1 -f scripts/cee/it-app-stubs.sql >/dev/null
 
@@ -50,7 +54,19 @@ CONF
 
 nohup "$POSTGREST_BIN" "$WORK/postgrest.conf" > "$WORK/postgrest.log" 2>&1 &
 nohup node scripts/cee/it-proxy.mjs > "$WORK/proxy.log" 2>&1 &
-sleep 2
+
+# Wait until both answer (not a fixed sleep), and fail loudly with their logs if they don't.
+ready() { [ "$(curl -s -o /dev/null -w '%{http_code}' "$1" || true)" = "200" ]; }
+for i in $(seq 1 60); do
+  if ready http://127.0.0.1:54330/ && ready http://127.0.0.1:54331/rest/v1/; then break; fi
+  if [ "$i" = 60 ]; then
+    echo "PostgREST or the proxy did not become ready in 30 s." >&2
+    echo "--- postgrest.log" >&2; tail -20 "$WORK/postgrest.log" >&2
+    echo "--- proxy.log" >&2; tail -20 "$WORK/proxy.log" >&2
+    exit 1
+  fi
+  sleep 0.5
+done
 
 jwt() { SECRET="$SECRET" ROLE="$1" node -e '
 const c=require("crypto"),b=(o)=>Buffer.from(JSON.stringify(o)).toString("base64url");

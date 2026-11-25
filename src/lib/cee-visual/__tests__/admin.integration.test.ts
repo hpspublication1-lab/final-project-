@@ -85,6 +85,10 @@ INSERT INTO user_profiles (id, subscription_plan, status) SELECT * FROM (VALUES 
       nodes: await import('@/app/api/v1/cee/admin/curriculum/nodes/route'),
       syllabi: await import('@/app/api/v1/cee/admin/syllabi/route'),
       verify: await import('@/app/api/v1/cee/admin/syllabi/[id]/verify/route'),
+      syllabus: await import('@/app/api/v1/cee/admin/syllabi/[id]/route'),
+      importCsv: await import('@/app/api/v1/cee/admin/syllabi/[id]/import/route'),
+      exportCsv: await import('@/app/api/v1/cee/admin/syllabi/[id]/export/route'),
+      node: await import('@/app/api/v1/cee/admin/curriculum/nodes/[id]/route'),
       lessons: await import('@/app/api/v1/cee/admin/lessons/route'),
       lesson: await import('@/app/api/v1/cee/admin/lessons/[id]/route'),
       revisions: await import('@/app/api/v1/cee/admin/lessons/[id]/revisions/route'),
@@ -150,6 +154,72 @@ INSERT INTO user_profiles (id, subscription_plan, status) SELECT * FROM (VALUES 
     const own = await call(r.verify.POST(req('POST', { sourceUrl: 'https://example.org/mec-syllabus.pdf', sourceSha256: 'a'.repeat(64) }), params({ id: ids.syllabus })));
     expect(own.status).toBe(403);
     expect(own.body.error.code).toBe('SOD_VIOLATION');
+  });
+
+  it('imports a syllabus from CSV (dry run first), then a separate director verifies it against the same document', async () => {
+    // Placeholder titles: test data, not syllabus content.
+    const csv = ['level,title,code,source_ref', '1,Test subject,,p. 1', '2,Test chapter,,p. 1', '3,Test topic,,"p. 2, 1.1"'].join('\n');
+    const fingerprint = 'c'.repeat(64);
+    as('director');
+    const s = await call(r.syllabi.POST(req('POST', { program: 'cee_medical', label: 'Import test (not a real syllabus)' })));
+    const sid = s.body.data.id as string;
+    const imp = (body: unknown) => call(r.importCsv.POST(req('POST', body), params({ id: sid })));
+
+    as('ieltsEditor');
+    expect((await imp({ csv })).status).toBe(403);
+
+    as('editor');
+    const patched = await call(r.syllabus.PATCH(req('PATCH', { sourceUrl: 'https://example.org/test-document.pdf', sourceSha256: fingerprint }), params({ id: sid })));
+    expect(patched.status).toBe(200);
+    const bad = await imp({ csv: 'level,title\n1,S\n3,Skipped' });
+    expect(bad.status).toBe(200);
+    expect(bad.body.data).toMatchObject({ dryRun: true, valid: false, errors: [{ row: 3 }] });
+    expect((await imp({ csv: 'level,title\n1,S\n3,Skipped', dryRun: false })).body.error.code).toBe('IMPORT_INVALID');
+
+    const dry = await imp({ csv });
+    expect(dry.body.data).toMatchObject({ dryRun: true, valid: true, existingEntries: 0, stats: { subjects: 1, chapters: 1, topics: 1 } });
+    expect(sql(`SELECT count(*) FROM cee_curriculum_nodes WHERE syllabus_version_id = '${sid}'`)).toBe('0');
+
+    const real = await imp({ csv, dryRun: false });
+    expect(real.status).toBe(201);
+    expect(real.body.data).toMatchObject({ imported: 3, replaced: 0 });
+    expect((await imp({ csv, dryRun: false })).status).toBe(409); // already has entries
+    const replaced = await imp({ csv: csv.replace('Test topic', 'Test topic (corrected)'), dryRun: false, replace: true });
+    expect(replaced.body.data).toMatchObject({ imported: 3, replaced: 3 });
+
+    const exported = await r.exportCsv.GET(req('GET'), params({ id: sid }));
+    expect(exported.headers.get('content-type')).toMatch(/text\/csv/);
+    const text = (await exported.text()).replace(/^\uFEFF/, '');
+    expect(text.split('\r\n')).toEqual([
+      'level,title,code,source_ref',
+      '1,Test subject,test-subject,p. 1',
+      '2,Test chapter,test-chapter,p. 1',
+      '3,Test topic (corrected),test-topic-corrected,"p. 2, 1.1"',
+      '',
+    ]);
+
+    const verify = (sha: string) => call(r.verify.POST(req('POST', { sourceUrl: 'https://example.org/test-document.pdf', sourceSha256: sha }), params({ id: sid })));
+    expect((await verify(fingerprint)).body.error.code).toBe('FORBIDDEN'); // an editor is not an academic director
+    as('director');
+    expect((await verify(fingerprint)).body.error.code).toBe('SOD_VIOLATION'); // the director created it
+    as('director2');
+    const wrongDoc = await verify('d'.repeat(64));
+    expect(wrongDoc.status).toBe(409);
+    expect(wrongDoc.body.error.code).toBe('SOURCE_MISMATCH');
+    expect((await verify(fingerprint)).status).toBe(200);
+    expect(sql(`SELECT status || ' ' || (verified_by = '${people.director2}') FROM cee_syllabus_versions WHERE id = '${sid}'`)).toBe('VERIFIED true');
+    expect(sql(`SELECT count(*) FROM cee_audit_logs WHERE entity_id = '${sid}' AND action IN ('CURRICULUM_IMPORT','SYLLABUS_VERIFY') AND request_id IS NOT NULL`)).toBe('3');
+
+    // Frozen now: no imports, no new entries, no edits to its details. Linking a chapter to a course page still works.
+    as('editor');
+    expect((await imp({ csv, dryRun: false, replace: true })).body.error.code).toBe('CURRICULUM_FROZEN');
+    const chapterId = sql(`SELECT id FROM cee_curriculum_nodes WHERE syllabus_version_id = '${sid}' AND node_type = 'CHAPTER'`);
+    expect((await call(r.nodes.POST(req('POST', { syllabusId: sid, parentId: chapterId, nodeType: 'TOPIC', code: 'late', title: 'Late' })))).body.error.code).toBe('CURRICULUM_FROZEN');
+    expect((await call(r.syllabus.PATCH(req('PATCH', { label: 'Renamed' }), params({ id: sid })))).body.error.code).toBe('CURRICULUM_FROZEN');
+    const link = await call(r.node.PATCH(req('PATCH', { legacyChapterId: legacyChapter }), params({ id: chapterId })));
+    expect(link.status).toBe(200);
+    const subjectId = sql(`SELECT id FROM cee_curriculum_nodes WHERE syllabus_version_id = '${sid}' AND node_type = 'SUBJECT'`);
+    expect((await call(r.node.PATCH(req('PATCH', { legacyChapterId: legacyChapter }), params({ id: subjectId })))).status).toBe(400);
   });
 
   it('creates a lesson only inside the editor’s course', async () => {

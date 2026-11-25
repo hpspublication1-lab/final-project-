@@ -208,8 +208,23 @@ export interface CurriculumView {
     status: string;
     effectiveDate: string | null;
     sourceUrl: string | null;
-    nodes: { id: string; parentId: string | null; type: string; code: string; title: string; legacyChapterId: string | null }[];
+    sourceSha256: string | null;
+    verifiedAt: string | null;
+    enteredByMe: boolean;
+    nodes: { id: string; parentId: string | null; type: string; code: string; title: string; sortKey: number; sourceRef: string | null; legacyChapterId: string | null }[];
   }[];
+}
+
+export interface ImportPreview {
+  dryRun: true;
+  valid: boolean;
+  errors: { row: number | null; column?: string; message: string }[];
+  warnings: { row: number | null; message: string }[];
+  stats: { subjects: number; chapters: number; topics: number; deepestLevel: number; withoutSourceRef: number };
+  existingEntries: number;
+  needsReplace: boolean;
+  preview: { row: number; level: number; type: string; code: string; title: string; sourceRef: string | null }[];
+  previewTruncated: boolean;
 }
 
 /** "Biology › Human Physiology › Human Heart" for each node. */

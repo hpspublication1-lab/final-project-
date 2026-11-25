@@ -73,19 +73,18 @@ export default function ReviewQueueClient() {
         method: 'POST',
         json: { decision, comments: comments.trim() || undefined },
       });
-      setMessage({
-        tone: 'ok',
-        text:
-          r.revisionStatus === 'APPROVED'
-            ? `Recorded. All six gates are now approved; “${active.lessonTitle}” can be published.`
-            : r.revisionStatus === 'CHANGES_REQUESTED'
-              ? 'Recorded. The revision went back to its author with your comments.'
-              : 'Recorded.',
-      });
+      const text =
+        r.revisionStatus === 'APPROVED'
+          ? `Recorded. All six gates are now approved; “${active.lessonTitle}” can be published.`
+          : r.revisionStatus === 'CHANGES_REQUESTED'
+            ? 'Recorded. The revision went back to its author with your comments.'
+            : 'Recorded.';
       setActive(null);
       setComments('');
       setDecision('APPROVE');
+      // Confirm only once the list no longer shows the request just decided.
       await queue.reload();
+      setMessage({ tone: 'ok', text });
     } catch (err) {
       setMessage({ tone: 'error', text: err instanceof CeeAdminError ? err.message : String(err) });
     } finally {

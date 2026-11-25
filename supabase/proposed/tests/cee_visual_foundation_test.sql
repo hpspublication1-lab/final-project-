@@ -19,13 +19,14 @@ BEGIN
     INSERT INTO results(name, ok, detail) VALUES (name, position(fragment IN SQLERRM) > 0, SQLERRM);
   END;
 END $$;
+-- A NULL condition counts as a failure.
 CREATE FUNCTION pg_temp.check(name text, cond boolean, detail text DEFAULT '') RETURNS void LANGUAGE sql AS $$
-  INSERT INTO results(name, ok, detail) VALUES (name, cond, detail);
+  INSERT INTO results(name, ok, detail) VALUES (name, coalesce(cond, false), coalesce(detail, '') || CASE WHEN cond IS NULL THEN ' (condition was NULL)' ELSE '' END);
 $$;
 
 -- people (plain uuids; the schema has no FK to auth.users by design)
 CREATE TEMP TABLE ppl (k text PRIMARY KEY, id uuid);
-INSERT INTO ppl VALUES ('editor', gen_random_uuid()), ('expert', gen_random_uuid()), ('director', gen_random_uuid()),
+INSERT INTO ppl VALUES ('editor', gen_random_uuid()), ('expert', gen_random_uuid()), ('director', gen_random_uuid()), ('director2', gen_random_uuid()),
   ('publisher', gen_random_uuid()), ('student', gen_random_uuid()), ('nobody', gen_random_uuid());
 CREATE FUNCTION pg_temp.u(k text) RETURNS uuid LANGUAGE sql AS $$ SELECT id FROM ppl WHERE ppl.k = $1 $$;
 
@@ -105,10 +106,11 @@ UPDATE cee_lesson_revisions SET status = 'APPROVED' WHERE id = 'e0000000-0000-00
 -- ── Publication gates ─────────────────────────────────────────────────────
 SELECT pg_temp.expect('cannot publish against an unverified syllabus or unapproved mapping',
   format($q$SELECT cee_publish_revision('e0000000-0000-0000-0000-000000000002','%s','k-r2')$q$, pg_temp.u('publisher')), 'MAPPING_NOT_VERIFIED');
-SELECT pg_temp.expect('a syllabus cannot be VERIFIED without verifier and source hash',
-  $q$UPDATE cee_syllabus_versions SET status = 'VERIFIED' WHERE id = '11111111-1111-1111-1111-111111111111'$q$, 'check constraint');
-UPDATE cee_syllabus_versions SET status = 'VERIFIED', verified_by = pg_temp.u('director'), verified_at = now(),
-  source_sha256 = repeat('a', 64) WHERE id = '11111111-1111-1111-1111-111111111111';
+SELECT pg_temp.expect('a syllabus cannot be marked VERIFIED directly',
+  format($q$UPDATE cee_syllabus_versions SET status = 'VERIFIED', verified_by = '%s', verified_at = now(), source_sha256 = repeat('a', 64)
+          WHERE id = '11111111-1111-1111-1111-111111111111'$q$, pg_temp.u('director2')), 'VERIFY_VIA_FUNCTION');
+INSERT INTO cee_role_assignments (user_id, role_key, program_code, granted_by) VALUES (pg_temp.u('director2'),'ACADEMIC_DIRECTOR','cee_medical',pg_temp.u('director'));
+SELECT cee_verify_syllabus('11111111-1111-1111-1111-111111111111', pg_temp.u('director2'), 'https://example.org/test-document', repeat('a', 64));
 UPDATE cee_lesson_mappings SET status = 'APPROVED', approved_by = pg_temp.u('director'), approved_at = now()
   WHERE id = 'd0000000-0000-0000-0000-000000000001';
 SELECT pg_temp.expect('the author cannot publish',
@@ -279,7 +281,104 @@ SELECT pg_temp.check('requesting changes sends the revision back and cancels the
   AND (SELECT count(*) FROM cee_review_requests WHERE entity_id = 'e0000000-0000-0000-0000-000000000011' AND status = 'CANCELLED') = 5
   AND (SELECT count(*) FROM cee_audit_logs WHERE entity_id = 'e0000000-0000-0000-0000-000000000011' AND action = 'REVIEW_REQUEST_CHANGES') = 1);
 
+-- ── Syllabus import and verification (M6) ─────────────────────────────────
+-- A separate draft; test data only, clearly labelled.
+INSERT INTO cee_role_assignments (user_id, role_key, program_code, granted_by) VALUES
+  (pg_temp.u('editor'),'EDITOR','cee_medical',pg_temp.u('director')),
+  (pg_temp.u('expert'),'ACADEMIC_DIRECTOR','cee_medical',pg_temp.u('director')),
+  (pg_temp.u('director'),'ACADEMIC_DIRECTOR','cee_medical',pg_temp.u('director'));
+INSERT INTO cee_role_assignments (user_id, role_key, program_code, subject_node_id, granted_by) VALUES
+  (pg_temp.u('nobody'),'ACADEMIC_DIRECTOR','cee_medical','a0000000-0000-0000-0000-000000000001',pg_temp.u('director'));
+INSERT INTO cee_syllabus_versions (id, program_code, label, created_by, source_sha256)
+VALUES ('33333333-3333-3333-3333-333333333333', 'cee_medical', 'Import test (not a real syllabus)', pg_temp.u('director'), repeat('c', 64));
+SELECT pg_temp.expect('a syllabus cannot be created already VERIFIED',
+  format($q$INSERT INTO cee_syllabus_versions (program_code,label,status,verified_by,verified_at,source_sha256,created_by)
+          VALUES ('cee_medical','x','VERIFIED','%s',now(),repeat('a',64),'%s')$q$, pg_temp.u('director2'), pg_temp.u('editor')), 'ILLEGAL_TRANSITION');
+CREATE FUNCTION pg_temp.tree(tag text) RETURNS jsonb LANGUAGE sql AS $$
+  SELECT jsonb_build_array(
+    jsonb_build_object('id', md5(tag || 's')::uuid, 'parent_id', NULL, 'node_type', 'SUBJECT', 'code', 'test-subject', 'title', 'Test subject', 'sort_key', 1, 'source_ref', 'p. 1'),
+    jsonb_build_object('id', md5(tag || 'c')::uuid, 'parent_id', md5(tag || 's')::uuid, 'node_type', 'CHAPTER', 'code', 'test-chapter', 'title', 'Test chapter', 'sort_key', 1, 'source_ref', 'p. 1, 1.1'),
+    jsonb_build_object('id', md5(tag || 't')::uuid, 'parent_id', md5(tag || 'c')::uuid, 'node_type', 'TOPIC', 'code', 'test-topic', 'title', 'Test topic', 'sort_key', 1, 'source_ref', NULL))
+$$;
+SELECT pg_temp.expect('importing needs a program-wide director or editor',
+  format($q$SELECT cee_import_curriculum('33333333-3333-3333-3333-333333333333','%s',pg_temp.tree('a'),false)$q$, pg_temp.u('publisher')), 'FORBIDDEN');
+CREATE TEMP TABLE imp_a AS SELECT cee_import_curriculum('33333333-3333-3333-3333-333333333333', pg_temp.u('editor'), pg_temp.tree('a'), false) AS n;
+SELECT pg_temp.check('the editor imports a three-level tree in one call',
+  (SELECT n FROM imp_a) = 3 AND (SELECT source_ref FROM cee_curriculum_nodes WHERE id = md5('ac')::uuid) = 'p. 1, 1.1'
+  AND (SELECT created_by FROM cee_curriculum_nodes WHERE id = md5('at')::uuid) = pg_temp.u('editor'));
+SELECT pg_temp.expect('a second import without replace is refused',
+  format($q$SELECT cee_import_curriculum('33333333-3333-3333-3333-333333333333','%s',pg_temp.tree('b'),false)$q$, pg_temp.u('editor')), 'already has 3 entries');
+SELECT pg_temp.expect('an import with a bad row changes nothing',
+  format($q$SELECT cee_import_curriculum('33333333-3333-3333-3333-333333333333','%s',
+     pg_temp.tree('b') || jsonb_build_array(jsonb_build_object('id',gen_random_uuid(),'parent_id',md5('bs')::uuid,'node_type','TOPIC','code','bad','title','Topic under a subject')),true)$q$,
+     pg_temp.u('editor')), 'CURRICULUM_SHAPE');
+SELECT pg_temp.check('… and the first import is still intact',
+  (SELECT count(*) FROM cee_curriculum_nodes WHERE syllabus_version_id = '33333333-3333-3333-3333-333333333333') = 3
+  AND EXISTS (SELECT 1 FROM cee_curriculum_nodes WHERE id = md5('at')::uuid));
+CREATE TEMP TABLE imp_b AS SELECT cee_import_curriculum('33333333-3333-3333-3333-333333333333', pg_temp.u('editor'), pg_temp.tree('b'), true) AS n;
+SELECT pg_temp.check('replace swaps the whole tree',
+  (SELECT n FROM imp_b) = 3 AND NOT EXISTS (SELECT 1 FROM cee_curriculum_nodes WHERE id = md5('at')::uuid)
+  AND (SELECT count(*) FROM cee_curriculum_nodes WHERE syllabus_version_id = '33333333-3333-3333-3333-333333333333') = 3);
+INSERT INTO cee_syllabus_versions (id, program_code, label, created_by) VALUES ('44444444-4444-4444-4444-444444444444', 'cee_medical', 'In-use test (not a real syllabus)', pg_temp.u('director'));
+SELECT cee_import_curriculum('44444444-4444-4444-4444-444444444444', pg_temp.u('editor'), pg_temp.tree('u'), false);
+INSERT INTO cee_learning_objectives (node_id, code, text) VALUES (md5('ut')::uuid, 'test-objective', 'Test objective (not real content)');
+SELECT pg_temp.expect('replace refuses when an objective points at a draft entry',
+  format($q$SELECT cee_import_curriculum('44444444-4444-4444-4444-444444444444','%s',pg_temp.tree('v'),true)$q$, pg_temp.u('editor')), 'IN_USE');
+
+SELECT pg_temp.expect('the syllabus creator cannot verify it',
+  format($q$SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333','%s','https://example.org/x',repeat('c',64))$q$, pg_temp.u('director')), 'SOD_VIOLATION');
+INSERT INTO cee_role_assignments (user_id, role_key, program_code, granted_by) VALUES (pg_temp.u('editor'),'ACADEMIC_DIRECTOR','cee_medical',pg_temp.u('director'));
+SELECT pg_temp.expect('whoever entered the tree cannot verify it, even as a director',
+  format($q$SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333','%s','https://example.org/x',repeat('c',64))$q$, pg_temp.u('editor')), 'SOD_VIOLATION');
+SELECT pg_temp.expect('a subject-scoped director cannot verify a whole syllabus',
+  format($q$SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333','%s','https://example.org/x',repeat('c',64))$q$, pg_temp.u('nobody')), 'FORBIDDEN');
+SELECT pg_temp.expect('verifying against a different document is refused',
+  format($q$SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333','%s','https://example.org/x',repeat('d',64))$q$, pg_temp.u('expert')), 'SOURCE_MISMATCH');
+SELECT pg_temp.expect('a hash that is not lowercase hex is refused',
+  format($q$SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333','%s','https://example.org/x',repeat('C',64))$q$, pg_temp.u('expert')), 'SOURCE_MISMATCH');
+INSERT INTO cee_curriculum_nodes (syllabus_version_id, parent_id, node_type, code, title, created_by)
+VALUES ('33333333-3333-3333-3333-333333333333', NULL, 'SUBJECT', 'empty-subject', 'Empty test subject', pg_temp.u('editor'));
+SELECT pg_temp.expect('a subject without chapters blocks verification',
+  format($q$SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333','%s','https://example.org/x',repeat('c',64))$q$, pg_temp.u('expert')), 'SYLLABUS_INCOMPLETE');
+DELETE FROM cee_curriculum_nodes WHERE syllabus_version_id = '33333333-3333-3333-3333-333333333333' AND code = 'empty-subject';
+SELECT cee_verify_syllabus('33333333-3333-3333-3333-333333333333', pg_temp.u('expert'), '', repeat('c', 64));
+SELECT pg_temp.check('a separate director verifies it against the recorded document',
+  (SELECT status = 'VERIFIED' AND verified_by = pg_temp.u('expert') FROM cee_syllabus_versions WHERE id = '33333333-3333-3333-3333-333333333333')
+  AND EXISTS (SELECT 1 FROM cee_audit_logs WHERE action = 'SYLLABUS_VERIFY' AND entity_id = '33333333-3333-3333-3333-333333333333')
+  AND EXISTS (SELECT 1 FROM cee_audit_logs WHERE action = 'CURRICULUM_IMPORT' AND entity_id = '33333333-3333-3333-3333-333333333333'));
+SELECT pg_temp.expect('a verified tree takes no new entries',
+  format($q$INSERT INTO cee_curriculum_nodes (syllabus_version_id,parent_id,node_type,code,title,created_by) VALUES ('33333333-3333-3333-3333-333333333333','%s','TOPIC','late','Late',gen_random_uuid())$q$, md5('bc')::uuid), 'CURRICULUM_FROZEN');
+SELECT pg_temp.expect('a verified entry cannot be renamed',
+  $q$UPDATE cee_curriculum_nodes SET title = 'Renamed' WHERE id = md5('bt')::uuid$q$, 'CURRICULUM_FROZEN');
+SELECT pg_temp.expect('a verified entry cannot be deleted',
+  $q$DELETE FROM cee_curriculum_nodes WHERE id = md5('bt')::uuid$q$, 'CURRICULUM_FROZEN');
+UPDATE cee_curriculum_nodes SET legacy_chapter_id = gen_random_uuid() WHERE id = md5('bc')::uuid;
+SELECT pg_temp.check('a verified chapter can still be linked to a course page',
+  (SELECT legacy_chapter_id IS NOT NULL FROM cee_curriculum_nodes WHERE id = md5('bc')::uuid));
+SELECT pg_temp.expect('importing into a verified syllabus is refused',
+  format($q$SELECT cee_import_curriculum('33333333-3333-3333-3333-333333333333','%s',pg_temp.tree('w'),true)$q$, pg_temp.u('editor')), 'CURRICULUM_FROZEN');
+SELECT pg_temp.expect('a verified syllabus keeps its source',
+  $q$UPDATE cee_syllabus_versions SET source_sha256 = repeat('e',64) WHERE id = '33333333-3333-3333-3333-333333333333'$q$, 'IMMUTABLE_SYLLABUS');
+SELECT pg_temp.expect('a verified syllabus cannot be deleted',
+  $q$DELETE FROM cee_syllabus_versions WHERE id = '33333333-3333-3333-3333-333333333333'$q$, 'IMMUTABLE_SYLLABUS');
+UPDATE cee_syllabus_versions SET status = 'RETIRED' WHERE id = '33333333-3333-3333-3333-333333333333';
+SELECT pg_temp.expect('a retired syllabus cannot come back',
+  $q$UPDATE cee_syllabus_versions SET status = 'VERIFIED' WHERE id = '33333333-3333-3333-3333-333333333333'$q$, 'ILLEGAL_TRANSITION');
+
 -- ── Browser roles have no access (CEE-004) ───────────────────────────────
+SELECT pg_temp.check('no cee_* function is executable by anon or authenticated',
+  NOT EXISTS (SELECT 1 FROM pg_proc p, (VALUES ('anon'), ('authenticated')) r(role)
+              WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'cee\_%'
+                AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.role) AND has_function_privilege(r.role, p.oid, 'EXECUTE')),
+  (SELECT string_agg(p.oid::regprocedure::text, ', ') FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'cee\_%'
+     AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') AND has_function_privilege('authenticated', p.oid, 'EXECUTE')));
+SELECT pg_temp.check('the server role can call the six transactional functions',
+  NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role')
+  OR (SELECT bool_and(has_function_privilege('service_role', f::regprocedure, 'EXECUTE')) FROM unnest(ARRAY[
+       'public.cee_publish_revision(uuid,uuid,text)', 'public.cee_submit_revision(uuid,uuid)', 'public.cee_decide_review(uuid,uuid,text,text)',
+       'public.cee_latest_decision(text,uuid,text)', 'public.cee_import_curriculum(uuid,uuid,jsonb,boolean,text)',
+       'public.cee_verify_syllabus(uuid,uuid,text,text,text)']) f));
+
 SELECT pg_temp.check('row security is on for every cee_* table',
   (SELECT bool_and(relrowsecurity) FROM pg_class WHERE relname LIKE 'cee\_%' AND relkind = 'r'));
 SET ROLE authenticated;

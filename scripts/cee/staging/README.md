@@ -14,7 +14,7 @@ project and refuses a database that contains user rows.
 | `schema_snapshot.sql` | no | Prints a schema-only SQL script of `public` (plus bucket settings and `storage.objects` policies) from the system catalog. Reads no table rows. |
 | `check_superseded.sql` | no | Reports which CEE schema is installed. Last row is the VERDICT: CLEAN, CHOSEN SCHEMA INSTALLED, SUPERSEDED INSTALLED, MIXED or UNKNOWN. |
 | `remove_superseded.sql` | yes | Drops the superseded tables in one transaction. Refuses if the chosen schema is there or if any superseded table holds non-seed rows. |
-| `validate_migration.sh` | yes (staging only) | Applies the migration, runs the 61 schema checks in a rolled-back transaction, rehearses the rollback, re-applies, and writes an evidence log. |
+| `validate_migration.sh` | yes (staging only) | Applies the migration, runs the 86 schema checks in a rolled-back transaction, rehearses the rollback, re-applies, and writes an evidence log. |
 | `tests/` | — | Local and CI fixtures: `snapshot_roundtrip.sh` proves the snapshot reproduces a schema exactly and carries no rows. |
 
 ## Steps (owner or someone with production read access)
@@ -49,7 +49,7 @@ secrets. Configure those in the staging project's dashboard if a test needs them
 
 - Snapshot round trip: a production-like schema plus the chosen schema (24 tables, 14
   triggers, policies on `public` and `storage.objects`) → snapshot → apply to an empty
-  database → snapshot again → identical. The chosen schema's 61 checks pass on the copy.
+  database → snapshot again → identical. The chosen schema’s checks (86 as of M6) pass on the copy.
   Rows planted in the source don't appear in the snapshot.
 - `validate_migration.sh` refused when confirmation was missing, when the URL was the
   production project, and when the database had user rows. On a schema-only copy it

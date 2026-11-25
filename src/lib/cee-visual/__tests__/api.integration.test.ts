@@ -60,14 +60,17 @@ TRUNCATE cee_settings, cee_syllabus_versions, cee_curriculum_nodes, cee_learning
   cee_lesson_questions, cee_review_requests, cee_review_decisions, cee_publications, cee_role_assignments, cee_audit_logs,
   cee_student_progress, cee_player_events, cee_attempts CASCADE;
 INSERT INTO cee_settings (key, value) VALUES ('cee_visual_enabled', 'false');
-INSERT INTO cee_syllabus_versions (id, program_code, label, status, source_sha256, verified_by, verified_at, created_by)
-VALUES ('${ID.syllabus}', 'cee_medical', 'MEC CEE (integration test)', 'VERIFIED', repeat('a',64), '${ID.director}', now(), '${ID.editor}'),
-       ('${ID.ieltsSyllabus}', 'ielts', 'IELTS (integration test, unverified)', 'DRAFT', NULL, NULL, NULL, '${ID.editor}');
+INSERT INTO cee_syllabus_versions (id, program_code, label, created_by)
+VALUES ('${ID.syllabus}', 'cee_medical', 'MEC CEE (integration test)', '${ID.editor}'),
+       ('${ID.ieltsSyllabus}', 'ielts', 'IELTS (integration test, unverified)', '${ID.editor}');
 INSERT INTO cee_curriculum_nodes (id, syllabus_version_id, parent_id, node_type, code, title, sort_key, created_by) VALUES
- ('${ID.biology}', '${ID.syllabus}', NULL, 'SUBJECT', 'biology', 'Biology', 1, '${ID.director}'),
- ('${ID.physiology}', '${ID.syllabus}', '${ID.biology}', 'CHAPTER', 'human-physiology', 'Human Physiology', 1, '${ID.director}'),
- ('${ID.circulatory}', '${ID.syllabus}', '${ID.physiology}', 'TOPIC', 'circulatory-system', 'Circulatory System', 1, '${ID.director}'),
- ('${ID.heart}', '${ID.syllabus}', '${ID.circulatory}', 'TOPIC', 'human-heart', 'Human Heart', 1, '${ID.director}');
+ ('${ID.biology}', '${ID.syllabus}', NULL, 'SUBJECT', 'biology', 'Biology', 1, '${ID.editor}'),
+ ('${ID.physiology}', '${ID.syllabus}', '${ID.biology}', 'CHAPTER', 'human-physiology', 'Human Physiology', 1, '${ID.editor}'),
+ ('${ID.circulatory}', '${ID.syllabus}', '${ID.physiology}', 'TOPIC', 'circulatory-system', 'Circulatory System', 1, '${ID.editor}'),
+ ('${ID.heart}', '${ID.syllabus}', '${ID.circulatory}', 'TOPIC', 'human-heart', 'Human Heart', 1, '${ID.editor}');
+-- Verified the only way the schema allows: by a separate academic director, through the function.
+INSERT INTO cee_role_assignments (user_id, role_key, program_code, granted_by) VALUES ('${ID.director}', 'ACADEMIC_DIRECTOR', 'cee_medical', '${ID.director}');
+SELECT cee_verify_syllabus('${ID.syllabus}', '${ID.director}', 'https://example.org/integration-test-document', repeat('a', 64));
 INSERT INTO cee_lessons (id, program_code, slug, title, created_by)
 VALUES ('${ID.lesson}', 'cee_medical', 'player-test', 'Player test lesson (integration fixture)', '${ID.editor}');
 INSERT INTO cee_lesson_mappings (lesson_id, node_id, status, approved_by, approved_at, created_by)

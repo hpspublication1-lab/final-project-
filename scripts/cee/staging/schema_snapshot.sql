@@ -142,17 +142,21 @@ ddl(ord, sub, stmt) AS (
   WHERE r.relacl IS NOT NULL AND ro.rolname IN ('anon', 'authenticated', 'service_role')
   GROUP BY r.relname, r.qname, g.grantee, ro.rolname
 
-  -- Function EXECUTE grants (functions default to PUBLIC; reproduce revokes too)
+  -- Function EXECUTE grants: reset (PUBLIC and the API roles, since Supabase's default
+  -- privileges grant new functions to anon and authenticated), then grant exactly
+  -- what the source has. A NULL ACL means the built-in default: owner and PUBLIC.
   UNION ALL
   SELECT 15, p.proname || pg_get_function_identity_arguments(p.oid) || '.0',
-         format('REVOKE ALL ON FUNCTION public.%I(%s) FROM PUBLIC;', p.proname, pg_get_function_identity_arguments(p.oid))
+         format('REVOKE ALL ON FUNCTION public.%I(%s) FROM %s;', p.proname, pg_get_function_identity_arguments(p.oid),
+                (SELECT string_agg(r, ', ' ORDER BY o) FROM (VALUES (0, 'PUBLIC'), (1, 'anon'), (2, 'authenticated'), (3, 'service_role')) v(o, r)
+                 WHERE o = 0 OR EXISTS (SELECT 1 FROM pg_roles WHERE rolname = v.r)))
   FROM pg_proc p
-  WHERE p.pronamespace = (SELECT oid FROM pub) AND p.prokind IN ('f', 'p') AND p.proacl IS NOT NULL AND p.oid NOT IN (SELECT objid FROM ext_objs)
+  WHERE p.pronamespace = (SELECT oid FROM pub) AND p.prokind IN ('f', 'p') AND p.oid NOT IN (SELECT objid FROM ext_objs)
   UNION ALL
   SELECT 15, p.proname || pg_get_function_identity_arguments(p.oid) || '.1.' || g.grantee::text,
          format('GRANT EXECUTE ON FUNCTION public.%I(%s) TO %s;', p.proname, pg_get_function_identity_arguments(p.oid),
                 CASE WHEN g.grantee = 0 THEN 'PUBLIC' ELSE quote_ident(ro.rolname) END)
-  FROM pg_proc p CROSS JOIN LATERAL aclexplode(p.proacl) g LEFT JOIN pg_roles ro ON ro.oid = g.grantee
+  FROM pg_proc p CROSS JOIN LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) g LEFT JOIN pg_roles ro ON ro.oid = g.grantee
   WHERE p.pronamespace = (SELECT oid FROM pub) AND p.prokind IN ('f', 'p') AND p.oid NOT IN (SELECT objid FROM ext_objs)
     AND g.privilege_type = 'EXECUTE' AND (g.grantee = 0 OR ro.rolname IN ('anon', 'authenticated', 'service_role'))
 )

@@ -13,6 +13,8 @@ DROP FUNCTION IF EXISTS public.cee_publish_revision(uuid, uuid, text);
 DROP FUNCTION IF EXISTS public.cee_submit_revision(uuid, uuid);
 DROP FUNCTION IF EXISTS public.cee_decide_review(uuid, uuid, text, text);
 DROP FUNCTION IF EXISTS public.cee_latest_decision(text, uuid, text);
+DROP FUNCTION IF EXISTS public.cee_import_curriculum(uuid, uuid, jsonb, boolean, text);
+DROP FUNCTION IF EXISTS public.cee_verify_syllabus(uuid, uuid, text, text, text);
 DROP TABLE IF EXISTS public.cee_attempts, public.cee_player_events, public.cee_student_progress,
   public.cee_audit_logs, public.cee_role_assignments, public.cee_publications, public.cee_review_decisions,
   public.cee_review_requests, public.cee_lesson_questions, public.cee_question_revisions, public.cee_lesson_assets,
@@ -21,6 +23,6 @@ DROP TABLE IF EXISTS public.cee_attempts, public.cee_player_events, public.cee_s
   public.cee_syllabus_versions, public.cee_settings;
 DROP FUNCTION IF EXISTS public.cee_check_node(), public.cee_check_mapping(), public.cee_guard_lesson_revision(),
   public.cee_guard_asset_version(), public.cee_guard_question_revision(), public.cee_guard_revision_pins(), public.cee_append_only(),
-  public.cee_check_decision(), public.cee_lock_on_review();
+  public.cee_check_decision(), public.cee_lock_on_review(), public.cee_guard_syllabus_version(), public.cee_guard_curriculum_frozen();
 DROP DOMAIN IF EXISTS cee_program_code;
 COMMIT;

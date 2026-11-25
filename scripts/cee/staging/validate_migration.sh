@@ -9,7 +9,7 @@
 #   * the URL points at the production Supabase project;
 #   * the database contains any user rows (auth.users or public.user_profiles);
 #   * check_superseded.sql doesn't report CLEAN.
-# Then: apply → run the 61 schema checks inside a transaction that is rolled back →
+# Then: apply → run the schema checks inside a transaction that is rolled back →
 # rehearse the real rollback → verify nothing is left → re-apply → verify.
 set -euo pipefail
 cd "$(dirname "$0")/../../.."

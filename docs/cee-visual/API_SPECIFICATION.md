@@ -48,9 +48,14 @@ Next.js route handlers under `src/app/api/v1/cee/…`. This adapts `05_API_CONTR
 | 409 | `REVISION_CONFLICT` | Stale `revision` on a draft edit |
 | 409 | `IDEMPOTENCY_CONFLICT` | An idempotency key reused with a different request body |
 | 409 | `STATE_CONFLICT` | Illegal transition, e.g. editing a submitted revision (`IMMUTABLE_REVISION` from the database) |
+| 409 | `CURRICULUM_FROZEN` | Changing a syllabus (or its tree) that is no longer `DRAFT` |
+| 409 | `SOURCE_MISMATCH` | Verifying against a document whose SHA-256 differs from the one recorded while drafting |
+| 409 | `IN_USE` | Replacing a draft tree whose entries lessons, objectives or role scopes already point at |
 | 413 | `PAYLOAD_TOO_LARGE` | Over the per-kind size cap |
 | 415 | `UNSUPPORTED_TYPE` | MIME type or magic bytes not allowed |
 | 422 | `CURRICULUM_INVALID` | Shape, scope or cycle errors from the curriculum triggers |
+| 422 | `IMPORT_INVALID` | A syllabus CSV with problems; `details.errors` lists them by line |
+| 422 | `SYLLABUS_INCOMPLETE` | Verifying a syllabus with no subjects, or a subject without a chapter |
 | 422 | `CROSS_PROGRAM_MAPPING` | Mapping into another program without the cross-program flow |
 | 422 | `ACADEMIC_APPROVAL_REQUIRED` | A review gate isn't approved |
 | 422 | `MAPPING_NOT_VERIFIED` | No approved mapping into a verified syllabus |
@@ -83,8 +88,12 @@ Next.js route handlers under `src/app/api/v1/cee/…`. This adapts `05_API_CONTR
 | Method and path | Permission and scope | Notes |
 |---|---|---|
 | `POST /admin/syllabi` | `ACADEMIC_DIRECTOR` for the program | Creates `DRAFT` |
-| `POST /admin/syllabi/:id/verify` | `ACADEMIC_DIRECTOR`, not the creator | Requires `source_url`, `source_sha256`; immutable afterwards |
-| `POST /admin/curriculum/nodes` | `ACADEMIC_DIRECTOR` or `EDITOR` scoped to the subject | 422 `CURRICULUM_INVALID` on shape, scope or cycle |
+| `PATCH /admin/syllabi/:id` | `ACADEMIC_DIRECTOR` or `EDITOR`, program-wide | `DRAFT` only: label, source URL, **source SHA-256** (of the document it is entered from), effective date, notes |
+| `POST /admin/syllabi/:id/import` | `ACADEMIC_DIRECTOR` or `EDITOR`, program-wide | Body `{csv, dryRun = true, replace = false}`. Dry run: line-numbered errors, warnings, counts, preview. Real run: `cee_import_curriculum()` replaces the draft's tree in one transaction. Format: `docs/cee-visual/SYLLABUS_WORKFLOW.md` |
+| `GET /admin/syllabi/:id/export` | Any CEE role in the program | `text/csv` in the import format (re-importable); cells that a spreadsheet would run as formulas are prefixed with `'` |
+| `POST /admin/syllabi/:id/verify` | Program-wide `ACADEMIC_DIRECTOR` who neither created nor entered any of it | Through `cee_verify_syllabus()`: SHA-256 must match the recorded one (if any); every subject needs a chapter; the syllabus and its tree are frozen afterwards (only retiring is allowed) |
+| `POST /admin/curriculum/nodes` | `ACADEMIC_DIRECTOR` or `EDITOR` scoped to the subject | `DRAFT` syllabus only (409 `CURRICULUM_FROZEN`); optional `sourceRef`; 422 `CURRICULUM_INVALID` on shape, scope or cycle |
+| `PATCH /admin/curriculum/nodes/:id` | `ACADEMIC_DIRECTOR` or `EDITOR` scoped to the subject | Chapters only: `{legacyChapterId}` links to an existing course chapter page. Allowed after verification (not syllabus content) |
 | `PATCH /admin/curriculum/nodes/:id` | Same | `revision` required |
 | `POST /admin/lessons` | `EDITOR` for the program | Creates the lesson and revision 1 (`DRAFT`) |
 | `POST /admin/lessons/:id/revisions` | `EDITOR` | New `DRAFT`, copied from the latest revision |

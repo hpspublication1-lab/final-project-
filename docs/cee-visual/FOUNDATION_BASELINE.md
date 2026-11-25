@@ -27,23 +27,25 @@ The handoff's rule applies: nothing counts as complete on the strength of mockup
 
 | Suite | Runs against | Result |
 |---|---|---|
-| `supabase/proposed/tests/cee_visual_foundation_test.sql` | Fresh Postgres 16 | **61/61** |
+| `supabase/proposed/tests/cee_visual_foundation_test.sql` | Fresh Postgres 16 with Supabase's default privileges | **86/86** (61 at the baseline; 25 added in M6) |
 | Rollback, with a publication present | Postgres 16 | Refuses (as designed) |
 | Rollback, clean | Postgres 16 | Leaves 0 tables and 0 functions; re-apply OK |
 | Chosen schema over the superseded tables | Postgres 16 | Stops at the first clash; creates nothing |
-| Unit tests: `schemas`, `authz`, `grading-completion`, `player-bridge-http`, `eventQueue`, `validators` (attack files generated per case) | Node | 714 for the whole site, all passing |
+| Unit tests: `schemas`, `authz`, `grading-completion`, `player-bridge-http`, `eventQueue`, `validators` (attack files generated per case), `syllabusImport` | Node | 730 for the whole site, all passing (16 new for the syllabus importer) |
 | `api.integration.test.ts` (student API) | PostgREST 12 → Postgres 16 | **12/12** |
-| `admin.integration.test.ts` (editorial flow) | PostgREST 12 → Postgres 16 | **9/9** |
+| `admin.integration.test.ts` (editorial flow, syllabus import and verification) | PostgREST 12 → Postgres 16 | **10/10** |
 | Player scenarios: 3D, fallback, context loss ×2, no WebGL, keyboard, reduced motion, mobile | Chrome (SwiftShader) | All behaved as designed |
 | Student lesson page: access gating, progress, quiz, reload persistence | Chrome, dev and production builds | Pass |
 | Full flow: editor → 3 reviewers → publisher → student | Chrome, dev and production builds | Pass |
 | Answer keys absent from the student page HTML | Production build | Absent (dev mode serialises them; production doesn't) |
 | Security policy: `blob:` textures blocked before, allowed after | Chrome, production build | Confirmed |
-| `scripts/cee/staging/tests/snapshot_roundtrip.sh`: schema-only snapshot → empty DB → snapshot again | Postgres 16 | **Identical** (24 tables, 14 triggers, `public` and `storage.objects` policies); planted rows absent; 61/61 on the copy |
+| `scripts/cee/staging/tests/snapshot_roundtrip.sh`: schema-only snapshot → empty DB → snapshot again | Postgres 16 with Supabase's default privileges | **Identical** (24 tables, 16 triggers, `public` and `storage.objects` policies); planted rows absent; 86/86 on the copy |
 | `check_superseded.sql` on clean / chosen / superseded / history-only / first-file-only databases | Postgres 16 | Correct verdict in all five |
 | `remove_superseded.sql`: seed rows only / chosen schema present / one non-seed row | Postgres 16 | Removes / refuses / refuses |
 | `validate_migration.sh`: no confirmation / production URL / user rows / schema-only copy / second run | Postgres 16 | Refuses / refuses / refuses / **PASS all 4 steps** / stops (already installed) |
-| `.github/workflows/cee-visual-db.yml`, every step run locally under `bash -eo pipefail` | Postgres 16, PostgREST 12.0.2 | All pass (integration 12/12 and 9/9). Not yet run on GitHub |
+| `.github/workflows/cee-visual-db.yml`, every step run locally under `bash -eo pipefail` | Postgres 16 (password auth, as in CI), PostgREST 12.0.2 | All pass locally (SQL 86/86, integration 12/12 and 10/10). **On GitHub (run on `f9fad54`) every database step passed, but the student API integration tests returned 500**; it doesn't reproduce locally. The job now waits for its services and posts their logs as annotations, to diagnose it on the next run |
+| Syllabus screen in Chrome: bad CSV, preview, import, record document, wrong document, verify, frozen view, CSV download, 390 px, teacher access | Chrome, dev build | **14/14**, no page errors |
+| Full walkthrough again on 25 Nov, every staff member signed in as a **teacher** (as real academic staff are): editor → expert, director, reviewer (six gates) → publisher → enrolled student sees the lesson and its quiz | Chrome, dev build | Pass, no page errors. An unenrolled student sees only the title and an enrol prompt |
 
 ## Foundation acceptance criteria
 
@@ -52,12 +54,12 @@ Format: `Requirement | status | code path | commit/PR | tests executed | result 
 | # | Requirement | Status | Code path | Commit/PR | Tests executed | Result | Reviewer | Date | Remaining risk |
 |---|---|---|---|---|---|---|---|---|---|
 | F1 | Repository and data model audited; reuse plan approved | VERIFIED | `docs/cee-visual/*` | PR #5 (in #6) | Reference check (50 refs, 35 cited lines); Mermaid parse 16/16 | Pass | Owner approved D1–D6 (23 Nov) and the base build (24 Nov) | 24 Nov | D7 open |
-| F2 | Syllabus version, program scope and curriculum mappings validated | PARTIAL | `cee_syllabus_versions`, `cee_curriculum_nodes`, `cee_check_node`, `cee_check_mapping`; admin syllabus screen | `1f5a961` | SQL (shape, scope, cycle, depth, cross-program); admin test (syllabus verify, separation of duties) | Pass | — | 24 Nov | **No official MEC syllabus loaded or verified**; import workflow being built (M6) |
+| F2 | Syllabus version, program scope and curriculum mappings validated | PARTIAL | `cee_syllabus_versions`, `cee_curriculum_nodes`, `cee_check_node`, `cee_check_mapping`; admin syllabus screen | `1f5a961` | SQL (shape, scope, cycle, depth, cross-program); admin test (syllabus verify, separation of duties) | Pass | — | 25 Nov | Import and verification workflow built and tested (M6, `docs/cee-visual/SYLLABUS_WORKFLOW.md`). **No official MEC syllabus entered or verified yet**: needs the document from mec.gov.np and two academic directors |
 | F3 | Additive migrations: dry-run and rollback documented | PARTIAL | `supabase/proposed/*`, `DATABASE_DESIGN.md` §6 | `1a01ca7` | Apply / rollback / re-apply on scratch Postgres | Pass | — | 24 Nov | **Not dry-run on a production-shaped schema yet** (needs staging, M2–M4) |
 | F4 | Secure asset upload, quarantine, scanning and processing operational | PARTIAL | `validators/glb.ts`, `validators/svg.ts`, `validators/manifest.ts` | `b98f1a9` | 43 validator tests incl. 27 malicious SVGs and bad GLBs; Khronos validator | Pass | — | 24 Nov | **Upload pipeline, storage buckets and scanner not built** (M7); scanner needs D7 |
 | F5 | Versioned manifest validation; immutable published asset storage | PARTIAL | `schemas.ts`, `cee_guard_asset_version`, `cee_lock_on_review` | `b98f1a9` | Manifest schema and cross-check tests; SQL immutability checks | Pass | — | 24 Nov | Content-addressed promotion to a published bucket not built (M7) |
 | F6 | Universal player renders approved 3D and 2D, with accessible fallback | VERIFIED (local) | `src/components/visual-player/*` | `b75b0d1` | Chrome scenarios (see above) | Pass | — | 24 Nov | Only a geometric test model so far; no real anatomy model; no reference-device benchmark |
-| F7 | Draft/review/approval/publish tested with scoped RBAC | VERIFIED (local) | `admin.server.ts`, `cee_submit_revision`, `cee_decide_review`, `cee_publish_revision` | `1f5a961` | `admin.integration` 9/9; SQL 61/61; Chrome full flow | Pass | — | 24 Nov | Asset review gates go through the same requests, but the decision API covers lesson revisions only (M7) |
+| F7 | Draft/review/approval/publish tested with scoped RBAC | VERIFIED (local) | `admin.server.ts`, `cee_submit_revision`, `cee_decide_review`, `cee_publish_revision` | `1f5a961` | `admin.integration` 10/10; SQL 86/86; Chrome full flow | Pass | — | 24 Nov | Asset review gates go through the same requests, but the decision API covers lesson revisions only (M7) |
 | F8 | No cross-program leakage in queries, search or CMS | VERIFIED (local) | `authz.ts`, `service.server.ts`, course isolation (PR #4, live) | `1f5a961`, `a16e0bd` | `authz` tests (IELTS/IOE/Physics denied); admin test (IELTS editor denied); course isolation verified live 23 Nov | Pass | — | 24 Nov | Search isn't part of the CEE visual API yet |
 | F9 | Mobile bridge validated on reference devices, including resume and errors | PARTIAL | `bridge.ts` | `b98f1a9` | 4 protocol tests | Pass | — | 24 Nov | **BLOCKED: mobile app code (G1)**; no device harness |
 | F10 | Server-validated, deduplicated progress events | VERIFIED (local) | `completion.ts`, `recordEvents`, `cee_player_events` PK | `b98f1a9` | `api.integration` (duplicates earn nothing, foreign events rejected, other students isolated) | Pass | — | 24 Nov | Section reads still come from the browser (documented limit) |
@@ -113,10 +115,23 @@ someone running `check_superseded.sql`). What the code shows:
 - The commits were pushed to the production branch but not deployed, and nothing in the repo applies
   migrations on deploy. That makes an install less likely, but it doesn't prove one never happened.
 
+## Defects found and fixed during M2–M6 (25 Nov)
+
+| # | Severity | Finding | Fix | Evidence |
+|---|---|---|---|---|
+| 1 | Medium | A VERIFIED syllabus could still change. `createNode` didn't check status, and nothing in the database stopped inserts, edits or deletes in a verified tree, or edits to its source fingerprint. | Guards `cee_guard_syllabus_version` and `cee_guard_curriculum_frozen`. Verification only through `cee_verify_syllabus()` (role, separation of duties incl. whoever entered the tree, document fingerprint, every subject has a chapter). | SQL checks 57–79; admin integration; Chrome |
+| 2 | Low (not exploitable) | `cee_submit_revision`, `cee_decide_review` and `cee_latest_decision` were executable by `anon` and `authenticated` on Supabase through default privileges. Only `REVOKE … FROM PUBLIC` had been applied. They failed one layer down, at the tables, so the existing test passed for the wrong reason. | Every `cee_*` function is revoked from PUBLIC, anon, authenticated and service_role, then six are granted to service_role. Local test databases now apply Supabase's default privileges. The schema snapshot resets function grants for the API roles too. | SQL checks 80–81; reproduced against the previous migration |
+| 3 | Medium (workflow blocker) | The admin middleware let teachers and content managers open only an allowlist of admin paths, and `/admin/cee-visual` wasn't on it. Only full admins could reach the CMS. | Added to the academic-staff allowlist. Data access is still decided per request by scoped CEE roles. | Chrome: a teacher reaches the page, a teacher without a CEE role sees no data, a teacher is still kept out of `/admin/users` |
+| 4 | Test harness | A SQL check whose condition was NULL was shown as FAIL but not counted, so the run could still pass. | NULL now counts as a failure. | — |
+| 5 | Low (UX) | The syllabus, review queue and roles screens confirmed an action before reloading. For a moment the screen still showed the old state, e.g. the request just decided, so a quick second click gave a confusing error. Found by the browser walkthrough. | Reload first, then confirm. | Chrome walkthrough, repeated runs |
+
+Also found: the superseded migration `…000001` can't apply to this schema (see above), and MEC's
+Bachelor-level syllabus was revised again on 28 April 2026, per a mirrored copy of MEC's document. The existing course chapters may predate that revision.
+
 ## Remaining criteria, in dependency order
 
 1. **Staging project** (owner: finish the Supabase connector sign-in, or create a separate staging project) → F3, F11, F12, CEE-012. Everything else for M2–M5 is built and tested: once access exists it's one snapshot command and one validation command (`scripts/cee/staging/README.md`).
 2. **Upload pipeline** (M7, in progress) → F4, F5, CEE-003; then **D7 scanner choice** (owner) to make it operational.
-3. **Official MEC syllabus document plus an academic director** → F2 and every publication.
+3. **The official MEC syllabus document plus two academic directors** (one enters, the other verifies; the workflow is ready, M6) → F2 and every publication.
 4. **A licensed heart model and named reviewers** (owner and academic staff) → the pilot and F12.
 5. **Mobile app code** (owner) → F9.

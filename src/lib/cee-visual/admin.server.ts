@@ -19,6 +19,7 @@ import { isSuperAdmin } from '@/lib/config/superAdmin';
 import { decideScope, reviewAction, type CeeAction, type ReviewGate, type RoleAssignment, type RoleKey } from './authz';
 import { CeeApiError, mapDbError, type DbErrorLike } from './http';
 import { LessonContent, type ProgramCode } from './schemas';
+import { exportSyllabusCsv, planSyllabusImport, toImportPayload, type PlannedNode } from './syllabusImport';
 import { db, requireUser, type SessionUser } from './service.server';
 import { z } from 'zod';
 
@@ -270,21 +271,151 @@ export const SyllabusVerify = z.strictObject({
   sourceSha256: z.string().regex(/^[0-9a-f]{64}$/, 'lowercase hex SHA-256 of the official document'),
 });
 
-export async function verifySyllabus(ctx: StaffContext, syllabusId: string, input: z.infer<typeof SyllabusVerify>) {
+interface SyllabusRow {
+  id: string;
+  program_code: ProgramCode;
+  status: string;
+  created_by: string;
+  source_sha256: string | null;
+}
+
+async function syllabusRow(client: SupabaseClient, syllabusId: string): Promise<SyllabusRow> {
   const s = check(
-    await ctx.client.from('cee_syllabus_versions').select('id, program_code, status, created_by').eq('id', syllabusId).maybeSingle()
-  ) as { id: string; program_code: ProgramCode; status: string; created_by: string } | null;
+    await client.from('cee_syllabus_versions').select('id, program_code, status, created_by, source_sha256').eq('id', syllabusId).maybeSingle()
+  ) as SyllabusRow | null;
   if (!s) throw new CeeApiError('NOT_FOUND');
-  authorize(ctx, 'syllabus:verify', s.program_code, null, [s.created_by]);
+  return s;
+}
+
+/** Everyone who entered part of the syllabus: none of them may verify it. */
+async function syllabusAuthors(client: SupabaseClient, s: SyllabusRow): Promise<string[]> {
+  const rows = check(await client.from('cee_curriculum_nodes').select('created_by').eq('syllabus_version_id', s.id)) as { created_by: string }[];
+  return [...new Set([s.created_by, ...rows.map((r) => r.created_by)])];
+}
+
+/**
+ * Verification by a program-wide academic director who neither created nor
+ * entered the syllabus. The database function repeats every check, compares
+ * the document fingerprint with the one recorded while drafting, and freezes
+ * the tree.
+ */
+export async function verifySyllabus(ctx: StaffContext, syllabusId: string, input: z.infer<typeof SyllabusVerify>) {
+  const s = await syllabusRow(ctx.client, syllabusId);
+  authorize(ctx, 'syllabus:verify', s.program_code, null, await syllabusAuthors(ctx.client, s));
   if (s.status !== 'DRAFT') throw new CeeApiError('STATE_CONFLICT', 'Only a draft syllabus can be verified.');
+  if (s.source_sha256 && s.source_sha256 !== input.sourceSha256) throw new CeeApiError('SOURCE_MISMATCH');
   check(
-    await ctx.client
-      .from('cee_syllabus_versions')
-      .update({ status: 'VERIFIED', source_url: input.sourceUrl, source_sha256: input.sourceSha256, verified_by: ctx.user.id, verified_at: new Date().toISOString() })
-      .eq('id', syllabusId)
-      .eq('status', 'DRAFT')
+    await ctx.client.rpc('cee_verify_syllabus', {
+      p_syllabus: syllabusId,
+      p_verifier: ctx.user.id,
+      p_source_url: input.sourceUrl,
+      p_sha256: input.sourceSha256,
+      p_request_id: ctx.requestId,
+    })
   );
-  await audit(ctx, 'SYLLABUS_VERIFY', 'SYLLABUS_VERSION', syllabusId, input);
+}
+
+export const SyllabusDraftUpdate = z
+  .strictObject({
+    label: z.string().min(3).max(120).optional(),
+    sourceUrl: z.url().max(500).nullable().optional(),
+    sourceSha256: z.string().regex(/^[0-9a-f]{64}$/, 'lowercase hex SHA-256 of the official document').nullable().optional(),
+    effectiveDate: z.iso.date().nullable().optional(),
+    notes: z.string().max(2000).nullable().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to change.');
+
+/** Draft details, including the fingerprint of the document it is being entered from. */
+export async function updateSyllabusDraft(ctx: StaffContext, syllabusId: string, input: z.infer<typeof SyllabusDraftUpdate>) {
+  const s = await syllabusRow(ctx.client, syllabusId);
+  authorize(ctx, 'curriculum:edit', s.program_code, null);
+  if (s.status !== 'DRAFT') throw new CeeApiError('CURRICULUM_FROZEN');
+  const patch: Record<string, unknown> = {};
+  if (input.label !== undefined) patch.label = input.label;
+  if (input.sourceUrl !== undefined) patch.source_url = input.sourceUrl;
+  if (input.sourceSha256 !== undefined) patch.source_sha256 = input.sourceSha256;
+  if (input.effectiveDate !== undefined) patch.effective_date = input.effectiveDate;
+  if (input.notes !== undefined) patch.notes = input.notes;
+  const rows = check(await ctx.client.from('cee_syllabus_versions').update(patch).eq('id', syllabusId).eq('status', 'DRAFT').select('id')) as { id: string }[];
+  if (rows.length === 0) throw new CeeApiError('CURRICULUM_FROZEN');
+  await audit(ctx, 'SYLLABUS_UPDATE', 'SYLLABUS_VERSION', syllabusId, input);
+}
+
+export const CurriculumImport = z.strictObject({
+  csv: z.string().min(1).max(1024 * 1024),
+  dryRun: z.boolean().default(true),
+  replace: z.boolean().default(false),
+});
+
+const PREVIEW_LIMIT = 1000;
+
+/**
+ * Bulk entry from a CSV outline. A dry run (the default) only validates and
+ * previews; a real import replaces the draft's tree in one database
+ * transaction, or changes nothing.
+ */
+export async function importCurriculum(ctx: StaffContext, syllabusId: string, input: z.infer<typeof CurriculumImport>) {
+  const s = await syllabusRow(ctx.client, syllabusId);
+  authorize(ctx, 'curriculum:edit', s.program_code, null);
+  if (s.status !== 'DRAFT') throw new CeeApiError('CURRICULUM_FROZEN');
+  const head = await ctx.client.from('cee_curriculum_nodes').select('id', { count: 'exact', head: true }).eq('syllabus_version_id', syllabusId);
+  if (head.error) throw mapDbError(head.error);
+  const existingEntries = head.count ?? 0;
+  const plan = planSyllabusImport(input.csv);
+  const needsReplace = existingEntries > 0 && !input.replace;
+
+  if (input.dryRun) {
+    return {
+      dryRun: true as const,
+      valid: plan.errors.length === 0,
+      errors: plan.errors,
+      warnings: plan.warnings,
+      stats: plan.stats,
+      existingEntries,
+      needsReplace,
+      preview: plan.nodes.slice(0, PREVIEW_LIMIT).map((n: PlannedNode) => ({ row: n.row, level: n.level, type: n.nodeType, code: n.code, title: n.title, sourceRef: n.sourceRef })),
+      previewTruncated: plan.nodes.length > PREVIEW_LIMIT,
+    };
+  }
+  if (plan.errors.length) throw new CeeApiError('IMPORT_INVALID', undefined, { errors: plan.errors.slice(0, 50) });
+  if (needsReplace) throw new CeeApiError('STATE_CONFLICT', `This draft already has ${existingEntries} entries. Choose to replace them, or use a new draft.`);
+  const imported = check(
+    await ctx.client.rpc('cee_import_curriculum', {
+      p_syllabus: syllabusId,
+      p_actor: ctx.user.id,
+      p_nodes: toImportPayload(plan.nodes, () => crypto.randomUUID()),
+      p_replace: input.replace,
+      p_request_id: ctx.requestId,
+    })
+  ) as number;
+  return { dryRun: false as const, imported, replaced: existingEntries, warnings: plan.warnings, stats: plan.stats };
+}
+
+/** The tree as an import file, for checking side by side with the document or correcting in a new draft. */
+export async function exportCurriculum(ctx: StaffContext, syllabusId: string): Promise<{ filename: string; csv: string }> {
+  const s = check(
+    await ctx.client.from('cee_syllabus_versions').select('id, program_code, label').eq('id', syllabusId).maybeSingle()
+  ) as { id: string; program_code: ProgramCode; label: string } | null;
+  if (!s) throw new CeeApiError('NOT_FOUND');
+  authorizeView(ctx, s.program_code);
+  const nodes = check(
+    await ctx.client.from('cee_curriculum_nodes').select('id, parent_id, code, title, sort_key, source_ref').eq('syllabus_version_id', syllabusId)
+  ) as { id: string; parent_id: string | null; code: string; title: string; sort_key: number; source_ref: string | null }[];
+  const csv = exportSyllabusCsv(nodes.map((n) => ({ id: n.id, parentId: n.parent_id, code: n.code, title: n.title, sortKey: n.sort_key, sourceRef: n.source_ref })));
+  return { filename: `${codeOrSyllabus(s.label)}.csv`, csv };
+}
+
+const codeOrSyllabus = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'syllabus';
+
+export const NodeLink = z.strictObject({ legacyChapterId: z.uuid().nullable() });
+
+/** Link a syllabus chapter to an existing course chapter page. Allowed after verification: it isn't syllabus content. */
+export async function linkNode(ctx: StaffContext, nodeId: string, input: z.infer<typeof NodeLink>) {
+  const nc = await nodeContext(ctx.client, nodeId);
+  authorize(ctx, 'curriculum:edit', nc.program, nc.subjectId);
+  if (nc.node.node_type !== 'CHAPTER') throw new CeeApiError('INVALID_REQUEST', 'Only chapters link to course chapter pages.');
+  check(await ctx.client.from('cee_curriculum_nodes').update({ legacy_chapter_id: input.legacyChapterId }).eq('id', nodeId));
+  await audit(ctx, 'NODE_LINK', 'CURRICULUM_NODE', nodeId, input);
 }
 
 export const NodeCreate = z.strictObject({
@@ -296,6 +427,7 @@ export const NodeCreate = z.strictObject({
   sortKey: z.number().int().min(0).max(100000).default(0),
   legacySubjectId: z.uuid().nullable().default(null),
   legacyChapterId: z.uuid().nullable().default(null),
+  sourceRef: z.string().trim().min(1).max(200).nullable().default(null),
 });
 
 export async function createNode(ctx: StaffContext, input: z.infer<typeof NodeCreate>) {
@@ -303,6 +435,7 @@ export async function createNode(ctx: StaffContext, input: z.infer<typeof NodeCr
     await ctx.client.from('cee_syllabus_versions').select('program_code, status').eq('id', input.syllabusId).maybeSingle()
   ) as { program_code: ProgramCode; status: string } | null;
   if (!s) throw new CeeApiError('NOT_FOUND');
+  if (s.status !== 'DRAFT') throw new CeeApiError('CURRICULUM_FROZEN');
   // Subjects are program-wide decisions; anything below is scoped to its subject.
   const subjectId = input.parentId ? (await nodeContext(ctx.client, input.parentId)).subjectId : null;
   authorize(ctx, 'curriculum:edit', s.program_code, subjectId);
@@ -318,6 +451,7 @@ export async function createNode(ctx: StaffContext, input: z.infer<typeof NodeCr
         sort_key: input.sortKey,
         legacy_subject_id: input.legacySubjectId,
         legacy_chapter_id: input.legacyChapterId,
+        source_ref: input.sourceRef,
         created_by: ctx.user.id,
       })
       .select('id')
@@ -330,17 +464,42 @@ export async function createNode(ctx: StaffContext, input: z.infer<typeof NodeCr
 export async function curriculumForAdmin(ctx: StaffContext, program: ProgramCode) {
   authorizeView(ctx, program);
   const syllabi = check(
-    await ctx.client.from('cee_syllabus_versions').select('id, label, status, effective_date, source_url').eq('program_code', program).order('created_at')
-  ) as { id: string; label: string; status: string; effective_date: string | null; source_url: string | null }[];
+    await ctx.client
+      .from('cee_syllabus_versions')
+      .select('id, label, status, effective_date, source_url, source_sha256, created_by, verified_by, verified_at')
+      .eq('program_code', program)
+      .order('created_at')
+  ) as {
+    id: string;
+    label: string;
+    status: string;
+    effective_date: string | null;
+    source_url: string | null;
+    source_sha256: string | null;
+    created_by: string;
+    verified_by: string | null;
+    verified_at: string | null;
+  }[];
   const nodes = syllabi.length
     ? (check(
         await ctx.client
           .from('cee_curriculum_nodes')
-          .select('id, syllabus_version_id, parent_id, node_type, code, title, sort_key, legacy_chapter_id')
+          .select('id, syllabus_version_id, parent_id, node_type, code, title, sort_key, legacy_chapter_id, source_ref, created_by')
           .in('syllabus_version_id', syllabi.map((s) => s.id))
           .order('sort_key')
           .order('title')
-      ) as { id: string; syllabus_version_id: string; parent_id: string | null; node_type: string; code: string; title: string; sort_key: number; legacy_chapter_id: string | null }[])
+      ) as {
+        id: string;
+        syllabus_version_id: string;
+        parent_id: string | null;
+        node_type: string;
+        code: string;
+        title: string;
+        sort_key: number;
+        legacy_chapter_id: string | null;
+        source_ref: string | null;
+        created_by: string;
+      }[])
     : [];
   return {
     syllabi: syllabi.map((s) => ({
@@ -349,9 +508,22 @@ export async function curriculumForAdmin(ctx: StaffContext, program: ProgramCode
       status: s.status,
       effectiveDate: s.effective_date,
       sourceUrl: s.source_url,
+      sourceSha256: s.source_sha256,
+      verifiedAt: s.verified_at,
+      // Whether the caller entered any of it, so the screen can say who may verify.
+      enteredByMe: s.created_by === ctx.user.id || nodes.some((n) => n.syllabus_version_id === s.id && n.created_by === ctx.user.id),
       nodes: nodes
         .filter((n) => n.syllabus_version_id === s.id)
-        .map((n) => ({ id: n.id, parentId: n.parent_id, type: n.node_type, code: n.code, title: n.title, legacyChapterId: n.legacy_chapter_id })),
+        .map((n) => ({
+          id: n.id,
+          parentId: n.parent_id,
+          type: n.node_type,
+          code: n.code,
+          title: n.title,
+          sortKey: n.sort_key,
+          sourceRef: n.source_ref,
+          legacyChapterId: n.legacy_chapter_id,
+        })),
     })),
   };
 }

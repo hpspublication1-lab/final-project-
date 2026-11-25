@@ -57,6 +57,7 @@ CREATE TABLE public.cee_curriculum_nodes (
   sort_key            integer NOT NULL DEFAULT 0,
   legacy_subject_id   uuid,   -- existing public.subjects.id (no FK on purpose)
   legacy_chapter_id   uuid,   -- existing public.chapters.id (no FK on purpose)
+  source_ref          text CHECK (source_ref IS NULL OR length(source_ref) BETWEEN 1 AND 200),  -- where in the official document, e.g. "p. 4, 2.3"
   created_by          uuid NOT NULL,
   created_at          timestamptz NOT NULL DEFAULT now(),
   CHECK ((node_type = 'SUBJECT') = (parent_id IS NULL))
@@ -88,6 +89,67 @@ BEGIN
 END $$;
 CREATE TRIGGER cee_check_node BEFORE INSERT OR UPDATE ON public.cee_curriculum_nodes
   FOR EACH ROW EXECUTE FUNCTION public.cee_check_node();
+
+-- A syllabus is edited only while DRAFT. It becomes VERIFIED only through
+-- cee_verify_syllabus(); from then on its identity, source and tree are frozen
+-- and the only change allowed is retiring it. Changes need a new version.
+CREATE FUNCTION public.cee_guard_syllabus_version() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.status <> 'DRAFT' OR NEW.verified_by IS NOT NULL OR NEW.verified_at IS NOT NULL THEN
+      RAISE EXCEPTION 'ILLEGAL_TRANSITION: a syllabus starts as DRAFT' USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.status <> 'DRAFT' THEN
+      RAISE EXCEPTION 'IMMUTABLE_SYLLABUS: only a draft syllabus can be deleted' USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN OLD;
+  END IF;
+  IF OLD.status = 'DRAFT' THEN
+    IF (NEW.status = 'VERIFIED' OR NEW.verified_by IS NOT NULL OR NEW.verified_at IS NOT NULL)
+       AND coalesce(current_setting('cee.verifying', true), '') <> 'on' THEN
+      RAISE EXCEPTION 'VERIFY_VIA_FUNCTION: use cee_verify_syllabus()' USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF NOT ((OLD.status = 'VERIFIED' AND NEW.status IN ('VERIFIED','RETIRED')) OR (OLD.status = 'RETIRED' AND NEW.status = 'RETIRED')) THEN
+    RAISE EXCEPTION 'ILLEGAL_TRANSITION: syllabus % to %', OLD.status, NEW.status USING ERRCODE = 'check_violation';
+  END IF;
+  IF ROW(NEW.program_code, NEW.label, NEW.source_url, NEW.source_sha256, NEW.effective_date, NEW.verified_by, NEW.verified_at, NEW.created_by, NEW.created_at)
+     IS DISTINCT FROM ROW(OLD.program_code, OLD.label, OLD.source_url, OLD.source_sha256, OLD.effective_date, OLD.verified_by, OLD.verified_at, OLD.created_by, OLD.created_at) THEN
+    RAISE EXCEPTION 'IMMUTABLE_SYLLABUS: a verified syllabus can only be retired; create a new version' USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER cee_guard_syllabus_version BEFORE INSERT OR UPDATE OR DELETE ON public.cee_syllabus_versions
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_syllabus_version();
+
+-- Nodes change only while their syllabus is DRAFT. The one exception is the link
+-- to an existing course page (legacy_*), which isn't syllabus content. FOR SHARE
+-- makes a concurrent verification wait for this change, or this change see it.
+CREATE FUNCTION public.cee_guard_curriculum_frozen() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE st text; link_only boolean;
+BEGIN
+  link_only := TG_OP = 'UPDATE'
+    AND (to_jsonb(NEW) - 'legacy_subject_id' - 'legacy_chapter_id') = (to_jsonb(OLD) - 'legacy_subject_id' - 'legacy_chapter_id');
+  IF TG_OP IN ('UPDATE','DELETE') THEN
+    SELECT status INTO st FROM public.cee_syllabus_versions WHERE id = OLD.syllabus_version_id FOR SHARE;
+    IF st <> 'DRAFT' AND NOT link_only THEN
+      RAISE EXCEPTION 'CURRICULUM_FROZEN: the syllabus is %; create a new version to change it', st USING ERRCODE = 'check_violation';
+    END IF;
+  END IF;
+  IF TG_OP IN ('INSERT','UPDATE') THEN
+    SELECT status INTO st FROM public.cee_syllabus_versions WHERE id = NEW.syllabus_version_id FOR SHARE;
+    IF st <> 'DRAFT' AND NOT link_only THEN
+      RAISE EXCEPTION 'CURRICULUM_FROZEN: the syllabus is %; create a new version to change it', st USING ERRCODE = 'check_violation';
+    END IF;
+  END IF;
+  RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+END $$;
+CREATE TRIGGER cee_guard_curriculum_frozen BEFORE INSERT OR UPDATE OR DELETE ON public.cee_curriculum_nodes
+  FOR EACH ROW EXECUTE FUNCTION public.cee_guard_curriculum_frozen();
 
 CREATE TABLE public.cee_learning_objectives (
   id        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -626,6 +688,101 @@ BEGIN
   RETURN (SELECT status FROM public.cee_lesson_revisions WHERE id = rev.id);
 END $$;
 
+-- ═══ Syllabus import and verification (transactional) ═════════════════════
+-- Import replaces a DRAFT syllabus's tree in one transaction: all rows or none.
+-- p_nodes is an array ordered parents-first: [{id, parent_id, node_type, code,
+-- title, sort_key, source_ref}]. The node triggers check shape, scope and cycles.
+CREATE FUNCTION public.cee_import_curriculum(p_syllabus uuid, p_actor uuid, p_nodes jsonb, p_replace boolean, p_request_id text DEFAULT NULL)
+RETURNS integer LANGUAGE plpgsql AS $$
+DECLARE s record; existing int; n int := 0; e record;
+BEGIN
+  SELECT * INTO s FROM public.cee_syllabus_versions WHERE id = p_syllabus FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND' USING ERRCODE = 'no_data_found'; END IF;
+  IF s.status <> 'DRAFT' THEN
+    RAISE EXCEPTION 'CURRICULUM_FROZEN: the syllabus is %; create a new version to change it', s.status USING ERRCODE = 'check_violation';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.cee_role_assignments WHERE user_id = p_actor AND role_key IN ('ACADEMIC_DIRECTOR','EDITOR')
+                 AND program_code = s.program_code AND subject_node_id IS NULL AND revoked_at IS NULL) THEN
+    RAISE EXCEPTION 'FORBIDDEN: importing needs a program-wide ACADEMIC_DIRECTOR or EDITOR role' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF jsonb_typeof(p_nodes) IS DISTINCT FROM 'array' OR jsonb_array_length(p_nodes) NOT BETWEEN 1 AND 5000 THEN
+    RAISE EXCEPTION 'CURRICULUM_SHAPE: an import needs between 1 and 5000 entries' USING ERRCODE = 'check_violation';
+  END IF;
+
+  SELECT count(*) INTO existing FROM public.cee_curriculum_nodes WHERE syllabus_version_id = p_syllabus;
+  IF existing > 0 THEN
+    IF NOT p_replace THEN
+      RAISE EXCEPTION 'STATE_CONFLICT: this draft already has % entries; replace them or use a new draft', existing USING ERRCODE = 'check_violation';
+    END IF;
+    BEGIN
+      LOOP  -- leaves first, so each parent is unreferenced when it goes
+        DELETE FROM public.cee_curriculum_nodes x WHERE x.syllabus_version_id = p_syllabus
+           AND NOT EXISTS (SELECT 1 FROM public.cee_curriculum_nodes c WHERE c.parent_id = x.id);
+        EXIT WHEN NOT FOUND;
+      END LOOP;
+    EXCEPTION WHEN foreign_key_violation THEN
+      RAISE EXCEPTION 'IN_USE: lessons, objectives or role scopes already point at entries in this draft' USING ERRCODE = 'check_violation';
+    END;
+  END IF;
+
+  FOR e IN SELECT v, ord FROM jsonb_array_elements(p_nodes) WITH ORDINALITY AS t(v, ord) ORDER BY ord LOOP
+    INSERT INTO public.cee_curriculum_nodes (id, syllabus_version_id, parent_id, node_type, code, title, sort_key, source_ref, created_by)
+    VALUES ((e.v->>'id')::uuid, p_syllabus, (e.v->>'parent_id')::uuid, e.v->>'node_type', e.v->>'code', e.v->>'title',
+            coalesce((e.v->>'sort_key')::int, 0), nullif(e.v->>'source_ref', ''), p_actor);
+    n := n + 1;
+  END LOOP;
+
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id, after_json, request_id)
+  VALUES (p_actor, 'CURRICULUM_IMPORT', 'SYLLABUS_VERSION', p_syllabus, jsonb_build_object('entries', n, 'replaced', existing), p_request_id);
+  RETURN n;
+END $$;
+
+-- Verification: a program-wide academic director who neither created the
+-- syllabus nor entered any of it, checking the same document it was entered
+-- from (when one was recorded). The tree must have at least one subject, and
+-- every subject at least one chapter.
+CREATE FUNCTION public.cee_verify_syllabus(p_syllabus uuid, p_verifier uuid, p_source_url text, p_sha256 text, p_request_id text DEFAULT NULL)
+RETURNS void LANGUAGE plpgsql AS $$
+DECLARE s record; subjects int; empty_subjects int; entries int;
+BEGIN
+  SELECT * INTO s FROM public.cee_syllabus_versions WHERE id = p_syllabus FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND' USING ERRCODE = 'no_data_found'; END IF;
+  IF s.status <> 'DRAFT' THEN RAISE EXCEPTION 'STATE_CONFLICT: the syllabus is %', s.status USING ERRCODE = 'check_violation'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.cee_role_assignments WHERE user_id = p_verifier AND role_key = 'ACADEMIC_DIRECTOR'
+                 AND program_code = s.program_code AND subject_node_id IS NULL AND revoked_at IS NULL) THEN
+    RAISE EXCEPTION 'FORBIDDEN: verifying needs a program-wide ACADEMIC_DIRECTOR role' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF p_verifier = s.created_by
+     OR EXISTS (SELECT 1 FROM public.cee_curriculum_nodes WHERE syllabus_version_id = p_syllabus AND created_by = p_verifier) THEN
+    RAISE EXCEPTION 'SOD_VIOLATION: whoever created or entered this syllabus cannot verify it' USING ERRCODE = 'check_violation';
+  END IF;
+  IF p_sha256 IS NULL OR p_sha256 !~ '^[0-9a-f]{64}$' THEN
+    RAISE EXCEPTION 'SOURCE_MISMATCH: a lowercase hex SHA-256 of the official document is required' USING ERRCODE = 'check_violation';
+  END IF;
+  IF s.source_sha256 IS NOT NULL AND s.source_sha256 <> p_sha256 THEN
+    RAISE EXCEPTION 'SOURCE_MISMATCH: the document checked is not the one this syllabus was entered from' USING ERRCODE = 'check_violation';
+  END IF;
+  SELECT count(*) FILTER (WHERE node_type = 'SUBJECT'),
+         count(*) FILTER (WHERE node_type = 'SUBJECT' AND NOT EXISTS (
+           SELECT 1 FROM public.cee_curriculum_nodes c WHERE c.parent_id = n.id AND c.node_type = 'CHAPTER')),
+         count(*)
+    INTO subjects, empty_subjects, entries
+    FROM public.cee_curriculum_nodes n WHERE n.syllabus_version_id = p_syllabus;
+  IF subjects = 0 OR empty_subjects > 0 THEN
+    RAISE EXCEPTION 'SYLLABUS_INCOMPLETE: % subject(s), % without a chapter', subjects, empty_subjects USING ERRCODE = 'check_violation';
+  END IF;
+
+  PERFORM set_config('cee.verifying', 'on', true);
+  UPDATE public.cee_syllabus_versions
+     SET status = 'VERIFIED', verified_by = p_verifier, verified_at = now(), source_sha256 = p_sha256,
+         source_url = coalesce(nullif(p_source_url, ''), source_url)
+   WHERE id = p_syllabus;
+  PERFORM set_config('cee.verifying', 'off', true);
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id, after_json, request_id)
+  VALUES (p_verifier, 'SYLLABUS_VERIFY', 'SYLLABUS_VERSION', p_syllabus,
+          jsonb_build_object('source_url', coalesce(nullif(p_source_url, ''), s.source_url), 'source_sha256', p_sha256, 'entries', entries), p_request_id);
+END $$;
+
 -- ═══ Access: server only ═══════════════════════════════════════════════════
 -- Row security on, no policies for anon/authenticated: the browser can't read or
 -- write any cee_* table. Route handlers use the service role after verifyCeeScope().
@@ -648,16 +805,27 @@ BEGIN
     END IF;
   END LOOP;
 END $rls$;
-REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.cee_submit_revision(uuid, uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.cee_decide_review(uuid, uuid, text, text) FROM PUBLIC;
-DO $fn$ BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM anon; END IF;
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON FUNCTION public.cee_publish_revision(uuid, uuid, text) FROM authenticated; END IF;
+-- Functions: closed to everyone, then opened to the server role only. On Supabase,
+-- new functions are executable by anon and authenticated through default
+-- privileges, so revoking from PUBLIC alone would not be enough.
+DO $fn$
+DECLARE f regprocedure;
+BEGIN
+  FOR f IN SELECT p.oid::regprocedure FROM pg_proc p
+           WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'cee\_%' LOOP
+    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC', f);
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN EXECUTE format('REVOKE ALL ON FUNCTION %s FROM anon', f); END IF;
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN EXECUTE format('REVOKE ALL ON FUNCTION %s FROM authenticated', f); END IF;
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN EXECUTE format('REVOKE ALL ON FUNCTION %s FROM service_role', f); END IF;
+  END LOOP;
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
-    GRANT EXECUTE ON FUNCTION public.cee_publish_revision(uuid, uuid, text) TO service_role;
-    GRANT EXECUTE ON FUNCTION public.cee_submit_revision(uuid, uuid) TO service_role;
-    GRANT EXECUTE ON FUNCTION public.cee_decide_review(uuid, uuid, text, text) TO service_role;
+    GRANT EXECUTE ON FUNCTION public.cee_publish_revision(uuid, uuid, text),
+                              public.cee_submit_revision(uuid, uuid),
+                              public.cee_decide_review(uuid, uuid, text, text),
+                              public.cee_latest_decision(text, uuid, text),
+                              public.cee_import_curriculum(uuid, uuid, jsonb, boolean, text),
+                              public.cee_verify_syllabus(uuid, uuid, text, text, text)
+      TO service_role;
   END IF;
 END $fn$;
 

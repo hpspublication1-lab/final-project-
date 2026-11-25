@@ -12,3 +12,8 @@ CREATE TABLE IF NOT EXISTS storage.buckets (id text PRIMARY KEY, name text NOT N
 CREATE TABLE IF NOT EXISTS storage.objects (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), bucket_id text REFERENCES storage.buckets(id), name text, owner uuid);
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+-- Supabase's default privileges: anything postgres creates in public is open to the API roles
+-- until a migration revokes it. Without this, a local run hides missing REVOKEs.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
