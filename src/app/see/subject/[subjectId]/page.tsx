@@ -1,12 +1,26 @@
-'use client';
-
 import React from 'react';
-import { useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import CanonicalSubjectWorkspace from '@/components/see/CanonicalSubjectWorkspace';
+import { SEE_SUBJECT_HIERARCHY } from '@/lib/data/seeQuestionBankData';
 
-export default function DedicatedSeeSubjectPage() {
-  const params = useParams();
-  const subjectId = (params?.subjectId as string) || 'science';
+interface PageProps {
+  params: Promise<{ subjectId: string }>;
+}
+
+/**
+ * Validates whether the given SEE subject exists in the canonical curriculum.
+ */
+export function isValidSeeSubject(subjectId: string): boolean {
+  if (!subjectId || typeof subjectId !== 'string') return false;
+  return SEE_SUBJECT_HIERARCHY.some((s) => s.id.toLowerCase() === subjectId.trim().toLowerCase());
+}
+
+export default async function DedicatedSeeSubjectPage({ params }: PageProps) {
+  const { subjectId } = await params;
+
+  if (!isValidSeeSubject(subjectId)) {
+    notFound();
+  }
 
   return <CanonicalSubjectWorkspace subjectId={subjectId} />;
 }
