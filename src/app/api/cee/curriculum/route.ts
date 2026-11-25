@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 
 export interface CurriculumTopic {
   id: string;
@@ -225,6 +226,20 @@ const CANONICAL_CEE_CURRICULUM: CurriculumSubject[] = [
  */
 export async function GET(req: NextRequest) {
   try {
+    const rl = enforceRateLimit(req, 'api');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests. Please slow down.' } },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rl.resetSeconds),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const program = searchParams.get('program') || 'cee';
     const subjectCode = searchParams.get('subject');

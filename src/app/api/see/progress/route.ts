@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
     const watched = Math.max(0, Math.floor(Number(watchedSeconds) || 0));
     const total = Math.max(0, Math.floor(Number(totalDurationSec) || 0));
     const percentage = total > 0 ? Math.min(100, Math.round((watched / total) * 100)) : 0;
-    const completed = isCompleted === true || percentage >= 90;
+    // Derives completion strictly from verified watch duration (min 90%)
+    const completed = percentage >= 90;
 
     const admin = createAdminClient();
     if (!admin) {

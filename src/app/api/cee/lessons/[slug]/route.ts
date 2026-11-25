@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { enforceRateLimit } from '@/lib/security/rateLimiter';
 import {
   CANONICAL_LESSONS_MAP,
   type VisualLessonPublishedPayload,
@@ -13,10 +14,24 @@ export type { VisualLessonPublishedPayload };
  * Strictly returns HTTP 404 for unapproved/draft lessons (CEE-004).
  */
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const rl = enforceRateLimit(req, 'api');
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests. Please slow down.' } },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rl.resetSeconds),
+            'X-RateLimit-Remaining': '0',
+          },
+        }
+      );
+    }
+
     const { slug } = await params;
 
     // Check database if publication exists

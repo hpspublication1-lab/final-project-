@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
     const targetAuthUser = (userList?.users || []).find((u) => u.id === userId);
     const previousRole =
       (existingProfile as any)?.role ||
+      targetAuthUser?.app_metadata?.role ||
       targetAuthUser?.user_metadata?.role ||
       (existingProfile?.is_admin ? 'admin' : 'student_free');
 
