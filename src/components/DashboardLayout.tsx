@@ -366,6 +366,11 @@ export default function DashboardLayout({
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setDeviceNotificationPermission(Notification.permission);
+      if (Notification.permission === 'granted') {
+        import('@/lib/firebase/messaging').then(({ registerFCMDevice }) => {
+          registerFCMDevice().catch(() => {});
+        }).catch(() => {});
+      }
     }
   }, []);
 
@@ -379,6 +384,9 @@ export default function DashboardLayout({
       setDeviceNotificationPermission(perm);
       if (perm === 'granted') {
         toast.success('Device push notifications enabled!');
+        import('@/lib/firebase/messaging').then(({ registerFCMDevice }) => {
+          registerFCMDevice().catch(() => {});
+        }).catch(() => {});
         if ('serviceWorker' in navigator) {
           navigator.serviceWorker.ready.then((reg) => {
             reg.showNotification('Samyak Guru Device Alerts Active 🔔', {

@@ -136,6 +136,9 @@ export default function AdminNotificationsClient() {
           new Notification(testTitle, { body: testBody, icon: '/favicon.ico' });
         }
         toast.success('Native device notification triggered on your screen!');
+        import('@/lib/firebase/messaging').then(({ registerFCMDevice }) => {
+          registerFCMDevice().catch(() => {});
+        }).catch(() => {});
       } else {
         toast.error('Device notification permission was not granted. Please allow notifications in site settings.');
       }
