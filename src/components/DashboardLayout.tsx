@@ -20,6 +20,7 @@ import ProgramSelectorModal from '@/components/ProgramSelectorModal';
 import { useProgram, normalizeCourseId, CanonicalCourseId, COURSES_MAP } from '@/contexts/ProgramContext';
 import MobileBottomNav from '@/components/navigation/MobileBottomNav';
 import { toast } from 'sonner';
+import { triggerDeviceNotification } from '@/lib/notifications/deviceNotification';
 
 interface NavItem {
   label: string;
@@ -323,34 +324,13 @@ export default function DashboardLayout({
               return [newNotif, ...prev];
             });
 
-            // Trigger real native OS device notification
-            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-              const notifTitle = newNotif.title || 'Samyak Guru';
-              const notifBody = newNotif.message || 'You have a new update.';
-              const notifUrl = newNotif.action_url || '/dashboard';
-
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.ready.then((reg) => {
-                  reg.showNotification(notifTitle, {
-                    body: notifBody,
-                    icon: '/favicon.ico',
-                    badge: '/favicon.ico',
-                    tag: newNotif.id,
-                    data: { url: notifUrl },
-                  });
-                }).catch(() => {
-                  new Notification(notifTitle, {
-                    body: notifBody,
-                    icon: '/favicon.ico',
-                  });
-                });
-              } else {
-                new Notification(notifTitle, {
-                  body: notifBody,
-                  icon: '/favicon.ico',
-                });
-              }
-            }
+            // Trigger real native OS device notification + audio chime
+            triggerDeviceNotification({
+              title: newNotif.title || 'Samyak Guru',
+              body: newNotif.message || 'You have a new update.',
+              actionUrl: newNotif.action_url || '/dashboard',
+              tag: newNotif.id,
+            }).catch(() => {});
           }
         }
       )

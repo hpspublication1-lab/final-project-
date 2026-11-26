@@ -38,7 +38,9 @@ describe('FCM Token Registration API (/api/notifications/fcm-token)', () => {
       role: 'student_free',
       app_metadata: {},
       user_metadata: {},
-    });
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    } as any);
 
     const req = new NextRequest('http://localhost:3000/api/notifications/fcm-token', {
       method: 'POST',

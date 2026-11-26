@@ -4,9 +4,15 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, BellRing, Send, CheckCircle2, AlertCircle,
-  Users, Radio, Clock, Loader2, RefreshCw
+  Users, Radio, Clock, Loader2, RefreshCw, Volume2, ShieldAlert
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  triggerDeviceNotification,
+  playNotificationChime,
+  getNotificationPermissionStatus,
+  requestNotificationPermission,
+} from '@/lib/notifications/deviceNotification';
 
 interface NotificationLog {
   id: string;
@@ -26,6 +32,7 @@ export default function AdminNotificationsClient() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [recentDispatches, setRecentDispatches] = useState<NotificationLog[]>([]);
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission | 'unsupported'>('default');
 
   const loadDispatches = async () => {
     setLoading(true);
@@ -46,7 +53,48 @@ export default function AdminNotificationsClient() {
 
   useEffect(() => {
     loadDispatches();
+    setPermissionStatus(getNotificationPermissionStatus());
   }, []);
+
+  const handleRequestPermission = async () => {
+    const perm = await requestNotificationPermission();
+    setPermissionStatus(perm);
+    if (perm === 'granted') {
+      toast.success('Device notifications allowed! You will now receive system alerts.');
+      await triggerDeviceNotification({
+        title: 'Samyak Guru Alerts Enabled 🔔',
+        body: 'You will now receive real-time notifications on this device.',
+      });
+      import('@/lib/firebase/messaging').then(({ registerFCMDevice }) => {
+        registerFCMDevice().catch(() => {});
+      }).catch(() => {});
+    } else if (perm === 'denied') {
+      toast.error('Notifications are blocked by your browser settings.');
+    }
+  };
+
+  const testDeviceAlert = async () => {
+    const res = await triggerDeviceNotification({
+      title: '🔴 Samyak Guru Live Alert',
+      body: 'Real device notification triggered successfully on your operating system!',
+      actionUrl: '/admin/notifications',
+    });
+
+    setPermissionStatus(getNotificationPermissionStatus());
+
+    if (res.success) {
+      toast.success('Device notification alert triggered on your screen!');
+      import('@/lib/firebase/messaging').then(({ registerFCMDevice }) => {
+        registerFCMDevice().catch(() => {});
+      }).catch(() => {});
+    } else if (res.reason === 'denied') {
+      toast.error('Device notifications are blocked in your browser site permissions.');
+    } else if (res.reason === 'unsupported') {
+      toast.error('Browser does not support native system notifications.');
+    } else {
+      toast.error('Notification was not displayed. Please check your browser permissions.');
+    }
+  };
 
   const handleDispatch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +141,14 @@ export default function AdminNotificationsClient() {
 
       setRecentDispatches((prev) => [newDispatch, ...prev]);
       toast.success(data.message || `Dispatched to ${data.count ?? 'all'} student notification trays!`);
+
+      // Trigger instant preview on admin's own device with audio chime!
+      await triggerDeviceNotification({
+        title: title.trim(),
+        body: body.trim(),
+        actionUrl: linkUrl.trim() || undefined,
+      });
+
       setTitle('');
       setBody('');
       setLinkUrl('');
@@ -101,49 +157,6 @@ export default function AdminNotificationsClient() {
       toast.error(err.message || 'Failed to dispatch notification.');
     } finally {
       setSending(false);
-    }
-  };
-
-  const testDeviceNotification = async () => {
-    if (typeof window === 'undefined' || !('Notification' in window)) {
-      toast.error('Device notifications are not supported in this browser.');
-      return;
-    }
-
-    try {
-      let perm = Notification.permission;
-      if (perm !== 'granted') {
-        perm = await Notification.requestPermission();
-      }
-
-      if (perm === 'granted') {
-        const testTitle = 'Samyak Guru Admin Test Alert 🔔';
-        const testBody = 'This is a real system notification delivered to your operating system.';
-
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.ready.then((reg) => {
-            reg.showNotification(testTitle, {
-              body: testBody,
-              icon: '/favicon.ico',
-              badge: '/favicon.ico',
-              tag: 'admin-test-alert',
-              data: { url: '/admin/notifications' },
-            });
-          }).catch(() => {
-            new Notification(testTitle, { body: testBody, icon: '/favicon.ico' });
-          });
-        } else {
-          new Notification(testTitle, { body: testBody, icon: '/favicon.ico' });
-        }
-        toast.success('Native device notification triggered on your screen!');
-        import('@/lib/firebase/messaging').then(({ registerFCMDevice }) => {
-          registerFCMDevice().catch(() => {});
-        }).catch(() => {});
-      } else {
-        toast.error('Device notification permission was not granted. Please allow notifications in site settings.');
-      }
-    } catch (err) {
-      console.error('Test notification error:', err);
     }
   };
 
@@ -159,22 +172,34 @@ export default function AdminNotificationsClient() {
             </Link>
             <div>
               <h1 className="text-xl font-extrabold text-foreground flex items-center gap-2">
-                <BellRing size={22} className="text-primary" /> In-App Notification Dispatcher
+                <BellRing size={22} className="text-primary" /> In-App &amp; Device Notification Dispatcher
               </h1>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Send direct in-app notifications and deep-links to candidate dashboards.
+                Send direct in-app notifications and real operating system push alerts to candidate dashboards.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={testDeviceNotification}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+              type="button"
+              onClick={testDeviceAlert}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 transition-colors shadow-sm"
+              title="Test native OS pop-up alert and audio chime on your device"
             >
-              <BellRing size={12} />
+              <BellRing size={13} />
               <span>Test Device Alert</span>
             </button>
             <button
+              type="button"
+              onClick={playNotificationChime}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors"
+              title="Test audio chime"
+            >
+              <Volume2 size={13} />
+              <span>Chime</span>
+            </button>
+            <button
+              type="button"
               onClick={loadDispatches}
               disabled={loading}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors"
@@ -184,6 +209,51 @@ export default function AdminNotificationsClient() {
             </button>
           </div>
         </div>
+
+        {/* Browser Permission Status Banner */}
+        {permissionStatus === 'denied' && (
+          <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-4 flex items-start gap-3 text-xs text-red-600 dark:text-red-400">
+            <ShieldAlert size={18} className="shrink-0 mt-0.5 text-red-600" />
+            <div className="space-y-1">
+              <p className="font-bold text-sm">Browser Notifications are Blocked</p>
+              <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                Your browser is currently set to block notifications for this site. To receive real system pop-ups on your desktop or phone:
+              </p>
+              <ol className="list-decimal list-inside space-y-0.5 font-medium pl-1 text-[11px]">
+                <li>Click the tune / lock icon <span className="font-mono bg-red-500/10 px-1 rounded">🔒</span> on the far left of your address bar (next to the URL).</li>
+                <li>Find <strong>Notifications</strong> and change it from <em>Block</em> to <strong>Allow</strong>.</li>
+                <li>Click the <strong>Test Device Alert</strong> button above to verify.</li>
+              </ol>
+            </div>
+          </div>
+        )}
+
+        {permissionStatus === 'default' && (
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-300">
+            <div className="flex items-center gap-2.5">
+              <BellRing size={18} className="shrink-0 text-amber-600" />
+              <div>
+                <p className="font-bold">Device Notifications Not Yet Allowed</p>
+                <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                  Allow browser notifications to receive real OS popups on your device.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleRequestPermission}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-sm transition-all shrink-0"
+            >
+              Allow Alerts
+            </button>
+          </div>
+        )}
+
+        {permissionStatus === 'granted' && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+            <CheckCircle2 size={15} className="text-emerald-600" />
+            <span>Real Operating System &amp; Device Notifications Active on this Device</span>
+          </div>
+        )}
 
         {/* Dispatch Form */}
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
@@ -235,7 +305,7 @@ export default function AdminNotificationsClient() {
               <textarea
                 rows={3}
                 required
-                placeholder="Enter alert message to appear in candidate top notification bell..."
+                placeholder="Enter alert message to appear in candidate notification trays and system popups..."
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 className="input-field w-full py-2 text-xs"
