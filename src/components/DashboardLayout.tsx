@@ -289,7 +289,7 @@ export default function DashboardLayout({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Fetch real notifications
+  // Fetch real notifications and subscribe to realtime updates
   useEffect(() => {
     if (!user?.id) return;
     const supabase = createClient();
@@ -302,6 +302,33 @@ export default function DashboardLayout({
       .then(({ data }) => {
         if (data) setNotifications(data);
       });
+
+    const channel = supabase
+      .channel(`student-notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new) {
+            setNotifications((prev) => {
+              const newNotif = payload.new as any;
+              const exists = prev.some((n) => n.id === newNotif.id);
+              if (exists) return prev;
+              return [newNotif, ...prev];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;

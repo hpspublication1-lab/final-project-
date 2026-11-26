@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, BellRing, Send, CheckCircle2, AlertCircle,
-  Users, Radio, Clock
+  Users, Radio, Clock, Loader2, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ interface NotificationLog {
   body: string;
   recipient: string;
   link_url?: string;
+  count?: number;
   created_at: string;
 }
 
@@ -23,47 +24,84 @@ export default function AdminNotificationsClient() {
   const [linkUrl, setLinkUrl] = useState('');
   const [targetType, setTargetType] = useState<'all' | 'see' | 'cee'>('all');
   const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [recentDispatches, setRecentDispatches] = useState<NotificationLog[]>([]);
 
-  const [recentDispatches, setRecentDispatches] = useState<NotificationLog[]>([
-    {
-      id: 'notif_1',
-      title: 'Grand Mock 1 Ready for Review',
-      body: 'Your full score card and KaTeX solutions are now available.',
-      recipient: 'All CEE Candidates',
-      link_url: '/mock-tests',
-      created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-    },
-    {
-      id: 'notif_2',
-      title: 'Live Doubt Clearing Class in 30 Mins',
-      body: 'Join the interactive botany session with teacher discussion.',
-      recipient: 'CEE 2026 Batch',
-      link_url: '/live-class',
-      created_at: new Date(Date.now() - 3600000 * 20).toISOString(),
-    },
-  ]);
+  const loadDispatches = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/notifications');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.dispatches)) {
+          setRecentDispatches(data.dispatches);
+        }
+      }
+    } catch (err) {
+      console.error('[AdminNotifications] Failed to load dispatches:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleDispatch = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadDispatches();
+  }, []);
+
+  const handleDispatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !body.trim()) return;
+    if (!title.trim() || !body.trim()) {
+      toast.error('Title and message body are required.');
+      return;
+    }
 
     setSending(true);
-    setTimeout(() => {
-      const newDispatch: NotificationLog = {
+    try {
+      const res = await fetch('/api/admin/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          body: body.trim(),
+          targetType,
+          linkUrl: linkUrl.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to dispatch notification.');
+      }
+
+      const newDispatch: NotificationLog = data.dispatch || {
         id: `notif_${Date.now()}`,
         title: title.trim(),
         body: body.trim(),
-        recipient: targetType === 'all' ? 'All Registered Students' : targetType === 'cee' ? 'CEE Candidates' : 'SEE Candidates',
+        recipient:
+          targetType === 'all'
+            ? 'All Registered Students'
+            : targetType === 'cee'
+            ? 'CEE Candidates'
+            : 'SEE Candidates',
         link_url: linkUrl.trim() || undefined,
+        count: data.count || 0,
         created_at: new Date().toISOString(),
       };
+
       setRecentDispatches((prev) => [newDispatch, ...prev]);
-      toast.success('In-app notification dispatched to student notification trays!');
+      toast.success(data.message || `Dispatched to ${data.count ?? 'all'} student notification trays!`);
       setTitle('');
       setBody('');
       setLinkUrl('');
+    } catch (err: any) {
+      console.error('[AdminNotifications] Dispatch error:', err);
+      toast.error(err.message || 'Failed to dispatch notification.');
+    } finally {
       setSending(false);
-    }, 600);
+    }
   };
 
   return (
@@ -85,6 +123,14 @@ export default function AdminNotificationsClient() {
               </p>
             </div>
           </div>
+          <button
+            onClick={loadDispatches}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors"
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+            <span>Refresh Logs</span>
+          </button>
         </div>
 
         {/* Dispatch Form */}
@@ -112,7 +158,7 @@ export default function AdminNotificationsClient() {
                 <label className="block font-semibold text-foreground mb-1">Deep Link Target (Optional):</label>
                 <input
                   type="text"
-                  placeholder="e.g. /mock-tests or /live-class"
+                  placeholder="e.g. /mock-tests or /live-classes"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
                   className="input-field w-full py-2 text-xs"
@@ -150,7 +196,15 @@ export default function AdminNotificationsClient() {
                 disabled={sending}
                 className="btn-primary py-2 px-5 text-xs font-bold flex items-center gap-1.5"
               >
-                <Send size={13} /> {sending ? 'Dispatching...' : 'Dispatch Notification'}
+                {sending ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin" /> Dispatching...
+                  </>
+                ) : (
+                  <>
+                    <Send size={13} /> Dispatch Notification
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -158,31 +212,56 @@ export default function AdminNotificationsClient() {
 
         {/* Recent Dispatches */}
         <div className="bg-card border border-border rounded-2xl p-5 space-y-4 shadow-sm">
-          <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border pb-3">
-            <Clock size={16} className="text-primary" /> Recent Dispatches
-          </h2>
-
-          <div className="divide-y divide-border">
-            {recentDispatches.map((n) => (
-              <div key={n.id} className="py-3 flex items-start justify-between gap-4 text-xs">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground">{n.title}</span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
-                      {n.recipient}
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground">{n.body}</p>
-                  {n.link_url && (
-                    <span className="text-[11px] text-primary font-mono font-semibold">Link: {n.link_url}</span>
-                  )}
-                </div>
-                <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                  {new Date(n.created_at).toLocaleTimeString()}
-                </span>
-              </div>
-            ))}
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Clock size={16} className="text-primary" /> Recent Dispatches
+            </h2>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              {recentDispatches.length} Total
+            </span>
           </div>
+
+          {loading ? (
+            <div className="py-8 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+              <Loader2 size={20} className="animate-spin text-primary" />
+              <span className="text-xs">Loading dispatch history...</span>
+            </div>
+          ) : recentDispatches.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground space-y-1">
+              <Clock size={24} className="mx-auto text-muted-foreground/50 mb-2" />
+              <p className="text-xs font-semibold text-foreground">No Dispatches Yet</p>
+              <p className="text-[11px]">Compose and dispatch your first in-app notification above.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {recentDispatches.map((n) => (
+                <div key={n.id} className="py-3 flex items-start justify-between gap-4 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-foreground">{n.title}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
+                        {n.recipient}
+                      </span>
+                      {typeof n.count === 'number' && n.count > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          {n.count} recipients
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">{n.body}</p>
+                    {n.link_url && (
+                      <span className="text-[11px] text-primary font-mono font-semibold block">
+                        Link: {n.link_url}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap shrink-0">
+                    {new Date(n.created_at).toLocaleDateString()} {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

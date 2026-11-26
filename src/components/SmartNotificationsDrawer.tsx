@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Bell, Flame, AlertTriangle, Video, Sparkles, CheckCircle2, ArrowRight, X
+  Bell, Flame, AlertTriangle, Video, Sparkles, CheckCircle2, ArrowRight, X, Radio
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export interface SmartNotification {
   id: string;
-  type: 'streak' | 'weak_topic' | 'missed_class' | 'readiness';
+  type: 'streak' | 'weak_topic' | 'missed_class' | 'readiness' | 'broadcast' | 'info';
   title: string;
   message: string;
   timeAgo: string;
@@ -18,55 +18,113 @@ export interface SmartNotification {
   ctaHref: string;
 }
 
+const DEFAULT_SMART_SUGGESTIONS: SmartNotification[] = [
+  {
+    id: 'n1',
+    type: 'streak',
+    title: '🔥 Streak Maintenance Alert',
+    message: "You're on a 7-day streak. Complete today's 20 MCQs to keep it alive.",
+    timeAgo: '10m ago',
+    read: false,
+    ctaText: 'Solve 20 MCQs Now',
+    ctaHref: '/see/subject/mathematics',
+  },
+  {
+    id: 'n2',
+    type: 'weak_topic',
+    title: '⚠️ Accuracy Drop Warning',
+    message: "Your Algebra accuracy dropped to 54%. We've prepared a 15-minute targeted revision for you.",
+    timeAgo: '1h ago',
+    read: false,
+    ctaText: 'Start 15m Algebra Revision',
+    ctaHref: '/see/subject/mathematics',
+  },
+  {
+    id: 'n3',
+    type: 'missed_class',
+    title: '📹 Missed Live Class Recording',
+    message: 'You missed today\'s Physics Universal Gravitation live class. Watch the recording now.',
+    timeAgo: '3h ago',
+    read: false,
+    ctaText: 'Watch Recording (24m)',
+    ctaHref: '/see/lessons/default-see-1',
+  },
+  {
+    id: 'n4',
+    type: 'readiness',
+    title: '🎯 SEE Readiness Boost Opportunity',
+    message: 'Completing 1 Light Refraction Science chapter will push your SEE Readiness Score to 78%.',
+    timeAgo: '5h ago',
+    read: true,
+    ctaText: 'View Science Chapter',
+    ctaHref: '/see/subject/science',
+  },
+];
+
+function formatTimeAgo(dateString: string): string {
+  try {
+    const diffMs = Date.now() - new Date(dateString).getTime();
+    const minutes = Math.floor(diffMs / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  } catch {
+    return 'Recent';
+  }
+}
+
 export default function SmartNotificationsDrawer() {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<SmartNotification[]>([
-    {
-      id: 'n1',
-      type: 'streak',
-      title: '🔥 Streak Maintenance Alert',
-      message: "You're on a 7-day streak. Complete today's 20 MCQs to keep it alive.",
-      timeAgo: '10m ago',
-      read: false,
-      ctaText: 'Solve 20 MCQs Now',
-      ctaHref: '/see/subject/mathematics',
-    },
-    {
-      id: 'n2',
-      type: 'weak_topic',
-      title: '⚠️ Accuracy Drop Warning',
-      message: "Your Algebra accuracy dropped to 54%. We've prepared a 15-minute targeted revision for you.",
-      timeAgo: '1h ago',
-      read: false,
-      ctaText: 'Start 15m Algebra Revision',
-      ctaHref: '/see/subject/mathematics',
-    },
-    {
-      id: 'n3',
-      type: 'missed_class',
-      title: '📹 Missed Live Class Recording',
-      message: 'You missed today\'s Physics Universal Gravitation live class. Watch the recording now.',
-      timeAgo: '3h ago',
-      read: false,
-      ctaText: 'Watch Recording (24m)',
-      ctaHref: '/see/lessons/default-see-1',
-    },
-    {
-      id: 'n4',
-      type: 'readiness',
-      title: '🎯 SEE Readiness Boost Opportunity',
-      message: 'Completing 1 Light Refraction Science chapter will push your SEE Readiness Score to 78%.',
-      timeAgo: '5h ago',
-      read: true,
-      ctaText: 'View Science Chapter',
-      ctaHref: '/see/subject/science',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<SmartNotification[]>(DEFAULT_SMART_SUGGESTIONS);
+
+  // Fetch real user notifications from API on mount
+  useEffect(() => {
+    let mounted = true;
+    async function fetchNotifications() {
+      try {
+        const res = await fetch('/api/notifications?limit=20');
+        if (res.ok) {
+          const data = await res.json();
+          if (mounted && data.success && Array.isArray(data.notifications) && data.notifications.length > 0) {
+            const mapped: SmartNotification[] = data.notifications.map((n: any) => ({
+              id: n.id,
+              type: n.type === 'streak' ? 'streak'
+                : n.type === 'weak_topic' ? 'weak_topic'
+                : n.type === 'missed_class' ? 'missed_class'
+                : n.type === 'readiness' ? 'readiness'
+                : 'broadcast',
+              title: n.title,
+              message: n.message,
+              timeAgo: formatTimeAgo(n.created_at),
+              read: Boolean(n.is_read),
+              ctaText: n.action_url ? 'View Target' : 'Open Details',
+              ctaHref: n.action_url || '/dashboard',
+            }));
+            setNotifications(mapped);
+          }
+        }
+      } catch (err) {
+        // Fallback to default notifications
+      }
+    }
+    fetchNotifications();
+    return () => { mounted = false; };
+  }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      });
+    } catch {}
     toast.success('All notifications marked as read');
   };
 
@@ -80,6 +138,10 @@ export default function SmartNotificationsDrawer() {
         return { icon: Video, color: 'text-purple-500', bg: 'bg-purple-500/10 border-purple-500/20' };
       case 'readiness':
         return { icon: Sparkles, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' };
+      case 'broadcast':
+      case 'info':
+      default:
+        return { icon: Radio, color: 'text-blue-500', bg: 'bg-blue-500/10 border-blue-500/20' };
     }
   };
 
@@ -90,11 +152,12 @@ export default function SmartNotificationsDrawer() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2.5 rounded-2xl bg-card hover:bg-muted border border-border text-foreground transition-all shadow-sm flex items-center justify-center"
+        aria-label="Toggle notifications drawer"
       >
         <Bell size={18} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white font-mono text-[10px] font-black flex items-center justify-center border-2 border-background animate-pulse">
-            {unreadCount}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
@@ -106,7 +169,7 @@ export default function SmartNotificationsDrawer() {
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-mono">
-                SMART BEHAVIOR ENGINE
+                SMART NOTIFICATIONS
               </span>
             </div>
             <div className="flex items-center gap-2">
