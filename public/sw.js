@@ -57,3 +57,49 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
+
+// ── Native OS Push Notification Handler ──────────────────────────────────
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : 'You have a new update.' };
+  }
+
+  const title = data.title || 'Samyak Guru';
+  const options = {
+    body: data.body || data.message || 'New update available.',
+    icon: '/favicon.ico',
+    badge: '/favicon.ico',
+    tag: data.id || 'samyak-notification',
+    data: {
+      url: data.action_url || data.url || '/dashboard',
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── Notification Click Handler: Focus / Open Window ──────────────────────
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || '/dashboard';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+

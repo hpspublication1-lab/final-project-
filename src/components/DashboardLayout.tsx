@@ -19,6 +19,7 @@ import ProgramSwitcher from '@/components/ProgramSwitcher';
 import ProgramSelectorModal from '@/components/ProgramSelectorModal';
 import { useProgram, normalizeCourseId, CanonicalCourseId, COURSES_MAP } from '@/contexts/ProgramContext';
 import MobileBottomNav from '@/components/navigation/MobileBottomNav';
+import { toast } from 'sonner';
 
 interface NavItem {
   label: string;
@@ -315,12 +316,41 @@ export default function DashboardLayout({
         },
         (payload) => {
           if (payload.new) {
+            const newNotif = payload.new as any;
             setNotifications((prev) => {
-              const newNotif = payload.new as any;
               const exists = prev.some((n) => n.id === newNotif.id);
               if (exists) return prev;
               return [newNotif, ...prev];
             });
+
+            // Trigger real native OS device notification
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+              const notifTitle = newNotif.title || 'Samyak Guru';
+              const notifBody = newNotif.message || 'You have a new update.';
+              const notifUrl = newNotif.action_url || '/dashboard';
+
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then((reg) => {
+                  reg.showNotification(notifTitle, {
+                    body: notifBody,
+                    icon: '/favicon.ico',
+                    badge: '/favicon.ico',
+                    tag: newNotif.id,
+                    data: { url: notifUrl },
+                  });
+                }).catch(() => {
+                  new Notification(notifTitle, {
+                    body: notifBody,
+                    icon: '/favicon.ico',
+                  });
+                });
+              } else {
+                new Notification(notifTitle, {
+                  body: notifBody,
+                  icon: '/favicon.ico',
+                });
+              }
+            }
           }
         }
       )
@@ -330,6 +360,51 @@ export default function DashboardLayout({
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
+
+  const [deviceNotificationPermission, setDeviceNotificationPermission] = useState<string>('default');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setDeviceNotificationPermission(Notification.permission);
+    }
+  }, []);
+
+  const requestDeviceNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      toast.error('Device push notifications are not supported in this browser.');
+      return;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      setDeviceNotificationPermission(perm);
+      if (perm === 'granted') {
+        toast.success('Device push notifications enabled!');
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification('Samyak Guru Device Alerts Active 🔔', {
+              body: 'You will now receive real-time notifications on your device for exams and live classes.',
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+            });
+          }).catch(() => {
+            new Notification('Samyak Guru Device Alerts Active 🔔', {
+              body: 'You will now receive real-time notifications on your device for exams and live classes.',
+              icon: '/favicon.ico',
+            });
+          });
+        } else {
+          new Notification('Samyak Guru Device Alerts Active 🔔', {
+            body: 'You will now receive real-time notifications on your device for exams and live classes.',
+            icon: '/favicon.ico',
+          });
+        }
+      } else if (perm === 'denied') {
+        toast.error('Notifications were blocked. Please enable them in your browser site permissions.');
+      }
+    } catch (err) {
+      console.error('Notification permission error:', err);
+    }
+  };
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -684,6 +759,25 @@ export default function DashboardLayout({
                         </button>
                       )}
                     </div>
+
+                    {deviceNotificationPermission !== 'granted' ? (
+                      <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between gap-2">
+                        <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                          Enable real device alerts
+                        </span>
+                        <button
+                          onClick={requestDeviceNotificationPermission}
+                          className="px-2.5 py-1 rounded-lg bg-primary text-primary-foreground font-bold text-[10px] hover:opacity-90 transition-opacity"
+                        >
+                          Enable
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-1.5 flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Real Device Notifications Active
+                      </div>
+                    )}
 
                     <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.04]">
                       {notifications.length === 0 ? (

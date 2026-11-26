@@ -11,8 +11,7 @@ export default function ServiceWorkerRegister() {
   useEffect(() => {
     if (
       typeof window !== 'undefined' &&
-      'serviceWorker' in navigator &&
-      process.env.NODE_ENV === 'production'
+      'serviceWorker' in navigator
     ) {
       window.addEventListener('load', () => {
         navigator.serviceWorker

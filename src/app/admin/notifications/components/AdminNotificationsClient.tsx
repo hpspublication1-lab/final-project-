@@ -104,6 +104,46 @@ export default function AdminNotificationsClient() {
     }
   };
 
+  const testDeviceNotification = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      toast.error('Device notifications are not supported in this browser.');
+      return;
+    }
+
+    try {
+      let perm = Notification.permission;
+      if (perm !== 'granted') {
+        perm = await Notification.requestPermission();
+      }
+
+      if (perm === 'granted') {
+        const testTitle = 'Samyak Guru Admin Test Alert 🔔';
+        const testBody = 'This is a real system notification delivered to your operating system.';
+
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.showNotification(testTitle, {
+              body: testBody,
+              icon: '/favicon.ico',
+              badge: '/favicon.ico',
+              tag: 'admin-test-alert',
+              data: { url: '/admin/notifications' },
+            });
+          }).catch(() => {
+            new Notification(testTitle, { body: testBody, icon: '/favicon.ico' });
+          });
+        } else {
+          new Notification(testTitle, { body: testBody, icon: '/favicon.ico' });
+        }
+        toast.success('Native device notification triggered on your screen!');
+      } else {
+        toast.error('Device notification permission was not granted. Please allow notifications in site settings.');
+      }
+    } catch (err) {
+      console.error('Test notification error:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -123,14 +163,23 @@ export default function AdminNotificationsClient() {
               </p>
             </div>
           </div>
-          <button
-            onClick={loadDispatches}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors"
-          >
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-            <span>Refresh Logs</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={testDeviceNotification}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
+            >
+              <BellRing size={12} />
+              <span>Test Device Alert</span>
+            </button>
+            <button
+              onClick={loadDispatches}
+              disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-border bg-card hover:bg-muted text-foreground transition-colors"
+            >
+              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+              <span>Refresh Logs</span>
+            </button>
+          </div>
         </div>
 
         {/* Dispatch Form */}
