@@ -158,6 +158,8 @@ export async function listAssets(ctx: StaffContext, program: ProgramCode) {
 
   return {
     acceptedTypes: ACCEPTED_TYPES,
+    /** False until decision D7: uploads can be checked, described and reviewed, but not published. */
+    scannerConfigured: getScanner() !== null,
     assets: assets.map((a) => ({
       id: a.id,
       title: a.title,

@@ -75,6 +75,7 @@ export function useCeeData<T>(path: string | null) {
 
 const NAV = [
   { href: '/admin/cee-visual/lessons', label: 'Lessons' },
+  { href: '/admin/cee-visual/assets', label: 'Visuals' },
   { href: '/admin/cee-visual/reviews', label: 'Reviews' },
   { href: '/admin/cee-visual/curriculum', label: 'Syllabus' },
   { href: '/admin/cee-visual/roles', label: 'Roles' },
@@ -148,6 +149,11 @@ const STATUS_STYLE: Record<string, string> = {
   DECIDED: 'bg-muted text-foreground border-border',
   CANCELLED: 'bg-muted text-muted-foreground border-border',
   VERIFIED: 'bg-success-light text-foreground border-success',
+  UPLOADING: 'bg-muted text-foreground border-border',
+  VALIDATING: 'bg-warning-light text-foreground border-warning',
+  VALIDATED: 'bg-primary/10 text-primary border-primary/40',
+  REJECTED: 'bg-error-light text-foreground border-error',
+  NOT_SUBMITTED: 'bg-muted text-muted-foreground border-border',
   RETIRED: 'bg-muted text-muted-foreground border-border',
 };
 
@@ -163,6 +169,11 @@ const STATUS_LABEL: Record<string, string> = {
   DECIDED: 'Decided',
   CANCELLED: 'Cancelled',
   VERIFIED: 'Verified',
+  UPLOADING: 'Waiting for file',
+  VALIDATING: 'Checking',
+  VALIDATED: 'Passed checks',
+  REJECTED: 'Failed checks',
+  NOT_SUBMITTED: 'Not sent for review',
   RETIRED: 'Retired',
 };
 

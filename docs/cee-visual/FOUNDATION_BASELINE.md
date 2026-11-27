@@ -27,11 +27,11 @@ The handoff's rule applies: nothing counts as complete on the strength of mockup
 
 | Suite | Runs against | Result |
 |---|---|---|
-| `supabase/proposed/tests/cee_visual_foundation_test.sql` | Fresh Postgres 16 with Supabase's default privileges | **86/86** (61 at the baseline; 25 added in M6) |
+| `supabase/proposed/tests/cee_visual_foundation_test.sql` | Fresh Postgres 16 with Supabase's default privileges | **102/102** (61 at the baseline; 25 added in M6, 16 in M7) |
 | Rollback, with a publication present | Postgres 16 | Refuses (as designed) |
 | Rollback, clean | Postgres 16 | Leaves 0 tables and 0 functions; re-apply OK |
 | Chosen schema over the superseded tables | Postgres 16 | Stops at the first clash; creates nothing |
-| Unit tests: `schemas`, `authz`, `grading-completion`, `player-bridge-http`, `eventQueue`, `validators` (attack files generated per case), `syllabusImport` | Node | 730 for the whole site, all passing (16 new for the syllabus importer) |
+| Unit tests: `schemas`, `authz`, `grading-completion`, `player-bridge-http`, `eventQueue`, `validators` (attack files generated per case), `syllabusImport` | Node | 773 for the whole site, all passing (16 for the syllabus importer, 11 for the asset pipeline, 17 adopted from the independent security suite, 3 for PATCH-001, 12 for FIX-001) |
 | `api.integration.test.ts` (student API) | PostgREST 12 → Postgres 16 | **12/12** |
 | `admin.integration.test.ts` (editorial flow, syllabus import and verification) | PostgREST 12 → Postgres 16 | **10/10** |
 | Player scenarios: 3D, fallback, context loss ×2, no WebGL, keyboard, reduced motion, mobile | Chrome (SwiftShader) | All behaved as designed |
@@ -100,6 +100,24 @@ Format: `Requirement | status | code path | commit/PR | tests executed | result 
 ## Release gates (file 10)
 
 None is met yet. Critical E2E on staging, zero open critical/high security issues (the security audit is assigned to Antigravity), a verified syllabus with academically reviewed content, every published 3D lesson having a fallback (enforced by the database), role isolation (tested locally), a migration dry-run on staging, a rollback rehearsal, and reference-device benchmarks.
+
+## M7: secure visual upload pipeline (27 Nov)
+
+| Evidence | Environment | Result |
+|---|---|---|
+| Schema checks (status rules, promotion only after a clean scan, asset review functions, private buckets, grants) | Postgres 16 with Supabase default privileges | **102/102** |
+| `assetPipeline.test.ts`: type sniffing, hash and size verification, validators, image limits, size caps | Node | 11/11 |
+| `assets.integration.test.ts`: create, signed single-use upload, server checks, tampered file rejected, script SVG rejected, manifest checked against the model's nodes, preview, three-gate review in the shared queue, attaching to a draft, promotion only after CLEAN, INFECTED final | PostgREST 12 + storage stand-in | **11/11** |
+| Chrome: create, upload with progress, wrong type caught, script SVG rejected with its reason, describe, send for review, expert reviews through the student player, rights approval, attach to a draft with role checks, 390 px | Chrome, dev build | **14/14**, no page errors |
+| Full lesson walkthrough after the changes (editor → six gates → publisher → enrolled student with quiz; answers absent from the page) | Chrome | Pass |
+
+**Still blocked for M8:** decision D7. `src/lib/cee-visual/scanner.ts` is the slot: one implementation,
+selected by server configuration, and the pipeline uses it with no other change. Until then every
+upload stays NOT_SCANNED, nothing is promoted, and no lesson using it can be published.
+
+**Known limitations:** visuals have no subject, so only course-wide reviewers can decide their reviews.
+PNG and WebP are checked by header (type, dimensions), not fully decoded on the server. The server
+reads each file into memory to check it; the 25 MB GLB cap keeps this inside a 60-second function.
 
 ## Were the superseded migrations ever installed? (objective 3)
 

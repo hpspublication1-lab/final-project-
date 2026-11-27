@@ -6,6 +6,7 @@
  * The server decides what's allowed; this screen only offers what it says.
  */
 import Link from 'next/link';
+import LessonVisuals, { type AttachedVisual } from './LessonVisuals';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessNotice,
@@ -40,6 +41,7 @@ interface Detail {
   questions: { id: string; stem: string; options: string[]; answerKey: string; rationale: string; status: string }[];
   reviews: { requestId: string; gate: string; status: string; decision: { decision: string; comments: string | null; decidedAt: string } | null }[];
   publications: { id: string; revisionId: string; publishedAt: string; active: boolean }[];
+  attached: AttachedVisual[];
   permissions: { edit: boolean; publish: boolean };
 }
 
@@ -356,6 +358,10 @@ export default function LessonEditorClient({ lessonId }: { lessonId: string }) {
               </fieldset>
             )}
           </section>
+
+          {latest && (
+            <LessonVisuals revisionId={latest.id} program={d.lesson.program} editable={editable} attached={d.attached ?? []} onChanged={detail.reload} />
+          )}
         </div>
 
         <aside className="space-y-4">

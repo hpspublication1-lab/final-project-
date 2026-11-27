@@ -8,6 +8,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import VisualPlayerShell from '@/components/visual-player/VisualPlayerShell';
+import type { ResolvedVisual, VisualAssetManifest } from '@/lib/cee-visual/schemas';
 import {
   AccessNotice,
   buttonPrimary,
@@ -21,7 +23,39 @@ import {
   useCeeData,
 } from '../../shared';
 
-interface ReviewItem {
+interface AssetReviewItem {
+  subject: 'ASSET';
+  id: string;
+  gate: string;
+  status: string;
+  requestedAt: string;
+  assetId: string;
+  assetTitle: string;
+  assetKind: 'MODEL_3D' | 'DIAGRAM_2D';
+  license: string | null;
+  sourceCredit: string | null;
+  versionId: string;
+  versionNumber: number;
+  canDecide: boolean;
+  cannotDecideReason: string | null;
+  decision: { decision: string; comments: string | null; decidedAt: string } | null;
+}
+
+interface AssetPreview {
+  url: string;
+  fallbackUrl: string | null;
+  mimeType: string;
+  kind: 'MODEL_3D' | 'DIAGRAM_2D';
+  license: string | null;
+  sourceCredit: string | null;
+  manifest: VisualAssetManifest | null;
+  scanned: boolean;
+}
+
+type ReviewItem = LessonReviewItem | AssetReviewItem;
+
+interface LessonReviewItem {
+  subject: 'LESSON';
   id: string;
   gate: string;
   status: string;
@@ -51,11 +85,58 @@ const GATE_HELP: Record<string, string> = {
   RIGHTS: 'Do we have the rights to every image, model and text in it?',
 };
 
+const ASSET_GATE_HELP: Record<string, string> = {
+  SCIENTIFIC: 'Is the anatomy or science shown correctly, and do the description and labels say only what the visual shows?',
+  VISUAL: 'Is it clear on a phone, are labels and parts legible, and does the 2D fallback carry the same information?',
+  RIGHTS: 'Does the licence below allow this use, and is the credit complete and accurate? Check them at the source.',
+};
+
+/** A visual under review, shown through the same player students get. */
+function AssetReview({ item }: { item: AssetReviewItem }) {
+  const p = useCeeData<AssetPreview>(`/asset-versions/${item.versionId}/preview`);
+  const visual: ResolvedVisual | null =
+    p.data?.manifest
+      ? {
+          assetVersionId: item.versionId,
+          manifest: p.data.manifest,
+          ...(p.data.kind === 'MODEL_3D' ? { modelUrl: p.data.url, fallbackUrl: p.data.fallbackUrl ?? undefined } : { diagramUrl: p.data.url }),
+        }
+      : null;
+  return (
+    <div className="space-y-4">
+      <dl className="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
+        <dt className="text-muted-foreground">Type</dt>
+        <dd>{item.assetKind === 'MODEL_3D' ? '3D model' : '2D diagram'}</dd>
+        <dt className="text-muted-foreground">Licence</dt>
+        <dd>{item.license}</dd>
+        <dt className="text-muted-foreground">Source and credit</dt>
+        <dd>{item.sourceCredit}</dd>
+        {p.data?.manifest && (
+          <>
+            <dt className="text-muted-foreground">Description</dt>
+            <dd>{p.data.manifest.accessibility.description}</dd>
+          </>
+        )}
+        {p.data && (
+          <>
+            <dt className="text-muted-foreground">Malware scan</dt>
+            <dd>{p.data.scanned ? 'Clean' : 'Not scanned yet (decision D7)'}</dd>
+          </>
+        )}
+      </dl>
+      {p.loading && <p className="text-sm text-muted-foreground">Loading the visual…</p>}
+      {p.error && <p className="text-sm text-error">{p.error.message}</p>}
+      {visual && <VisualPlayerShell key={item.versionId} visual={visual} />}
+      {p.data && !p.data.manifest && <p className="text-sm">This version has no description yet.</p>}
+    </div>
+  );
+}
+
 export default function ReviewQueueClient() {
   const [tab, setTab] = useState<'open' | 'done'>('open');
   const queue = useCeeData<{ reviews: ReviewItem[] }>(`/reviews?program=cee_medical${tab === 'done' ? '&status=done' : ''}`);
   const [active, setActive] = useState<ReviewItem | null>(null);
-  const lesson = useCeeData<LessonForReview>(active ? `/lessons/${active.lessonId}` : null);
+  const lesson = useCeeData<LessonForReview>(active?.subject === 'LESSON' ? `/lessons/${active.lessonId}` : null);
   const [decision, setDecision] = useState<'APPROVE' | 'REQUEST_CHANGES' | 'REJECT'>('APPROVE');
   const [comments, setComments] = useState('');
   const [busy, setBusy] = useState(false);
@@ -69,16 +150,22 @@ export default function ReviewQueueClient() {
     setBusy(true);
     setMessage(null);
     try {
-      const r = await ceeAdmin<{ revisionStatus: string }>(`/reviews/${active.id}/decision`, {
+      const r = await ceeAdmin<{ revisionStatus?: string; assetReviewState?: string }>(`/reviews/${active.id}/decision`, {
         method: 'POST',
         json: { decision, comments: comments.trim() || undefined },
       });
       const text =
-        r.revisionStatus === 'APPROVED'
-          ? `Recorded. All six gates are now approved; “${active.lessonTitle}” can be published.`
-          : r.revisionStatus === 'CHANGES_REQUESTED'
-            ? 'Recorded. The revision went back to its author with your comments.'
-            : 'Recorded.';
+        active.subject === 'ASSET'
+          ? r.assetReviewState === 'APPROVED'
+            ? `Recorded. All three reviews approved “${active.assetTitle}”, version ${active.versionNumber}.`
+            : r.assetReviewState === 'CHANGES_REQUESTED'
+              ? 'Recorded. The uploader was asked for a new version, with your comments.'
+              : 'Recorded.'
+          : r.revisionStatus === 'APPROVED'
+            ? `Recorded. All six gates are now approved; “${active.lessonTitle}” can be published.`
+            : r.revisionStatus === 'CHANGES_REQUESTED'
+              ? 'Recorded. The revision went back to its author with your comments.'
+              : 'Recorded.';
       setActive(null);
       setComments('');
       setDecision('APPROVE');
@@ -92,8 +179,51 @@ export default function ReviewQueueClient() {
     }
   };
 
+  const decisionArea = active ? (
+    <>
+                  {tab === 'open' &&
+                    (active.canDecide ? (
+                      <form onSubmit={submit} className="rounded-xl border border-border bg-card p-5 space-y-3" aria-labelledby="decide-h">
+                        <h2 id="decide-h" className="font-semibold">
+                          Your decision
+                        </h2>
+                        <div className="flex flex-wrap gap-4 text-sm" role="radiogroup" aria-label="Decision">
+                          {(
+                            [
+                              ['APPROVE', 'Approve'],
+                              ['REQUEST_CHANGES', 'Request changes'],
+                              ['REJECT', 'Reject'],
+                            ] as const
+                          ).map(([v, label]) => (
+                            <label key={v} className="inline-flex items-center gap-2">
+                              <input type="radio" name="decision" checked={decision === v} onChange={() => setDecision(v)} />
+                              {label}
+                            </label>
+                          ))}
+                        </div>
+                        <label className="block space-y-1">
+                          <span className="text-sm font-medium">Comments {decision === 'APPROVE' ? '(optional)' : '(say what needs to change)'}</span>
+                          <textarea className={inputClass} rows={4} required={decision !== 'APPROVE'} maxLength={4000} value={comments} onChange={(e) => setComments(e.target.value)} />
+                        </label>
+                        <button type="submit" className={buttonPrimary} disabled={busy}>
+                          {busy ? 'Recording…' : 'Record decision'}
+                        </button>
+                      </form>
+                    ) : (
+                      <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">You can read this review but not decide it: {active.cannotDecideReason}</p>
+                    ))}
+                  {active.decision && (
+                    <p className="rounded-xl border border-border bg-card p-5 text-sm">
+                      <span className="font-medium">{active.decision.decision === 'APPROVE' ? 'Approved' : active.decision.decision === 'REJECT' ? 'Rejected' : 'Changes requested'}</span>{' '}
+                      on {new Date(active.decision.decidedAt).toLocaleString()}
+                      {active.decision.comments ? `: ${active.decision.comments}` : '.'}
+                    </p>
+                  )}
+    </>
+  ) : null;
+
   return (
-    <PageShell title="Review queue" description="Each lesson revision needs approval on six gates. You see the gates you can decide, never your own work.">
+    <PageShell title="Review queue" description="Lesson revisions need approval on six gates and visuals on three. You see the gates you can decide, never your own work.">
       {queue.error ? (
         <AccessNotice error={queue.error} />
       ) : (
@@ -144,10 +274,18 @@ export default function ReviewQueueClient() {
                       <span className="text-sm font-semibold">{GATE_LABEL[it.gate] ?? it.gate}</span>
                       <StatusBadge status={it.decision ? (it.decision.decision === 'APPROVE' ? 'APPROVED' : 'CHANGES_REQUESTED') : it.status} />
                     </div>
-                    <p className="mt-1 text-sm">
-                      {it.lessonTitle} <span className="text-muted-foreground">#{it.revisionNumber}</span>
-                    </p>
-                    {it.topic && <p className="text-xs text-muted-foreground mt-0.5">{it.topic}</p>}
+                    {it.subject === 'ASSET' ? (
+                      <p className="mt-1 text-sm">
+                        Visual: {it.assetTitle} <span className="text-muted-foreground">version {it.versionNumber}</span>
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mt-1 text-sm">
+                          {it.lessonTitle} <span className="text-muted-foreground">#{it.revisionNumber}</span>
+                        </p>
+                        {it.topic && <p className="text-xs text-muted-foreground mt-0.5">{it.topic}</p>}
+                      </>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">Requested {new Date(it.requestedAt).toLocaleString()}</p>
                   </button>
                 </li>
@@ -157,6 +295,24 @@ export default function ReviewQueueClient() {
             <div>
               {!active ? (
                 <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">Choose a review to read the revision.</div>
+              ) : active.subject === 'ASSET' ? (
+                <div className="space-y-4">
+                  <section className="rounded-xl border border-border bg-card p-5 space-y-3" aria-labelledby="read-h">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 id="read-h" className="text-lg font-semibold">
+                        {active.assetTitle}, version {active.versionNumber}
+                      </h2>
+                      <Link href="/admin/cee-visual/assets" className={buttonSecondary}>
+                        Open visuals
+                      </Link>
+                    </div>
+                    <p className="text-sm">
+                      <span className="font-medium">{GATE_LABEL[active.gate]}:</span> <span className="text-muted-foreground">{ASSET_GATE_HELP[active.gate]}</span>
+                    </p>
+                    <AssetReview item={active} />
+                  </section>
+                  {decisionArea}
+                </div>
               ) : (
                 <div className="space-y-4">
                   <section className="rounded-xl border border-border bg-card p-5 space-y-3" aria-labelledby="read-h">
@@ -209,44 +365,7 @@ export default function ReviewQueueClient() {
                     )}
                   </section>
 
-                  {tab === 'open' &&
-                    (active.canDecide ? (
-                      <form onSubmit={submit} className="rounded-xl border border-border bg-card p-5 space-y-3" aria-labelledby="decide-h">
-                        <h2 id="decide-h" className="font-semibold">
-                          Your decision
-                        </h2>
-                        <div className="flex flex-wrap gap-4 text-sm" role="radiogroup" aria-label="Decision">
-                          {(
-                            [
-                              ['APPROVE', 'Approve'],
-                              ['REQUEST_CHANGES', 'Request changes'],
-                              ['REJECT', 'Reject'],
-                            ] as const
-                          ).map(([v, label]) => (
-                            <label key={v} className="inline-flex items-center gap-2">
-                              <input type="radio" name="decision" checked={decision === v} onChange={() => setDecision(v)} />
-                              {label}
-                            </label>
-                          ))}
-                        </div>
-                        <label className="block space-y-1">
-                          <span className="text-sm font-medium">Comments {decision === 'APPROVE' ? '(optional)' : '(say what needs to change)'}</span>
-                          <textarea className={inputClass} rows={4} required={decision !== 'APPROVE'} maxLength={4000} value={comments} onChange={(e) => setComments(e.target.value)} />
-                        </label>
-                        <button type="submit" className={buttonPrimary} disabled={busy}>
-                          {busy ? 'Recording…' : 'Record decision'}
-                        </button>
-                      </form>
-                    ) : (
-                      <p className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">You can read this review but not decide it: {active.cannotDecideReason}</p>
-                    ))}
-                  {active.decision && (
-                    <p className="rounded-xl border border-border bg-card p-5 text-sm">
-                      <span className="font-medium">{active.decision.decision === 'APPROVE' ? 'Approved' : active.decision.decision === 'REJECT' ? 'Rejected' : 'Changes requested'}</span>{' '}
-                      on {new Date(active.decision.decidedAt).toLocaleString()}
-                      {active.decision.comments ? `: ${active.decision.comments}` : '.'}
-                    </p>
-                  )}
+                  {decisionArea}
                 </div>
               )}
             </div>
