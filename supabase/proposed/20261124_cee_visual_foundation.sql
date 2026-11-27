@@ -243,7 +243,7 @@ CREATE TABLE public.cee_asset_versions (
   created_by         uuid NOT NULL,
   created_at         timestamptz NOT NULL DEFAULT now(),
   UNIQUE (asset_id, version_number),
-  CHECK (published_key IS NULL OR status = 'VALIDATED')
+  CHECK (published_key IS NULL OR (status = 'VALIDATED' AND scan_status = 'CLEAN'))   -- promoted only once validated AND scanned clean
 );
 
 CREATE TABLE public.cee_asset_jobs (
@@ -441,6 +441,16 @@ BEGIN
   END IF;
   IF OLD.locked_at IS NOT NULL AND (NEW.manifest IS DISTINCT FROM OLD.manifest OR NEW.locked_at IS DISTINCT FROM OLD.locked_at) THEN
     RAISE EXCEPTION 'IMMUTABLE_ASSET: approved manifest is frozen; create a new version' USING ERRCODE = 'check_violation';
+  END IF;
+  -- Pipeline states only move forward: UPLOADING → VALIDATING → VALIDATED | REJECTED.
+  IF NEW.status <> OLD.status AND NOT (
+       (OLD.status = 'UPLOADING'  AND NEW.status IN ('VALIDATING','REJECTED'))
+    OR (OLD.status = 'VALIDATING' AND NEW.status IN ('VALIDATED','REJECTED'))) THEN
+    RAISE EXCEPTION 'ILLEGAL_TRANSITION: asset version % to %', OLD.status, NEW.status USING ERRCODE = 'check_violation';
+  END IF;
+  -- A scan verdict of CLEAN or INFECTED is final; ERROR may be retried.
+  IF NEW.scan_status <> OLD.scan_status AND OLD.scan_status IN ('CLEAN','INFECTED') THEN
+    RAISE EXCEPTION 'ILLEGAL_TRANSITION: scan result % is final', OLD.scan_status USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END $$;
@@ -783,6 +793,62 @@ BEGIN
           jsonb_build_object('source_url', coalesce(nullif(p_source_url, ''), s.source_url), 'source_sha256', p_sha256, 'entries', entries), p_request_id);
 END $$;
 
+-- ═══ Asset review (transactional) ═══════════════════════════════════════════
+-- A validated version goes to three gates at once. Submitting locks its manifest
+-- (cee_lock_on_review); changes after that mean a new version, so a version is
+-- submitted exactly once. Licence and credit are required for the rights gate.
+CREATE FUNCTION public.cee_submit_asset_version(p_version uuid, p_actor uuid, p_request_id text DEFAULT NULL) RETURNS void
+LANGUAGE plpgsql AS $$
+DECLARE v record; a record; g text;
+BEGIN
+  SELECT * INTO v FROM public.cee_asset_versions WHERE id = p_version FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'NOT_FOUND' USING ERRCODE = 'no_data_found'; END IF;
+  SELECT * INTO a FROM public.cee_visual_assets WHERE id = v.asset_id;
+  IF v.status <> 'VALIDATED' THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: only a validated version can be reviewed (this one is %)', v.status USING ERRCODE = 'check_violation';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.cee_review_requests WHERE entity_type = 'ASSET_VERSION' AND entity_id = p_version) THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: this version was already sent for review; upload a new version to change it' USING ERRCODE = 'check_violation';
+  END IF;
+  IF v.manifest = '{}'::jsonb THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: describe the visual (its manifest) before review' USING ERRCODE = 'check_violation';
+  END IF;
+  IF nullif(btrim(coalesce(a.license, '')), '') IS NULL OR nullif(btrim(coalesce(a.source_credit, '')), '') IS NULL THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: record the licence and source credit before review' USING ERRCODE = 'check_violation';
+  END IF;
+  FOREACH g IN ARRAY ARRAY['SCIENTIFIC','VISUAL','RIGHTS'] LOOP
+    INSERT INTO public.cee_review_requests (entity_type, entity_id, gate, requested_by) VALUES ('ASSET_VERSION', p_version, g, p_actor);
+  END LOOP;
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id, request_id)
+  VALUES (p_actor, 'SUBMIT', 'ASSET_VERSION', p_version, p_request_id);
+END $$;
+
+-- Returns the version's review state afterwards: IN_REVIEW, APPROVED or CHANGES_REQUESTED.
+CREATE FUNCTION public.cee_decide_asset_review(p_request uuid, p_reviewer uuid, p_decision text, p_comments text, p_request_id text DEFAULT NULL)
+RETURNS text LANGUAGE plpgsql AS $$
+DECLARE r record; g text; pending int := 0;
+BEGIN
+  SELECT * INTO r FROM public.cee_review_requests WHERE id = p_request FOR UPDATE;
+  IF r.id IS NULL THEN RAISE EXCEPTION 'NOT_FOUND: review request' USING ERRCODE = 'check_violation'; END IF;
+  IF r.entity_type <> 'ASSET_VERSION' THEN
+    RAISE EXCEPTION 'STATE_CONFLICT: not an asset review' USING ERRCODE = 'check_violation';
+  END IF;
+  PERFORM 1 FROM public.cee_asset_versions WHERE id = r.entity_id FOR UPDATE;
+  -- The decision trigger enforces separation of duties and closes the request.
+  INSERT INTO public.cee_review_decisions (request_id, decision, comments, reviewer_id) VALUES (p_request, p_decision, p_comments, p_reviewer);
+  INSERT INTO public.cee_audit_logs (actor_id, action, entity_type, entity_id, after_json, request_id)
+  VALUES (p_reviewer, 'REVIEW_' || p_decision, 'ASSET_VERSION', r.entity_id, jsonb_build_object('gate', r.gate, 'request_id', p_request), p_request_id);
+  IF p_decision IN ('REQUEST_CHANGES','REJECT') THEN
+    UPDATE public.cee_review_requests SET status = 'CANCELLED'
+     WHERE entity_type = 'ASSET_VERSION' AND entity_id = r.entity_id AND status = 'OPEN';
+    RETURN 'CHANGES_REQUESTED';
+  END IF;
+  FOREACH g IN ARRAY ARRAY['SCIENTIFIC','VISUAL','RIGHTS'] LOOP
+    IF public.cee_latest_decision('ASSET_VERSION', r.entity_id, g) IS DISTINCT FROM 'APPROVE' THEN pending := pending + 1; END IF;
+  END LOOP;
+  RETURN CASE WHEN pending = 0 THEN 'APPROVED' ELSE 'IN_REVIEW' END;
+END $$;
+
 -- ═══ Access: server only ═══════════════════════════════════════════════════
 -- Row security on, no policies for anon/authenticated: the browser can't read or
 -- write any cee_* table. Route handlers use the service role after verifyCeeScope().
@@ -824,9 +890,26 @@ BEGIN
                               public.cee_decide_review(uuid, uuid, text, text),
                               public.cee_latest_decision(text, uuid, text),
                               public.cee_import_curriculum(uuid, uuid, jsonb, boolean, text),
-                              public.cee_verify_syllabus(uuid, uuid, text, text, text)
+                              public.cee_verify_syllabus(uuid, uuid, text, text, text),
+                              public.cee_submit_asset_version(uuid, uuid, text),
+                              public.cee_decide_asset_review(uuid, uuid, text, text, text)
       TO service_role;
   END IF;
 END $fn$;
+
+
+-- ═══ Storage: two private buckets ══════════════════════════════════════════
+-- Uploads land in cee-quarantine through a signed, single-use URL; only files
+-- that are validated and scanned clean are copied to cee-published. Neither is
+-- public and neither has a policy, so only the server (service role) and signed
+-- URLs reach them. Skipped where there is no Supabase Storage schema.
+DO $buckets$ BEGIN
+  IF to_regclass('storage.buckets') IS NOT NULL THEN
+    INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types) VALUES
+      ('cee-quarantine', 'cee-quarantine', false, 52428800, ARRAY['model/gltf-binary','image/svg+xml','image/png','image/webp']),
+      ('cee-published',  'cee-published',  false, 52428800, ARRAY['model/gltf-binary','image/svg+xml','image/png','image/webp'])
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+END $buckets$;
 
 COMMIT;

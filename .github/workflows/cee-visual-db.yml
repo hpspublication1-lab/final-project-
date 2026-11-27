@@ -44,14 +44,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Schema checks (86 SQL assertions), rollback and its publication guard
+      - name: Schema checks (102 SQL assertions), rollback and its publication guard
         run: |
           $PG -q -d postgres -c "CREATE DATABASE cee_sql"
           $PG -q -d cee_sql -v ON_ERROR_STOP=1 -f scripts/cee/staging/tests/supabase_base.sql
           $PG -q -d cee_sql -v ON_ERROR_STOP=1 -f supabase/proposed/20261124_cee_visual_foundation.sql
           { echo 'BEGIN;'; cat supabase/proposed/tests/cee_visual_foundation_test.sql; echo 'ROLLBACK;'; } | $PG -q -d cee_sql | tee sql-tests.txt
           if grep -qE '\| FAIL +\|' sql-tests.txt; then echo "::error::SQL assertions failed"; exit 1; fi
-          test "$(grep -cE '\| PASS +\|' sql-tests.txt)" -ge 86
+          test "$(grep -cE '\| PASS +\|' sql-tests.txt)" -ge 102
           $PG -q -d cee_sql -v ON_ERROR_STOP=1 -f supabase/proposed/20261124_cee_visual_foundation_ROLLBACK.sql
           left=$($PG -d cee_sql -At -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename LIKE 'cee\_%'")
           test "$left" = "0" || { echo "::error::rollback left $left tables"; exit 1; }
@@ -102,6 +102,8 @@ jobs:
           npx vitest run --no-file-parallelism src/lib/cee-visual/__tests__/api.integration.test.ts 2>&1 | tee it-api.log
           scripts/cee/it-setup.sh > /dev/null
           npx vitest run --no-file-parallelism src/lib/cee-visual/__tests__/admin.integration.test.ts 2>&1 | tee it-admin.log
+          scripts/cee/it-setup.sh > /dev/null
+          npx vitest run --no-file-parallelism src/lib/cee-visual/__tests__/assets.integration.test.ts 2>&1 | tee it-assets.log
 
       # Logs as annotations, so a failure can be read from the checks page without downloading anything.
       - name: Service logs on failure
@@ -110,7 +112,7 @@ jobs:
           note() { [ -s "$2" ] && echo "::error title=$1::$(tail -c 3000 "$2" | sed 's/%/%25/g' | sed ':a;N;$!ba;s/\n/%0A/g')" || true; }
           note postgrest.log /tmp/cee-it/postgrest.log
           note proxy.log /tmp/cee-it/proxy.log
-          grep -h '\[cee-visual\]' it-api.log it-admin.log 2>/dev/null | head -20 > app-errors.txt || true
+          grep -h '\[cee-visual\]' it-api.log it-admin.log it-assets.log 2>/dev/null | head -20 > app-errors.txt || true
           note app-errors app-errors.txt
           node --version
 
@@ -123,6 +125,7 @@ jobs:
             sql-tests.txt
             it-api.log
             it-admin.log
+            it-assets.log
             ci-evidence/
             /tmp/cee-snapshot/
           if-no-files-found: ignore

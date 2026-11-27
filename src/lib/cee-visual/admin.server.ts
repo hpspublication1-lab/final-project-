@@ -33,7 +33,7 @@ export interface StaffContext {
   requestId: string;
 }
 
-function check<T>(res: { data: T; error: DbErrorLike | null }): T {
+export function check<T>(res: { data: T; error: DbErrorLike | null }): T {
   if (res.error) throw mapDbError(res.error);
   return res.data;
 }
@@ -68,7 +68,7 @@ export function requireSuperAdmin(ctx: StaffContext): void {
   if (!ctx.isSuperAdmin) throw new CeeApiError('FORBIDDEN', 'Only a super admin can manage roles.');
 }
 
-async function audit(ctx: StaffContext, action: string, entityType: string, entityId: string | null, after?: unknown, before?: unknown) {
+export async function audit(ctx: StaffContext, action: string, entityType: string, entityId: string | null, after?: unknown, before?: unknown) {
   check(
     await ctx.client.from('cee_audit_logs').insert({
       actor_id: ctx.user.id,
@@ -153,7 +153,7 @@ interface RevisionRow {
 
 const REVISION_COLS = 'id, lesson_id, revision_number, status, content, created_by, created_at, submitted_at, updated_at';
 
-async function revisionWithScope(client: SupabaseClient, revisionId: string) {
+export async function revisionWithScope(client: SupabaseClient, revisionId: string) {
   const rev = check(await client.from('cee_lesson_revisions').select(REVISION_COLS).eq('id', revisionId).maybeSingle()) as RevisionRow | null;
   if (!rev) throw new CeeApiError('NOT_FOUND');
   const scope = await lessonScope(client, rev.lesson_id);
@@ -634,6 +634,7 @@ export async function lessonDetail(ctx: StaffContext, lessonId: string) {
 
   let questions: unknown[] = [];
   let reviews: unknown[] = [];
+  let attached: unknown[] = [];
   if (latest) {
     type QRow = { sort_key: number; cee_question_revisions: unknown };
     const qrows = check(
@@ -648,6 +649,32 @@ export async function lessonDetail(ctx: StaffContext, lessonId: string) {
       return { id: q.id, sortKey: r.sort_key, stem: q.stem, options: q.options, answerKey: q.answer_key, rationale: q.rationale, difficulty: q.difficulty, status: q.status };
     });
     reviews = await gateSummary(ctx.client, latest.id);
+    const arows = check(
+      await ctx.client
+        .from('cee_lesson_assets')
+        .select('role, sort_key, cee_asset_versions(id, version_number, status, scan_status, published_key, manifest, cee_visual_assets(id, title, kind))')
+        .eq('lesson_revision_id', latest.id)
+        .order('sort_key')
+    ) as unknown as {
+      role: string;
+      sort_key: number;
+      cee_asset_versions: Embed<{
+        id: string;
+        version_number: number;
+        status: string;
+        scan_status: string;
+        published_key: string | null;
+        manifest: Record<string, unknown>;
+        cee_visual_assets: Embed<{ id: string; title: string; kind: string }>;
+      }>;
+    }[];
+    attached = arows.flatMap((r) => {
+      const v = oneEmbed(r.cee_asset_versions);
+      const a = v ? oneEmbed(v.cee_visual_assets) : null;
+      if (!v || !a) return [];
+      const ready = v.status === 'VALIDATED' && v.scan_status === 'CLEAN' && v.published_key !== null;
+      return [{ role: r.role, versionId: v.id, versionNumber: v.version_number, assetId: a.id, title: a.title, kind: a.kind, scanStatus: v.scan_status, ready, described: Object.keys(v.manifest ?? {}).length > 0 }];
+    });
   }
   const pubs = check(
     await ctx.client.from('cee_publications').select('id, lesson_revision_id, published_at, superseded_at, archived_at').eq('lesson_id', lessonId).order('published_at', { ascending: false })
@@ -670,6 +697,7 @@ export async function lessonDetail(ctx: StaffContext, lessonId: string) {
     latest: latest ? { id: latest.id, number: latest.revision_number, status: latest.status, content: latest.content, updatedAt: latest.updated_at, createdBy: latest.created_by } : null,
     questions,
     reviews,
+    attached,
     publications: pubs.map((p) => ({ id: p.id, revisionId: p.lesson_revision_id, publishedAt: p.published_at, active: !p.superseded_at && !p.archived_at })),
     permissions: {
       edit: can('lesson:edit'),
@@ -841,7 +869,8 @@ export async function reviewQueue(ctx: StaffContext, program: ProgramCode, statu
       .order('requested_at', { ascending: status === 'OPEN' })
       .limit(500)
   ) as { id: string; entity_id: string; gate: ReviewGate; status: string; requested_at: string; requested_by: string }[];
-  if (reqs.length === 0) return [];
+  const assetItems = await assetReviewItems(ctx, program, status);
+  if (reqs.length === 0) return assetItems;
   const revIds = [...new Set(reqs.map((r) => r.entity_id))];
   const revs = check(
     await ctx.client.from('cee_lesson_revisions').select('id, lesson_id, revision_number, status, created_by').in('id', revIds)
@@ -859,7 +888,7 @@ export async function reviewQueue(ctx: StaffContext, program: ProgramCode, statu
         }[])
       : [];
 
-  return reqs.flatMap((r) => {
+  const lessonItems = reqs.flatMap((r) => {
     const rev = revs.find((x) => x.id === r.entity_id);
     const scope = rev ? scopes.get(rev.lesson_id) : undefined;
     if (!rev || !scope || scope.lesson.program_code !== program) return [];
@@ -875,6 +904,7 @@ export async function reviewQueue(ctx: StaffContext, program: ProgramCode, statu
     const d = decisions.find((x) => x.request_id === r.id);
     return [
       {
+        subject: 'LESSON' as const,
         id: r.id,
         gate: r.gate,
         status: r.status,
@@ -891,7 +921,75 @@ export async function reviewQueue(ctx: StaffContext, program: ProgramCode, statu
       },
     ];
   });
+  return [...lessonItems, ...assetItems];
 }
+
+/**
+ * Visual (asset version) reviews: three gates per version. Visuals have no
+ * subject, so deciding them needs a program-wide role for the gate.
+ */
+async function assetReviewItems(ctx: StaffContext, program: ProgramCode, status: 'OPEN' | 'DONE') {
+  const reqs = check(
+    await ctx.client
+      .from('cee_review_requests')
+      .select('id, entity_id, gate, status, requested_at')
+      .eq('entity_type', 'ASSET_VERSION')
+      .in('status', status === 'OPEN' ? ['OPEN'] : ['DECIDED', 'CANCELLED'])
+      .order('requested_at', { ascending: status === 'OPEN' })
+      .limit(500)
+  ) as { id: string; entity_id: string; gate: ReviewGate; status: string; requested_at: string }[];
+  if (reqs.length === 0) return [];
+  const versions = check(
+    await ctx.client
+      .from('cee_asset_versions')
+      .select('id, asset_id, version_number, created_by, cee_visual_assets(id, title, kind, program_code, license, source_credit)')
+      .in('id', [...new Set(reqs.map((r) => r.entity_id))])
+  ) as unknown as {
+    id: string;
+    version_number: number;
+    created_by: string;
+    cee_visual_assets: Embed<{ id: string; title: string; kind: string; program_code: ProgramCode; license: string | null; source_credit: string | null }>;
+  }[];
+  const decisions =
+    status === 'DONE'
+      ? (check(await ctx.client.from('cee_review_decisions').select('request_id, decision, comments, decided_at').in('request_id', reqs.map((r) => r.id))) as {
+          request_id: string;
+          decision: string;
+          comments: string | null;
+          decided_at: string;
+        }[])
+      : [];
+  return reqs.flatMap((r) => {
+    const v = versions.find((x) => x.id === r.entity_id);
+    const a = v ? oneEmbed(v.cee_visual_assets) : null;
+    if (!v || !a || a.program_code !== program) return [];
+    const can = decideScope(ctx.assignments, { actorId: ctx.user.id, action: reviewAction(r.gate), program, subjectNodeId: null, authorIds: [v.created_by] });
+    if (status === 'OPEN' && !can.allowed && !ctx.isSuperAdmin) return [];
+    const d = decisions.find((x) => x.request_id === r.id);
+    return [
+      {
+        subject: 'ASSET' as const,
+        id: r.id,
+        gate: r.gate,
+        status: r.status,
+        requestedAt: r.requested_at,
+        assetId: a.id,
+        assetTitle: a.title,
+        assetKind: a.kind,
+        license: a.license,
+        sourceCredit: a.source_credit,
+        versionId: v.id,
+        versionNumber: v.version_number,
+        canDecide: can.allowed,
+        cannotDecideReason: can.allowed ? null : can.code === 'SOD_VIOLATION' ? 'You uploaded this version.' : 'Needs a course-wide role for this review.',
+        decision: d ? { decision: d.decision, comments: d.comments, decidedAt: d.decided_at } : null,
+      },
+    ];
+  });
+}
+
+type Embed<T> = T | T[] | null;
+const oneEmbed = <T,>(e: Embed<T>): T | null => (Array.isArray(e) ? (e[0] ?? null) : e);
 
 export const DecisionInput = z.strictObject({
   decision: z.enum(['APPROVE', 'REQUEST_CHANGES', 'REJECT']),
@@ -902,12 +1000,28 @@ export async function decideReview(ctx: StaffContext, requestId: string, input: 
   const r = check(
     await ctx.client.from('cee_review_requests').select('id, entity_type, entity_id, gate, status').eq('id', requestId).maybeSingle()
   ) as { id: string; entity_type: string; entity_id: string; gate: ReviewGate; status: string } | null;
-  if (!r || r.entity_type !== 'LESSON_REVISION') throw new CeeApiError('NOT_FOUND');
+  if (!r || (r.entity_type !== 'LESSON_REVISION' && r.entity_type !== 'ASSET_VERSION')) throw new CeeApiError('NOT_FOUND');
+  if (input.decision !== 'APPROVE' && !input.comments?.trim()) throw new CeeApiError('INVALID_REQUEST', 'Say what needs to change.');
+  if (r.entity_type === 'ASSET_VERSION') {
+    const v = check(
+      await ctx.client.from('cee_asset_versions').select('id, created_by, cee_visual_assets(program_code)').eq('id', r.entity_id).single()
+    ) as unknown as { id: string; created_by: string; cee_visual_assets: Embed<{ program_code: ProgramCode }> };
+    const program = oneEmbed(v.cee_visual_assets)?.program_code;
+    if (!program) throw new CeeApiError('NOT_FOUND');
+    authorize(ctx, reviewAction(r.gate), program, null, [v.created_by]);
+    const state = check(
+      await ctx.client.rpc('cee_decide_asset_review', {
+        p_request: requestId,
+        p_reviewer: ctx.user.id,
+        p_decision: input.decision,
+        p_comments: input.comments?.trim() || null,
+        p_request_id: ctx.requestId,
+      })
+    ) as string;
+    return { assetReviewState: state };
+  }
   const { rev, lesson, subjectId } = await revisionWithScope(ctx.client, r.entity_id);
   authorize(ctx, reviewAction(r.gate), lesson.program_code, subjectId, [rev.created_by]);
-  if (input.decision !== 'APPROVE' && !input.comments?.trim()) {
-    throw new CeeApiError('INVALID_REQUEST', 'Say what needs to change.');
-  }
   const status = check(
     await ctx.client.rpc('cee_decide_review', {
       p_request: requestId,

@@ -167,8 +167,18 @@ END $g$;
 UPDATE cee_lesson_revisions SET status = 'APPROVED' WHERE id = 'e0000000-0000-0000-0000-000000000003';
 SELECT pg_temp.expect('an unscanned, unvalidated asset blocks publication',
   format($q$SELECT cee_publish_revision('e0000000-0000-0000-0000-000000000003','%s','k-r3')$q$, pg_temp.u('publisher')), 'ASSET_NOT_READY');
-UPDATE cee_asset_versions SET status = 'VALIDATED', scan_status = 'CLEAN', published_key = 'p/' || id
+SELECT pg_temp.expect('an asset version cannot skip validation',
+  $q$UPDATE cee_asset_versions SET status = 'VALIDATED' WHERE id = '20000000-0000-0000-0000-000000000001'$q$, 'ILLEGAL_TRANSITION');
+UPDATE cee_asset_versions SET status = 'VALIDATING' WHERE id IN ('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002');
+UPDATE cee_asset_versions SET status = 'VALIDATED' WHERE id IN ('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002');
+SELECT pg_temp.expect('an unscanned asset cannot be promoted',
+  $q$UPDATE cee_asset_versions SET published_key = 'p/early' WHERE id = '20000000-0000-0000-0000-000000000001'$q$, 'check constraint');
+UPDATE cee_asset_versions SET scan_status = 'CLEAN', published_key = 'p/' || id
  WHERE id IN ('20000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002');
+SELECT pg_temp.expect('a clean scan verdict is final',
+  $q$UPDATE cee_asset_versions SET scan_status = 'INFECTED' WHERE id = '20000000-0000-0000-0000-000000000001'$q$, 'ILLEGAL_TRANSITION');
+SELECT pg_temp.expect('a validated version cannot be rejected afterwards',
+  $q$UPDATE cee_asset_versions SET status = 'REJECTED' WHERE id = '20000000-0000-0000-0000-000000000001'$q$, 'ILLEGAL_TRANSITION');
 SELECT pg_temp.expect('a 3D lesson without a fallback cannot be published',
   format($q$SELECT cee_publish_revision('e0000000-0000-0000-0000-000000000003','%s','k-r3')$q$, pg_temp.u('publisher')), 'FALLBACK_REQUIRED');
 SELECT pg_temp.expect('a published asset key is permanent',
@@ -365,6 +375,51 @@ UPDATE cee_syllabus_versions SET status = 'RETIRED' WHERE id = '33333333-3333-33
 SELECT pg_temp.expect('a retired syllabus cannot come back',
   $q$UPDATE cee_syllabus_versions SET status = 'VERIFIED' WHERE id = '33333333-3333-3333-3333-333333333333'$q$, 'ILLEGAL_TRANSITION');
 
+-- ── Asset review (M7) ─────────────────────────────────────────────────────
+-- Test data only: a placeholder visual, not real content.
+INSERT INTO cee_visual_assets (id, program_code, title, kind, created_by)
+VALUES ('10000000-0000-0000-0000-0000000000a7', 'cee_medical', 'Review test visual (not real content)', 'DIAGRAM_2D', pg_temp.u('editor'));
+INSERT INTO cee_asset_versions (id, asset_id, version_number, quarantine_key, sha256, size_bytes, mime_type, created_by) VALUES
+ ('20000000-0000-0000-0000-0000000000a1','10000000-0000-0000-0000-0000000000a7',1,'rv/1',repeat('1',64),100,'image/svg+xml',pg_temp.u('editor')),
+ ('20000000-0000-0000-0000-0000000000a2','10000000-0000-0000-0000-0000000000a7',2,'rv/2',repeat('2',64),100,'image/svg+xml',pg_temp.u('editor'));
+SELECT pg_temp.expect('a version still uploading cannot be sent for review',
+  format($q$SELECT cee_submit_asset_version('20000000-0000-0000-0000-0000000000a1','%s')$q$, pg_temp.u('editor')), 'only a validated version');
+UPDATE cee_asset_versions SET status = 'VALIDATING' WHERE asset_id = '10000000-0000-0000-0000-0000000000a7';
+UPDATE cee_asset_versions SET status = 'VALIDATED' WHERE asset_id = '10000000-0000-0000-0000-0000000000a7';
+SELECT pg_temp.expect('review needs the visual described (manifest) first',
+  format($q$SELECT cee_submit_asset_version('20000000-0000-0000-0000-0000000000a1','%s')$q$, pg_temp.u('editor')), 'describe the visual');
+UPDATE cee_asset_versions SET manifest = '{"schemaVersion":"1.0","title":"test"}' WHERE asset_id = '10000000-0000-0000-0000-0000000000a7';
+SELECT pg_temp.expect('review needs the licence and source credit recorded',
+  format($q$SELECT cee_submit_asset_version('20000000-0000-0000-0000-0000000000a1','%s')$q$, pg_temp.u('editor')), 'licence and source credit');
+UPDATE cee_visual_assets SET license = 'test-only', source_credit = 'Test fixture' WHERE id = '10000000-0000-0000-0000-0000000000a7';
+SELECT cee_submit_asset_version('20000000-0000-0000-0000-0000000000a1', pg_temp.u('editor'));
+SELECT pg_temp.check('submitting opens three gates and locks the manifest',
+  (SELECT count(*) FROM cee_review_requests WHERE entity_type = 'ASSET_VERSION' AND entity_id = '20000000-0000-0000-0000-0000000000a1' AND status = 'OPEN') = 3
+  AND (SELECT locked_at IS NOT NULL FROM cee_asset_versions WHERE id = '20000000-0000-0000-0000-0000000000a1'));
+SELECT pg_temp.expect('a submitted manifest is frozen',
+  $q$UPDATE cee_asset_versions SET manifest = '{"x":1}' WHERE id = '20000000-0000-0000-0000-0000000000a1'$q$, 'IMMUTABLE_ASSET');
+SELECT pg_temp.expect('a version is sent for review only once',
+  format($q$SELECT cee_submit_asset_version('20000000-0000-0000-0000-0000000000a1','%s')$q$, pg_temp.u('editor')), 'already sent for review');
+CREATE FUNCTION pg_temp.areq(v uuid, g text) RETURNS uuid LANGUAGE sql AS $$
+  SELECT id FROM cee_review_requests WHERE entity_type = 'ASSET_VERSION' AND entity_id = v AND gate = g ORDER BY requested_at DESC LIMIT 1 $$;
+SELECT pg_temp.expect('the uploader cannot review their own visual',
+  format($q$SELECT cee_decide_asset_review('%s','%s','APPROVE',NULL)$q$, pg_temp.areq('20000000-0000-0000-0000-0000000000a1','SCIENTIFIC'), pg_temp.u('editor')), 'SOD_VIOLATION');
+SELECT pg_temp.expect('an asset decision cannot be recorded on a lesson review',
+  format($q$SELECT cee_decide_asset_review('f0000000-0000-0000-0000-000000000001','%s','APPROVE',NULL)$q$, pg_temp.u('expert')), 'not an asset review');
+SELECT pg_temp.check('two of three approvals leave it in review; the third approves it',
+  cee_decide_asset_review(pg_temp.areq('20000000-0000-0000-0000-0000000000a1','SCIENTIFIC'), pg_temp.u('expert'), 'APPROVE', NULL) = 'IN_REVIEW'
+  AND cee_decide_asset_review(pg_temp.areq('20000000-0000-0000-0000-0000000000a1','VISUAL'), pg_temp.u('expert'), 'APPROVE', NULL) = 'IN_REVIEW');
+SELECT pg_temp.check('… and the rights approval completes it',
+  cee_decide_asset_review(pg_temp.areq('20000000-0000-0000-0000-0000000000a1','RIGHTS'), pg_temp.u('director'), 'APPROVE', NULL) = 'APPROVED');
+SELECT cee_submit_asset_version('20000000-0000-0000-0000-0000000000a2', pg_temp.u('editor'));
+CREATE TEMP TABLE chg AS SELECT cee_decide_asset_review(pg_temp.areq('20000000-0000-0000-0000-0000000000a2','VISUAL'), pg_temp.u('expert'), 'REQUEST_CHANGES', 'Labels overlap') AS state;
+SELECT pg_temp.check('requesting changes closes the other gates for that version',
+  (SELECT state FROM chg) = 'CHANGES_REQUESTED'
+  AND (SELECT count(*) FROM cee_review_requests WHERE entity_id = '20000000-0000-0000-0000-0000000000a2' AND status = 'CANCELLED') = 2);
+SELECT pg_temp.check('storage buckets are private, where Supabase Storage exists',
+  to_regclass('storage.buckets') IS NULL
+  OR (SELECT count(*) FROM storage.buckets WHERE id IN ('cee-quarantine','cee-published') AND NOT public) = 2);
+
 -- ── Browser roles have no access (CEE-004) ───────────────────────────────
 SELECT pg_temp.check('no cee_* function is executable by anon or authenticated',
   NOT EXISTS (SELECT 1 FROM pg_proc p, (VALUES ('anon'), ('authenticated')) r(role)
@@ -372,12 +427,13 @@ SELECT pg_temp.check('no cee_* function is executable by anon or authenticated',
                 AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r.role) AND has_function_privilege(r.role, p.oid, 'EXECUTE')),
   (SELECT string_agg(p.oid::regprocedure::text, ', ') FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'cee\_%'
      AND EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') AND has_function_privilege('authenticated', p.oid, 'EXECUTE')));
-SELECT pg_temp.check('the server role can call the six transactional functions',
+SELECT pg_temp.check('the server role can call the eight transactional functions',
   NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role')
   OR (SELECT bool_and(has_function_privilege('service_role', f::regprocedure, 'EXECUTE')) FROM unnest(ARRAY[
        'public.cee_publish_revision(uuid,uuid,text)', 'public.cee_submit_revision(uuid,uuid)', 'public.cee_decide_review(uuid,uuid,text,text)',
        'public.cee_latest_decision(text,uuid,text)', 'public.cee_import_curriculum(uuid,uuid,jsonb,boolean,text)',
-       'public.cee_verify_syllabus(uuid,uuid,text,text,text)']) f));
+       'public.cee_verify_syllabus(uuid,uuid,text,text,text)', 'public.cee_submit_asset_version(uuid,uuid,text)',
+       'public.cee_decide_asset_review(uuid,uuid,text,text,text)']) f));
 
 SELECT pg_temp.check('row security is on for every cee_* table',
   (SELECT bool_and(relrowsecurity) FROM pg_class WHERE relname LIKE 'cee\_%' AND relkind = 'r'));

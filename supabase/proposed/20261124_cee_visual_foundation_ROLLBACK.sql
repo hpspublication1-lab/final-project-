@@ -15,6 +15,18 @@ DROP FUNCTION IF EXISTS public.cee_decide_review(uuid, uuid, text, text);
 DROP FUNCTION IF EXISTS public.cee_latest_decision(text, uuid, text);
 DROP FUNCTION IF EXISTS public.cee_import_curriculum(uuid, uuid, jsonb, boolean, text);
 DROP FUNCTION IF EXISTS public.cee_verify_syllabus(uuid, uuid, text, text, text);
+DROP FUNCTION IF EXISTS public.cee_submit_asset_version(uuid, uuid, text);
+DROP FUNCTION IF EXISTS public.cee_decide_asset_review(uuid, uuid, text, text, text);
+-- Buckets go only if empty; otherwise they stay, with a notice, so no file is lost.
+DO $buckets$ BEGIN
+  IF to_regclass('storage.buckets') IS NOT NULL THEN
+    IF EXISTS (SELECT 1 FROM storage.objects WHERE bucket_id IN ('cee-quarantine','cee-published')) THEN
+      RAISE NOTICE 'cee-quarantine / cee-published still hold files; buckets kept';
+    ELSE
+      DELETE FROM storage.buckets WHERE id IN ('cee-quarantine','cee-published');
+    END IF;
+  END IF;
+END $buckets$;
 DROP TABLE IF EXISTS public.cee_attempts, public.cee_player_events, public.cee_student_progress,
   public.cee_audit_logs, public.cee_role_assignments, public.cee_publications, public.cee_review_decisions,
   public.cee_review_requests, public.cee_lesson_questions, public.cee_question_revisions, public.cee_lesson_assets,

@@ -52,8 +52,9 @@ server-host = "127.0.0.1"
 server-port = 54330
 CONF
 
+rm -rf "$WORK/storage" && mkdir -p "$WORK/storage"   # stored objects start empty on every run
 nohup "$POSTGREST_BIN" "$WORK/postgrest.conf" > "$WORK/postgrest.log" 2>&1 &
-nohup node scripts/cee/it-proxy.mjs > "$WORK/proxy.log" 2>&1 &
+IT_STORAGE_DIR="$WORK/storage" nohup node scripts/cee/it-proxy.mjs > "$WORK/proxy.log" 2>&1 &
 
 # Wait until both answer (not a fixed sleep), and fail loudly with their logs if they don't.
 ready() { [ "$(curl -s -o /dev/null -w '%{http_code}' "$1" || true)" = "200" ]; }
