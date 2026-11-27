@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { usePublishedVisualLessons } from '@/components/visual-player/usePublishedVisualLessons';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import { createClient } from '@/lib/supabase/client';
@@ -111,6 +112,10 @@ export default function ChapterDetailClient({ subjectId, chapterId }: ChapterDet
 
     return () => { cancelled = true; };
   }, [subjectId, chapterId, user]);
+
+  // Published visual lessons mapped to this chapter (none until published; nothing inferred from titles).
+  const visualLessons = usePublishedVisualLessons('cee_medical');
+  const chapterVisualLessons = useMemo(() => visualLessons.filter((v) => v.legacyChapterIds.includes(chapterId)), [visualLessons, chapterId]);
 
   if (loading) {
     return (
@@ -255,45 +260,28 @@ export default function ChapterDetailClient({ subjectId, chapterId }: ChapterDet
             {/* Overview */}
             {activeTab === 'overview' && (
               <div className="grid lg:grid-cols-3 gap-6">
-                {(() => {
-                  const text = `${chapterRow.title || ''} ${chapterRow.description || ''}`.toLowerCase();
-                  let vis: { slug: string; title: string; topic: string } | null = null;
-                  if (text.includes('circulat') || text.includes('heart') || text.includes('cardio') || text.includes('blood')) {
-                    vis = { slug: 'human-heart', title: 'Human Heart Anatomy, Valve Mechanics & Cardiac Cycle', topic: 'Interactive Cardiac Simulation & Flow' };
-                  } else if (text.includes('excret') || text.includes('nephron') || text.includes('kidney') || text.includes('renal')) {
-                    vis = { slug: 'nephron', title: 'Nephron Ultrastructure & Countercurrent Multiplication', topic: 'Renal Ultrafiltration & ADH Osmoregulation' };
-                  } else if (text.includes('respirat') || text.includes('lung') || text.includes('gas exchange') || text.includes('alveol')) {
-                    vis = { slug: 'gas-exchange', title: 'Alveolar Gas Exchange & Respiratory Membrane Diffusion', topic: 'Fick Law Gas Diffusion Barrier' };
-                  }
-                  if (!vis) return null;
-
-                  return (
-                    <div className="lg:col-span-3 p-5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0 border border-emerald-500/30">
-                          <Sparkles size={22} />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/40">
-                              CEE 3D Visual Intelligence
-                            </span>
-                            <span className="text-xs text-muted-foreground font-mono">Interactive Biological Simulation</span>
-                          </div>
-                          <p className="text-sm font-bold text-foreground mt-1">{vis.title}</p>
-                          <p className="text-xs text-muted-foreground">{vis.topic}</p>
-                        </div>
+                {chapterVisualLessons.map((v) => (
+                  <div
+                    key={v.id}
+                    className="lg:col-span-3 p-5 rounded-2xl bg-card border border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Sparkles size={22} />
                       </div>
-                      <Link
-                        href={`/learn/visual/${vis.slug}`}
-                        target="_blank"
-                        className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shrink-0 transition flex items-center gap-1.5 shadow-sm"
-                      >
-                        Launch 3D Player <ExternalLink size={13} />
-                      </Link>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{v.title}</p>
+                        <p className="text-xs text-muted-foreground">Visual lesson on {v.topic}</p>
+                      </div>
                     </div>
-                  );
-                })()}
+                    <Link
+                      href={`/cee/visual/${v.id}`}
+                      className="px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-dark text-primary-foreground font-semibold text-sm shrink-0 transition"
+                    >
+                      Open lesson
+                    </Link>
+                  </div>
+                ))}
 
                 <div className="lg:col-span-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[

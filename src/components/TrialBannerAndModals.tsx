@@ -6,6 +6,28 @@ import { usePathname } from 'next/navigation';
 import { useTrial } from '@/contexts/TrialContext';
 import { Sparkles, Clock, Zap, CheckCircle2, ChevronRight, X, Lock, RefreshCw, Trophy, Star } from 'lucide-react';
 
+/**
+ * Determines whether promotional trial pop-ups and sticky banners should be suppressed.
+ * Suppresses promos on authentication flows (login, signup, password reset) and
+ * internal staff/administrative interfaces (admin studio, staff portals, teacher views),
+ * while preserving the intended promotional experience for prospective and active students.
+ */
+export function shouldSuppressTrialPromo(pathname: string): boolean {
+  if (!pathname) return false;
+
+  // 1. Authentication, onboarding and recovery flows
+  const isAuthFlow =
+    /^\/(login|signup|register|reset-password|onboarding)(\/|$)/.test(pathname) ||
+    pathname.startsWith('/auth/');
+  if (isAuthFlow) return true;
+
+  // 2. Administrative, staff, and teacher interfaces
+  const isAdminOrStaff = /^\/(admin|staff|teacher)(\/|$)/.test(pathname);
+  if (isAdminOrStaff) return true;
+
+  return false;
+}
+
 export default function TrialBannerAndModals() {
   const [mounted, setMounted] = React.useState(false);
   const {
@@ -27,13 +49,8 @@ export default function TrialBannerAndModals() {
 
   if (!mounted) return null;
 
-  // Someone on a sign-in, reset or onboarding screen is mid-task: a full-screen
-  // promo or a countdown bar on top of the form only gets in the way.
-  const isAuthFlow =
-    /^\/(login|signup|register|reset-password|onboarding)(\/|$)/.test(pathname) ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/admin/login');
-  if (isAuthFlow) return null;
+  // Suppress trial promo on auth flows and administrative/staff workspaces
+  if (shouldSuppressTrialPromo(pathname)) return null;
 
   return (
     <>

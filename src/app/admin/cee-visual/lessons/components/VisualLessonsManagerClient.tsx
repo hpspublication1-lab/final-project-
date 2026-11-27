@@ -1,350 +1,198 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+/**
+ * CEE visual lessons: list, search, and create. Ported from the parallel
+ * build's studio onto /api/v1/cee/admin; lessons now map to a real syllabus
+ * topic instead of free-text subject/chapter fields.
+ */
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import {
-  Sparkles, Plus, Search, ExternalLink, RefreshCw, GitBranch,
-  CheckCircle2, Clock, AlertTriangle, ShieldCheck, ArrowRight, BookOpen
-} from 'lucide-react';
-import { toast } from 'sonner';
+  AccessNotice,
+  buttonPrimary,
+  buttonSecondary,
+  ceeAdmin,
+  CeeAdminError,
+  inputClass,
+  nodePaths,
+  PageShell,
+  StatusBadge,
+  useCeeData,
+  type CurriculumView,
+} from '../../shared';
 
-interface LessonAdminItem {
+interface LessonItem {
   id: string;
-  title: string;
   slug: string;
-  subject: string;
-  chapter: string;
-  topic: string;
-  currentRevisionNumber: number;
-  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED' | 'SUPERSEDED' | 'ARCHIVED';
-  publicationId?: string;
-  publishedAt?: string;
+  title: string;
+  topic: { id: string; title: string; mappingStatus: string } | null;
+  latestRevision: { id: string; number: number; status: string; updatedAt: string } | null;
+  publication: { id: string; publishedAt: string; revisionNumber: number | null } | null;
   createdAt: string;
 }
 
+const slugify = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 96);
+
 export default function VisualLessonsManagerClient() {
-  const [lessons, setLessons] = useState<LessonAdminItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const router = useRouter();
+  const lessons = useCeeData<{ lessons: LessonItem[] }>('/lessons?program=cee_medical');
+  const curriculum = useCeeData<CurriculumView>('/curriculum?program=cee_medical');
+  const paths = useMemo(() => nodePaths(curriculum.data), [curriculum.data]);
 
-  // New Lesson Modal State
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [newTitle, setNewTitle] = useState<string>('');
-  const [newSlug, setNewSlug] = useState<string>('');
-  const [newSubject, setNewSubject] = useState<string>('Biology — Zoology');
-  const [newChapter, setNewChapter] = useState<string>('Human Physiology');
-  const [newTopic, setNewTopic] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('ALL');
+  const [creating, setCreating] = useState(false);
+  const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [slugTouched, setSlugTouched] = useState(false);
+  const [nodeId, setNodeId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchLessons = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/cee/admin/lessons');
-      const data = await res.json();
-      if (res.ok && data.data) {
-        setLessons(data.data);
-      } else {
-        toast.error(data.error?.message || 'Failed to fetch visual lessons');
-      }
-    } catch {
-      toast.error('Network error loading visual lessons.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLessons();
-  }, []);
-
-  const handleCreateLesson = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim() || !newSlug.trim()) {
-      toast.error('Please provide a lesson title and slug.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const res = await fetch('/api/cee/admin/lessons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newTitle.trim(),
-          slug: newSlug.trim(),
-          subject: newSubject,
-          chapter: newChapter,
-          topic: newTopic.trim() || newTitle.trim(),
-        }),
-      });
-
-      const json = await res.json();
-      if (res.ok && json.data) {
-        toast.success(`Draft lesson '${json.data.title}' created (Revision 1).`);
-        setIsModalOpen(false);
-        setNewTitle('');
-        setNewSlug('');
-        setNewTopic('');
-        fetchLessons();
-      } else {
-        toast.error(json.error?.message || 'Failed to create lesson.');
-      }
-    } catch {
-      toast.error('Failed to create lesson due to a network error.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleBranchRevision = async (lesson: LessonAdminItem) => {
-    try {
-      const res = await fetch(`/api/cee/admin/lessons/${lesson.id}/revisions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const json = await res.json();
-      if (res.ok && json.data) {
-        toast.success(`Branched new Revision ${json.data.revisionNumber} (DRAFT) for '${lesson.title}'.`);
-        fetchLessons();
-      } else {
-        toast.error(json.error?.message || 'Failed to branch revision.');
-      }
-    } catch {
-      toast.error('Network error while branching revision.');
-    }
-  };
-
-  const handleSubmitForReview = async (lesson: LessonAdminItem) => {
-    try {
-      const revId = `rev_${lesson.id}_v${lesson.currentRevisionNumber}`;
-      const res = await fetch(`/api/cee/admin/lesson-revisions/${revId}/submit`, {
-        method: 'POST',
-      });
-      const json = await res.json();
-      if (res.ok && json.data) {
-        toast.success(`Submitted '${lesson.title}' Revision ${lesson.currentRevisionNumber} to Academic Review Queue.`);
-        fetchLessons();
-      } else {
-        toast.error(json.error?.message || 'Failed to submit for review.');
-      }
-    } catch {
-      toast.error('Network error submitting revision.');
-    }
-  };
-
-  const filteredLessons = lessons.filter((l) => {
-    const matchesSearch =
-      l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.topic.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || l.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  const list = lessons.data?.lessons ?? [];
+  const shown = list.filter((l) => {
+    const q = query.trim().toLowerCase();
+    const text = `${l.title} ${l.slug} ${l.topic ? (paths.get(l.topic.id)?.path ?? l.topic.title) : ''}`.toLowerCase();
+    const st = l.publication ? 'PUBLISHED' : (l.latestRevision?.status ?? 'DRAFT');
+    return (!q || text.includes(q)) && (status === 'ALL' || st === status || l.latestRevision?.status === status);
   });
 
-  const getStatusBadge = (status: LessonAdminItem['status']) => {
-    switch (status) {
-      case 'PUBLISHED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Published
-          </span>
-        );
-      case 'APPROVED':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/30">
-            <ShieldCheck className="w-3.5 h-3.5" /> Approved
-          </span>
-        );
-      case 'IN_REVIEW':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-            <Clock className="w-3.5 h-3.5" /> In Review
-          </span>
-        );
-      case 'DRAFT':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
-            <GitBranch className="w-3.5 h-3.5" /> Draft
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-900 text-slate-400 border border-slate-800">
-            {status}
-          </span>
-        );
+  const topics = useMemo(
+    () =>
+      [...paths.entries()]
+        .filter(([, v]) => v.type !== 'SUBJECT')
+        .sort((a, b) => a[1].path.localeCompare(b[1].path)),
+    [paths]
+  );
+
+  const count = (pred: (l: LessonItem) => boolean) => list.filter(pred).length;
+
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setFormError(null);
+    try {
+      const r = await ceeAdmin<{ id: string }>('/lessons', { method: 'POST', json: { program: 'cee_medical', title: title.trim(), slug, nodeId } });
+      router.push(`/admin/cee-visual/lessons/${r.id}`);
+    } catch (err) {
+      setFormError(err instanceof CeeAdminError ? (err.code === 'STATE_CONFLICT' ? 'That web address is already used by another lesson.' : err.message) : String(err));
+      setSaving(false);
     }
   };
 
+  const blocking = lessons.error ?? curriculum.error;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 font-sans">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Top Header & Breadcrumb */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 mb-1">
-              <Link href="/admin" className="hover:underline text-slate-400">Admin</Link>
-              <span>/</span>
-              <span className="text-emerald-400">CEE Visual Intelligence Studio</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-              <Sparkles className="w-7 h-7 text-emerald-400" />
-              CEE Visual Lessons Studio
-            </h1>
-            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-              Author, branch, review, and publish interactive 3D simulations and anatomical models for Nepal Medical Education Commission CEE Entrance.
-            </p>
+    <PageShell
+      title="Visual lessons"
+      description="Write 3D and diagram lessons for CEE. Each one is reviewed on six gates before a publisher can release it to students."
+      actions={
+        !blocking && (
+          <button type="button" className={buttonPrimary} onClick={() => setCreating(true)}>
+            New lesson
+          </button>
+        )
+      }
+    >
+      {blocking ? (
+        <AccessNotice error={blocking} />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              ['Lessons', list.length],
+              ['Published', count((l) => Boolean(l.publication))],
+              ['In review', count((l) => l.latestRevision?.status === 'IN_REVIEW')],
+              ['Drafts', count((l) => l.latestRevision?.status === 'DRAFT')],
+            ].map(([label, n]) => (
+              <div key={label} className="rounded-xl border border-border bg-card p-4">
+                <p className="text-xs text-muted-foreground">{label}</p>
+                <p className="text-2xl font-bold mt-1">{n}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/cee-visual/reviews"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 transition"
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              Review Queue
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-            </Link>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20"
-            >
-              <Plus className="w-4 h-4" />
-              New Visual Lesson
+          <div className="flex flex-col sm:flex-row gap-3">
+            <label className="sm:w-80">
+              <span className="sr-only">Search lessons</span>
+              <input className={inputClass} placeholder="Search by title or topic" value={query} onChange={(e) => setQuery(e.target.value)} />
+            </label>
+            <label>
+              <span className="sr-only">Status</span>
+              <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="ALL">All statuses</option>
+                <option value="DRAFT">Draft</option>
+                <option value="IN_REVIEW">In review</option>
+                <option value="CHANGES_REQUESTED">Changes requested</option>
+                <option value="APPROVED">Approved</option>
+                <option value="PUBLISHED">Published</option>
+              </select>
+            </label>
+            <button type="button" className={buttonSecondary} onClick={() => void lessons.reload()} disabled={lessons.loading}>
+              {lessons.loading ? 'Refreshing…' : 'Refresh'}
             </button>
           </div>
-        </div>
 
-        {/* Quick KPI Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur">
-            <p className="text-xs text-slate-400 font-medium">Total Visual Lessons</p>
-            <p className="text-2xl font-black text-white mt-1">{lessons.length}</p>
-          </div>
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur">
-            <p className="text-xs text-emerald-400 font-medium">Published & Active</p>
-            <p className="text-2xl font-black text-emerald-400 mt-1">
-              {lessons.filter((l) => l.status === 'PUBLISHED').length}
-            </p>
-          </div>
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur">
-            <p className="text-xs text-amber-400 font-medium">In Academic Review</p>
-            <p className="text-2xl font-black text-amber-400 mt-1">
-              {lessons.filter((l) => l.status === 'IN_REVIEW').length}
-            </p>
-          </div>
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur">
-            <p className="text-xs text-slate-400 font-medium">Draft Revisions</p>
-            <p className="text-2xl font-black text-slate-300 mt-1">
-              {lessons.filter((l) => l.status === 'DRAFT').length}
-            </p>
-          </div>
-        </div>
-
-        {/* Search, Filter & Refresh Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Search lessons by title, slug, or topic..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="PUBLISHED">Published</option>
-              <option value="APPROVED">Approved</option>
-              <option value="IN_REVIEW">In Review</option>
-              <option value="DRAFT">Draft</option>
-            </select>
-            <button
-              onClick={fetchLessons}
-              title="Refresh lessons"
-              className="p-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* Lessons List Table */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/30 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-mono text-[10px] border-b border-slate-800">
+          <div className="rounded-xl border border-border bg-card overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border text-xs text-muted-foreground">
                 <tr>
-                  <th className="py-3 px-4">Lesson Title & Topic</th>
-                  <th className="py-3 px-4">Subject & Chapter</th>
-                  <th className="py-3 px-4">Revision</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4 font-medium">Lesson</th>
+                  <th className="py-3 px-4 font-medium">Topic</th>
+                  <th className="py-3 px-4 font-medium">Latest revision</th>
+                  <th className="py-3 px-4 font-medium">Live</th>
+                  <th className="py-3 px-4" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-slate-300">
-                {filteredLessons.length === 0 ? (
+              <tbody className="divide-y divide-border">
+                {shown.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-500">
-                      No visual lessons found matching your filters.
+                    <td colSpan={5} className="py-10 px-4 text-center text-muted-foreground">
+                      {list.length === 0 ? 'No visual lessons yet. Start one with “New lesson”.' : 'No lessons match these filters.'}
                     </td>
                   </tr>
                 ) : (
-                  filteredLessons.map((lesson) => (
-                    <tr key={lesson.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-white">{lesson.title}</div>
-                        <div className="text-[11px] text-slate-400 font-mono mt-0.5">
-                          slug: {lesson.slug}
-                        </div>
+                  shown.map((l) => (
+                    <tr key={l.id} className="hover:bg-muted/40">
+                      <td className="py-3 px-4">
+                        <Link href={`/admin/cee-visual/lessons/${l.id}`} className="font-semibold hover:underline">
+                          {l.title}
+                        </Link>
+                        <div className="text-xs text-muted-foreground mt-0.5">/{l.slug}</div>
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="text-slate-200">{lesson.subject}</div>
-                        <div className="text-[11px] text-slate-500">{lesson.chapter}</div>
+                      <td className="py-3 px-4 text-muted-foreground">
+                        {l.topic ? (paths.get(l.topic.id)?.path ?? l.topic.title) : 'Not mapped'}
+                        {l.topic?.mappingStatus === 'PROPOSED' && <span className="block text-xs">Mapping not approved yet</span>}
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-medium text-slate-300">
-                        Rev {lesson.currentRevisionNumber}
+                      <td className="py-3 px-4">
+                        {l.latestRevision ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="text-muted-foreground">#{l.latestRevision.number}</span>
+                            <StatusBadge status={l.latestRevision.status} />
+                          </span>
+                        ) : (
+                          '—'
+                        )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        {getStatusBadge(lesson.status)}
+                      <td className="py-3 px-4 text-muted-foreground">
+                        {l.publication ? `Revision ${l.publication.revisionNumber ?? '?'} since ${new Date(l.publication.publishedAt).toLocaleDateString()}` : 'Not published'}
                       </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/learn/visual/${lesson.slug}`}
-                            target="_blank"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] transition"
-                            title="Preview lesson in player"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            Preview
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        {l.publication && (
+                          <Link href={`/cee/visual/${l.id}`} className={`${buttonSecondary} mr-2`} target="_blank">
+                            View as student
                           </Link>
-
-                          {lesson.status === 'DRAFT' && (
-                            <button
-                              onClick={() => handleSubmitForReview(lesson)}
-                              className="px-2.5 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-medium transition"
-                            >
-                              Submit Review
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => handleBranchRevision(lesson)}
-                            className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition"
-                            title="Branch a new draft revision"
-                          >
-                            Branch Rev
-                          </button>
-                        </div>
+                        )}
+                        <Link href={`/admin/cee-visual/lessons/${l.id}`} className={buttonSecondary}>
+                          Open
+                        </Link>
                       </td>
                     </tr>
                   ))
@@ -352,117 +200,85 @@ export default function VisualLessonsManagerClient() {
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* New Visual Lesson Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Plus className="w-5 h-5 text-emerald-400" />
-                Create New CEE Visual Lesson
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-slate-400 hover:text-slate-200 text-sm font-mono"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateLesson} className="space-y-4 text-xs">
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Lesson Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ear: Cochlear Ultrastructure & Organ of Corti"
-                  value={newTitle}
-                  onChange={(e) => {
-                    setNewTitle(e.target.value);
-                    if (!newSlug) {
-                      setNewSlug(
-                        e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9]+/g, '-')
-                          .replace(/^-|-$/g, '')
-                      );
-                    }
-                  }}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">URL Slug</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. ear-cochlea"
-                  value={newSlug}
-                  onChange={(e) => setNewSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Subject</label>
-                  <select
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Biology — Zoology">Biology — Zoology</option>
-                    <option value="Biology — Botany">Biology — Botany</option>
-                    <option value="Chemistry">Chemistry</option>
-                    <option value="Physics">Physics</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-300 font-medium mb-1">Chapter</label>
+      {creating && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="new-lesson-title">
+          <form onSubmit={create} className="w-full max-w-lg rounded-xl border border-border bg-card p-6 space-y-4 shadow-xl">
+            <h2 id="new-lesson-title" className="text-lg font-bold">
+              New visual lesson
+            </h2>
+            {topics.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                There are no syllabus topics yet. Add the syllabus on the{' '}
+                <Link href="/admin/cee-visual/curriculum" className="underline">
+                  Syllabus
+                </Link>{' '}
+                screen first, so the lesson can be mapped to a topic.
+              </p>
+            ) : (
+              <>
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Title</span>
                   <input
-                    type="text"
-                    value={newChapter}
-                    onChange={(e) => setNewChapter(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-emerald-500"
+                    className={inputClass}
+                    required
+                    minLength={3}
+                    maxLength={200}
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      if (!slugTouched) setSlug(slugify(e.target.value));
+                    }}
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">Curriculum Topic</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Sensory Reception & Mechanotransduction"
-                  value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition"
-                >
-                  Cancel
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Web address</span>
+                  <input
+                    className={inputClass}
+                    required
+                    pattern="[a-z0-9][a-z0-9-]{1,95}"
+                    value={slug}
+                    onChange={(e) => {
+                      setSlugTouched(true);
+                      setSlug(e.target.value);
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">Lowercase letters, digits and hyphens.</span>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-sm font-medium">Syllabus topic</span>
+                  <select className={inputClass} required value={nodeId} onChange={(e) => setNodeId(e.target.value)}>
+                    <option value="">Choose a topic</option>
+                    {topics.map(([id, v]) => (
+                      <option key={id} value={id}>
+                        {v.path}
+                        {v.verified ? '' : ' (syllabus not verified)'}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+            {formError && (
+              <p role="alert" className="text-sm text-error">
+                {formError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" className={buttonSecondary} onClick={() => setCreating(false)}>
+                Cancel
+              </button>
+              {topics.length > 0 && (
+                <button type="submit" className={buttonPrimary} disabled={saving}>
+                  {saving ? 'Creating…' : 'Create lesson'}
                 </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Creating...' : 'Create Draft Lesson'}
-                </button>
-              </div>
-            </form>
-          </div>
+              )}
+            </div>
+          </form>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

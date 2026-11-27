@@ -26,7 +26,11 @@ export async function POST(request: NextRequest) {
     const watched = Math.max(0, Math.floor(Number(watchedSeconds) || 0));
     const total = Math.max(0, Math.floor(Number(totalDurationSec) || 0));
     const percentage = total > 0 ? Math.min(100, Math.round((watched / total) * 100)) : 0;
-    const completed = isCompleted === true || percentage >= 90;
+    // Completion comes only from watch time the server can check (90% or more).
+    // A client-sent `isCompleted` is ignored: it would let anyone mark a lesson
+    // done without watching it. (VULN-002 / PATCH-001 from the independent audit.)
+    void isCompleted;
+    const completed = percentage >= 90;
 
     const admin = createAdminClient();
     if (!admin) {

@@ -59,6 +59,8 @@
     "@100mslive/react-sdk": "^0.12.5",
     "@dhiwise/component-tagger": "^1.0.15",
     "@heroicons/react": "^2.2.0",
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
     "@rocketnew/llm-sdk": "^1.1.0",
     "@supabase/ssr": "0.12.3",
     "@supabase/supabase-js": "^2.87.1",
@@ -67,6 +69,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/katex": "^0.16.8",
     "framer-motion": "^11.18.2",
+    "gltf-validator": "^2.0.0-dev.3.10",
     "hls.js": "^1.5.17",
     "jsonwebtoken": "^9.0.3",
     "katex": "^0.18.1",
@@ -83,6 +86,7 @@
     "rehype-katex": "^7.0.1",
     "remark-math": "^6.0.0",
     "sonner": "^1.7.4",
+    "three": "^0.187.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -93,6 +97,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "19.0.3",
     "@types/react-dom": "19.0.3",
+    "@types/three": "^0.187.0",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
     "autoprefixer": "10.4.2",

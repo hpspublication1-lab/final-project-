@@ -265,6 +265,9 @@ export async function middleware(request: NextRequest) {
         '/admin/resources',
         '/admin/flashcards',
         '/admin/exams',
+        // CEE visual CMS: these pages hold no data themselves; every read and
+        // write goes through /api/v1/cee/admin, which requires a scoped CEE role.
+        '/admin/cee-visual',
       ];
       const isAllowed = allowedContentPaths.some((p) => pathname === p || pathname.startsWith(p + '/'));
       if (!isAllowed) {

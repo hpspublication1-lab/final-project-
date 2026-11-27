@@ -39,7 +39,9 @@ const csp = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
   "font-src 'self' data:",
-  `connect-src 'self' ${sb.https} ${sb.wss} ${analyticsConnect} ${bunnyConnect} https://cloudflareinsights.com`,
+  // blob: lets three.js read textures embedded in a 3D model: GLTFLoader turns each into a
+  // blob: URL and fetch()es it. blob: URLs can only be created by this page's own scripts.
+  `connect-src 'self' blob: ${sb.https} ${sb.wss} ${analyticsConnect} ${bunnyConnect} https://cloudflareinsights.com`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

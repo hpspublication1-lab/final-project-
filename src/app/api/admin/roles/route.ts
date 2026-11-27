@@ -127,6 +127,8 @@ export async function POST(req: NextRequest) {
     const targetAuthUser = (userList?.users || []).find((u) => u.id === userId);
     const previousRole =
       (existingProfile as any)?.role ||
+      // app_metadata is server-written; user_metadata can be edited by the user themselves.
+      targetAuthUser?.app_metadata?.role ||
       targetAuthUser?.user_metadata?.role ||
       (existingProfile?.is_admin ? 'admin' : 'student_free');
 
